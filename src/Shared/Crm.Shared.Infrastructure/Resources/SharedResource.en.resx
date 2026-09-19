@@ -231,4 +231,15 @@
   <data name="field.sla_state" xml:space="preserve"><value>SLA state</value></data>
   <data name="permission.crm.cases.read" xml:space="preserve"><value>View cases</value></data>
   <data name="permission.crm.cases.write" xml:space="preserve"><value>Create and manage cases</value></data>
+  <!-- Security hardening (C-SEC) -->
+  <data name="auth.password_change_required" xml:space="preserve"><value>You must change your temporary password before doing this.</value></data>
+  <data name="validation.password_too_common" xml:space="preserve"><value>This password is too common; choose a more unique one.</value></data>
+  <data name="validation.password_contains_email" xml:space="preserve"><value>The password must not contain the user-name part of your e-mail address.</value></data>
+  <data name="validation.password_too_long" xml:space="preserve"><value>Password must be at most {MaxLength} characters.</value></data>
+  <data name="validation.website" xml:space="preserve"><value>Website must be a valid address starting with http:// or https://.</value></data>
+  <data name="member.cannot_modify_self" xml:space="preserve"><value>You cannot change your own role or deactivate your own membership.</value></data>
+  <data name="role.permission_escalation" xml:space="preserve"><value>You cannot grant a permission you do not hold yourself.</value></data>
+  <data name="invitation.not_found" xml:space="preserve"><value>The invitation was not found or does not belong to you.</value></data>
+  <data name="field.current_password" xml:space="preserve"><value>Current password</value></data>
+  <data name="field.new_password" xml:space="preserve"><value>New password</value></data>
 </root>

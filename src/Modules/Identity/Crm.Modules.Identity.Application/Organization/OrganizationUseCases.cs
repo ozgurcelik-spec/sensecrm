@@ -9,6 +9,7 @@ using FluentValidation;
 namespace Crm.Modules.Identity.Application.Organization;
 
 /// <summary>Aktif organizasyonun bilgileri; organizasyonun her aktif üyesi okuyabilir.</summary>
+[AnyAuthenticatedUser("Her aktif üye kendi organizasyonunun temel bilgisini görür (kiracı filtresi)")]
 public sealed record GetOrganizationQuery : IQuery<OrganizationDto>;
 
 public sealed class GetOrganizationHandler(ICurrentUser currentUser, ITenantContext tenant, ITenantRepository tenants, IMembershipRepository memberships)
@@ -63,6 +64,7 @@ public sealed class UpdateOrganizationHandler(ITenantContext tenant, ITenantRepo
 }
 
 /// <summary>Birleşik izin kataloğu (tüm modüller): anahtar + grup (org | crm). Görünen adlar istemcide çevrilir (K8).</summary>
+[AnyAuthenticatedUser("İzin kataloğu (anahtar listesi) hassas değildir; istemci izin ekranı ve rol editörü için")]
 public sealed record ListPermissionsQuery : IQuery<IReadOnlyList<PermissionDto>>;
 
 public sealed class ListPermissionsHandler(IPermissionCatalog catalog) : IQueryHandler<ListPermissionsQuery, IReadOnlyList<PermissionDto>>

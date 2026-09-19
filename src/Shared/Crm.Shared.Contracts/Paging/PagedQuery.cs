@@ -29,7 +29,11 @@ public sealed record PagedQuery
     /// <summary>Alan bazlı filtreler.</summary>
     public IReadOnlyList<FilterClause> Filters { get; init; } = [];
 
-    public int Skip => (Page - PagingDefaults.FirstPage) * PageSize;
+    /// <summary>Atlanacak satır sayısı; <c>int</c> taşmasına karşı güvenli (L6): çok büyük sayfa numarası int.MaxValue'ya kırpılır.</summary>
+    public int Skip => SkipFor(Page, PageSize);
+
+    public static int SkipFor(int page, int pageSize) =>
+        (int)Math.Min((long)Math.Max(page - PagingDefaults.FirstPage, 0) * Math.Max(pageSize, 1), int.MaxValue);
 
     public IReadOnlyList<SortClause> SortClauses => SortClause.Parse(Sort);
 

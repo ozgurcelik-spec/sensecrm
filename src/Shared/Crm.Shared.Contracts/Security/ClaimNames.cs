@@ -15,6 +15,9 @@ public static class ClaimNames
     public const string Roles = "roles";
     public const string PlatformAdmin = "platform_admin";
     public const string Language = "lang";
+
+    /// <summary>Parolası geçici olan hesap (<c>MustChangePassword</c>): değer <see cref="TrueValue"/> ise yalnız parola değiştirme uçları çalışır.</summary>
+    public const string PasswordChangeRequired = "pwd_change";
     public const string TrueValue = "true";
 }
 

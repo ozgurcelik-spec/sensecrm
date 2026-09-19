@@ -32,8 +32,15 @@ try
         .Enrich.With(new UserEnricher(services.GetRequiredService<IHttpContextAccessor>()))
         .Enrich.WithProperty(HostConstants.ApplicationProperty, context.Configuration[HostConstants.ApplicationNameKey] ?? HostConstants.DefaultApplicationName));
 
-    // "Server: Kestrel" başlığı sunucu teknolojisini ifşa etmesin.
-    builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
+    // "Server: Kestrel" başlığı sunucu teknolojisini ifşa etmesin. İstek gövdesi üst sınırı (M2; RequestLimits:MaxRequestBodyBytes,
+    // varsayılan 1 MB): bu API yalnız küçük JSON alır; aşan istek Kestrel'de 413 ile kesilir.
+    var maxBodyBytes = builder.Configuration.GetSection(Crm.Shared.Contracts.Configuration.ConfigurationSections.RequestLimits).Get<Crm.Shared.Contracts.Configuration.RequestLimitsOptions>()?.MaxRequestBodyBytes
+        ?? Crm.Shared.Contracts.Configuration.RequestLimitsDefaults.MaxRequestBodyBytes;
+    builder.WebHost.ConfigureKestrel(o =>
+    {
+        o.AddServerHeader = false;
+        o.Limits.MaxRequestBodySize = maxBodyBytes;
+    });
 
     builder.Services.AddCrmWeb(builder.Configuration, ModuleCatalog.Modules);
     builder.Services.AddCrmAuthentication(builder.Configuration, builder.Environment);
@@ -75,11 +82,16 @@ try
     app.UseCrmLocalization();
     app.UseCrmCors();
 
-    // Anonim kimlik uçları için IP bazlı hız sınırlama; yalnız [EnableRateLimiting] ile işaretli uçlarda devreye girer.
+    app.UseAuthentication();
+
+    // Hız sınırlama kimlik doğrulamadan SONRA: anonim auth uçları IP başına ([EnableRateLimiting]), kimliği doğrulanmış tüm istekler
+    // ayrıca kullanıcı ve kiracı başına genel sınırdan geçer (M2). Kullanıcı/kiracı anahtarı doğrulanmış JWT claim'lerinden okunur.
     app.UseRateLimiter();
 
-    app.UseAuthentication();
     app.UseRequestContext();
+
+    // Geçici parolalı hesap: parola değişene kadar yalnız [AllowWhenPasswordChangeRequired] uçlar çalışır (H4).
+    app.UsePasswordChangeRequired();
     app.UseAuthorization();
 
     app.MapControllers();

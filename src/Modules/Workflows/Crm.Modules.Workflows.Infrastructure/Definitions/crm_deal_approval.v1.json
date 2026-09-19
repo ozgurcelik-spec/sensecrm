@@ -1,13 +1,13 @@
 {
   "name": "crm_deal_approval",
-  "description": "CRM v1: kazanilan buyuk tutarli firsat icin onay talepleri acar, karari bekler, sonucu firsata not olarak isler.",
+  "description": "CRM v1: kazanilan buyuk tutarli firsat icin onay talepleri acar, karari bekler, sonucu firsata not olarak isler. Gorevler yalniz tenantId+executionId ile yurutmeyi bulur; rol/parametre/karar veritabanindan okunur (Conductor girdisi guvenilmez).",
   "version": 1,
   "schemaVersion": 2,
   "ownerEmail": "crm@algosense.com.tr",
   "restartable": true,
   "timeoutPolicy": "ALERT_ONLY",
   "timeoutSeconds": 0,
-  "inputParameters": ["tenantId", "executionId", "ruleId", "dealId", "dealName", "amount", "currency", "approverRoleId"],
+  "inputParameters": ["tenantId", "executionId", "ruleId", "dealId", "dealName", "amount", "currency"],
   "tasks": [
     {
       "name": "crm_create_approvals",
@@ -15,12 +15,7 @@
       "type": "SIMPLE",
       "inputParameters": {
         "tenantId": "${workflow.input.tenantId}",
-        "executionId": "${workflow.input.executionId}",
-        "dealId": "${workflow.input.dealId}",
-        "dealName": "${workflow.input.dealName}",
-        "amount": "${workflow.input.amount}",
-        "currency": "${workflow.input.currency}",
-        "approverRoleId": "${workflow.input.approverRoleId}"
+        "executionId": "${workflow.input.executionId}"
       }
     },
     {
@@ -34,11 +29,7 @@
       "type": "SIMPLE",
       "inputParameters": {
         "tenantId": "${workflow.input.tenantId}",
-        "executionId": "${workflow.input.executionId}",
-        "dealId": "${workflow.input.dealId}",
-        "decision": "${wait_decision.output.decision}",
-        "comment": "${wait_decision.output.comment}",
-        "approverUserId": "${wait_decision.output.approverUserId}"
+        "executionId": "${workflow.input.executionId}"
       }
     },
     {

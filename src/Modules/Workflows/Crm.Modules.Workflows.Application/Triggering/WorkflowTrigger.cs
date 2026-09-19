@@ -18,25 +18,17 @@ public static class WorkflowInputs
     public static JsonObject DealSubject(Guid dealId, string dealName, decimal? amount, string currency) =>
         new() { ["dealId"] = dealId, ["dealName"] = dealName, ["amount"] = amount, ["currency"] = currency };
 
-    /// <summary>Motora gönderilen tam girdi: saklanan konu + <c>tenantId, executionId, ruleId</c> + kuralın güncel parametreleri.</summary>
+    /// <summary>
+    /// Motora gönderilen girdi: saklanan konu (yalnız Conductor arayüzünde okunabilirlik için) + <c>tenantId, executionId, ruleId</c>.
+    /// Rol kimlikleri/parametreler burada GÖNDERİLMEZ (H1): görevler bunları güvenilmez girdiden değil, kayıtlı kuraldan okur;
+    /// <c>tenantId</c>/<c>executionId</c> yalnız yürütme satırını bulmak içindir ve Worker'da doğrulanır.
+    /// </summary>
     public static JsonObject Build(WorkflowExecution execution, WorkflowRule rule)
     {
         var input = (JsonObject)JsonNode.Parse(execution.InputJson)!;
         input["tenantId"] = execution.TenantId;
         input["executionId"] = execution.Id;
         input["ruleId"] = rule.Id;
-        switch (rule.Kind)
-        {
-            case WorkflowRuleKind.LeadAssignment:
-                var lead = rule.LeadAssignment;
-                input["assigneeRoleId"] = lead.AssigneeRoleId;
-                input["followUpHours"] = lead.FollowUpHours;
-                break;
-            case WorkflowRuleKind.DealApproval:
-                input["approverRoleId"] = rule.DealApproval.ApproverRoleId;
-                break;
-        }
-
         return input;
     }
 }

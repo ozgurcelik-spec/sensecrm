@@ -26,6 +26,7 @@ public sealed class GetAuditLogHandler(IIdentityReadStore readStore) : IQueryHan
 /// kaynağının okuma izni (<see cref="IAuditEntityPermissions"/>, ör. Account → <c>crm.accounts.read</c>). Modüllerin bildirmediği
 /// türler yalnız <c>org.audit.read</c> ile okunur.
 /// </summary>
+[AnyAuthenticatedUser("Yetki handler içinde: org.audit.read veya varlık türünün kaynak okuma izni (IAuditEntityPermissions)")]
 public sealed record GetEntityAuditQuery(string EntityType, string EntityId, PagedQuery Paging) : IQuery<AuditPageDto>;
 
 public sealed class GetEntityAuditValidator : AbstractValidator<GetEntityAuditQuery>

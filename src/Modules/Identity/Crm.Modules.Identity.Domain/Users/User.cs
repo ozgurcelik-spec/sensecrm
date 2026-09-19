@@ -19,7 +19,7 @@ public sealed class User : AggregateRoot<Guid>
     {
     }
 
-    private User(Guid id, EmailAddress email, string displayName, string locale, string passwordHash) : base(id)
+    private User(Guid id, EmailAddress email, string displayName, string locale, string passwordHash, bool mustChangePassword) : base(id)
     {
         Email = email.Value;
         NormalizedEmail = Normalize(email.Value);
@@ -28,6 +28,7 @@ public sealed class User : AggregateRoot<Guid>
         PasswordHash = passwordHash;
         SecurityStamp = NewStamp();
         IsActive = true;
+        MustChangePassword = mustChangePassword;
     }
 
     public string Email { get; private set; } = string.Empty;
@@ -55,21 +56,42 @@ public sealed class User : AggregateRoot<Guid>
 
     public bool IsActive { get; private set; }
 
+    /// <summary>Parola yönetici tarafından üretilmiş geçici paroladır; değiştirilene kadar yalnız <c>POST /me/password</c> vb. çalışır.</summary>
+    public bool MustChangePassword { get; private set; }
+
     /// <summary>Girişte açılacak organizasyon: en son geçiş yapılan (hâlâ aktif üyeyse).</summary>
     public Guid? DefaultTenantId { get; private set; }
 
     public static string Normalize(string email) => email.Trim().ToUpperInvariant();
 
-    public static User Create(string email, string displayName, string locale, string passwordHash)
+    /// <summary>
+    /// <paramref name="mustChangePassword"/>: yönetici tarafından açılan hesapta parola sunucu üretimidir ve tek seferliktir; kullanıcı
+    /// değiştirene kadar yalnız parola değiştirme uçları çalışır (H4).
+    /// </summary>
+    public static User Create(string email, string displayName, string locale, string passwordHash, bool mustChangePassword = false)
     {
         var user = new User(
             Guid.CreateVersion7(),
             EmailAddress.Of(email),
             Guard.MaxLength(Guard.NotEmpty(displayName), IdentityLimits.DisplayNameMaxLength),
             Guard.NotEmpty(locale),
-            Guard.NotEmpty(passwordHash));
+            Guard.NotEmpty(passwordHash),
+            mustChangePassword);
         user.Raise(new UserCreated(user.Id, user.Email));
         return user;
+    }
+
+    /// <summary>
+    /// Parolayı değiştirir: <c>SecurityStamp</c> yenilenir, <c>MustChangePassword</c> temizlenir, kilit/sayaç sıfırlanır. Diğer
+    /// oturumların (refresh token aileleri) iptali çağıranın işidir.
+    /// </summary>
+    public void ChangePassword(string newPasswordHash)
+    {
+        PasswordHash = Guard.NotEmpty(newPasswordHash);
+        SecurityStamp = NewStamp();
+        MustChangePassword = false;
+        FailedAccessCount = 0;
+        LockoutEndUtc = null;
     }
 
     public Result CanSignIn(DateTime nowUtc)
@@ -87,6 +109,11 @@ public sealed class User : AggregateRoot<Guid>
 
         return Result.Success();
     }
+
+    public bool IsLockedOut(DateTime nowUtc) => LockoutEndUtc is { } end && end > nowUtc;
+
+    /// <summary>Parola değişmeden hash'i günceller (yineleme sayısı yükseltmesi, L5); güvenlik damgası değişmez.</summary>
+    public void RehashPassword(string newPasswordHash) => PasswordHash = Guard.NotEmpty(newPasswordHash);
 
     public void RecordFailedAccess(DateTime nowUtc, LockoutPolicy policy)
     {

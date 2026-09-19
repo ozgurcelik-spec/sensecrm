@@ -80,6 +80,23 @@ internal static class ValidationRules
     public static IRuleBuilderOptions<T, string?> Optional<T>(this IRuleBuilder<T, string?> rule, int maxLength) =>
         rule.MaximumLength(maxLength);
 
+    /// <summary>
+    /// Web sitesi (L7): boş olabilir; doluysa mutlak <c>http://</c> veya <c>https://</c> adresi olmalıdır (<c>javascript:</c>,
+    /// <c>data:</c>, çıplak host vb. reddedilir; arayüz bağlantıyı doğrudan <c>href</c> yapar). Yalnız yazmada doğrulanır; eski
+    /// kayıtlar okunurken hata vermez.
+    /// </summary>
+    public static IRuleBuilderOptions<T, string?> OptionalHttpUrl<T>(this IRuleBuilder<T, string?> rule, int maxLength) =>
+        rule.MaximumLength(maxLength)
+            .Must(url => string.IsNullOrWhiteSpace(url) || IsHttpUrl(url))
+            .WithMessage(InvalidWebsite);
+
+    public static bool IsHttpUrl(string value) =>
+        Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+        && !string.IsNullOrEmpty(uri.Host);
+
+    public const string InvalidWebsite = "validation.website";
+
     public static IRuleBuilderOptions<T, string?> OptionalEmail<T>(this IRuleBuilder<T, string?> rule) =>
         rule.MaximumLength(SalesLimits.EmailMaxLength)
             .Must(email => string.IsNullOrWhiteSpace(email) || EmailAddress.IsValid(email))

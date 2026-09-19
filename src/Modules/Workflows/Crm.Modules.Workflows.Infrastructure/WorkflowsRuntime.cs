@@ -79,17 +79,24 @@ public static class WorkflowsRuntime
 }
 
 /// <summary>
-/// Bir workflow görevini kiracı + sistem bağlamında çalıştırır (Worker ve sahte motor ortak kullanır): kiracı <c>input.tenantId</c>'den,
-/// her görev kendi DI kapsamında. Beklenmeyen istisna geçici hata (<see cref="WorkflowTaskResult.Retry"/>) sayılır.
+/// Bir workflow görevini kiracı + sistem bağlamında çalıştırır (Worker ve sahte motor ortak kullanır); her görev kendi DI kapsamında.
+/// Beklenmeyen istisna geçici hata (<see cref="WorkflowTaskResult.Retry"/>) sayılır.
+///
+/// <b>Güven doğrulaması (H1):</b> Conductor girdisi (<c>tenantId</c>, <c>executionId</c>) yalnız ARAMA anahtarıdır. Hiçbir görev şunlar
+/// doğrulanmadan çalışmaz: <c>(tenantId, executionId)</c> için <c>workflow_executions</c> satırı vardır (kiracı filtresi altında; başka
+/// kiracının satırı bulunmaz), yürütme <c>running</c>'dir, kayıtlı <c>engine_workflow_id</c> görevin geldiği motor workflow örneğinin
+/// kimliğine eşittir ve görev türü yürütmenin türüne uyar. Aksi hâlde görev yan etkisiz <b>terminal</b> hatayla biter
+/// (<c>untrusted_task</c>). Motor kimliği henüz yazılmamışsa (başlatma ile kayıt arasındaki kısa yarış) geçici hata döner. Rol
+/// kimlikleri/parametreler yürütmenin <c>ruleId</c>'sindeki kayıtlı kuraldan okunur, görev girdisinden değil.
 /// </summary>
 public sealed partial class WorkflowTaskRunner(IServiceScopeFactory scopes, ILogger<WorkflowTaskRunner> logger)
 {
-    public async Task<WorkflowTaskResult> ExecuteAsync(string taskType, JsonElement inputData, CancellationToken ct)
+    public async Task<WorkflowTaskResult> ExecuteAsync(string taskType, string workflowInstanceId, JsonElement inputData, CancellationToken ct)
     {
         var input = new TaskInput(inputData);
-        if (input.TenantId == Guid.Empty)
+        if (input.TenantId == Guid.Empty || input.GetGuid("executionId") is not { } executionId || string.IsNullOrWhiteSpace(workflowInstanceId))
         {
-            return WorkflowTaskResult.Failed("invalid_input");
+            return WorkflowTaskResult.Failed(WorkflowsErrors.UntrustedTask);
         }
 
         await using var scope = scopes.CreateAsyncScope();
@@ -104,7 +111,15 @@ public sealed partial class WorkflowTaskRunner(IServiceScopeFactory scopes, ILog
 
         try
         {
-            return await handler.ExecuteAsync(input, ct).ConfigureAwait(false);
+            var execution = await scope.ServiceProvider.GetRequiredService<IWorkflowExecutionRepository>().GetByIdAsync(executionId, ct).ConfigureAwait(false);
+            if (Verify(execution, handler, workflowInstanceId) is { } rejected)
+            {
+                LogTaskRejected(logger, taskType, input.TenantId, executionId, rejected.Reason);
+                return rejected;
+            }
+
+            var rule = await scope.ServiceProvider.GetRequiredService<IWorkflowRuleRepository>().GetByIdAsync(execution!.RuleId, ct).ConfigureAwait(false);
+            return await handler.ExecuteAsync(new TrustedTask(execution, rule, input), ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -113,8 +128,29 @@ public sealed partial class WorkflowTaskRunner(IServiceScopeFactory scopes, ILog
         }
     }
 
+    /// <summary>Doğrulama başarısızsa sonucu (yan etkisiz), başarılıysa null döner.</summary>
+    private static WorkflowTaskResult? Verify(Domain.Executions.WorkflowExecution? execution, IWorkflowTaskWorker handler, string workflowInstanceId)
+    {
+        if (execution is null || !execution.IsRunning || execution.Kind != handler.ExecutionKind)
+        {
+            return WorkflowTaskResult.Failed(WorkflowsErrors.UntrustedTask);
+        }
+
+        if (execution.EngineWorkflowId is null)
+        {
+            return WorkflowTaskResult.Retry(WorkflowsErrors.EngineIdPending);
+        }
+
+        return string.Equals(execution.EngineWorkflowId, workflowInstanceId, StringComparison.Ordinal)
+            ? null
+            : WorkflowTaskResult.Failed(WorkflowsErrors.UntrustedTask);
+    }
+
     [LoggerMessage(EventId = 5000, Level = LogLevel.Error, Message = "Workflow task {TaskType} failed for tenant {TenantId}")]
     private static partial void LogTaskFailed(ILogger logger, Exception exception, string taskType, Guid tenantId);
+
+    [LoggerMessage(EventId = 5003, Level = LogLevel.Warning, Message = "Workflow task {TaskType} rejected for tenant {TenantId}, execution {ExecutionId}: {Reason}")]
+    private static partial void LogTaskRejected(ILogger logger, string taskType, Guid tenantId, Guid executionId, string? reason);
 }
 
 /// <summary>

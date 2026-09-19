@@ -18,6 +18,15 @@ public sealed class RecordLookup(SalesDbContext db) : IRecordLookup
         _ => false,
     };
 
+    public async Task<Guid?> GetOwnerUserIdAsync(RecordType type, Guid id, CancellationToken cancellationToken = default) => type switch
+    {
+        RecordType.Account => await db.Accounts.AsNoTracking().Where(a => a.Id == id).Select(a => (Guid?)a.OwnerUserId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false),
+        RecordType.Contact => await db.Contacts.AsNoTracking().Where(c => c.Id == id).Select(c => (Guid?)c.OwnerUserId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false),
+        RecordType.Lead => await db.Leads.AsNoTracking().Where(l => l.Id == id).Select(l => (Guid?)l.OwnerUserId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false),
+        RecordType.Deal => await db.Deals.AsNoTracking().Where(d => d.Id == id).Select(d => (Guid?)d.OwnerUserId).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false),
+        _ => null,
+    };
+
     public async Task<string?> GetDisplayNameAsync(RecordType type, Guid id, CancellationToken cancellationToken = default)
     {
         var names = await GetDisplayNamesAsync([new RecordRef(type, id)], cancellationToken).ConfigureAwait(false);

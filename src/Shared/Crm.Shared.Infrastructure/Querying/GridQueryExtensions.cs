@@ -94,8 +94,9 @@ public static class FilterExpressionBuilder
 {
     private static readonly MethodInfo StringContains = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
     private static readonly MethodInfo StringStartsWith = typeof(string).GetMethod(nameof(string.StartsWith), [typeof(string)])!;
-    private static readonly MethodInfo EfLike = typeof(DbFunctionsExtensions).GetMethod(nameof(DbFunctionsExtensions.Like), [typeof(DbFunctions), typeof(string), typeof(string)])!;
+    private static readonly MethodInfo EfLike = typeof(DbFunctionsExtensions).GetMethod(nameof(DbFunctionsExtensions.Like), [typeof(DbFunctions), typeof(string), typeof(string), typeof(string)])!;
     private const string LikeWildcard = "%";
+    private const string LikeEscape = "\\";
 
     public static Expression<Func<T, bool>>? Build<T>(LambdaExpression member, FilterClause clause)
     {
@@ -178,9 +179,16 @@ public static class FilterExpressionBuilder
             return null;
         }
 
-        var pattern = Expression.Constant(prefix + value + suffix);
-        return Expression.Call(EfLike, Expression.Constant(EF.Functions), body, pattern);
+        // L8: kullanıcı girdisindeki %, _ ve \ düz metindir (joker olarak yorumlanmaz); yalnız bizim eklediğimiz % joker kalır.
+        var pattern = Expression.Constant(prefix + EscapeLike(value) + suffix);
+        return Expression.Call(EfLike, Expression.Constant(EF.Functions), body, pattern, Expression.Constant(LikeEscape));
     }
+
+    /// <summary>LIKE joker karakterlerini kaçışlar (<c>\</c>, <c>%</c>, <c>_</c>).</summary>
+    public static string EscapeLike(string value) =>
+        value.Replace(LikeEscape, LikeEscape + LikeEscape, StringComparison.Ordinal)
+            .Replace("%", LikeEscape + "%", StringComparison.Ordinal)
+            .Replace("_", LikeEscape + "_", StringComparison.Ordinal);
 
     private static bool TryConvert(string? raw, Type type, out object? value)
     {

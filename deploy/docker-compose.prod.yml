@@ -21,7 +21,7 @@ x-logging: &logging
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -70,7 +70,7 @@ services:
 
   # Roles, databases and privileges (idempotent, runs on every `up`). See deploy/postgres/init-roles.sql.
   db-init:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine
     restart: "no"
     depends_on:
       postgres:
@@ -248,7 +248,7 @@ services:
   # Optional distributed cache (HybridCache L2) for running more than one api replica: `--profile redis` (or COMPOSE_PROFILES=redis)
   # plus REDIS_CONNECTION=redis:6379,password=<REDIS_PASSWORD> in deploy/.env. A single api replica does not need it.
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.11-alpine
     profiles: ["redis"]
     restart: unless-stopped
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in deploy/.env}", "--appendonly", "no", "--save", "", "--maxmemory", "${REDIS_MAXMEMORY:-256mb}", "--maxmemory-policy", "allkeys-lru"]

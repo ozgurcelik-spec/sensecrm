@@ -36,7 +36,7 @@ jobs:
           cache-dependency-path: |
             Directory.Packages.props
             **/*.csproj
-      - run: dotnet restore Crm.slnx
+      - run: dotnet restore Crm.slnx --locked-mode
       - run: dotnet format Crm.slnx --verify-no-changes --no-restore
       - run: dotnet build Crm.slnx -c Release --no-restore
       - run: dotnet test Crm.slnx -c Release --no-build

@@ -4,6 +4,7 @@ using Crm.Modules.Identity.Domain.Memberships;
 using Crm.Modules.Identity.Domain.Users;
 using Crm.Shared.Contracts.Context;
 using Crm.Shared.Contracts.Messaging;
+using Crm.Shared.Contracts.Security;
 using Crm.Shared.Kernel.Results;
 using FluentValidation;
 using Microsoft.Extensions.Options;
@@ -14,6 +15,7 @@ namespace Crm.Modules.Identity.Application.Auth;
 // Kayıt (Zoho tarzı self sign-up, K1): yeni organizasyon + sistem rolleri + kullanıcı Administrator olarak.
 // ---------------------------------------------------------------------------------------------------------------------
 
+[AnyAuthenticatedUser("Anonim kimlik akışı: kayıt (Registration:Mode ile denetlenir)")]
 public sealed record SignUpCommand(
     string OrganizationName,
     string DisplayName,
@@ -30,7 +32,7 @@ public sealed class SignUpValidator : AbstractValidator<SignUpCommand>
         RuleFor(x => x.OrganizationName).NotEmpty().MaximumLength(IdentityLimits.OrganizationNameMaxLength);
         RuleFor(x => x.DisplayName).NotEmpty().MaximumLength(IdentityLimits.DisplayNameMaxLength);
         RuleFor(x => x.Email).Email();
-        RuleFor(x => x.Password).Password(options.Value.MinPasswordLength);
+        RuleFor(x => x.Password).MeetsPasswordPolicy(options.Value.MinPasswordLength, x => x.Email);
         RuleFor(x => x.Locale).SupportedLocale();
     }
 }
@@ -60,22 +62,31 @@ public sealed class SignUpHandler(
 
         memberships.Add(Membership.Create(provisioned.Tenant.Id, user.Id, provisioned.Administrator.Id, now));
 
-        return sessions.Issue(user, new SessionContext(provisioned.Tenant, provisioned.Administrator), rotateFrom: null, command.DeviceInfo, command.IpAddress);
+        return sessions.Issue(user, new SessionContext(provisioned.Tenant, provisioned.Administrator), command.DeviceInfo, command.IpAddress);
     }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Giriş: e-posta + parola; kullanıcının varsayılan (en son kullanılan) veya ilk aktif organizasyonunda oturum açılır.
+//
+// Sertleştirme (M3):
+//  - Zamanlama: kullanıcı yoksa da bir sahte hash doğrulanır (yanıt süresi hesap varlığını sızdırmaz).
+//  - Sıra: parola HER ZAMAN önce doğrulanır; locked_out / user_disabled yalnız parola DOĞRU olduğunda söylenir, aksi hâlde
+//    genel auth.invalid_credentials döner (saldırgan hesabın kilitli/pasif olduğunu öğrenemez).
+//  - Kilit: hesap kilidi eşiği (Identity:MaxFailedAccessAttempts, varsayılan 10) tek bir IP'nin IP+hesap eşiğinden (5) yüksektir;
+//    tek IP bilinen bir e-postayı tek başına kilitleyemez. Kilitliyken yanlış deneme kilidi UZATMAZ. Ek olarak e-posta anahtarlı
+//    hız kovası (RateLimiting:LoginEmail) ve IP başına auth hız sınırı (RateLimiting:Auth) vardır.
 // ---------------------------------------------------------------------------------------------------------------------
 
+[AnyAuthenticatedUser("Anonim kimlik akışı: giriş")]
 public sealed record LoginCommand(string Email, string Password, string? DeviceInfo, string? IpAddress) : ICommand<AuthResponse>;
 
 public sealed class LoginValidator : AbstractValidator<LoginCommand>
 {
     public LoginValidator()
     {
-        RuleFor(x => x.Email).NotEmpty();
-        RuleFor(x => x.Password).NotEmpty();
+        RuleFor(x => x.Email).NotEmpty().MaximumLength(IdentityLimits.EmailMaxLength);
+        RuleFor(x => x.Password).NotEmpty().MaximumLength(IdentityLimits.PasswordMaxLength);
     }
 }
 
@@ -83,6 +94,7 @@ public sealed class LoginHandler(
     IUserRepository users,
     IMembershipRepository memberships,
     IPasswordHasher hasher,
+    ILoginThrottle throttle,
     SessionIssuer sessions,
     IIdentityUnitOfWork unitOfWork,
     IOptions<IdentityOptions> options,
@@ -91,25 +103,47 @@ public sealed class LoginHandler(
     public async Task<Result<AuthResponse>> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
         var now = clock.GetUtcNow().UtcDateTime;
+        var normalizedEmail = User.Normalize(command.Email);
+
+        // E-posta anahtarlı ikinci hız kovası + IP+hesap engeli: parola doğrulamasına (pahalı) girmeden reddedilir.
+        if (!throttle.TryAcquireEmailBucket(normalizedEmail) || throttle.IsBlocked(command.IpAddress, normalizedEmail))
+        {
+            return new Error(ErrorCodes.RateLimitExceeded, ErrorType.TooManyRequests);
+        }
+
         var user = await users.GetByEmailAsync(command.Email, cancellationToken).ConfigureAwait(false);
         if (user is null)
         {
+            hasher.VerifyDummy(command.Password);
+            throttle.RecordFailure(command.IpAddress, normalizedEmail);
             return Error.Unauthorized(IdentityErrors.InvalidCredentials);
         }
 
+        var verification = hasher.Check(user.PasswordHash, command.Password);
+        if (verification == PasswordVerification.Failed)
+        {
+            throttle.RecordFailure(command.IpAddress, normalizedEmail);
+            if (!user.IsLockedOut(now))
+            {
+                user.RecordFailedAccess(now, new LockoutPolicy(options.Value.MaxFailedAccessAttempts, TimeSpan.FromMinutes(options.Value.LockoutMinutes)));
+
+                // Hata sonucu UnitOfWorkBehaviour'da kaydedilmez; kilitleme sayacı yine de kalıcı olmalı.
+                await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            return Error.Unauthorized(IdentityErrors.InvalidCredentials);
+        }
+
+        // Parola doğru: artık kilit/pasif durumu söylenebilir.
         var canSignIn = user.CanSignIn(now);
         if (canSignIn.IsFailure)
         {
             return canSignIn.Error;
         }
 
-        if (!hasher.Verify(user.PasswordHash, command.Password))
+        if (verification == PasswordVerification.SuccessRehashNeeded)
         {
-            user.RecordFailedAccess(now, new LockoutPolicy(options.Value.MaxFailedAccessAttempts, TimeSpan.FromMinutes(options.Value.LockoutMinutes)));
-
-            // Hata sonucu UnitOfWorkBehaviour'da kaydedilmez; kilitleme sayacı yine de kalıcı olmalı.
-            await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return Error.Unauthorized(IdentityErrors.InvalidCredentials);
+            user.RehashPassword(hasher.Hash(command.Password)); // L5: eski/düşük yinelemeli hash yükseltilir.
         }
 
         var active = await memberships.ListActiveOfUserAcrossTenantsAsync(user.Id, cancellationToken).ConfigureAwait(false);
@@ -119,9 +153,10 @@ public sealed class LoginHandler(
         {
             if (await sessions.ResolveAsync(user.Id, tenantId, cancellationToken).ConfigureAwait(false) is { } session)
             {
+                throttle.Reset(command.IpAddress, normalizedEmail);
                 user.RecordSuccessfulLogin(now);
                 user.SetDefaultTenant(tenantId);
-                return sessions.Issue(user, session, rotateFrom: null, command.DeviceInfo, command.IpAddress);
+                return sessions.Issue(user, session, command.DeviceInfo, command.IpAddress);
             }
         }
 
@@ -130,14 +165,22 @@ public sealed class LoginHandler(
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Yenileme: refresh token rotasyonu; iptal edilmiş token tekrar gelirse tüm aile kapatılır (reuse detection).
+// Yenileme: refresh token rotasyonu (atomik); iptal edilmiş token tekrar gelirse tüm aile kapatılır (reuse detection), kısa bir
+// eşzamanlılık toleransı hariç (aynı istemciden, döndürmeden hemen sonra gelen ikinci istek hırsızlık sayılmaz). Oturum ömrü mutlaktır.
 // ---------------------------------------------------------------------------------------------------------------------
 
+[AnyAuthenticatedUser("Anonim kimlik akışı: refresh token ile oturum yenileme")]
 public sealed record RefreshTokenCommand(string RefreshToken, string? DeviceInfo, string? IpAddress) : ICommand<AuthResponse>;
 
 public sealed class RefreshTokenValidator : AbstractValidator<RefreshTokenCommand>
 {
-    public RefreshTokenValidator() => RuleFor(x => x.RefreshToken).NotEmpty();
+    public RefreshTokenValidator() => RuleFor(x => x.RefreshToken).NotEmpty().MaximumLength(RefreshTokenLimits.MaxLength);
+}
+
+/// <summary>Refresh token girdi sınırı (base64url 32 bayt ≈ 43 karakter; makul üst sınır hash maliyetini sınırlar).</summary>
+public static class RefreshTokenLimits
+{
+    public const int MaxLength = 256;
 }
 
 public sealed class RefreshTokenHandler(
@@ -146,6 +189,7 @@ public sealed class RefreshTokenHandler(
     ISecretGenerator secrets,
     SessionIssuer sessions,
     IIdentityUnitOfWork unitOfWork,
+    IOptions<IdentityOptions> options,
     TimeProvider clock) : ICommandHandler<RefreshTokenCommand, AuthResponse>
 {
     public async Task<Result<AuthResponse>> Handle(RefreshTokenCommand command, CancellationToken cancellationToken)
@@ -157,20 +201,20 @@ public sealed class RefreshTokenHandler(
             return Error.Unauthorized(IdentityErrors.InvalidRefreshToken);
         }
 
-        if (!existing.IsActive(now))
+        if (existing.RevokedAt is not null)
         {
-            if (existing.RevokedAt is not null)
+            if (!await IsConcurrentRotationAsync(existing, command, now, cancellationToken).ConfigureAwait(false))
             {
                 // Reuse detection: kullanılmış/iptal edilmiş token tekrar geldi → aynı aile tamamen kapatılır ve kalıcılaştırılır.
-                foreach (var token in await refreshTokens.GetFamilyAsync(existing.FamilyId, cancellationToken).ConfigureAwait(false))
-                {
-                    token.Revoke(now);
-                }
-
-                await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await RevokeFamilyAsync(existing, now, cancellationToken).ConfigureAwait(false);
             }
 
             return Error.Unauthorized(IdentityErrors.InvalidRefreshToken);
+        }
+
+        if (!existing.IsActive(now))
+        {
+            return Error.Unauthorized(IdentityErrors.InvalidRefreshToken); // süresi doldu (token veya aile mutlak ömrü)
         }
 
         var user = await users.GetByIdAsync(existing.UserId, cancellationToken).ConfigureAwait(false);
@@ -185,7 +229,35 @@ public sealed class RefreshTokenHandler(
             return Error.Unauthorized(IdentityErrors.InvalidRefreshToken);
         }
 
-        return sessions.Issue(user, session, rotateFrom: existing, command.DeviceInfo, command.IpAddress);
+        // Atomik dönüşüm: eşzamanlı iki yenilemeden yalnız biri kazanır; kaybeden aileyi KAPATMAZ (kazananın token'ı geçerli kalır).
+        var response = await sessions.RotateAsync(user, session, existing, command.DeviceInfo, command.IpAddress, cancellationToken).ConfigureAwait(false);
+        return response is null ? Error.Unauthorized(IdentityErrors.InvalidRefreshToken) : response;
+    }
+
+    /// <summary>
+    /// Döndürülmüş token, döndürmeden kısa süre sonra (<c>RefreshReuseGraceSeconds</c>) ve döndürmeyi yapan istemciyle (IP + kullanıcı
+    /// aracısı) aynı istemciden geliyorsa eşzamanlı yenileme sayılır (aile kapatılmaz). Başka istemciden veya gecikmeli ise hırsızlık.
+    /// </summary>
+    private async Task<bool> IsConcurrentRotationAsync(Domain.Tokens.RefreshToken existing, RefreshTokenCommand command, DateTime now, CancellationToken ct)
+    {
+        if (!existing.IsRotated || existing.RevokedAt is not { } revokedAt
+            || now - revokedAt > TimeSpan.FromSeconds(options.Value.RefreshReuseGraceSeconds))
+        {
+            return false;
+        }
+
+        var successor = await refreshTokens.GetByHashAsync(existing.ReplacedByTokenHash!, ct).ConfigureAwait(false);
+        return successor is not null && successor.IsSameClient(command.DeviceInfo, command.IpAddress);
+    }
+
+    private async Task RevokeFamilyAsync(Domain.Tokens.RefreshToken existing, DateTime now, CancellationToken ct)
+    {
+        foreach (var token in await refreshTokens.GetFamilyAsync(existing.FamilyId, ct).ConfigureAwait(false))
+        {
+            token.Revoke(now);
+        }
+
+        await unitOfWork.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 }
 
@@ -193,11 +265,12 @@ public sealed class RefreshTokenHandler(
 // Çıkış: verilen refresh token'ın ailesi (oturum) iptal edilir. Bilinmeyen token için de 204 (bilgi sızdırılmaz).
 // ---------------------------------------------------------------------------------------------------------------------
 
+[AnyAuthenticatedUser("Anonim kimlik akışı: çıkış (refresh token sahibi)")]
 public sealed record LogoutCommand(string RefreshToken) : ICommand;
 
 public sealed class LogoutValidator : AbstractValidator<LogoutCommand>
 {
-    public LogoutValidator() => RuleFor(x => x.RefreshToken).NotEmpty();
+    public LogoutValidator() => RuleFor(x => x.RefreshToken).NotEmpty().MaximumLength(RefreshTokenLimits.MaxLength);
 }
 
 public sealed class LogoutHandler(IRefreshTokenRepository refreshTokens, ISecretGenerator secrets, TimeProvider clock) : ICommandHandler<LogoutCommand>
@@ -220,8 +293,10 @@ public sealed class LogoutHandler(IRefreshTokenRepository refreshTokens, ISecret
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Organizasyon değiştirme (Zoho "org switch"): kullanıcının aktif üyesi olduğu başka organizasyon için yeni oturum.
+// Bekleyen (kabul edilmemiş) davet aktif organizasyon sayılmaz.
 // ---------------------------------------------------------------------------------------------------------------------
 
+[AnyAuthenticatedUser("Kimliği doğrulanmış kullanıcı yalnız kendi aktif üyeliği olan organizasyona geçer; handler üyeliği doğrular")]
 public sealed record SwitchOrganizationCommand(Guid OrganizationId, string? DeviceInfo, string? IpAddress) : ICommand<AuthResponse>;
 
 public sealed class SwitchOrganizationValidator : AbstractValidator<SwitchOrganizationCommand>
@@ -252,6 +327,6 @@ public sealed class SwitchOrganizationHandler(IUserRepository users, SessionIssu
         }
 
         user.SetDefaultTenant(session.Tenant.Id);
-        return sessions.Issue(user, session, rotateFrom: null, command.DeviceInfo, command.IpAddress);
+        return sessions.Issue(user, session, command.DeviceInfo, command.IpAddress);
     }
 }

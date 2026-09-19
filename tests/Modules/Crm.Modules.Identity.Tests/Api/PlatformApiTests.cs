@@ -94,8 +94,14 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
         body.GetProperty("adminAccountCreated").GetBoolean().ShouldBeTrue();
         body.TryGetProperty("generatedPassword", out _).ShouldBeFalse("verilen parola yanıtta geri dönmez");
 
+        // Platform yöneticisinin verdiği parola geçicidir: ilk girişte değiştirilmek zorundadır (yalnız /me ve parola ucu açık).
         var admin = await factory.CreateClient().LoginAsync(adminEmail, AdminPassword);
-        var me = await factory.CreateClient().WithToken(admin.AccessToken).GetFromJsonAsync<JsonElement>($"{Base}/me", Ct);
+        admin.MustChangePassword.ShouldBeTrue();
+        var pending = factory.CreateClient().WithToken(admin.AccessToken);
+        await (await pending.GetAsync($"{Base}/organization", Ct)).ShouldBeProblemAsync(HttpStatusCode.Forbidden, "auth.password_change_required");
+        var changed = await LoginAndChangePasswordAsync(adminEmail, AdminPassword);
+        var me = await changed.GetFromJsonAsync<JsonElement>($"{Base}/me", Ct);
+        me.GetProperty("user").GetProperty("mustChangePassword").GetBoolean().ShouldBeFalse();
         me.GetProperty("organization").GetProperty("id").GetGuid().ShouldBe(body.GetProperty("organizationId").GetGuid());
         me.GetProperty("organization").GetProperty("defaultLocale").GetString().ShouldBe("en");
         me.GetProperty("role").GetProperty("name").GetString().ShouldBe("Administrator");
@@ -120,7 +126,7 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
     }
 
     [Fact]
-    public async Task CreateOrganization_WithExistingAccountEmail_OnlyAddsAdministratorMembership()
+    public async Task CreateOrganization_WithExistingAccountEmail_OnlyAddsAPendingAdministratorInvitation()
     {
         var existingEmail = UniqueEmail("existing");
         var own = await factory.CreateClient().SignUpAsync("Existing Home Org", existingEmail);
@@ -131,11 +137,19 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
         response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync(Ct));
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
         body.GetProperty("adminAccountCreated").GetBoolean().ShouldBeFalse();
+        body.GetProperty("adminInvitationPending").GetBoolean().ShouldBeTrue();
         body.TryGetProperty("generatedPassword", out _).ShouldBeFalse();
 
-        // Hesabın parolası değişmedi ve artık iki organizasyonu var.
-        var me = await factory.CreateClient().WithToken(own.AccessToken).GetFromJsonAsync<JsonElement>($"{Base}/me", Ct);
-        me.GetProperty("organizations").EnumerateArray().Select(o => o.GetProperty("name").GetString())
+        // Hesap sahibinin onayı olmadan yönetici YAPILMAZ: organizasyon sayısı 1 kalır, davet bekler.
+        var client = factory.CreateClient().WithToken(own.AccessToken);
+        var me = await client.GetFromJsonAsync<JsonElement>($"{Base}/me", Ct);
+        me.GetProperty("organizations").EnumerateArray().Select(o => o.GetProperty("name").GetString()).ShouldBe(["Existing Home Org"]);
+        var invitation = (await client.GetFromJsonAsync<JsonElement>($"{Base}/me/invitations", Ct)).EnumerateArray().Single();
+        (invitation.GetProperty("organizationName").GetString(), invitation.GetProperty("roleName").GetString()).ShouldBe(("Second Home Org", "Administrator"));
+
+        // Kabul edince iki organizasyonu olur; hesabın parolası değişmedi.
+        (await client.PostAsync($"{Base}/me/invitations/{invitation.GetProperty("id").GetGuid()}/accept", null, Ct)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await client.GetFromJsonAsync<JsonElement>($"{Base}/me", Ct)).GetProperty("organizations").EnumerateArray().Select(o => o.GetProperty("name").GetString())
             .ShouldBe(["Existing Home Org", "Second Home Org"], ignoreOrder: true);
         (await factory.CreateClient().LoginAsync(existingEmail)).AccessToken.ShouldNotBeNullOrWhiteSpace();
     }
@@ -202,8 +216,8 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
         var emailB = UniqueEmail("iso-b");
         var orgA = await (await platform.PostAsJsonAsync($"{Base}/platform/organizations", NewOrgRequest("Isolation A", emailA, AdminPassword), Ct)).Content.ReadFromJsonAsync<JsonElement>(Ct);
         var orgB = await (await platform.PostAsJsonAsync($"{Base}/platform/organizations", NewOrgRequest("Isolation B", emailB, AdminPassword), Ct)).Content.ReadFromJsonAsync<JsonElement>(Ct);
-        var adminA = factory.CreateClient().WithToken((await factory.CreateClient().LoginAsync(emailA, AdminPassword)).AccessToken);
-        var adminB = factory.CreateClient().WithToken((await factory.CreateClient().LoginAsync(emailB, AdminPassword)).AccessToken);
+        var adminA = await LoginAndChangePasswordAsync(emailA, AdminPassword);
+        var adminB = await LoginAndChangePasswordAsync(emailB, AdminPassword);
 
         // Her organizasyon yalnız kendi tek üyesini ve kendi 2 sistem rolünü görür.
         foreach (var (client, userId) in new[] { (adminA, orgA.GetProperty("adminUserId").GetGuid()), (adminB, orgB.GetProperty("adminUserId").GetGuid()) })
@@ -379,6 +393,16 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
         }
 
         return string.Join(" | ", messages);
+    }
+
+    /// <summary>Geçici parolayla girer, parolayı <see cref="DefaultPassword"/> olarak değiştirir ve güncel oturumla yetkili istemciyi döner.</summary>
+    private async Task<HttpClient> LoginAndChangePasswordAsync(string email, string temporaryPassword)
+    {
+        var client = factory.CreateClient();
+        client.WithToken((await client.LoginAsync(email, temporaryPassword)).AccessToken);
+        var changed = await client.PostAsJsonAsync($"{Base}/me/password", new { currentPassword = temporaryPassword, newPassword = DefaultPassword }, Ct);
+        changed.StatusCode.ShouldBe(HttpStatusCode.OK, await changed.Content.ReadAsStringAsync(Ct));
+        return client.WithToken((await changed.Content.ReadFromJsonAsync<AuthResponse>(Ct))!.AccessToken);
     }
 
     private async Task<PlatformAdminResult> EnsureAdminAsync(string? email, string? password)

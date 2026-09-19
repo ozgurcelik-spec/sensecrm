@@ -3,7 +3,9 @@ using Crm.Modules.Activities.Application.Activities;
 using Crm.Modules.Activities.Domain.Activities;
 using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Sales.Contracts;
+using Crm.Shared.Contracts.Context;
 using Crm.Shared.Contracts.Paging;
+using Crm.Shared.Contracts.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Crm.Modules.Activities.Infrastructure.Persistence;
@@ -13,8 +15,14 @@ namespace Crm.Modules.Activities.Infrastructure.Persistence;
 /// listedeki alanlarda (<c>dueAt</c>, <c>createdAt</c>, <c>subject</c>, <c>priority</c>; bilinmeyen alan yok sayılır) ve her zaman
 /// <c>Id</c> ile kararlı; <c>dueAt</c> boş olanlar her yönde sonda. Atanan ve ilişkili kayıt adları sayfa başına toplu çözülür.
 /// </summary>
-public sealed class ActivityReadStore(ActivitiesDbContext db, IMemberLookup members, IRecordLookup records) : IActivityReadStore
+public sealed class ActivityReadStore(ActivitiesDbContext db, IMemberLookup members, IRecordLookup records, ICurrentUser currentUser, IPermissionService permissions) : IActivityReadStore
 {
+    /// <summary>
+    /// Çağıran ilişkili kaydın türünü okuyamıyorsa (ör. yalnız <c>crm.activities.read</c>) <c>relatedName</c> yerine bu nötr yer tutucu
+    /// döner (L2): aktivite listesi, okuma izni olmayan firma/kişi/potansiyel/fırsat adlarını sızdırmaz. Tür/kimlik yine döner.
+    /// </summary>
+    public const string HiddenRelatedName = "***";
+
     public async Task<PagedResult<ActivityDto>> ListAsync(PagedQuery paging, ActivityFilter filter, DateTime nowUtc, CancellationToken ct)
     {
         var query = db.Activities.AsNoTracking();
@@ -174,7 +182,8 @@ public sealed class ActivityReadStore(ActivitiesDbContext db, IMemberLookup memb
             .Select(a => new RecordRef(ToRecordType(a.RelatedType!.Value), a.RelatedId!.Value))
             .Distinct()
             .ToList();
-        var names = refs.Count == 0 ? new Dictionary<RecordRef, string>() : await records.GetDisplayNamesAsync(refs, ct);
+        var readable = await ReadableRecordTypesAsync(refs, ct);
+        var names = refs.Count == 0 ? new Dictionary<RecordRef, string>() : await records.GetDisplayNamesAsync(refs.Where(r => readable.Contains(r.Type)).ToList(), ct);
 
         return activities.Select(a => new ActivityDto(
             a.Id,
@@ -188,7 +197,7 @@ public sealed class ActivityReadStore(ActivitiesDbContext db, IMemberLookup memb
             a.EndAt,
             a.RelatedType,
             a.RelatedId,
-            a.RelatedType is { } type && a.RelatedId is { } id ? names.GetValueOrDefault(new RecordRef(ToRecordType(type), id)) : null,
+            RelatedName(a, names, readable),
             a.AssignedUserId,
             users.GetValueOrDefault(a.AssignedUserId),
             a.CompletedAt,
@@ -198,6 +207,39 @@ public sealed class ActivityReadStore(ActivitiesDbContext db, IMemberLookup memb
     }
 
     private static RecordType ToRecordType(ActivityRelatedType type) => RelatedRecordVerifier.ToRecordType(type);
+
+    private static string? RelatedName(Activity activity, IReadOnlyDictionary<RecordRef, string> names, HashSet<RecordType> readable)
+    {
+        if (activity.RelatedType is not { } type || activity.RelatedId is not { } id)
+        {
+            return null;
+        }
+
+        var recordType = ToRecordType(type);
+        return readable.Contains(recordType) ? names.GetValueOrDefault(new RecordRef(recordType, id)) : HiddenRelatedName;
+    }
+
+    /// <summary>Çağıranın okuma izni olan ilişkili kayıt türleri (sistem bağlamı: hepsi). Sayfa başına tek izin çözümü.</summary>
+    private async Task<HashSet<RecordType>> ReadableRecordTypesAsync(IReadOnlyCollection<RecordRef> refs, CancellationToken ct)
+    {
+        var types = refs.Select(r => r.Type).Distinct().ToList();
+        if (types.Count == 0 || currentUser.UserId is not { } userId)
+        {
+            return [.. types];
+        }
+
+        var held = await permissions.GetPermissionsAsync(userId, ct);
+        return types.Where(t => held.Contains(ReadPermission(t))).ToHashSet();
+    }
+
+    private static string ReadPermission(RecordType type) => type switch
+    {
+        RecordType.Account => SalesPermissions.AccountsRead,
+        RecordType.Contact => SalesPermissions.ContactsRead,
+        RecordType.Lead => SalesPermissions.LeadsRead,
+        RecordType.Deal => SalesPermissions.DealsRead,
+        _ => string.Empty,
+    };
 }
 
 /// <summary>ILIKE arama deseni: kullanıcı girdisindeki joker karakterler kaçışlanır; desen her zaman parametre olarak gider.</summary>

@@ -47,7 +47,21 @@ public sealed class MembershipRepository(IdentityDbContext db) : IMembershipRepo
 
     public Task<int> CountWithRoleAsync(Guid roleId, CancellationToken ct) => db.Memberships.CountAsync(m => m.RoleId == roleId, ct);
 
+    public async Task<IReadOnlyList<Membership>> ListPendingOfUserAcrossTenantsAsync(Guid userId, CancellationToken ct) =>
+        // Bilinçli kiracı filtresi aşımı: yalnız verilen kullanıcının kendi bekleyen davetleri (hesap sahibi, başka kimse değil).
+        await db.Memberships.IgnoreQueryFilters([Shared.Infrastructure.Persistence.ModuleDbContext.TenantFilter])
+            .Where(m => m.UserId == userId && m.Status == MembershipStatus.Pending)
+            .OrderBy(m => m.JoinedAt)
+            .ToListAsync(ct);
+
+    public Task<Membership?> GetPendingInvitationAsync(Guid membershipId, Guid userId, CancellationToken ct) =>
+        // Bilinçli kiracı filtresi aşımı: satır kimliği + hesap sahibi + bekliyor üçlüsü; başkasının daveti asla dönmez.
+        db.Memberships.IgnoreQueryFilters([Shared.Infrastructure.Persistence.ModuleDbContext.TenantFilter])
+            .FirstOrDefaultAsync(m => m.Id == membershipId && m.UserId == userId && m.Status == MembershipStatus.Pending, ct);
+
     public void Add(Membership membership) => db.Memberships.Add(membership);
+
+    public void Remove(Membership membership) => db.Memberships.Remove(membership);
 }
 
 public sealed class RoleRepository(IdentityDbContext db) : IRoleRepository
@@ -73,6 +87,20 @@ public sealed class RefreshTokenRepository(IdentityDbContext db) : IRefreshToken
 
     public async Task<IReadOnlyList<RefreshToken>> GetFamilyAsync(Guid familyId, CancellationToken ct) =>
         await db.RefreshTokens.Where(t => t.FamilyId == familyId).ToListAsync(ct);
+
+    public async Task<bool> TryRotateAsync(Guid tokenId, string replacedByTokenHash, DateTime nowUtc, CancellationToken ct) =>
+        // Koşullu UPDATE atomiktir: iki eşzamanlı yenilemeden yalnız biri satırı 1 kez günceller (READ COMMITTED'da ikincisi
+        // kilidi bekler, birincinin commit'inden sonra "revoked_at IS NULL" koşulunu sağlamaz → 0 satır).
+        await db.RefreshTokens
+            .Where(t => t.Id == tokenId && t.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(t => t.RevokedAt, nowUtc)
+                .SetProperty(t => t.ReplacedByTokenHash, replacedByTokenHash), ct) == 1;
+
+    public Task<int> RevokeAllOfUserAsync(Guid userId, DateTime nowUtc, CancellationToken ct) =>
+        db.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, nowUtc), ct);
 
     public void Add(RefreshToken token) => db.RefreshTokens.Add(token);
 }

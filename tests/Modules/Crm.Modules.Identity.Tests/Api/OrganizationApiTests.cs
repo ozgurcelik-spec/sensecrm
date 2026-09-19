@@ -17,11 +17,7 @@ public sealed class OrganizationApiTests(CrmApiFactory factory)
     {
         var admin = await NewOrganizationAsync("Rbac Org");
         var standardRoleId = await AuthApiTests.RoleIdAsync(admin, "Standard");
-        var memberEmail = UniqueEmail("standard");
-        (await admin.PostAsJsonAsync($"{Base}/organization/members", new { email = memberEmail, displayName = "Std User", password = DefaultPassword, roleId = standardRoleId }, Ct))
-            .StatusCode.ShouldBe(HttpStatusCode.Created);
-
-        var member = factory.CreateClient().WithToken((await factory.CreateClient().LoginAsync(memberEmail)).AccessToken);
+        var member = (await factory.AddMemberAsync(admin, "Std User", standardRoleId)).Client;
 
         // org.users.read var: listeleyebilir.
         (await member.GetAsync($"{Base}/organization/roles", Ct)).StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -64,7 +60,7 @@ public sealed class OrganizationApiTests(CrmApiFactory factory)
         await (await admin.PutAsJsonAsync($"{Base}/organization/roles/{administratorId}", new { name = "Admin2", permissions = Array.Empty<string>() }, Ct))
             .ShouldBeProblemAsync(HttpStatusCode.UnprocessableEntity, "role.system_readonly");
 
-        (await admin.PostAsJsonAsync($"{Base}/organization/members", new { email = UniqueEmail("sales"), displayName = "Sales", password = DefaultPassword, roleId }, Ct))
+        (await admin.PostAsJsonAsync($"{Base}/organization/members", new { email = UniqueEmail("sales"), displayName = "Sales", roleId }, Ct))
             .StatusCode.ShouldBe(HttpStatusCode.Created);
         await (await admin.DeleteAsync($"{Base}/organization/roles/{roleId}", Ct))
             .ShouldBeProblemAsync(HttpStatusCode.Conflict, "role.in_use");
@@ -82,31 +78,36 @@ public sealed class OrganizationApiTests(CrmApiFactory factory)
         var standardRoleId = await AuthApiTests.RoleIdAsync(admin, "Standard");
 
         var email = UniqueEmail("member");
-        var added = await admin.PostAsJsonAsync($"{Base}/organization/members", new { email, displayName = "New Member", password = DefaultPassword, roleId = standardRoleId }, Ct);
+        var added = await admin.PostAsJsonAsync($"{Base}/organization/members", new { email, displayName = "New Member", roleId = standardRoleId }, Ct);
         added.StatusCode.ShouldBe(HttpStatusCode.Created);
+        added.Headers.CacheControl?.NoStore.ShouldBeTrue("geçici parola içeren yanıt saklanmaz");
         var member = await added.Content.ReadFromJsonAsync<JsonElement>(Ct);
         member.GetProperty("email").GetString().ShouldBe(email);
-        member.GetProperty("displayName").GetString().ShouldBe("New Member");
         member.GetProperty("roleName").GetString().ShouldBe("Standard");
-        member.GetProperty("isActive").GetBoolean().ShouldBeTrue();
+        member.GetProperty("roleId").GetGuid().ShouldBe(standardRoleId);
+        member.GetProperty("status").GetString().ShouldBe("active");
+        member.GetProperty("temporaryPassword").GetString()!.Length.ShouldBeGreaterThanOrEqualTo(16);
         var memberUserId = member.GetProperty("userId").GetGuid();
 
         await (await admin.PostAsJsonAsync($"{Base}/organization/members", new { email, roleId = standardRoleId }, Ct))
             .ShouldBeProblemAsync(HttpStatusCode.Conflict, "member.exists");
-        await (await admin.PostAsJsonAsync($"{Base}/organization/members", new { email = UniqueEmail("nopass"), displayName = "No Pass", roleId = standardRoleId }, Ct))
+        await (await admin.PostAsJsonAsync($"{Base}/organization/members", new { email = UniqueEmail("noname"), roleId = standardRoleId }, Ct))
             .ShouldBeProblemAsync(HttpStatusCode.BadRequest, "validation");
 
-        // Tek aktif yönetici kendini pasifleştiremez / rolünü düşüremez.
+        // Yönetici kendi rolünü değiştiremez / kendini pasifleştiremez (M7); tek yönetici olduğu için de düşürülemez.
         await (await admin.PatchAsJsonAsync($"{Base}/organization/members/{adminUserId}", new { isActive = false }, Ct))
-            .ShouldBeProblemAsync(HttpStatusCode.UnprocessableEntity, "member.last_admin");
+            .ShouldBeProblemAsync(HttpStatusCode.UnprocessableEntity, "member.cannot_modify_self");
         await (await admin.PatchAsJsonAsync($"{Base}/organization/members/{adminUserId}", new { roleId = standardRoleId }, Ct))
-            .ShouldBeProblemAsync(HttpStatusCode.UnprocessableEntity, "member.last_admin");
+            .ShouldBeProblemAsync(HttpStatusCode.UnprocessableEntity, "member.cannot_modify_self");
 
         // Üye pasifleştirilince oturum açamaz (aktif organizasyonu kalmaz).
         (await admin.PatchAsJsonAsync($"{Base}/organization/members/{memberUserId}", new { isActive = false }, Ct)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
         var members = await admin.GetFromJsonAsync<JsonElement>($"{Base}/organization/members", Ct);
-        members.EnumerateArray().Single(m => m.GetProperty("userId").GetGuid() == memberUserId).GetProperty("isActive").GetBoolean().ShouldBeFalse();
-        await (await factory.CreateClient().PostAsJsonAsync($"{Base}/auth/login", new { email, password = DefaultPassword }, Ct))
+        var row = members.EnumerateArray().Single(m => m.GetProperty("userId").GetGuid() == memberUserId);
+        row.GetProperty("isActive").GetBoolean().ShouldBeFalse();
+        row.GetProperty("status").GetString().ShouldBe("active");
+        row.GetProperty("displayName").GetString().ShouldBe("New Member");
+        await (await factory.CreateClient().PostAsJsonAsync($"{Base}/auth/login", new { email, password = member.GetProperty("temporaryPassword").GetString() }, Ct))
             .ShouldBeProblemAsync(HttpStatusCode.Forbidden, "auth.no_active_organization");
     }
 
@@ -181,7 +182,7 @@ public sealed class OrganizationApiTests(CrmApiFactory factory)
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "not_found");
 
         // A, B'nin rolünü kendi üyesine atayamaz.
-        await (await adminA.PostAsJsonAsync($"{Base}/organization/members", new { email = UniqueEmail("cross"), displayName = "Cross", password = DefaultPassword, roleId = roleBId }, Ct))
+        await (await adminA.PostAsJsonAsync($"{Base}/organization/members", new { email = UniqueEmail("cross"), displayName = "Cross", roleId = roleBId }, Ct))
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "not_found");
 
         // Denetim kaydı yalnız A'nın kayıtları.

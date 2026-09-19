@@ -1,13 +1,13 @@
 {
   "name": "crm_lead_assignment",
-  "description": "CRM v1: yeni potansiyel musteriyi rolun uyeleri arasinda round-robin atar ve takip gorevi acar.",
+  "description": "CRM v1: yeni potansiyel musteriyi rolun uyeleri arasinda round-robin atar ve takip gorevi acar. Gorevler yalniz tenantId+executionId ile yurutmeyi bulur; rol/parametre kayitli kuraldan okunur (Conductor girdisi guvenilmez).",
   "version": 1,
   "schemaVersion": 2,
   "ownerEmail": "crm@algosense.com.tr",
   "restartable": true,
   "timeoutPolicy": "ALERT_ONLY",
   "timeoutSeconds": 0,
-  "inputParameters": ["tenantId", "executionId", "ruleId", "leadId", "leadName", "assigneeRoleId", "followUpHours"],
+  "inputParameters": ["tenantId", "executionId", "ruleId", "leadId", "leadName"],
   "tasks": [
     {
       "name": "crm_assign_lead_owner",
@@ -15,9 +15,7 @@
       "type": "SIMPLE",
       "inputParameters": {
         "tenantId": "${workflow.input.tenantId}",
-        "executionId": "${workflow.input.executionId}",
-        "leadId": "${workflow.input.leadId}",
-        "assigneeRoleId": "${workflow.input.assigneeRoleId}"
+        "executionId": "${workflow.input.executionId}"
       }
     },
     {
@@ -27,10 +25,7 @@
       "inputParameters": {
         "tenantId": "${workflow.input.tenantId}",
         "executionId": "${workflow.input.executionId}",
-        "leadId": "${workflow.input.leadId}",
-        "leadName": "${workflow.input.leadName}",
-        "ownerUserId": "${assign_owner.output.ownerUserId}",
-        "followUpHours": "${workflow.input.followUpHours}"
+        "ownerUserId": "${assign_owner.output.ownerUserId}"
       }
     }
   ]

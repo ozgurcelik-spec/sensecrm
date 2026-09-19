@@ -197,9 +197,10 @@ internal static class CommerceApiKit
     {
         var role = await org.Admin.PostJsonAsync($"{Base}/organization/roles", new { name = "Role " + Guid.NewGuid().ToString("N")[..8], permissions });
         var email = UniqueEmail("member");
-        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, password = DefaultPassword, roleId = role.Id() });
+        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, roleId = role.Id() });
+        var temporary = member.GetProperty("temporaryPassword").GetString()!;
         var client = factory.CreateClient();
-        client.WithToken((await client.LoginAsync(email)).AccessToken);
+        await client.ActivateAsync(email, temporary);
         return (client, member.GetProperty("userId").GetGuid());
     }
 

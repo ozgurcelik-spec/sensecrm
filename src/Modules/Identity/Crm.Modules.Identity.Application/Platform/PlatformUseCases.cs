@@ -4,6 +4,7 @@ using Crm.Modules.Identity.Domain.Memberships;
 using Crm.Modules.Identity.Domain.Users;
 using Crm.Shared.Contracts.Context;
 using Crm.Shared.Contracts.Messaging;
+using Crm.Shared.Contracts.Security;
 using Crm.Shared.Kernel.Results;
 using FluentValidation;
 using Microsoft.Extensions.Options;
@@ -16,8 +17,11 @@ namespace Crm.Modules.Identity.Application.Platform;
 
 /// <summary>
 /// Yeni organizasyon + ilk yöneticisi. <see cref="AdminPassword"/> null ise tek seferlik parola üretilir ve yanıtta bir kez döner.
-/// Yönetici e-postası mevcut bir hesapsa hesap değişmez (parola/ad yok sayılır): yalnız yeni organizasyona Administrator üyeliği eklenir (K1).
+/// Yönetici e-postası mevcut bir hesapsa hesap değişmez (parola/ad yok sayılır) ve hesap sahibinin onayı olmadan yönetici YAPILMAZ:
+/// yeni organizasyona <b>bekleyen</b> Administrator daveti eklenir (H4-f; hesap sahibi <c>/me/invitations</c> ile kabul eder). Yeni hesap
+/// (parola üretilmiş ya da platform yöneticisince verilmiş) geçici paroladır: <c>MustChangePassword</c> = true.
 /// </summary>
+[AnyAuthenticatedUser("Platform yöneticisi yetkisi handler içinde her istekte veritabanından doğrulanır (isPlatformAdmin)")]
 public sealed record CreateOrganizationCommand(
     string OrganizationName,
     string AdminDisplayName,
@@ -25,7 +29,8 @@ public sealed record CreateOrganizationCommand(
     string? AdminPassword,
     string Locale) : ICommand<CreatedOrganizationDto>;
 
-/// <param name="AdminAccountCreated">false: e-posta zaten bir hesaba aitti, yalnız üyelik eklendi.</param>
+/// <param name="AdminAccountCreated">false: e-posta zaten bir hesaba aitti; yalnız bekleyen Administrator daveti eklendi.</param>
+/// <param name="AdminInvitationPending">true: yönetici mevcut bir hesap; organizasyonda hesap sahibi kabul edene kadar aktif yönetici yoktur.</param>
 /// <param name="GeneratedPassword">Yalnız parola verilmeden yeni hesap açıldıysa; bir daha okunamaz.</param>
 public sealed record CreatedOrganizationDto(
     Guid OrganizationId,
@@ -34,7 +39,8 @@ public sealed record CreatedOrganizationDto(
     Guid AdminUserId,
     string AdminEmail,
     bool AdminAccountCreated,
-    string? GeneratedPassword);
+    string? GeneratedPassword,
+    bool AdminInvitationPending = false);
 
 public sealed class CreateOrganizationValidator : AbstractValidator<CreateOrganizationCommand>
 {
@@ -43,7 +49,7 @@ public sealed class CreateOrganizationValidator : AbstractValidator<CreateOrgani
         RuleFor(x => x.OrganizationName).NotEmpty().MaximumLength(IdentityLimits.OrganizationNameMaxLength);
         RuleFor(x => x.AdminDisplayName).NotEmpty().MaximumLength(IdentityLimits.DisplayNameMaxLength);
         RuleFor(x => x.AdminEmail).Email();
-        When(x => x.AdminPassword is not null, () => RuleFor(x => x.AdminPassword).Password(options.Value.MinPasswordLength));
+        When(x => x.AdminPassword is not null, () => RuleFor(x => x.AdminPassword).MeetsPasswordPolicy(options.Value.MinPasswordLength, x => x.AdminEmail));
         RuleFor(x => x.Locale).SupportedLocale();
     }
 }
@@ -87,7 +93,8 @@ public sealed class CreateOrganizationHandler(
         if (admin is null)
         {
             generatedPassword = command.AdminPassword is null ? secrets.NewPassword() : null;
-            admin = User.Create(command.AdminEmail, command.AdminDisplayName, command.Locale, hasher.Hash(command.AdminPassword ?? generatedPassword!));
+            // Parolayı kullanıcı kendisi seçmedi (üretilmiş ya da platform yöneticisince verilmiş): ilk girişte değiştirilmek zorundadır.
+            admin = User.Create(command.AdminEmail, command.AdminDisplayName, command.Locale, hasher.Hash(command.AdminPassword ?? generatedPassword!), mustChangePassword: true);
             admin.SetDefaultTenant(provisioned.Tenant.Id);
             users.Add(admin);
         }
@@ -97,7 +104,10 @@ public sealed class CreateOrganizationHandler(
         // (handler içinde) kalıcılaştırılır; UnitOfWorkBehaviour'ın sonraki SaveChanges'i işlem yapmaz.
         using (tenantSetter.BeginScope(provisioned.Tenant.Id, provisioned.Tenant.Slug))
         {
-            memberships.Add(Membership.Create(provisioned.Tenant.Id, admin.Id, provisioned.Administrator.Id, now));
+            // Mevcut hesap onayı olmadan yönetici yapılmaz: bekleyen davet; yeni hesap doğrudan aktif Administrator.
+            memberships.Add(accountCreated
+                ? Membership.Create(provisioned.Tenant.Id, admin.Id, provisioned.Administrator.Id, now)
+                : Membership.Invite(provisioned.Tenant.Id, admin.Id, provisioned.Administrator.Id, now));
             await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -108,6 +118,7 @@ public sealed class CreateOrganizationHandler(
             admin.Id,
             admin.Email,
             accountCreated,
-            generatedPassword);
+            generatedPassword,
+            AdminInvitationPending: !accountCreated);
     }
 }

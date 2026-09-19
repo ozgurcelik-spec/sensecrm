@@ -206,9 +206,10 @@ internal static class ServiceApiKit
     {
         var role = await org.Admin.PostJsonAsync($"{Base}/organization/roles", new { name = "Role " + Guid.NewGuid().ToString("N")[..8], permissions });
         var email = UniqueEmail("member");
-        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, password = DefaultPassword, roleId = role.Id() });
+        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, roleId = role.Id() });
+        var temporary = member.GetProperty("temporaryPassword").GetString()!;
         var client = factory.CreateClient();
-        client.WithToken((await client.LoginAsync(email)).AccessToken);
+        await client.ActivateAsync(email, temporary);
         return (client, member.GetProperty("userId").GetGuid());
     }
 
@@ -217,7 +218,8 @@ internal static class ServiceApiKit
     {
         var role = await org.Admin.PostJsonAsync($"{Base}/organization/roles", new { name = "Role " + Guid.NewGuid().ToString("N")[..8], permissions });
         var email = UniqueEmail("member");
-        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, password = DefaultPassword, roleId = role.Id() });
+        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, roleId = role.Id() });
+        var temporary = member.GetProperty("temporaryPassword").GetString()!;
         var client = host.CreateClient();
 
         // Jeton doğrulaması gerçek saatle yapılır: oturum, sahte saat gerçek saate alınarak açılır, sonra saat eski değerine döner.
@@ -225,7 +227,7 @@ internal static class ServiceApiKit
         host.Clock.SetUtcNow(DateTimeOffset.UtcNow);
         try
         {
-            client.WithToken((await client.LoginAsync(email)).AccessToken);
+            await client.ActivateAsync(email, temporary);
         }
         finally
         {

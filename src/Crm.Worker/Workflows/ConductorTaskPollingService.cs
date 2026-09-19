@@ -68,7 +68,8 @@ public sealed partial class ConductorTaskPollingService(
 
     private async Task ProcessAsync(ConductorClient client, ConductorTask task, string workerId, CancellationToken ct)
     {
-        var result = await runner.ExecuteAsync(task.TaskType, task.InputData, ct).ConfigureAwait(false);
+        // Görev girdisi güvenilmezdir: runner, (tenantId, executionId, motor workflow kimliği) üçlüsünü workflow_executions ile doğrular (H1).
+        var result = await runner.ExecuteAsync(task.TaskType, task.WorkflowInstanceId, task.InputData, ct).ConfigureAwait(false);
         var status = result.Succeeded
             ? ConductorStatuses.Completed
             : result.Terminal ? ConductorStatuses.FailedWithTerminalError : ConductorStatuses.Failed;

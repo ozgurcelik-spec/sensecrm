@@ -21,14 +21,14 @@ kullanıcı ──HTTPS──▶ [TLS sonlandırıcı: Caddy/nginx/LB]  (sizin; 
 
 | Servis | İmaj | Görev | Kaynak sınırı (varsayılan) |
 |---|---|---|---|
-| `postgres` | `postgres:17-alpine` | `crm` + `conductor` veritabanları, `pgdata` volume | 2 GB / 2 CPU |
-| `db-init` | `postgres:17-alpine` | Roller (`crm_owner`, `crm_app`, `conductor`), veritabanları, izinler — **her `up`'ta**, idempotent | — |
+| `postgres` | `postgres:17.11-alpine` | `crm` + `conductor` veritabanları, `pgdata` volume | 2 GB / 2 CPU |
+| `db-init` | `postgres:17.11-alpine` | Roller (`crm_owner`, `crm_app`, `conductor`), veritabanları, izinler — **her `up`'ta**, idempotent | — |
 | `conductor` | `conductoross/conductor:3.32.4` | Workflow motoru (Redis/Elasticsearch yok) | 1,5 GB / 1,5 CPU |
 | `migrator` | `crm-migrator` | EF migration'ları (owner rolüyle), `create-platform-admin` | — |
 | `api` | `crm-api` | REST API (`/api/v1`), sağlık uçları | 1 GB / 2 CPU |
 | `worker` | `crm-worker` | Outbox işleyici, Conductor görev işleyicileri, yürütme durumu senkronu | 768 MB / 1 CPU |
 | `web` | `crm-web` | SPA + `/api` ters vekil | 128 MB / 0,5 CPU |
-| `redis` | `redis:7-alpine` | Yalnız birden çok `api` kopyasında (önbellek L2) | 384 MB |
+| `redis` | `redis:7.4.11-alpine` | Yalnız birden çok `api` kopyasında (önbellek L2) | 384 MB |
 
 Güvenlik duruşu (varsayılan): yalnız `web` portu yayınlanır; `backend` ağı `internal: true` olduğundan API/Worker/Postgres/Conductor dışarıya bağlantı
 başlatamaz; parola yok — sırlar `.env`/`secrets/` içindedir ve `:?` ile zorunludur; API ve Worker veritabanına yalnız DML yetkili `crm_app` rolüyle
@@ -93,9 +93,9 @@ docker compose -f deploy/docker-compose.prod.yml run --rm migrator create-platfo
 
 - Hesap yoksa: hesap + "Platform" adlı işletim organizasyonu (yalnız bu yönetici hesabı; müşteri verisi yok) + Administrator üyeliği oluşur.
 - Hesap varsa: parolasına dokunulmadan platform yöneticisi yapılır (yükseltme); zaten yöneticiyse hiçbir şey değişmez (çıkış kodu 0).
-- Geçersiz girdi (e-posta yok/parola < 12 karakter) → çıkış kodu 2 ve neden günlükte.
-- Bittikten sonra parola dosyasını **boşaltın** (`: > deploy/secrets/platform-admin-password`). Parola değiştirme/sıfırlama e-posta altyapısıyla birlikte sonraki aşamadadır
-  (bugün kullanıcı parolasını değiştiren bir uç yoktur; bkz. plan açık işleri) — bu yüzden platform yöneticisi için güçlü bir parola kullanın ve önce kasaya kaydedin.
+- Geçersiz girdi (e-posta yok/parola < 12 karakter ya da yaygın/e-posta adını içeren parola) → çıkış kodu 2 ve neden günlükte.
+- Bittikten sonra parola dosyasını **boşaltın** (`: > deploy/secrets/platform-admin-password`). Parola **sıfırlama** (unutulan parola) e-posta altyapısıyla birlikte sonraki aşamadadır
+  (parola değiştirme uçtan mevcuttur: `POST /me/password`, mevcut parolayı bilen kullanıcı için; unutulan parolayı yalnız sistem yöneticisi DB/`create-platform-admin` ile kurtarır) — bu yüzden platform yöneticisi için güçlü bir parola (≥ 12 karakter, yaygın parola/e-posta adı yasak) kullanın ve önce kasaya kaydedin.
 
 ### 3.5 İlk organizasyon (pilot şirket) ve yöneticisi
 
@@ -114,10 +114,10 @@ curl -s -X POST $BASE/api/v1/platform/organizations -H "Authorization: Bearer $T
 PowerShell: `Invoke-RestMethod -Method Post -Uri "$base/api/v1/platform/organizations" -Headers @{Authorization="Bearer $token"} -ContentType 'application/json' -Body $json`.
 (`curl` ile Türkçe karakterli gövde gönderirken Windows'ta Git Bash'i değil PowerShell'i kullanın; JSON'u UTF-8 gönderin.)
 
-Kurallar: e-posta zaten bir hesaba aitse hesap değişmez, yalnız yeni organizasyona Administrator üyeliği eklenir (`adminAccountCreated=false`, parola dönmez);
-`adminPassword` verilirse (≥ 8 karakter) yanıtta tekrarlanmaz. Yetki her istekte veritabanından doğrulanır — token'daki bayrak yetmez. Yeni organizasyon
+Kurallar: e-posta zaten bir hesaba aitse hesap değişmez ve hesap sahibinin onayı olmadan yönetici YAPILMAZ: yeni organizasyona **bekleyen** Administrator daveti eklenir (`adminAccountCreated=false`, `adminInvitationPending=true`, parola dönmez; hesap sahibi giriş yapıp Ayarlar/Davetler ekranından kabul eder, `GET /me/invitations` + `POST /me/invitations/{id}/accept`); yeni hesapta parola (üretilmiş ya da verilmiş) **geçicidir**: ilk girişte değiştirilmek zorundadır (`mustChangePassword`; değişene kadar yalnız parola değiştirme uçları çalışır);
+`adminPassword` verilirse (≥ 10 karakter, yaygın parola/e-posta adı yasak) yanıtta tekrarlanmaz. Yetki her istekte veritabanından doğrulanır — token'daki bayrak yetmez. Yeni organizasyon
 varsayılan satış hunisiyle (Worker) tohumlanır. Üretilen parolayı yöneticiye güvenli kanaldan iletin; ilk girişte değiştirmesini isteyin.
-Sonraki kullanıcılar organizasyonun kendi yöneticisi tarafından Ayarlar > Kullanıcılar ekranından eklenir.
+Sonraki kullanıcılar organizasyonun kendi yöneticisi tarafından Ayarlar > Kullanıcılar ekranından eklenir: yeni e-posta → sunucu üretimi **tek seferlik geçici parola** ekranda bir kez gösterilir (güvenli kanaldan iletin); mevcut hesap → davet (kullanıcı kabul edene kadar bekleyen).
 
 ### 3.6 Doğrulama (duman testi)
 
@@ -203,6 +203,18 @@ Postgres ana sürümü yükseltme (17 → 18): mantıksal yedek al → yeni sür
 `/health*` uçları `web` üzerinden dışarı verilmez (yalnız `/api/*` vekil edilir); iç izleme aracınız docker `healthcheck` durumunu veya `exec` çıktısını okuyabilir
 (ör. cron + `docker inspect`, Zabbix/Prometheus `cadvisor`). Diskler: `docker system df`, `pgdata` doluluğu ve yedek dizini için ayrıca uyarı kurun (>%80).
 
+### 9.1 Tek örnek varsayımı, izin önbelleği ve bellek içi sayaçlar (güvenlik notu)
+
+Pilot topolojisi **tek `api` örneğidir**. Bu varsayımdan üç davranış doğar; `api`'yi birden çok kopyaya çıkarmadan önce (K13/Kubernetes) ele alın:
+
+| Durum | Davranış | Sınır / Ne yapmalı |
+|---|---|---|
+| **İzin önbelleği** (HybridCache) | Kullanıcının etkin izinleri (üyelik → rol) `Caching:PermissionExpirationMinutes` süresince önbellekte kalır. Rol güncelleme, üye rol/aktiflik değişimi, davet ekleme/kabul **aynı süreçte önbelleği hemen geçersiz kılar** (yeni izin/geri alınan izin anında etkili). | Redis **yoksa** (varsayılan) önbellek yalnız süreç belleğindedir; varsayılan süre **2 dk** (`Caching:PermissionExpirationMinutes` açıkça verilmedikçe). Birden çok `api` kopyası + Redis ile diğer kopyalarda bayatlık en çok yerel süre (`LocalExpirationSeconds`, 30 sn) + Redis süresi kadardır (10 dk); bu durumda Redis profilini açın ve süreyi işletme riskinize göre kısaltın. Access token 15 dk yaşar; JWT'de izin claim'i **yoktur**, izinler her istekte önbellekten çözülür (yani token süresi izin bayatlığını uzatmaz). Bir kullanıcının **oturumu** silinemez/kapatılamaz: pasifleştirilen üye tokeni ile izinsiz kalır (izinler boş döner) ve refresh yenilenemez; hesap kapatma için yönetici üyeliği pasifleştirir. |
+| **Giriş azaltma sayaçları** (`LoginThrottle`: IP+hesap 5 hatalı deneme/15 dk, e-posta başına 20 deneme/dk) | Bellek içidir; `api` yeniden başlayınca sıfırlanır ve kopyalar arasında paylaşılmaz. | Çok kopyada saldırgan sınırı kopya sayısıyla çarpar; o zaman paylaşımlı depo (Redis) gerekir. Kalıcı kalan koruma: hesap kilidi (10 hatalı deneme → 15 dk, veritabanında) ve auth uçlarının IP başına hız sınırı. |
+| **Kimliği doğrulanmış hız sınırı** (`RateLimiting:User` 600/dk, `Tenant` 3000/dk) | Kopya başına sayılır. | Cömert varsayılanlar normal kullanımı asla etkilemez; kurumsal NAT/tek vekil arkasında kullanıcı başına sınır yine kullanıcı kimliğine (`sub`) bağlıdır, IP'ye değil. `RateLimiting__User__PermitLimit` vb. ortam değişkeniyle ayarlanır. |
+
+İstek gövdesi üst sınırı `RequestLimits__MaxRequestBodyBytes` (varsayılan 1 MB; aşan istek 413). Oturum: refresh token ailesinin **mutlak** ömrü 30 gündür (`Identity__RefreshFamilyDays`); süre dolunca kullanıcı yeniden giriş yapar. Parola değişince kullanıcının tüm cihazlardaki oturumları kapanır.
+
 ## 10. Günlükler
 
 - `docker compose ... logs -f --since 15m api worker web` ; servis başına döner kayıt (json-file, 20 MB × 5). Merkezî toplama için compose'daki `logging` bloğunu
@@ -244,7 +256,9 @@ Lead/fırsat olayları işlenmiyorsa outbox birikir: `SELECT count(*) FROM sales
 | `502 Bad Gateway` (`/api`) | api kapalı/yeniden başlıyor | `ps api`, `logs api`; nginx adresi 10 sn içinde yeniden çözer |
 | `permission denied for schema ...` (api/worker günlüğü) | `crm_app` izinleri eksik (ör. elle geri yükleme sonrası) | `up -d db-init` (izinleri yeniden verir) |
 | Giriş `auth.no_active_organization` | Kullanıcının aktif üyeliği yok | Organizasyon yöneticisi üyeliği etkinleştirsin |
-| Giriş `auth.locked_out` | 5 hatalı deneme → 15 dk kilit | Bekleyin (yönetici müdahalesi yok; kilit süresi dolunca açılır) |
+| Giriş `auth.locked_out` | 10 hatalı deneme (tüm IP'lerden) → 15 dk kilit; yalnız parola DOĞRUYKEN gösterilir | Bekleyin (kilit süresi dolunca açılır); doğru parolayı bilmeyen biri bu mesajı görmez (genel `auth.invalid_credentials`) |
+| Giriş `429 general.rate_limit_exceeded` | Aynı IP + hesap 5 hatalı deneme (15 dk) ya da e-posta başına dakikada 20 deneme; vekil arkasında `TRUSTED_PROXY_CIDR` yanlışsa tüm kullanıcılar tek IP görünür | 15 dk bekleyin; `TRUSTED_PROXY_CIDR` doğru mu bakın (bellek içi sayaçlar `up -d api` ile sıfırlanır) |
+| `403 auth.password_change_required` | Geçici parolalı hesap | Kullanıcı `POST /me/password` ile parolasını değiştirmeli (web ekranı yönlendirir) |
 | `port is already allocated` | `WEB_PORT` dolu | `.env`'de değiştirin |
 | Kullanıcılar aniden çıkış yaptı | JWT anahtarı değişti/yeniden üretildi | Beklenen; yeniden giriş |
 | Saat/tarih kayması | Konteyner saati ana makineden | Ana makinede NTP; uygulama `Europe/Istanbul` kullanır |

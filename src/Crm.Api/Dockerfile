@@ -22,7 +22,7 @@ COPY Directory.Build.props Directory.Packages.props global.json .editorconfig ./
 COPY src/ src/
 
 RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
-    dotnet restore src/Crm.Api/Crm.Api.csproj
+    dotnet restore src/Crm.Api/Crm.Api.csproj --locked-mode
 
 RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
     dotnet publish src/Crm.Api/Crm.Api.csproj \
@@ -30,7 +30,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
       --no-restore \
       --output /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.12 AS runtime
 WORKDIR /app
 
 # The base runtime image ships without curl; needed for the HEALTHCHECK below.

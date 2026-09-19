@@ -59,6 +59,12 @@ namespace Crm.Modules.Identity.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("role_id");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -85,6 +91,9 @@ namespace Crm.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "UserId")
                         .IsUnique()
                         .HasDatabaseName("ix_memberships_tenant_id_user_id");
+
+                    b.HasIndex("UserId", "Status")
+                        .HasDatabaseName("ix_memberships_user_id_status");
 
                     b.ToTable("memberships", "identity");
                 });
@@ -234,6 +243,10 @@ namespace Crm.Modules.Identity.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
 
+                    b.Property<DateTime>("FamilyExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("family_expires_at");
+
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid")
                         .HasColumnName("family_id");
@@ -354,6 +367,10 @@ namespace Crm.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ModifiedUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("modified_user_id");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("boolean")
+                        .HasColumnName("must_change_password");
 
                     b.Property<string>("NormalizedEmail")
                         .IsRequired()

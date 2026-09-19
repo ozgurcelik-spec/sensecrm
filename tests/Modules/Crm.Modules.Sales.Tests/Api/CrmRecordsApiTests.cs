@@ -274,10 +274,7 @@ public sealed class CrmRecordsApiTests(CrmApiFactory factory)
         var org = await factory.NewOrgAsync("Standard Org");
         var roles = await org.Admin.GetJsonAsync($"{Base}/organization/roles");
         var standardId = roles.EnumerateArray().Single(r => r.GetProperty("name").GetString() == "Standard").Id();
-        var email = UniqueEmail("std");
-        await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName = "Std", password = DefaultPassword, roleId = standardId });
-        var standard = factory.CreateClient();
-        standard.WithToken((await standard.LoginAsync(email)).AccessToken);
+        var standard = (await ApiTestClient.AddMemberAsync(factory, org.Admin, "Std", standardId)).Client;
 
         (await standard.CreateAccountAsync("Standart kullanıcı firması")).GetProperty("name").GetString().ShouldBe("Standart kullanıcı firması");
         var pipeline = await standard.DefaultPipelineAsync();

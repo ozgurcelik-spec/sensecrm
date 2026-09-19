@@ -99,7 +99,7 @@ public abstract class AccountFieldsValidator<T> : AbstractValidator<T>
     {
         RuleFor(x => x.Name).Required(SalesLimits.NameMaxLength);
         RuleFor(x => x.Industry).Optional(SalesLimits.IndustryMaxLength);
-        RuleFor(x => x.Website).Optional(SalesLimits.WebsiteMaxLength);
+        RuleFor(x => x.Website).OptionalHttpUrl(SalesLimits.WebsiteMaxLength);
         RuleFor(x => x.Phone).Optional(SalesLimits.PhoneMaxLength);
         RuleFor(x => x.Email).OptionalEmail();
         RuleFor(x => x.Description).Optional(SalesLimits.DescriptionMaxLength);

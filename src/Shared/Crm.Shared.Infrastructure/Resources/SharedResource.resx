@@ -231,4 +231,15 @@
   <data name="field.sla_state" xml:space="preserve"><value>SLA durumu</value></data>
   <data name="permission.crm.cases.read" xml:space="preserve"><value>Talepleri görüntüle</value></data>
   <data name="permission.crm.cases.write" xml:space="preserve"><value>Talep oluştur ve yönet</value></data>
+  <!-- Güvenlik sertleştirmesi (C-SEC) -->
+  <data name="auth.password_change_required" xml:space="preserve"><value>Geçici parolanızı değiştirmeden bu işlemi yapamazsınız.</value></data>
+  <data name="validation.password_too_common" xml:space="preserve"><value>Bu parola çok yaygın; daha benzersiz bir parola seçin.</value></data>
+  <data name="validation.password_contains_email" xml:space="preserve"><value>Parola e-posta adresinizin kullanıcı adı kısmını içeremez.</value></data>
+  <data name="validation.password_too_long" xml:space="preserve"><value>Parola en çok {MaxLength} karakter olabilir.</value></data>
+  <data name="validation.website" xml:space="preserve"><value>Web sitesi http:// veya https:// ile başlayan geçerli bir adres olmalıdır.</value></data>
+  <data name="member.cannot_modify_self" xml:space="preserve"><value>Kendi rolünüzü değiştiremez veya kendi üyeliğinizi pasifleştiremezsiniz.</value></data>
+  <data name="role.permission_escalation" xml:space="preserve"><value>Kendinizde olmayan bir izni veremezsiniz.</value></data>
+  <data name="invitation.not_found" xml:space="preserve"><value>Davet bulunamadı ya da size ait değil.</value></data>
+  <data name="field.current_password" xml:space="preserve"><value>Mevcut parola</value></data>
+  <data name="field.new_password" xml:space="preserve"><value>Yeni parola</value></data>
 </root>
