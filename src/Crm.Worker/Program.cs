@@ -2,6 +2,7 @@ using Crm.Modules.Activities.Infrastructure;
 using Crm.Modules.Activities.Infrastructure.Persistence;
 using Crm.Modules.Identity.Infrastructure;
 using Crm.Modules.Identity.Infrastructure.Persistence;
+using Crm.Modules.Marketing.Infrastructure;
 using Crm.Modules.Sales.Infrastructure;
 using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Modules.Workflows.Infrastructure;
@@ -70,6 +71,17 @@ builder.Services.AddHostedService<Crm.Worker.Workflows.ConductorTaskPollingServi
 builder.Services.AddHostedService<Crm.Worker.Workflows.ExecutionStatusSyncService>();
 // Konteyner HEALTHCHECK için canlılık sinyali (HTTP ucu yok).
 builder.Services.AddHostedService<Crm.Worker.HeartbeatService>();
+
+// Marketing (M6C): outbox'ı boşaltır (bugün olay üretmez) ve Sales'in LeadConverted olayının tüketicisini barındırır
+// (dönüşen lead'in kampanya üyelikleri kendiliğinden "converted" olur). Worker Application assembly'lerini taramadığı için elle kayıtlıdır.
+builder.Services.AddModuleDbContext<Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext>(builder.Configuration, Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext.SchemaName,
+    typeof(Crm.Modules.Marketing.Domain.ICampaignRepository).Assembly,
+    typeof(Crm.Modules.Marketing.Contracts.MarketingPermissions).Assembly);
+builder.Services.AddMarketingContractServices();
+builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Sales.Contracts.LeadConverted>, Crm.Modules.Marketing.Application.Members.LeadConvertedMarketingHandler>();
+builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext>>();
 
 await builder.Build().RunAsync();
 

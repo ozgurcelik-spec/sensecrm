@@ -27,6 +27,7 @@ builder.Services.AddModuleHandlers(
 builder.Services.AddModuleDbContext<SalesDbContext>(builder.Configuration, SalesDbContext.SchemaName);
 builder.Services.AddModuleDbContext<ActivitiesDbContext>(builder.Configuration, ActivitiesDbContext.SchemaName);
 builder.Services.AddModuleDbContext<WorkflowsDbContext>(builder.Configuration, WorkflowsDbContext.SchemaName);
+builder.Services.AddModuleDbContext<Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext>(builder.Configuration, Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext.SchemaName);
 
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);

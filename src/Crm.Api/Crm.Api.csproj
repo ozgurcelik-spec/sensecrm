@@ -11,6 +11,7 @@
     <ProjectReference Include="../Modules/Sales/Crm.Modules.Sales.Api/Crm.Modules.Sales.Api.csproj" />
     <ProjectReference Include="../Modules/Activities/Crm.Modules.Activities.Api/Crm.Modules.Activities.Api.csproj" />
     <ProjectReference Include="../Modules/Workflows/Crm.Modules.Workflows.Api/Crm.Modules.Workflows.Api.csproj" />
+    <ProjectReference Include="../Modules/Marketing/Crm.Modules.Marketing.Api/Crm.Modules.Marketing.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
