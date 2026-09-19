@@ -8,6 +8,7 @@ import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
 import { AccountFormDialog } from "@/components/crm/account-form-dialog";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
+import { WebsiteValue } from "@/components/crm/website-link";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -304,22 +305,7 @@ export default function AccountDetailPage() {
                 { label: t("crm:accounts.fields.industry"), value: orDash(account.industry) },
                 {
                   label: t("crm:accounts.fields.website"),
-                  value: account.website ? (
-                    <Anchor
-                      href={
-                        account.website.startsWith("http")
-                          ? account.website
-                          : `https://${account.website}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      size="sm"
-                    >
-                      {account.website}
-                    </Anchor>
-                  ) : (
-                    "-"
-                  ),
+                  value: <WebsiteValue website={account.website} />,
                 },
                 { label: t("crm:accounts.fields.phone"), value: orDash(account.phone) },
                 { label: t("crm:accounts.fields.email"), value: orDash(account.email) },

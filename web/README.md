@@ -107,3 +107,13 @@ HTTP contract: `docs/plan/m6c-pazarlama.md`. Screens: Campaigns (`/app/campaigns
 - On a 401 from an authenticated request, the api-client refreshes once. Concurrent requests share the same refresh. It then retries the request. If the refresh fails, it clears the session and redirects to `/login`.
 - API errors are ProblemDetails. The `code` is translated through `common:errors.<code>`, with the server `title` as the fallback.
 - Permission checks in the UI use `usePermission(key)` and `<PermissionGuard>`. The server enforces every permission as well.
+
+## Security hardening (C-SEC)
+
+New i18n namespace `security` (screens, policy hints, C-SEC error codes via `security:errors.<code>`, looked up after `common:errors.<code>` by `getApiErrorMessage`).
+
+- **Password policy** (`lib/password-policy.ts`): 10-128 characters and no e-mail local part (3+ characters), mirrored client-side on sign-up and change-password; the server additionally rejects common passwords and its field message is shown as-is. Passwords are never trimmed.
+- **Forced change**: `me.mustChangePassword` / login / refresh tokens set `useAuthStore().mustChangePassword`; a 403 `auth.password_change_required` from any request does the same (`setPasswordChangeRequiredHandler` in `lib/api-client.ts`). `ProtectedRoute` then redirects to the full-page `/change-password` (no shell); after success (`POST /me/password`, new tokens stored) it continues to `/app`. The same `components/security/change-password-form.tsx` is on the Profile page. `POST /me/password` uses `passthroughUnauthorized` so a wrong current password (401) is a field error, not a session end.
+- **Members**: create takes `{ email, displayName, roleId }` only. A new account's `temporaryPassword` is shown once in a copyable dialog; `status: "pending"` (existing account invited) shows an info toast. Pending members render read-only with a "Davet bekliyor" badge and are never offered as record owners.
+- **Invitations**: `components/shell/invitations-bell.tsx` next to the approvals bell (`GET /me/invitations`, polled every 60 s while visible); the dialog accepts/declines and, after accepting, refetches `/me` and offers "Şimdi geç" to switch organization.
+- **Website**: only absolute `http(s)://` URLs are valid in the account form and rendered as links (`lib/url.ts`, `components/crm/website-link.tsx`); anything else is inert text.

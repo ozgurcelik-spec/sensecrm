@@ -1,0 +1,65 @@
+{
+  "password": {
+    "policy": "En az {{min}}, en fazla {{max}} karakter; e-posta adresinizin kullanıcı adı kısmını içermemelidir. Yaygın parolalar reddedilir.",
+    "max": "Parola en fazla {{max}} karakter olabilir",
+    "containsEmail": "Parola e-posta adresinizin kullanıcı adı kısmını içermemelidir"
+  },
+  "changePassword": {
+    "title": "Parolayı değiştir",
+    "description": "Parolanızı değiştirdiğinizde diğer tüm oturumlarınız kapatılır.",
+    "current": "Mevcut parola",
+    "new": "Yeni parola",
+    "confirm": "Yeni parola (tekrar)",
+    "submit": "Parolayı değiştir",
+    "success": "Parolanız değiştirildi",
+    "mismatch": "Parolalar eşleşmiyor",
+    "sameAsCurrent": "Yeni parola mevcut parolanızdan farklı olmalıdır",
+    "currentWrong": "Mevcut parola hatalı"
+  },
+  "forced": {
+    "title": "Parolanızı değiştirin",
+    "subtitle": "Devam etmeden önce geçici parolanızı size özel yeni bir parolayla değiştirmeniz gerekiyor.",
+    "logout": "Çıkış yap"
+  },
+  "temporaryPassword": {
+    "title": "Geçici parola",
+    "intro": "{{email}} için hesap oluşturuldu. Aşağıdaki geçici parola yalnızca bir kez gösterilir.",
+    "warning": "Bu parolayı kullanıcıyla güvenli bir yolla paylaşın. Kullanıcı ilk girişte parolasını değiştirmek zorundadır. Bu pencere kapatıldıktan sonra parola tekrar görüntülenemez.",
+    "label": "Geçici parola",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "done": "Parolayı kaydettim, kapat"
+  },
+  "members": {
+    "createHint": "E-posta adresi zaten kayıtlıysa kullanıcıya davet gönderilir; yeni bir hesap için geçici parola oluşturulur ve bir kez gösterilir.",
+    "pendingNotice": "Kullanıcı daveti kabul edince eklenir",
+    "pendingBadge": "Davet bekliyor"
+  },
+  "invitations": {
+    "title": "Organizasyon davetleri",
+    "bellCount": "Bekleyen davetler: {{count}}",
+    "empty": "Bekleyen davetiniz yok",
+    "detail": "Rol: {{role}} · Davet tarihi: {{date}}",
+    "accept": "Kabul et",
+    "decline": "Reddet",
+    "acceptFor": "{{name}} davetini kabul et",
+    "declineFor": "{{name}} davetini reddet",
+    "accepted": "{{name}} davetini kabul ettiniz",
+    "declined": "Davet reddedildi",
+    "joined": "{{name}} organizasyonuna katıldınız.",
+    "switchNow": "Şimdi geç"
+  },
+  "website": {
+    "invalid": "Web sitesi http:// veya https:// ile başlayan geçerli bir adres olmalıdır"
+  },
+  "errors": {
+    "auth": {
+      "locked_out": "Hesap çok fazla hatalı denemeden dolayı geçici olarak kilitlendi. Bir süre sonra tekrar deneyin.",
+      "user_disabled": "Bu hesap devre dışı bırakılmış. Yöneticinizle iletişime geçin.",
+      "password_change_required": "Devam etmeden önce parolanızı değiştirmeniz gerekiyor"
+    },
+    "invitation": {
+      "not_found": "Davet bulunamadı veya süresi dolmuş"
+    }
+  }
+}

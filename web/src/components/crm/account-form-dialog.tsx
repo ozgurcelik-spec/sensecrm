@@ -8,6 +8,7 @@ import { useDefaultOwnerId } from "@/hooks/use-default-owner";
 import { toast, toastApiError } from "@/hooks/use-toast";
 import { applyValidationErrors } from "@/lib/api-error";
 import { blankToUndefined } from "@/lib/format";
+import { isHttpUrl } from "@/lib/url";
 import type { Account } from "@/types";
 import { EMPTY_ADDRESS, toAddressPayload, toAddressValues } from "@/lib/address";
 import { AddressFields } from "./address-fields";
@@ -25,7 +26,11 @@ const addressSchema = z.object({
 const schema = z.object({
   name: z.string().trim().min(1, "auth:validation.required"),
   industry: z.string(),
-  website: z.string(),
+  // Optional; when given it must be an absolute http:// or https:// URL (never javascript:, data: ...).
+  website: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || isHttpUrl(v), "security:website.invalid"),
   phone: z.string(),
   email: z
     .string()
@@ -63,7 +68,7 @@ interface AccountFormDialogProps {
 
 /** Create/edit account dialog. Mount it only while it is open (it resets its form on mount). */
 export function AccountFormDialog({ account, onClose, onSaved }: AccountFormDialogProps) {
-  const { t } = useTranslation(["crm", "common", "auth"]);
+  const { t } = useTranslation(["crm", "common", "auth", "security"]);
   const save = useSaveAccount();
   const defaultOwnerId = useDefaultOwnerId();
   const {

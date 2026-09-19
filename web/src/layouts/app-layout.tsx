@@ -7,6 +7,7 @@ import { usePendingApprovalCount } from "@/hooks/use-approvals";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
 import RouteBoundary from "@/components/route-boundary";
 import { ApprovalsBell } from "@/components/shell/approvals-bell";
+import { InvitationsBell } from "@/components/shell/invitations-bell";
 import { LanguageMenu } from "@/components/shell/language-menu";
 import { OrganizationSwitcher } from "@/components/shell/organization-switcher";
 import { UserMenu } from "@/components/shell/user-menu";
@@ -83,6 +84,7 @@ export default function AppLayout() {
           </Group>
           <Group gap="xs" wrap="nowrap">
             <ApprovalsBell />
+            <InvitationsBell />
             <OrganizationSwitcher />
             <LanguageMenu />
             <UserMenu />

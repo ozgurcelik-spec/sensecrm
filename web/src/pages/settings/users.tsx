@@ -24,10 +24,39 @@ import { useRoles } from "@/hooks/use-role-queries";
 import { toast, toastApiError } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/dates";
 import { useAuthStore } from "@/store/auth.store";
-import { PERMISSIONS, type Member, type Role } from "@/types";
+import { PERMISSIONS, type ActiveMember, type PendingMember, type Role } from "@/types";
+
+function PendingMemberRow({ member, timeZone }: { member: PendingMember; timeZone?: string }) {
+  const { t } = useTranslation(["users", "security"]);
+  return (
+    <Table.Tr data-testid="pending-member-row">
+      <Table.Td>
+        <Text size="sm" fw={500} c={member.displayName ? undefined : "dimmed"}>
+          {member.displayName ?? "-"}
+        </Text>
+      </Table.Td>
+      <Table.Td>
+        <Text size="sm">{member.email}</Text>
+      </Table.Td>
+      <Table.Td>
+        <Text size="sm">{member.roleName}</Text>
+      </Table.Td>
+      <Table.Td>
+        <Badge color="yellow" variant="light">
+          {t("security:members.pendingBadge")}
+        </Badge>
+      </Table.Td>
+      <Table.Td>
+        <Text size="sm" c="dimmed">
+          {member.invitedAt ? formatDate(member.invitedAt, timeZone) : "-"}
+        </Text>
+      </Table.Td>
+    </Table.Tr>
+  );
+}
 
 interface MemberRowProps {
-  member: Member;
+  member: ActiveMember;
   roles: Role[];
   canManage: boolean;
   isSelf: boolean;
@@ -118,7 +147,8 @@ export default function UsersPage() {
     if (!q) return list;
     return list.filter(
       (m) =>
-        m.displayName.toLocaleLowerCase().includes(q) || m.email.toLocaleLowerCase().includes(q)
+        (m.displayName ?? "").toLocaleLowerCase().includes(q) ||
+        m.email.toLocaleLowerCase().includes(q)
     );
   }, [members.data, query]);
 
@@ -167,16 +197,24 @@ export default function UsersPage() {
                       </Table.Td>
                     </Table.Tr>
                   ))}
-                {filtered.map((member) => (
-                  <MemberRow
-                    key={member.userId}
-                    member={member}
-                    roles={roles.data ?? []}
-                    canManage={canManage && !!roles.data}
-                    isSelf={member.userId === me?.user.id}
-                    timeZone={me?.organization.timeZone}
-                  />
-                ))}
+                {filtered.map((member) =>
+                  member.status === "pending" ? (
+                    <PendingMemberRow
+                      key={`pending:${member.email}`}
+                      member={member}
+                      timeZone={me?.organization.timeZone}
+                    />
+                  ) : (
+                    <MemberRow
+                      key={member.userId}
+                      member={member}
+                      roles={roles.data ?? []}
+                      canManage={canManage && !!roles.data}
+                      isSelf={member.userId === me?.user.id}
+                      timeZone={me?.organization.timeZone}
+                    />
+                  )
+                )}
                 {members.data && filtered.length === 0 && (
                   <Table.Tr>
                     <Table.Td colSpan={5}>

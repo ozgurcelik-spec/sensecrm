@@ -124,4 +124,59 @@ describe("api-client 401 handling", () => {
     expect(refresh).not.toHaveBeenCalled();
     expect(expired).toHaveBeenCalledTimes(1);
   });
+  it("notifies the password-change handler on a 403 auth.password_change_required and rejects", async () => {
+    const forced = vi.fn();
+    const refresh = vi.fn();
+    client.setPasswordChangeRequiredHandler(forced);
+    client.setRefreshHandler(refresh);
+    const error = {
+      response: { status: 403, data: { code: "auth.password_change_required" } },
+      config: { headers: { Authorization: "Bearer t" } },
+    } as unknown as AxiosError;
+
+    await expect(client.handleResponseError(error)).rejects.toBe(error);
+    expect(forced).toHaveBeenCalledTimes(1);
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("does not treat other 403s as a forced password change", async () => {
+    const forced = vi.fn();
+    client.setPasswordChangeRequiredHandler(forced);
+    const error = {
+      response: { status: 403, data: { code: "forbidden" } },
+      config: { headers: { Authorization: "Bearer t" } },
+    } as unknown as AxiosError;
+
+    await expect(client.handleResponseError(error)).rejects.toBe(error);
+    expect(forced).not.toHaveBeenCalled();
+  });
+
+  it("lets a 401 through untouched for passthroughUnauthorized calls (wrong current password)", async () => {
+    const refresh = vi.fn(async () => true);
+    const expired = vi.fn();
+    client.setRefreshHandler(refresh);
+    client.setSessionExpiredHandler(expired);
+    const error = authError(401, { passthroughUnauthorized: true });
+
+    await expect(client.handleResponseError(error)).rejects.toBe(error);
+    expect(refresh).not.toHaveBeenCalled();
+    expect(expired).not.toHaveBeenCalled();
+  });
+
+  it("ends the session when the refresh endpoint rejects the refresh token (401 -> handler false)", async () => {
+    // The store's refresh() resolves false on any failure of POST /auth/refresh (revoked, expired,
+    // absolute lifetime reached); that must log the user out.
+    const expired = vi.fn();
+    client.setRefreshHandler(async () => false);
+    client.setSessionExpiredHandler(expired);
+    localStorage.setItem(client.AUTH_TOKEN_STORAGE_KEY, "stale");
+    localStorage.setItem(client.REFRESH_TOKEN_STORAGE_KEY, "absolute-lifetime-over");
+
+    const error = authError(401);
+    await expect(client.handleResponseError(error)).rejects.toBe(error);
+
+    expect(expired).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem(client.REFRESH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(mockInstance.request).not.toHaveBeenCalled();
+  });
 });

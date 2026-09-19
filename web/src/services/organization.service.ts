@@ -2,7 +2,7 @@
  * Organization (tenant) settings, members and audit log - `/api/organization/*`.
  */
 import { apiClient } from "@/lib/api-client";
-import type { AuditEntry, Locale, Member, Organization, PagedResult } from "@/types";
+import type { AuditEntry, Locale, Member, MemberStatus, Organization, PagedResult } from "@/types";
 
 const ORG_BASE = "/organization";
 
@@ -31,8 +31,20 @@ export async function updateOrganization(request: UpdateOrganizationRequest): Pr
 export interface CreateMemberRequest {
   email: string;
   displayName: string;
-  password: string;
   roleId: string;
+}
+
+/**
+ * `POST /organization/members` (201). `temporaryPassword` exists only for a newly created account
+ * and is returned exactly once; `status: "pending"` means an existing account was invited.
+ */
+export interface CreateMemberResponse {
+  email: string;
+  roleId: string;
+  roleName: string;
+  status: MemberStatus;
+  userId?: string;
+  temporaryPassword?: string;
 }
 
 export interface UpdateMemberRequest {
@@ -45,8 +57,8 @@ export async function listMembers(): Promise<Member[]> {
   return data;
 }
 
-export async function createMember(request: CreateMemberRequest): Promise<Member> {
-  const { data } = await apiClient.post<Member>(`${ORG_BASE}/members`, request);
+export async function createMember(request: CreateMemberRequest): Promise<CreateMemberResponse> {
+  const { data } = await apiClient.post<CreateMemberResponse>(`${ORG_BASE}/members`, request);
   return data;
 }
 

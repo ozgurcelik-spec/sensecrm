@@ -2,7 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, Card, Group, Select, Stack, TextInput } from "@mantine/core";
+import { Button, Card, Group, Select, Stack, Text, TextInput, Title } from "@mantine/core";
+import { ChangePasswordForm } from "@/components/security/change-password-form";
 import { PageHeader } from "@/components/page-header";
 import { SUPPORTED_LOCALES } from "@/lib/locale";
 import { toast, toastApiError } from "@/hooks/use-toast";
@@ -86,7 +87,7 @@ function ProfileForm({ me }: { me: Me }) {
 }
 
 export default function AccountPage() {
-  const { t } = useTranslation(["account"]);
+  const { t } = useTranslation(["account", "security"]);
   const me = useAuthStore((state) => state.me);
   if (!me) return null;
 
@@ -94,7 +95,28 @@ export default function AccountPage() {
     <>
       <PageHeader title={t("account:title")} description={t("account:description")} />
       {/* Keyed by user so the form re-initializes if the profile changes underneath it. */}
-      <ProfileForm key={me.user.id} me={me} />
+      <Stack gap="lg">
+        <ProfileForm key={me.user.id} me={me} />
+        <Card
+          withBorder
+          padding="lg"
+          maw={560}
+          component="section"
+          aria-labelledby="change-password-title"
+        >
+          <Stack gap="md">
+            <Stack gap={2}>
+              <Title order={4} id="change-password-title">
+                {t("security:changePassword.title")}
+              </Title>
+              <Text size="sm" c="dimmed">
+                {t("security:changePassword.description")}
+              </Text>
+            </Stack>
+            <ChangePasswordForm email={me.user.email} />
+          </Stack>
+        </Card>
+      </Stack>
     </>
   );
 }
