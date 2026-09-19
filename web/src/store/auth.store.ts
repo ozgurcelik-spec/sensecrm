@@ -9,7 +9,7 @@ import {
 import { queryClient } from "@/lib/query-client";
 import * as authService from "@/services/auth.service";
 import type { SignupRequest } from "@/services/auth.service";
-import { getMe } from "@/services/me.service";
+import { changePassword as changePasswordRequest, getMe } from "@/services/me.service";
 import type { AuthTokens, Me } from "@/types";
 
 interface AuthStore {
@@ -20,6 +20,11 @@ interface AuthStore {
   me: Me | null;
   /** False until zustand `persist` has restored `me`; ProtectedRoute waits on it to avoid a permission flash. */
   hasHydrated: boolean;
+  /** The API only accepts the password-change flow until this is cleared (C-SEC). Persisted with `me`. */
+  mustChangePassword: boolean;
+  setMustChangePassword: (value: boolean) => void;
+  /** `POST /me/password`: stores the new tokens, clears the forced-change flag and reloads /me. */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   signup: (request: SignupRequest) => Promise<void>;
   logout: () => Promise<void>;
@@ -57,10 +62,14 @@ export const useAuthStore = create<AuthStore>()(
         set({ token: tokens.accessToken, refreshToken: tokens.refreshToken });
         try {
           const me = await getMe();
-          set({ me });
+          set({
+            me,
+            mustChangePassword:
+              me.mustChangePassword === true || tokens.mustChangePassword === true,
+          });
         } catch (error) {
           clearTokens();
-          set({ token: null, refreshToken: null, me: null });
+          set({ token: null, refreshToken: null, me: null, mustChangePassword: false });
           throw error;
         }
       }
@@ -70,6 +79,20 @@ export const useAuthStore = create<AuthStore>()(
         refreshToken: readStorage(REFRESH_TOKEN_STORAGE_KEY),
         me: null,
         hasHydrated: false,
+        mustChangePassword: false,
+
+        setMustChangePassword: (value) => set({ mustChangePassword: value }),
+
+        changePassword: async (currentPassword, newPassword) => {
+          const tokens = await changePasswordRequest({ currentPassword, newPassword });
+          storeTokens(tokens);
+          set({
+            token: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            mustChangePassword: false,
+          });
+          await get().refreshMe();
+        },
 
         login: async (email, password) => {
           await establishSession(await authService.login(email, password));
@@ -82,7 +105,7 @@ export const useAuthStore = create<AuthStore>()(
         logout: async () => {
           const refreshToken = get().refreshToken;
           clearTokens();
-          set({ token: null, refreshToken: null, me: null });
+          set({ token: null, refreshToken: null, me: null, mustChangePassword: false });
           queryClient.clear();
           if (refreshToken) {
             // Best effort: the server revokes the refresh token; the local session is already gone.
@@ -97,6 +120,9 @@ export const useAuthStore = create<AuthStore>()(
             const tokens = await authService.refreshTokens(refreshToken);
             storeTokens(tokens);
             set({ token: tokens.accessToken, refreshToken: tokens.refreshToken });
+            if (typeof tokens.mustChangePassword === "boolean") {
+              set({ mustChangePassword: tokens.mustChangePassword });
+            }
             return true;
           } catch {
             return false;
@@ -106,7 +132,14 @@ export const useAuthStore = create<AuthStore>()(
         refreshMe: async () => {
           if (!get().token && !get().refreshToken) return;
           try {
-            set({ me: await getMe() });
+            const me = await getMe();
+            set({
+              me,
+              mustChangePassword:
+                typeof me.mustChangePassword === "boolean"
+                  ? me.mustChangePassword
+                  : get().mustChangePassword,
+            });
           } catch {
             // A 401 is handled by the api-client; other failures keep the cached profile.
           }
@@ -131,7 +164,7 @@ export const useAuthStore = create<AuthStore>()(
       name: "auth-store",
       version: 1,
       // Tokens live under their own storage keys (read by the api-client); only the profile is persisted here.
-      partialize: (state) => ({ me: state.me }),
+      partialize: (state) => ({ me: state.me, mustChangePassword: state.mustChangePassword }),
       onRehydrateStorage: () => () => {
         setAuthState?.({ hasHydrated: true });
       },

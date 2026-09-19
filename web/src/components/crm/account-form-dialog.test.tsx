@@ -156,4 +156,58 @@ describe("AccountFormDialog", () => {
     });
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith("a1"));
   });
+  describe("website field (only http/https URLs)", () => {
+    it.each(["javascript:alert(1)", "acme.example", "ftp://acme.example", "data:text/html,x"])(
+      "rejects %s and does not call the API",
+      async (value) => {
+        open();
+
+        await userEvent.type(screen.getByLabelText(/Müşteri adı/), "Acme");
+        await userEvent.type(screen.getByLabelText("Web sitesi"), value);
+        await userEvent.click(screen.getByRole("button", { name: "Oluştur" }));
+
+        expect(
+          await screen.findByText(
+            "Web sitesi http:// veya https:// ile başlayan geçerli bir adres olmalıdır"
+          )
+        ).toBeInTheDocument();
+        expect(client.post).not.toHaveBeenCalled();
+      }
+    );
+
+    it("accepts an https URL and sends it", async () => {
+      open();
+
+      await userEvent.type(screen.getByLabelText(/Müşteri adı/), "Acme");
+      await userEvent.type(screen.getByLabelText("Web sitesi"), " https://acme.example/tr ");
+      await userEvent.click(screen.getByRole("button", { name: "Oluştur" }));
+
+      await waitFor(() => expect(client.post).toHaveBeenCalledTimes(1));
+      expect(client.post).toHaveBeenCalledWith(
+        "/accounts",
+        expect.objectContaining({ website: "https://acme.example/tr" })
+      );
+    });
+
+    it("maps a server validation error on website onto the field", async () => {
+      installApi(client, {
+        "GET /organization/members": () => MEMBERS,
+        "POST /accounts": () =>
+          problem(400, {
+            status: 400,
+            title: "Validation",
+            code: "validation",
+            errors: { Website: ["Geçersiz web adresi"] },
+          }),
+      });
+      open();
+
+      await userEvent.type(screen.getByLabelText(/Müşteri adı/), "Acme");
+      await userEvent.type(screen.getByLabelText("Web sitesi"), "http://acme.example");
+      await userEvent.click(screen.getByRole("button", { name: "Oluştur" }));
+
+      expect(await screen.findByText("Geçersiz web adresi")).toBeInTheDocument();
+      expect(toastApiError).not.toHaveBeenCalled();
+    });
+  });
 });

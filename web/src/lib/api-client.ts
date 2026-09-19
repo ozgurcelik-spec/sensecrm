@@ -12,6 +12,11 @@ declare module "axios" {
     skipAuthRetry?: boolean;
     /** Set on the retried copy of a request after a successful refresh, so a second 401 ends the session. */
     _retriedAfterRefresh?: boolean;
+    /**
+     * Keeps the Bearer header but lets a 401 reach the caller (no refresh, no session end): for
+     * calls whose own 401 means "wrong current password", e.g. POST /me/password.
+     */
+    passthroughUnauthorized?: boolean;
   }
 }
 
@@ -68,6 +73,19 @@ export function setSessionExpiredHandler(handler: SessionExpiredHandler | null):
   sessionExpiredHandler = handler;
 }
 
+/** ProblemDetails `code` of the 403 the API answers with while the user must change the password first. */
+export const PASSWORD_CHANGE_REQUIRED_CODE = "auth.password_change_required";
+
+export type PasswordChangeRequiredHandler = () => void;
+let passwordChangeRequiredHandler: PasswordChangeRequiredHandler | null = null;
+
+/** Called on any 403 `auth.password_change_required`; the app then routes to the forced change screen. */
+export function setPasswordChangeRequiredHandler(
+  handler: PasswordChangeRequiredHandler | null
+): void {
+  passwordChangeRequiredHandler = handler;
+}
+
 /** Several requests can 401 at once when the access token expires; the refresh token rotates, so refresh only once. */
 let refreshInFlight: Promise<boolean> | null = null;
 
@@ -110,6 +128,15 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+function isPasswordChangeRequired(error: AxiosError): boolean {
+  const data = error.response?.data;
+  return (
+    !!data &&
+    typeof data === "object" &&
+    (data as { code?: unknown }).code === PASSWORD_CHANGE_REQUIRED_CODE
+  );
+}
+
 /**
  * On a 401 from an authenticated request: refresh once (deduped) and retry the request once; end
  * the session if the refresh fails or the retry 401s again. Exported for unit tests.
@@ -117,7 +144,17 @@ apiClient.interceptors.request.use((config) => {
 export async function handleResponseError(error: AxiosError): Promise<AxiosResponse> {
   const config = error.config;
   const hadAuthHeader = !!config?.headers?.Authorization;
-  if (error.response?.status !== 401 || !config || !hadAuthHeader || config.skipAuthRetry) {
+  if (error.response?.status === 403 && isPasswordChangeRequired(error)) {
+    passwordChangeRequiredHandler?.();
+    return Promise.reject(error);
+  }
+  if (
+    error.response?.status !== 401 ||
+    !config ||
+    !hadAuthHeader ||
+    config.skipAuthRetry ||
+    config.passthroughUnauthorized
+  ) {
     return Promise.reject(error);
   }
 

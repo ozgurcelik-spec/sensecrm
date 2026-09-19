@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router";
 import { useTranslation } from "react-i18next";
 import NoAccess from "@/components/no-access";
 import { PermissionGuard } from "@/components/permission-guard";
-import ProtectedRoute from "@/components/protected-route";
+import ProtectedRoute, { CHANGE_PASSWORD_PATH } from "@/components/protected-route";
 import RouteBoundary from "@/components/route-boundary";
 import AppLayout from "@/layouts/app-layout";
 import LoginPage from "@/pages/auth/login";
@@ -13,6 +13,7 @@ import { PERMISSIONS } from "@/types";
 
 // Only the shell and the login page are eager; every other page is a separate chunk.
 const SignupPage = lazy(() => import("@/pages/auth/signup"));
+const ForcedChangePasswordPage = lazy(() => import("@/pages/auth/change-password"));
 const HomePage = lazy(() => import("@/pages/home"));
 const AccountPage = lazy(() => import("@/pages/account"));
 const OrganizationSettingsPage = lazy(() => import("@/pages/settings/organization"));
@@ -68,6 +69,15 @@ export default function App() {
           <Route path="/" element={<Navigate to="/app" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          {/* Forced full-page password change (no shell): users with a temporary password land here. */}
+          <Route
+            path={CHANGE_PASSWORD_PATH}
+            element={
+              <ProtectedRoute allowPasswordChange>
+                <ForcedChangePasswordPage />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/app"

@@ -9,6 +9,8 @@ export interface AuthTokens {
   refreshToken: string;
   /** ISO timestamp of the access token expiry. */
   expiresAt: string;
+  /** True while the account still has a temporary/expired password (C-SEC); absent on older servers. */
+  mustChangePassword?: boolean;
 }
 
 export interface OrganizationSummary {
@@ -36,6 +38,8 @@ export interface Me {
   role: { id: string; name: string };
   permissions: string[];
   organizations: OrganizationSummary[];
+  /** True while the API only accepts the password-change flow for this user (C-SEC). */
+  mustChangePassword?: boolean;
 }
 
 export type PermissionGroup = "org" | "crm";
@@ -45,7 +49,11 @@ export interface Permission {
   group: PermissionGroup;
 }
 
-export interface Member {
+export type MemberStatus = "active" | "pending";
+
+/** An organization member with an account. `status` is absent on older servers (= active). */
+export interface ActiveMember {
+  status?: "active";
   userId: string;
   email: string;
   displayName: string;
@@ -53,6 +61,28 @@ export interface Member {
   roleName: string;
   isActive: boolean;
   joinedAt: string;
+}
+
+/** An invited existing account that has not accepted yet: e-mail and role only, read-only in the UI. */
+export interface PendingMember {
+  status: "pending";
+  email: string;
+  displayName?: string;
+  userId?: string;
+  roleId?: string;
+  roleName: string;
+  invitedAt?: string;
+}
+
+export type Member = ActiveMember | PendingMember;
+
+/** Pending invitation of the signed-in user (`GET /me/invitations`). */
+export interface Invitation {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  roleName: string;
+  invitedAt: string;
 }
 
 export interface Role {

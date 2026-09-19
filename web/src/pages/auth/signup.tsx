@@ -8,24 +8,31 @@ import { Alert, Anchor, Button, PasswordInput, Stack, TextInput } from "@mantine
 import { useSignupEnabled } from "@/hooks/use-auth-config";
 import { applyValidationErrors, getApiErrorMessage } from "@/lib/api-error";
 import { toLocale } from "@/lib/locale";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  passwordField,
+  refinePasswordAgainstEmail,
+} from "@/lib/password-policy";
 import { useAuthStore } from "@/store/auth.store";
 import AuthLayout from "./auth-layout";
 
-export const PASSWORD_MIN_LENGTH = 8;
-
-const schema = z.object({
-  organizationName: z.string().trim().min(1, "auth:validation.required"),
-  displayName: z.string().trim().min(1, "auth:validation.required"),
-  email: z.string().trim().min(1, "auth:validation.required").email("auth:validation.email"),
-  password: z.string().min(PASSWORD_MIN_LENGTH, "auth:validation.passwordMin"),
-});
+const schema = z
+  .object({
+    organizationName: z.string().trim().min(1, "auth:validation.required"),
+    displayName: z.string().trim().min(1, "auth:validation.required"),
+    email: z.string().trim().min(1, "auth:validation.required").email("auth:validation.email"),
+    // 10-128 characters and no e-mail local part (mirrors the server policy); never trimmed.
+    password: passwordField(),
+  })
+  .superRefine((values, ctx) => refinePasswordAgainstEmail(values.password, values.email, ctx));
 
 type FormValues = z.infer<typeof schema>;
 const FIELDS = ["organizationName", "displayName", "email", "password"] as const;
 
 /** Zoho-style self sign-up: creates a new organization with the caller as its administrator. */
 export default function SignupPage() {
-  const { t, i18n } = useTranslation(["auth", "common"]);
+  const { t, i18n } = useTranslation(["auth", "common", "security"]);
   const navigate = useNavigate();
   const signup = useAuthStore((state) => state.signup);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
@@ -47,7 +54,8 @@ export default function SignupPage() {
   if (isKnown && !signupEnabled) return <Navigate to="/login" replace />;
 
   const fieldError = (message?: string) =>
-    message && t(message, { min: PASSWORD_MIN_LENGTH, defaultValue: message });
+    message &&
+    t(message, { min: PASSWORD_MIN_LENGTH, max: PASSWORD_MAX_LENGTH, defaultValue: message });
 
   const onSubmit = handleSubmit(async (values) => {
     setServerError(null);
@@ -112,6 +120,10 @@ export default function SignupPage() {
             autoComplete="new-password"
             withAsterisk
             error={fieldError(errors.password?.message)}
+            description={t("security:password.policy", {
+              min: PASSWORD_MIN_LENGTH,
+              max: PASSWORD_MAX_LENGTH,
+            })}
             {...register("password")}
           />
           <Button type="submit" fullWidth loading={isSubmitting}>

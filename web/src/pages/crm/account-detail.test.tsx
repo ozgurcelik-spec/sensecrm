@@ -169,4 +169,34 @@ describe("AccountDetailPage", () => {
 
     expect(await screen.findByText("Kayıt bulunamadı")).toBeInTheDocument();
   });
+  describe("website rendering", () => {
+    function showWith(website: string) {
+      setPermissions(["crm.accounts.read"]);
+      installApi(client, {
+        "GET /accounts/a1": () => ({ ...ACCOUNT, website }),
+        "GET /audit": () => ({ items: [], total: 0 }),
+      });
+      renderPage();
+    }
+
+    it("renders an https website as a safe external link", async () => {
+      showWith("https://acme.example/tr");
+
+      const link = await screen.findByRole("link", { name: "https://acme.example/tr" });
+      expect(link).toHaveAttribute("href", "https://acme.example/tr");
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+    });
+
+    it.each(["javascript:alert(document.cookie)", "data:text/html,<b>x</b>", "acme.example"])(
+      "shows %s as plain text, never as a link",
+      async (website) => {
+        showWith(website);
+
+        expect(await screen.findByText(website)).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: website })).not.toBeInTheDocument();
+        expect(document.querySelector('a[href^="javascript:"], a[href^="data:"]')).toBeNull();
+      }
+    );
+  });
 });

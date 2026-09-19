@@ -27,8 +27,10 @@ export function getApiProblem(error: unknown): ApiProblem | undefined {
 export function getApiErrorMessage(error: unknown): string {
   const problem = getApiProblem(error);
   if (problem?.code) {
-    const key = `common:errors.${problem.code}`;
-    if (i18n.exists(key)) return i18n.t(key);
+    // C-SEC codes live in the `security` namespace (`security:errors.<code>`) to keep common.json stable.
+    for (const key of [`common:errors.${problem.code}`, `security:errors.${problem.code}`]) {
+      if (i18n.exists(key)) return i18n.t(key);
+    }
   }
   if (problem?.title) return problem.title;
   if (axios.isAxiosError(error) && !error.response) return i18n.t("common:errors.network");

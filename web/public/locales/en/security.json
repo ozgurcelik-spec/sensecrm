@@ -1,0 +1,65 @@
+{
+  "password": {
+    "policy": "At least {{min}} and at most {{max}} characters; must not contain the local part of your email address. Common passwords are rejected.",
+    "max": "The password can be at most {{max}} characters",
+    "containsEmail": "The password must not contain the local part of your email address"
+  },
+  "changePassword": {
+    "title": "Change password",
+    "description": "Changing your password signs you out of all other sessions.",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "New password (again)",
+    "submit": "Change password",
+    "success": "Your password was changed",
+    "mismatch": "The passwords do not match",
+    "sameAsCurrent": "The new password must differ from your current password",
+    "currentWrong": "The current password is incorrect"
+  },
+  "forced": {
+    "title": "Change your password",
+    "subtitle": "Before you continue, replace your temporary password with a new one that only you know.",
+    "logout": "Sign out"
+  },
+  "temporaryPassword": {
+    "title": "Temporary password",
+    "intro": "An account was created for {{email}}. The temporary password below is shown only once.",
+    "warning": "Share this password with the user through a secure channel. The user must change it at first sign-in. Once this window is closed the password cannot be shown again.",
+    "label": "Temporary password",
+    "copy": "Copy",
+    "copied": "Copied",
+    "done": "I saved the password, close"
+  },
+  "members": {
+    "createHint": "If the email already has an account, an invitation is sent; for a new account a temporary password is generated and shown once.",
+    "pendingNotice": "The user is added once they accept the invitation",
+    "pendingBadge": "Invitation pending"
+  },
+  "invitations": {
+    "title": "Organization invitations",
+    "bellCount": "Pending invitations: {{count}}",
+    "empty": "You have no pending invitations",
+    "detail": "Role: {{role}} · Invited: {{date}}",
+    "accept": "Accept",
+    "decline": "Decline",
+    "acceptFor": "Accept the invitation to {{name}}",
+    "declineFor": "Decline the invitation to {{name}}",
+    "accepted": "You accepted the invitation to {{name}}",
+    "declined": "Invitation declined",
+    "joined": "You joined {{name}}.",
+    "switchNow": "Switch now"
+  },
+  "website": {
+    "invalid": "The website must be a valid address starting with http:// or https://"
+  },
+  "errors": {
+    "auth": {
+      "locked_out": "The account is temporarily locked after too many failed attempts. Try again later.",
+      "user_disabled": "This account has been disabled. Contact your administrator.",
+      "password_change_required": "You must change your password before you continue"
+    },
+    "invitation": {
+      "not_found": "The invitation was not found or has expired"
+    }
+  }
+}
