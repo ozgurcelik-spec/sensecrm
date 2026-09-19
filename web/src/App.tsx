@@ -6,7 +6,7 @@ import NoAccess from "@/components/no-access";
 import { PermissionGuard } from "@/components/permission-guard";
 import ProtectedRoute from "@/components/protected-route";
 import RouteBoundary from "@/components/route-boundary";
-import { CRM_MODULE_ITEMS } from "@/config/navigation";
+import { COMING_SOON_ITEMS } from "@/config/navigation";
 import AppLayout from "@/layouts/app-layout";
 import LoginPage from "@/pages/auth/login";
 import NotFoundPage from "@/pages/not-found";
@@ -21,6 +21,15 @@ const OrganizationSettingsPage = lazy(() => import("@/pages/settings/organizatio
 const UsersPage = lazy(() => import("@/pages/settings/users"));
 const RolesPage = lazy(() => import("@/pages/settings/roles"));
 const AuditLogPage = lazy(() => import("@/pages/audit-log"));
+const LeadsPage = lazy(() => import("@/pages/crm/leads"));
+const LeadDetailPage = lazy(() => import("@/pages/crm/lead-detail"));
+const ContactsPage = lazy(() => import("@/pages/crm/contacts"));
+const ContactDetailPage = lazy(() => import("@/pages/crm/contact-detail"));
+const AccountsPage = lazy(() => import("@/pages/crm/accounts"));
+const AccountDetailPage = lazy(() => import("@/pages/crm/account-detail"));
+const DealsPage = lazy(() => import("@/pages/crm/deals"));
+const DealDetailPage = lazy(() => import("@/pages/crm/deal-detail"));
+const PipelinesPage = lazy(() => import("@/pages/settings/pipelines"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
   return (
@@ -66,7 +75,72 @@ export default function App() {
             }
           >
             <Route index element={<HomePage />} />
-            {CRM_MODULE_ITEMS.map((item) => (
+            <Route
+              path="leads"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmLeadsRead}>
+                  <LeadsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="leads/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmLeadsRead}>
+                  <LeadDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="contacts"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmContactsRead}>
+                  <ContactsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="contacts/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmContactsRead}>
+                  <ContactDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="accounts"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmAccountsRead}>
+                  <AccountsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="accounts/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmAccountsRead}>
+                  <AccountDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="deals"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmDealsRead}>
+                  <DealsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="deals/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmDealsRead}>
+                  <DealDetailPage />
+                </RequirePermission>
+              }
+            />
+            {/* Activities and reports arrive in later milestones. */}
+            {COMING_SOON_ITEMS.map((item) => (
               <Route
                 key={item.key}
                 path={item.path.replace("/app/", "")}
@@ -93,6 +167,14 @@ export default function App() {
               element={
                 <RequirePermission permission={PERMISSIONS.orgUsersRead}>
                   <RolesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="settings/pipelines"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmDealsRead}>
+                  <PipelinesPage />
                 </RequirePermission>
               }
             />

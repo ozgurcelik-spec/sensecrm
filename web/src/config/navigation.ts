@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Target,
   Users,
+  Workflow,
 } from "lucide-react";
 import { PERMISSIONS } from "@/types";
 
@@ -25,7 +26,7 @@ export interface NavItem {
   end?: boolean;
 }
 
-/** CRM modules in the left navigation (Zoho order). CRM entries are placeholders until Milestone 2. */
+/** CRM modules in the left navigation (Zoho order). */
 export const NAV_ITEMS: readonly NavItem[] = [
   { key: "home", labelKey: "home", path: "/app", icon: Home, end: true },
   {
@@ -95,6 +96,13 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
     permissions: [PERMISSIONS.orgUsersRead],
   },
   {
+    key: "pipelines",
+    labelKey: "pipelines",
+    path: "/app/settings/pipelines",
+    icon: Workflow,
+    permissions: [PERMISSIONS.crmDealsRead],
+  },
+  {
     key: "audit",
     labelKey: "audit",
     path: "/app/settings/audit",
@@ -103,5 +111,10 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
   },
 ];
 
-/** CRM module keys that render the "coming soon" placeholder for now. */
+/** CRM modules shown in quick links (everything except the home entry). */
 export const CRM_MODULE_ITEMS = NAV_ITEMS.filter((item) => item.key !== "home");
+
+/** Modules that still render the "coming soon" placeholder (activities: M3, reports: later). */
+export const COMING_SOON_ITEMS = NAV_ITEMS.filter((item) =>
+  ["activities", "reports"].includes(item.key)
+);

@@ -67,4 +67,6 @@ public interface IIdentityReadStore
     Task<IReadOnlyList<OrganizationSummaryDto>> ListOrganizationsOfUserAsync(Guid userId, CancellationToken ct);
 
     Task<AuditPageDto> GetAuditPageAsync(int page, int pageSize, CancellationToken ct);
+
+    Task<AuditPageDto> GetEntityAuditPageAsync(string entityType, string entityId, int page, int pageSize, CancellationToken ct);
 }

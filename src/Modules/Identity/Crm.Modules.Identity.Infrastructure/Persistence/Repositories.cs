@@ -82,4 +82,34 @@ public sealed class MemberLookup(IdentityDbContext db, ITenantContext tenant) : 
 {
     public Task<bool> IsActiveMemberAsync(Guid userId, CancellationToken cancellationToken = default) =>
         tenant.IsResolved ? db.Memberships.AnyAsync(m => m.UserId == userId && m.IsActive, cancellationToken) : Task.FromResult(false);
+
+    public async Task<IReadOnlyDictionary<Guid, string>> GetDisplayNamesAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default)
+    {
+        if (!tenant.IsResolved || userIds.Count == 0)
+        {
+            return new Dictionary<Guid, string>();
+        }
+
+        var ids = userIds.Distinct().ToArray();
+        return await (from m in db.Memberships.AsNoTracking()
+                      where ids.Contains(m.UserId)
+                      join u in db.Users.AsNoTracking() on m.UserId equals u.Id
+                      select new { u.Id, u.DisplayName })
+            .ToDictionaryAsync(x => x.Id, x => x.DisplayName, cancellationToken);
+    }
+}
+
+/// <summary><see cref="ITenantDirectory"/>: organizasyonlar küresel tablodur (kiracı filtresi yok); yalnız sistem işleri kullanır.</summary>
+public sealed class TenantDirectory(IdentityDbContext db) : ITenantDirectory
+{
+    public async Task<IReadOnlyList<TenantInfo>> ListAllAsync(CancellationToken cancellationToken = default) =>
+        await db.Tenants.AsNoTracking().Where(t => t.IsActive)
+            .OrderBy(t => t.Name)
+            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale))
+            .ToListAsync(cancellationToken);
+
+    public Task<TenantInfo?> FindAsync(Guid tenantId, CancellationToken cancellationToken = default) =>
+        db.Tenants.AsNoTracking().Where(t => t.Id == tenantId)
+            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale))
+            .FirstOrDefaultAsync(cancellationToken);
 }

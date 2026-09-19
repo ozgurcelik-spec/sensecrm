@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="../Shared/Crm.Shared.Infrastructure/Crm.Shared.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Identity/Crm.Modules.Identity.Infrastructure/Crm.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Sales/Crm.Modules.Sales.Infrastructure/Crm.Modules.Sales.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

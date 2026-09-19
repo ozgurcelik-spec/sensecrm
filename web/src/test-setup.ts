@@ -18,6 +18,18 @@ if (!window.matchMedia) {
   });
 }
 
+// Mantine's combobox scrolls the active option into view.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
+// Mantine's autosizing Textarea listens to font loading.
+if (!("fonts" in document)) {
+  Object.defineProperty(document, "fonts", {
+    value: { addEventListener() {}, removeEventListener() {}, ready: Promise.resolve() },
+  });
+}
+
 if (!window.ResizeObserver) {
   window.ResizeObserver = class {
     observe() {}

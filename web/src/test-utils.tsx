@@ -51,7 +51,8 @@ export function renderWithProviders(ui: ReactElement, { route = "/" }: { route?:
     return (
       <I18nextProvider i18n={testI18n}>
         <QueryClientProvider client={queryClient}>
-          <MantineProvider theme={mantineTheme}>
+          {/* env="test": no transitions/portals, so modals and dropdowns render synchronously. */}
+          <MantineProvider theme={mantineTheme} env="test">
             <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
           </MantineProvider>
         </QueryClientProvider>

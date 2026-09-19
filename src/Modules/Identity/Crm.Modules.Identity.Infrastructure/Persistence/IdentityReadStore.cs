@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Crm.Modules.Identity.Application;
 using Crm.Shared.Infrastructure.Persistence;
+using Crm.Shared.Infrastructure.Persistence.Audit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Crm.Modules.Identity.Infrastructure.Persistence;
@@ -43,9 +44,14 @@ public sealed class IdentityReadStore(IdentityDbContext db) : IIdentityReadStore
             .Select(t => new OrganizationSummaryDto(t.Id, t.Name, t.Slug))
             .ToListAsync(ct);
 
-    public async Task<AuditPageDto> GetAuditPageAsync(int page, int pageSize, CancellationToken ct)
+    public async Task<AuditPageDto> GetAuditPageAsync(int page, int pageSize, CancellationToken ct) =>
+        await ToAuditPageAsync(db.AuditLogEntries.AsNoTracking(), page, pageSize, ct);
+
+    public async Task<AuditPageDto> GetEntityAuditPageAsync(string entityType, string entityId, int page, int pageSize, CancellationToken ct) =>
+        await ToAuditPageAsync(db.AuditLogEntries.AsNoTracking().Where(e => e.EntityType == entityType && e.EntityId == entityId), page, pageSize, ct);
+
+    private static async Task<AuditPageDto> ToAuditPageAsync(IQueryable<AuditLogEntry> query, int page, int pageSize, CancellationToken ct)
     {
-        var query = db.AuditLogEntries.AsNoTracking();
         var total = await query.LongCountAsync(ct);
         var rows = await query
             .OrderByDescending(e => e.OccurredAt)

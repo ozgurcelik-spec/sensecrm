@@ -1,6 +1,6 @@
 # Backend (.NET) — mimari özet ve HTTP sözleşmesi
 
-Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli) sonunda backend'in gerçek durumunu anlatır.
+Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli) ve Milestone 2 (satış çekirdeği) sonunda backend'in gerçek durumunu anlatır.
 Altyapı, senseik (HR SaaS) deposundan taşınmıştır: aynı teknoloji yığını (.NET 10, EF Core + Npgsql, xUnit v3) ve aynı proje yapısı.
 
 ## 1. Proje yapısı
@@ -18,11 +18,12 @@ src/
     Crm.Shared.Web/             ApiControllerBase, izin yetkilendirmesi, hata yönetimi, sürümleme/OpenAPI/CORS/hız sınırı
   Modules/
     Identity/           Domain · Application · Contracts · Infrastructure · Api   (şema: identity)
+    Sales/              Domain · Application · Contracts · Infrastructure · Api   (şema: sales; Milestone 2)
 tests/
   Crm.Tests.Architecture/      Onion/modül sınırı kuralları (NetArchTest)
   Crm.Tests.TenantIsolation/   EF modelinde kiracı filtresi/indeks denetimi (veritabanısız)
   Crm.Tests.Shared/            Testcontainers (postgres:17-alpine) + WebApplicationFactory<Program> + Respawn
-  Modules/                     Crm.Modules.Identity.Tests (birim + HTTP entegrasyon), Shared.Kernel/Infrastructure testleri
+  Modules/                     Crm.Modules.Identity.Tests + Crm.Modules.Sales.Tests (birim + HTTP entegrasyon), Shared.Kernel/Infrastructure testleri
 infra/docker-compose.yml       postgres + redis (host portları standart + 10000)
 build/new-module.ps1           Yeni modül iskeleti
 ```
@@ -57,7 +58,7 @@ Denetim kaydı ortak `audit.audit_log_entries` tablosuna, her modülde otomatik 
 
 ```powershell
 docker compose -f infra/docker-compose.yml up -d          # postgres (localhost:15432), redis (localhost:16379, isteğe bağlı)
-dotnet run --project src/Crm.Migrator                     # migration'ları uygular (audit + identity); "-- reset" yalnız Development
+dotnet run --project src/Crm.Migrator                     # migration'ları uygular (audit + identity + sales); "-- reset" yalnız Development
 dotnet run --project src/Crm.Api                          # http://localhost:5080  (Scalar: /scalar, OpenAPI: /openapi/v1.json)
 dotnet run --project src/Crm.Worker                       # outbox işleyici
 dotnet test Crm.slnx                                      # entegrasyon testleri için Docker gerekir
@@ -68,14 +69,14 @@ dotnet test Crm.slnx                                      # entegrasyon testleri
 - Web geliştirme sunucusu `/api` isteklerini `http://localhost:5080`'e yönlendirir; CORS `http://localhost:5173` için açıktır (`Cors:AllowedOrigins`).
 - Migration üretimi (yerel araç `dotnet-ef`, `dotnet-tools.json`):
   `dotnet dotnet-ef migrations add <Ad> --project src/Modules/Identity/Crm.Modules.Identity.Infrastructure --startup-project src/Crm.Migrator --context IdentityDbContext -o Persistence/Migrations`
-  Ortak denetim şeması için `--project src/Shared/Crm.Shared.Infrastructure --context AuditDbContext`. Mevcut migration'lar: `InitialIdentity`, `InitialAudit`.
+  Ortak denetim şeması için `--project src/Shared/Crm.Shared.Infrastructure --context AuditDbContext`. Mevcut migration'lar: `InitialIdentity`, `InitialAudit`, `InitialSales` (`--project src/Modules/Sales/Crm.Modules.Sales.Infrastructure --context SalesDbContext`).
 
 ## 4. Yeni modül ekleme
 
 1. `./build/new-module.ps1 -Name Sales` — 5 projeyi (Domain/Application/Contracts/Infrastructure/Api) açar, `Crm.slnx`'e ekler, derler.
 2. `src/Crm.Api/ModuleCatalog.cs`'e `new SalesModule()` ekleyin.
 3. `Crm.Migrator` ve `Crm.Worker`'a modülün Infrastructure projesini referans verip `AddModuleDbContext` (Worker'da ayrıca `AddModuleHandlers` + `AddHostedService<OutboxPollingService<SalesDbContext>>`) ekleyin.
-4. İzinleri `Contracts/SalesPermissions.cs`'te tanımlayın (`crm.<kaynak>.<eylem>`, grup `crm`); modül `IModule.Permissions` ile katalogla paylaşır. Yeni anahtarlar mevcut organizasyonların sistem rollerine API açılışında `SystemRolePermissionSynchronizer` ile yayılır (`SystemRoleDefinitions`: Administrator = tümü, Standard = tüm `crm.*` + `org.users.read`). Milestone 2'de `CrmPermissions` (Identity.Contracts) içindeki geçici kayıt ilgili modüle taşınıp kaldırılır.
+4. İzinleri `Contracts/SalesPermissions.cs`'te tanımlayın (`crm.<kaynak>.<eylem>`, grup `crm`); modül `IModule.Permissions` ile katalogla paylaşır. Yeni anahtarlar mevcut organizasyonların sistem rollerine API açılışında `SystemRolePermissionSynchronizer` ile yayılır (`SystemRoleDefinitions`: Administrator = tümü, Standard = tüm `crm.*` + `org.users.read`). Milestone 2'de `crm.accounts/contacts/leads/deals.*` anahtarları Identity.Contracts'taki `CrmPermissions`'tan `SalesPermissions`'a taşındı (anahtar dizgeleri aynı); `crm.activities.*` ve `crm.reports.read` Milestone 3'te kendi modüllerine taşınana kadar `CrmPermissions`'ta kalır.
 5. Kiracıya ait varlıklar `TenantAggregateRoot`, denetlenecekler `IAuditLogged` olur; global kiracı filtresi, `TenantId` indeksi ve denetim kaydı otomatik gelir. Kiracısız (küresel) bir tablo eklemek bilinçli karardır: `TenantQueryFilterConventionTests.GlobalEntities` listesine eklenir.
 6. Handler'ları **Application** assembly'sinden kaydedin (`AddModuleHandlers`; Domain/Contracts assembly'leri de verilir — outbox olay tipleri buradan çözülür). Integration event'i handler içinde `IIntegrationEventOutbox.Enqueue(...)` ile yayınlayın.
 
@@ -116,7 +117,7 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 ### Profil ve katalog
 - `GET /me` → `{ user: { id, email, displayName, locale, isPlatformAdmin }, organization: { id, name, slug, defaultLocale, timeZone }, role: { id, name }, permissions: string[], organizations: [{ id, name, slug }] }`
 - `PATCH /me` `{ displayName?, locale? }` → 204
-- `GET /permissions` → `[{ key, group }]` (`group`: `org` | `crm`); 16 anahtar: `org.settings.manage, org.users.read, org.users.manage, org.roles.manage, org.audit.read`, `crm.{accounts,contacts,leads,deals,activities}.{read,write}`, `crm.reports.read`
+- `GET /permissions` → `[{ key, group }]` (`group`: `org` | `crm`); 16 anahtar: `org.settings.manage, org.users.read, org.users.manage, org.roles.manage, org.audit.read`, `crm.{accounts,contacts,leads,deals}.{read,write}` (Sales modülü), `crm.activities.{read,write}` ve `crm.reports.read` (geçici olarak Identity.Contracts).
 
 ### Organizasyon
 - `GET /organization` → `{ id, name, slug, defaultLocale, timeZone }` (aktif üye); `PUT /organization` `{ name, defaultLocale, timeZone }` → 204 (`org.settings.manage`; `timeZone` geçerli IANA kimliği olmalı)
@@ -141,4 +142,68 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 - Kayıt sahipliği bazlı görünürlük/rol hiyerarşisi (K7), organizasyon grubu ve konsolidasyon (K4), PostgreSQL RLS (K2 ikinci savunma hattı).
 - E-posta ile davet, parola sıfırlama, MFA; SSO (K6).
 - Üretim gözlemlenebilirliği; Dockerfile'lar taşındı ama henüz bir imaj derlemesiyle doğrulanmadı.
-- `CrmPermissions` geçici kaydının Milestone 2'de modüllere taşınması.
+- Sales açık işleri: yinelenen firma/kişi tespiti, CSV içe aktarma, özel alanlar (kapsam dışı, bkz. [m2-satis-cekirdegi.md](../plan/m2-satis-cekirdegi.md)); pano `totalAmount` alanı para birimlerini ayırmadan toplar (TRY gösterimi; çok para birimli toplam sonraki iş); `GET /organization/members` hâlâ `org.users.read` ister (Administrator ve Standard'da var; bu izni taşımayan özel rollerde sahip seçici çalışmaz).
+
+## 8. Sales modülü (Milestone 2 — satış çekirdeği)
+
+HTTP sözleşmesinin bağlayıcı kaynağı [m2-api-kontrat.md](../plan/m2-api-kontrat.md); bu bölüm uygulanan hâli ve mimari kararları özetler.
+
+**Modül:** `Crm.Modules.Sales.{Domain,Application,Contracts,Infrastructure,Api}`, şema `sales`, tek `SalesDbContext`. Firma, kişi ve fırsat lead dönüştürmede tek transaction'da yazıldığı için tek modüldedir.
+Api host'u (`ModuleCatalog`), Migrator (`InitialSales`) ve Worker (outbox) Identity ile aynı kalıpla bağlanır.
+
+**Agregatlar** (hepsi `TenantAggregateRoot`, `IAuditLogged`, yumuşak silinen; kimlikler `Guid.CreateVersion7`, EF'te `ValueGeneratedNever`):
+
+| Agregat | Kurallar |
+|---|---|
+| `Account` | Ad kiracıda benzersiz değil; adres düz kolonlar (`BillingStreet…`; denetim alan bazında fark üretsin diye); `SensitiveFields`: e-posta, telefon |
+| `Contact` | İsteğe bağlı firma; `SensitiveFields`: e-posta, telefon, cep; `FullName` türetilir |
+| `Lead` | Kaynak `web\|referral\|campaign\|coldCall\|other`, durum `new\|contacted\|qualified\|unqualified\|converted`; `Convert(...)` sonrası salt-okur (`lead.already_converted`); durum `converted` yalnız dönüştürmeyle olur |
+| `Pipeline` + `PipelineStage` | Aşama türü `open\|won\|lost`; tam bir `won` + bir `lost` + en az bir `open` şart; aşama sırası dizi sırasıdır; kaldırılan aşama yumuşak silinir; kullanımdaki (fırsatlı) aşama silinemez (`pipeline.stage_in_use`); organizasyonda tam bir varsayılan huni |
+| `Deal` | Olasılık aşamadan gelir (saklanmaz); `MoveToStage` kazanma/kaybetmede `ClosedAt` yazar, açık aşamaya dönünce temizler, `lost` için neden zorunlu (`deal.lost_reason_required`), aşama değişince `DealStageChanged` domain event'i (outbox); tutar `decimal(18,4)`, para birimi ISO-4217 (varsayılan `TRY`) |
+
+**Uygulama katmanı:** her komut/sorgu bir `[RequiresPermission]` taşır (kontratın izin tablosu): okuma `crm.<kaynak>.read`, yazma `crm.<kaynak>.write`, huni okuma `crm.deals.read`, huni değiştirme `org.settings.manage`; dönüştürme `leads.write + accounts.write + contacts.write` (+ fırsat açılıyorsa handler'da `crm.deals.write`). Doğrulama FluentValidation (`validation` + `errors`) ile yapılır ve yetkiden önce çalışır (geçersiz gövdeli yetkisiz istek 400 alır). Alan doğrulayıcıları oluşturma/güncelleme komutları arasında `I*Fields` arayüzü + genel taban doğrulayıcıyla paylaşılır.
+- **Sahip (owner):** verilmezse çağıran kullanıcı; verilirse organizasyonun aktif üyesi olmalı (`owner.not_member`, 400) — `Identity.Contracts.IMemberLookup` (`IsActiveMemberAsync`, `GetDisplayNamesAsync`). Sahibi değişmeyen kayıtta üyelik yeniden sorgulanmaz (sahibi pasifleşen kayıt düzenlenebilir). Yanıtlarda `ownerName` bu arayüzle doldurulur (pasif üyeler dahil).
+- **Liste sorguları:** `SalesReadStore` (kiracı + yumuşak silme filtresi altında). `q` `ILIKE` + kaçışlı parametredir (kullanıcı girdisindeki `%`/`_` düz metindir, SQL birleştirme yok); `sort` yalnız beyaz listedeki alanlarda (bilinmeyen alan yok sayılır, her zaman `Id` ile kararlı): firma `name, industry, createdAt, updatedAt`; kişi `lastName, firstName, email, createdAt, updatedAt`; lead `lastName, company, status, source, rating, createdAt, updatedAt`; fırsat `name, amount, closingDate, closedAt, createdAt, updatedAt`. Sayfalama varsayılan 25, üst sınır 100 (`Paging` ayarı; `PagingDefaults` de 25/100'e çekildi — `/organization/audit` de artık en çok 100 satır döner).
+- **Pano:** `GET /deals/board` aşama başına tek toplama sorgusu (`count`, `totalAmount`) + aşama başına en çok 100 kart (en yeni önce).
+- **Lead dönüştürme** (`ConvertLeadHandler`): firma (mevcut veya lead şirket adıyla yeni) + kişi + isteğe bağlı fırsat (pipeline'ın ilk açık aşaması) + lead durumu + `LeadConverted` outbox kaydı **tek `SaveChanges`/transaction**'da yazılır; tüm nesneler önce bellekte kurulur, herhangi bir kural/yazma hatasında hiçbiri kalıcı olmaz (entegrasyon testi fırsat yazımını patlatarak doğrular). Yeni firma ve kişinin sahibi lead'in sahibidir.
+- **Olaylar:** `DealStageChanged` (domain event → Sales outbox), `LeadConverted` (integration event, `Sales.Contracts`; M3/M4 tüketir), `OrganizationCreated` (Identity integration event, `Identity.Contracts`; Sales tüketir).
+
+**Varsayılan huni tohumlama (Identity, Sales'e bağlanmaz):** Kayıt (`SignUpHandler`) `OrganizationCreated` olayını aynı transaction'da Identity outbox'ına yazar; Worker olayı `IEventBus`'a yayınlar; Sales'in `OrganizationCreatedHandler`'ı `IDefaultPipelineSeeder` ile organizasyon dilinde (`tr|en`) 6 aşamalı varsayılan huniyi kurar. Aynı `DefaultPipelineSeeder` (organizasyon başına PostgreSQL advisory lock + kilit sonrası yeniden kontrol → idempotent, eşzamanlı çağrıya dayanıklı) üç yoldan çalışır: (1) Worker olayı, (2) API açılışında `DefaultPipelineSyncHostedService` — M1'de açılmış mevcut organizasyonlar için (`Identity.Contracts.ITenantDirectory`), (3) tembel güvence: Worker henüz olayı işlemediyse ilk huni/pano/fırsat isteği `DefaultPipelineResolver` ile tohumlar (kayıttan hemen sonraki istek de çalışır).
+
+**Denetim:** Firma, kişi, lead, fırsat, huni ve huni aşaması değişiklikleri `audit.audit_log_entries`'e yazılır (aynı transaction; `EntityType` = `Account|Contact|Lead|Deal|Pipeline|PipelineStage`); kişisel veri alanları `***` ile maskelenir; enum alanları API'deki gibi camelCase string yazılır (`"converted"`). Kayıt bazlı uç: `GET /api/v1/audit?entityType=Account&entityId={id}&page&pageSize` → `/organization/audit` ile aynı `{ items, total }` biçimi (`Identity.Api.AuditController`). Yetki: `org.audit.read` **veya** varlık türünün kaynağının okuma izni; tür–izin eşlemesini her modül `Identity.Contracts.IAuditEntityPermissions` ile bildirir (Sales: `SalesAuditEntities`), bildirilmeyen türler yalnız `org.audit.read` ile okunur. `entityType`/`entityId` zorunludur (`validation`).
+
+**Uç noktalar** (hepsi `/api/v1`, Bearer):
+
+| Yol | Notlar |
+|---|---|
+| `GET/POST /accounts`, `GET/PUT/DELETE /accounts/{id}`, `GET /accounts/{id}/contacts`, `GET /accounts/{id}/deals` | Detayda `contactCount`, `dealCount`; bağlı kişi/fırsat varken silme `account.has_dependents` (409) |
+| `GET/POST /contacts`, `GET/PUT/DELETE /contacts/{id}` | Filtre `accountId`, `ownerUserId`; yanıtta `fullName`, `accountName` |
+| `GET/POST /leads`, `GET/PUT/DELETE /leads/{id}`, `POST /leads/{id}/convert` | Filtre `status`, `source`, `ownerUserId`; `convert` → 200 `{ accountId, contactId, dealId? }` |
+| `GET/POST /pipelines`, `GET/PUT /pipelines/{id}`, `PUT /pipelines/{id}/stages` | Okuma `crm.deals.read`, değiştirme `org.settings.manage`; varsayılanı düşürme `pipeline.default_required` (422) |
+| `GET/POST /deals`, `GET/PUT/DELETE /deals/{id}`, `GET /deals/board`, `POST /deals/{id}/stage` | Filtre `pipelineId, stageId, stageKind, ownerUserId, accountId`; `PUT` aşamayı değiştirmez; yanıtta `contactId?`, `contactName?`, `stageName`, `stageKind`, `probability`, `pipelineName`, `closedAt?`, `lostReason?` |
+| `GET /audit?entityType&entityId` | Kayıt bazlı denetim (yukarıda) |
+
+Oluşturma uçları 201 + `Location` + oluşan kaydın gövdesini döner; güncelleme/silme 204 (PUT tam değiştirmedir: gönderilmeyen isteğe bağlı alan temizlenir, `ownerUserId` verilmezse mevcut sahip korunur).
+
+**Yeni hata kodları** (kontrat + HTTP eşlemeleri; metinler `SharedResource.resx` tr/en):
+
+| code | HTTP | Ne zaman |
+|---|---|---|
+| `lead.already_converted` | 409 | Dönüşmüş lead güncelleme/yeniden dönüştürme |
+| `account.has_dependents` | 409 | Bağlı kişi/fırsatı olan firmayı silme |
+| `pipeline.stage_in_use` | 409 | Fırsat içeren aşamayı silme (`stageName` argümanı) |
+| `pipeline.default_required` | 422 | Varsayılan huniyi "varsayılan değil" yapma |
+| `pipeline.stage_not_found` | 404 | Aşama bu hunide/organizasyonda yok |
+| `deal.lost_reason_required` | 400 | `lost` aşamaya kayıp nedeni olmadan geçiş |
+| `owner.not_member` | 400 | Sahip organizasyonun aktif üyesi değil |
+
+Başka organizasyonun kaydı her zaman `not_found` (404) döner (çapraz referanslar dahil: başka organizasyonun firmasına kişi/fırsat bağlamak, başka organizasyonun aşamasına taşımak).
+
+**Testler:** `Crm.Modules.Sales.Tests` — domain birim testleri (lead dönüştürme/değişmezlik, aşama/olasılık, kayıp nedeni, tam bir won + bir lost kuralı, aşama yeniden düzenleme/kullanımdaki aşama, hassas alanlar); Testcontainers HTTP testleri (her kaynağın CRUD'u, dönüştürme + geri alma + gerçek atomiklik, pano toplamları/100 kart sınırı, liste filtre/sıralama/sayfalama/arama kaçışı, yazma izni olmayan kullanıcıya 403, sahip kuralı, **kiracılar arası izolasyon**, kayıtta huni tohumlama (tr/en), açılışta mevcut organizasyon tohumlama, denetim kayıtları + maskeleme + kayıt bazlı uç). Mimari ve kiracı izolasyonu testleri yeni modülü otomatik kapsar.
+
+## 9. Milestone 2'de değişenler (backend)
+- Yeni modül `Sales` (şema `sales`, migration `InitialSales`); `Crm.Api`, `Crm.Migrator`, `Crm.Worker`'a bağlandı.
+- `Identity.Contracts`: `CrmPermissions` içinden `accounts/contacts/leads/deals` anahtarları `SalesPermissions`'a taşındı; `IMemberLookup.GetDisplayNamesAsync`, `ITenantDirectory`, `OrganizationCreated`, `IAuditEntityPermissions` eklendi. Sistem rolleri: Administrator tüm anahtarlar (16), Standard tüm `crm.*` + `org.users.read`; mevcut organizasyonlar API açılışında `SystemRolePermissionSynchronizer` ile güncellenir.
+- Identity: kayıtta `OrganizationCreated` outbox olayı; `GET /audit?entityType&entityId` (kayıt bazlı denetim).
+- Ortak: `Paging` varsayılanı 25 / üst sınır 100; `AuditLogInterceptor` enum alanlarını camelCase string yazar; `SharedResource` tr/en'e Sales hata/alan anahtarları eklendi.
+- Test altyapısı: `CrmApiFactory` Respawn şemalarına `sales` eklendi.

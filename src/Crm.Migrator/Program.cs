@@ -1,5 +1,6 @@
 using Crm.Migrator;
 using Crm.Modules.Identity.Infrastructure.Persistence;
+using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Shared.Infrastructure.DependencyInjection;
 using Crm.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings {
 builder.Services.AddCrmCore(builder.Configuration);
 builder.Services.AddAuditStore(builder.Configuration);
 builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, IdentityDbContext.SchemaName);
+builder.Services.AddModuleDbContext<SalesDbContext>(builder.Configuration, SalesDbContext.SchemaName);
 
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);

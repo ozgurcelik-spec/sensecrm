@@ -9,5 +9,10 @@
   "role": "Rolünüz",
   "permissionCount": "{{count}} izin",
   "quickLinks": "Hızlı erişim",
-  "modulesSoon": "Satış modülleri (potansiyel, kişi, müşteri, fırsat) yakında burada olacak."
+  "stats": {
+    "openLeads": "Açık potansiyeller",
+    "openDeals": "Açık fırsatlar",
+    "pipelineAmount": "Açık huni tutarı",
+    "unavailable": "Kullanılamıyor"
+  }
 }

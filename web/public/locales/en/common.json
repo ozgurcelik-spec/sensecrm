@@ -23,6 +23,12 @@
   "backHome": "Back to home",
   "search": "Search",
   "confirm": "Confirm",
+  "clear": "Clear",
+  "clearFilters": "Clear filters",
+  "sortBy": "Sort by {{column}}",
+  "pageSize": "Rows per page",
+  "nextPage": "Next page",
+  "previousPage": "Previous page",
   "languages": {
     "tr": "Türkçe",
     "en": "English"
@@ -68,6 +74,23 @@
     "member": {
       "last_admin": "The organization must keep at least one active administrator",
       "exists": "This user is already a member of the organization"
+    },
+    "lead": {
+      "already_converted": "This lead has already been converted"
+    },
+    "deal": {
+      "lost_reason_required": "A lost reason is required for a lost deal"
+    },
+    "account": {
+      "has_dependents": "This account still has contacts or deals; delete or move them first"
+    },
+    "pipeline": {
+      "stage_not_found": "Stage not found",
+      "default_required": "There must be at least one default pipeline",
+      "stage_in_use": "Deals are still in this stage; move them to another stage first"
+    },
+    "owner": {
+      "not_member": "The selected owner is not an active member of this organization"
     }
   }
 }

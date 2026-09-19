@@ -89,9 +89,22 @@ export const PERMISSIONS = {
   orgRolesManage: "org.roles.manage",
   orgAuditRead: "org.audit.read",
   crmAccountsRead: "crm.accounts.read",
+  crmAccountsWrite: "crm.accounts.write",
   crmContactsRead: "crm.contacts.read",
+  crmContactsWrite: "crm.contacts.write",
   crmLeadsRead: "crm.leads.read",
+  crmLeadsWrite: "crm.leads.write",
   crmDealsRead: "crm.deals.read",
+  crmDealsWrite: "crm.deals.write",
   crmActivitiesRead: "crm.activities.read",
   crmReportsRead: "crm.reports.read",
 } as const;
+
+/** Milestone 2 list envelope (`GET /accounts`, `/contacts`, `/leads`, `/deals`). */
+export interface ListResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+export * from "./crm";

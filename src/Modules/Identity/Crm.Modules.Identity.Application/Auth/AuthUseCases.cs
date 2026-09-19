@@ -1,10 +1,12 @@
 using Crm.Modules.Identity.Application.Roles;
+using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Identity.Domain;
 using Crm.Modules.Identity.Domain.Memberships;
 using Crm.Modules.Identity.Domain.Roles;
 using Crm.Modules.Identity.Domain.Tenants;
 using Crm.Modules.Identity.Domain.Users;
 using Crm.Shared.Contracts.Context;
+using Crm.Shared.Contracts.Events;
 using Crm.Shared.Contracts.Messaging;
 using Crm.Shared.Kernel.Results;
 using FluentValidation;
@@ -44,6 +46,7 @@ public sealed class SignUpHandler(
     IMembershipRepository memberships,
     IPasswordHasher hasher,
     IPermissionCatalog catalog,
+    IIntegrationEventOutbox outbox,
     ISecretGenerator secrets,
     SessionIssuer sessions,
     IOptions<IdentityOptions> options,
@@ -60,6 +63,9 @@ public sealed class SignUpHandler(
         var slug = await UniqueSlugAsync(Tenant.SlugFrom(command.OrganizationName), cancellationToken).ConfigureAwait(false);
         var tenant = Tenant.Create(command.OrganizationName, slug, command.Locale, options.Value.DefaultTimeZone);
         tenants.Add(tenant);
+
+        // Modüller (ör. Sales: varsayılan satış hunisi) kendi varsayılan verilerini bu olayla tohumlar; aynı transaction'da outbox'a yazılır.
+        outbox.Enqueue(new OrganizationCreated(tenant.Id, tenant.Name, tenant.DefaultLocale));
 
         // Kiracı verisi açıkça yeni organizasyonun TenantId'siyle yazılır (anonim istek: kiracı bağlamı yok).
         var seeded = SeedSystemRoles(tenant.Id, catalog, roles);

@@ -1,0 +1,292 @@
+{
+  "owner": "Sahip",
+  "ownerPlaceholder": "Sahip seçin",
+  "noOptions": "Sonuç bulunamadı",
+  "createdAt": "Oluşturulma",
+  "updatedAt": "Güncellenme",
+  "accountPicker": {
+    "label": "Müşteri",
+    "placeholder": "Müşteri ara ve seçin",
+    "searching": "Aranıyor..."
+  },
+  "address": {
+    "street": "Adres",
+    "city": "İl / İlçe",
+    "state": "Bölge",
+    "postalCode": "Posta kodu",
+    "country": "Ülke"
+  },
+  "tabs": {
+    "general": "Genel",
+    "related": "İlişkili kayıtlar",
+    "audit": "Denetim"
+  },
+  "panel": {
+    "details": "Ayrıntılar"
+  },
+  "notFound": {
+    "title": "Kayıt bulunamadı",
+    "description": "Kayıt silinmiş olabilir veya bu organizasyona ait değil."
+  },
+  "validation": {
+    "amountMin": "Tutar sıfırdan küçük olamaz"
+  },
+  "audit": {
+    "empty": "Bu kayıt için denetim kaydı yok"
+  },
+  "auditFields": {
+    "name": "Ad",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "fullName": "Ad soyad",
+    "company": "Şirket",
+    "industry": "Sektör",
+    "website": "Web sitesi",
+    "phone": "Telefon",
+    "mobile": "Cep telefonu",
+    "email": "E-posta",
+    "title": "Unvan",
+    "description": "Açıklama",
+    "ownerUserId": "Sahip",
+    "accountId": "Müşteri",
+    "contactId": "Kişi",
+    "pipelineId": "Satış hunisi",
+    "stageId": "Aşama",
+    "amount": "Tutar",
+    "currency": "Para birimi",
+    "closingDate": "Kapanış tarihi",
+    "lostReason": "Kayıp nedeni",
+    "closedAt": "Kapanış zamanı",
+    "source": "Kaynak",
+    "status": "Durum",
+    "rating": "Derecelendirme",
+    "isDefault": "Varsayılan",
+    "billingAddress": "Fatura adresi",
+    "mailingAddress": "Posta adresi",
+    "convertedAccountId": "Dönüşen müşteri",
+    "convertedContactId": "Dönüşen kişi",
+    "convertedDealId": "Dönüşen fırsat",
+    "convertedAt": "Dönüşüm zamanı",
+    "deletedAt": "Silinme zamanı"
+  },
+  "accounts": {
+    "title": "Müşteriler",
+    "description": "Firmalar ve kurumlar",
+    "new": "Yeni müşteri",
+    "search": "Müşteri ara...",
+    "createTitle": "Yeni müşteri",
+    "editTitle": "Müşteriyi düzenle",
+    "created": "Müşteri oluşturuldu",
+    "updated": "Müşteri güncellendi",
+    "deleted": "Müşteri silindi",
+    "deleteTitle": "Müşteri silinsin mi?",
+    "deleteMessage": "\"{{name}}\" silinecek. Bağlı kişi veya fırsat varsa silme reddedilir.",
+    "fields": {
+      "name": "Müşteri adı",
+      "industry": "Sektör",
+      "website": "Web sitesi",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "billingAddress": "Fatura adresi",
+      "description": "Açıklama"
+    },
+    "related": {
+      "contacts": "Kişiler",
+      "deals": "Fırsatlar",
+      "noContacts": "Bu müşteriye bağlı kişi yok",
+      "noDeals": "Bu müşteriye bağlı fırsat yok",
+      "contactCount": "{{count}} kişi",
+      "dealCount": "{{count}} fırsat"
+    }
+  },
+  "contacts": {
+    "title": "Kişiler",
+    "description": "Müşterilerinizdeki ilgili kişiler",
+    "new": "Yeni kişi",
+    "search": "Kişi ara...",
+    "createTitle": "Yeni kişi",
+    "editTitle": "Kişiyi düzenle",
+    "created": "Kişi oluşturuldu",
+    "updated": "Kişi güncellendi",
+    "deleted": "Kişi silindi",
+    "deleteTitle": "Kişi silinsin mi?",
+    "deleteMessage": "\"{{name}}\" silinecek.",
+    "fields": {
+      "name": "Ad soyad",
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "mobile": "Cep telefonu",
+      "title": "Unvan",
+      "account": "Müşteri",
+      "mailingAddress": "Posta adresi"
+    },
+    "related": {
+      "deals": "Fırsatlar",
+      "noAccount": "Kişi bir müşteriye bağlı olmadığı için fırsat gösterilemiyor",
+      "noDeals": "Bu kişinin adına açılmış fırsat yok"
+    }
+  },
+  "leads": {
+    "title": "Potansiyeller",
+    "description": "Henüz müşteriye dönüşmemiş adaylar",
+    "new": "Yeni potansiyel",
+    "search": "Potansiyel ara...",
+    "createTitle": "Yeni potansiyel",
+    "editTitle": "Potansiyeli düzenle",
+    "created": "Potansiyel oluşturuldu",
+    "updated": "Potansiyel güncellendi",
+    "deleted": "Potansiyel silindi",
+    "deleteTitle": "Potansiyel silinsin mi?",
+    "deleteMessage": "\"{{name}}\" silinecek.",
+    "fields": {
+      "name": "Ad soyad",
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "company": "Şirket",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "source": "Kaynak",
+      "status": "Durum",
+      "rating": "Derecelendirme"
+    },
+    "sources": {
+      "web": "Web",
+      "referral": "Tavsiye",
+      "campaign": "Kampanya",
+      "coldCall": "Soğuk arama",
+      "other": "Diğer"
+    },
+    "statuses": {
+      "new": "Yeni",
+      "contacted": "İletişime geçildi",
+      "qualified": "Nitelikli",
+      "unqualified": "Niteliksiz",
+      "converted": "Dönüştürüldü"
+    },
+    "ratings": {
+      "hot": "Sıcak",
+      "warm": "Ilık",
+      "cold": "Soğuk"
+    },
+    "convert": {
+      "action": "Dönüştür",
+      "title": "{{name}} potansiyelini dönüştür",
+      "intro": "{{name}} için kişi oluşturulacak. Müşteri ve fırsat seçimini aşağıdan yapın.",
+      "accountMode": "Müşteri seçimi",
+      "newAccount": "Yeni müşteri: {{company}}",
+      "existingAccount": "Mevcut müşteri",
+      "sameNameTitle": "Aynı adda müşteri var",
+      "sameNameText": "\"{{name}}\" adlı müşteri zaten kayıtlı. Yinelenen kayıt açmak yerine onu kullanabilirsiniz.",
+      "useExisting": "Mevcut müşteriyi kullan",
+      "createNew": "Yeni müşteri oluştur",
+      "createDeal": "Fırsat da oluştur",
+      "defaultPipeline": "Varsayılan satış hunisi",
+      "submit": "Dönüştür",
+      "done": "Potansiyel dönüştürüldü"
+    },
+    "converted": {
+      "title": "Bu potansiyel dönüştürüldü ve salt okunurdur.",
+      "account": "Müşteriyi aç",
+      "contact": "Kişiyi aç",
+      "deal": "Fırsatı aç",
+      "at": "Dönüşüm zamanı"
+    }
+  },
+  "deals": {
+    "title": "Fırsatlar",
+    "description": "Satış hunisi ve açık fırsatlar",
+    "new": "Yeni fırsat",
+    "search": "Fırsat ara...",
+    "createTitle": "Yeni fırsat",
+    "editTitle": "Fırsatı düzenle",
+    "created": "Fırsat oluşturuldu",
+    "updated": "Fırsat güncellendi",
+    "deleted": "Fırsat silindi",
+    "deleteTitle": "Fırsat silinsin mi?",
+    "deleteMessage": "\"{{name}}\" silinecek.",
+    "fields": {
+      "name": "Fırsat adı",
+      "account": "Müşteri",
+      "contact": "Kişi",
+      "pipeline": "Satış hunisi",
+      "stage": "Aşama",
+      "stageKind": "Aşama türü",
+      "amount": "Tutar",
+      "currency": "Para birimi",
+      "closingDate": "Kapanış tarihi",
+      "probability": "Olasılık",
+      "lostReason": "Kayıp nedeni"
+    },
+    "contactNeedsAccount": "Önce müşteri seçin",
+    "firstStage": "İlk aşama",
+    "probabilityValue": "Kazanma olasılığı: %{{value}}",
+    "changeStage": "Aşamayı değiştir",
+    "kinds": {
+      "open": "Açık",
+      "won": "Kazanıldı",
+      "lost": "Kaybedildi"
+    },
+    "view": {
+      "label": "Görünüm",
+      "board": "Pano",
+      "list": "Liste"
+    },
+    "board": {
+      "moveTo": "{{name}} fırsatını taşı",
+      "moveToStage": "Aşamaya taşı",
+      "drag": "{{name}} fırsatını sürükle",
+      "count": "{{count}} fırsat",
+      "emptyColumn": "Bu aşamada fırsat yok",
+      "more": "+{{count}} fırsat daha (listede gör)",
+      "moved": "\"{{name}}\" fırsatı \"{{stage}}\" aşamasına taşındı",
+      "a11y": {
+        "instructions": "Fırsatı sürüklemek için Boşluk tuşuna basın, sütunlar arasında geçmek için sol ve sağ ok tuşlarını kullanın, bırakmak için tekrar Boşluk, iptal için Escape tuşuna basın.",
+        "pickedUp": "{{name}} fırsatı seçildi.",
+        "over": "{{name}} fırsatı {{stage}} aşamasının üzerinde.",
+        "dropped": "{{name}} fırsatı {{stage}} aşamasına bırakıldı.",
+        "cancelled": "{{name}} fırsatının taşınması iptal edildi."
+      }
+    },
+    "lost": {
+      "title": "Fırsat kaybedildi",
+      "message": "\"{{name}}\" fırsatını kaybedildi olarak işaretlemek için nedeni yazın.",
+      "confirm": "Kaybedildi olarak işaretle",
+      "done": "Fırsat kaybedildi olarak işaretlendi"
+    }
+  },
+  "pipelines": {
+    "title": "Satış hunileri",
+    "description": "Fırsat aşamalarını, olasılıklarını ve sırasını düzenleyin",
+    "new": "Yeni huni",
+    "createTitle": "Yeni satış hunisi",
+    "created": "Satış hunisi oluşturuldu",
+    "saved": "Satış hunisi güncellendi",
+    "select": "Satış hunisi",
+    "defaultTag": "varsayılan",
+    "name": "Huni adı",
+    "isDefault": "Varsayılan huni",
+    "stages": "Aşamalar",
+    "addStage": "Aşama ekle",
+    "stageName": "Aşama adı",
+    "probability": "Olasılık",
+    "kind": "Tür",
+    "moveUp": "Yukarı taşı",
+    "moveDown": "Aşağı taşı",
+    "moveUpNamed": "{{index}}. aşamayı yukarı taşı",
+    "moveDownNamed": "{{index}}. aşamayı aşağı taşı",
+    "removeStage": "Aşamayı sil",
+    "removeStageNamed": "{{index}}. aşamayı sil",
+    "readOnly": "Aşamaları düzenlemek için ayar yönetimi iznine sahip olmalısınız.",
+    "reset": "Değişiklikleri geri al",
+    "saveStages": "Aşamaları kaydet",
+    "stagesSaved": "Aşamalar kaydedildi",
+    "problems": {
+      "name": "Her aşamanın adı olmalıdır.",
+      "probability": "Olasılık 0 ile 100 arasında olmalıdır.",
+      "won": "Tam olarak bir \"Kazanıldı\" aşaması olmalıdır.",
+      "lost": "Tam olarak bir \"Kaybedildi\" aşaması olmalıdır."
+    }
+  }
+}

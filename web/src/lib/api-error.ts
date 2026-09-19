@@ -48,7 +48,11 @@ export function applyValidationErrors<T extends FieldValues>(
   if (!errors) return false;
   let matched = false;
   for (const [rawField, messages] of Object.entries(errors)) {
-    const field = rawField.charAt(0).toLowerCase() + rawField.slice(1);
+    // "BillingAddress.City" -> "billingAddress.city": every path segment is lower-camel-cased.
+    const field = rawField
+      .split(".")
+      .map((segment) => segment.charAt(0).toLowerCase() + segment.slice(1))
+      .join(".");
     const target = fields.find((f) => f === field);
     if (target && messages[0]) {
       setError(target, { type: "server", message: messages[0] });

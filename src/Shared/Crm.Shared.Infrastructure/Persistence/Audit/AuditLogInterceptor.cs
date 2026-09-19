@@ -24,7 +24,11 @@ public sealed class AuditLogInterceptor(ICurrentUser currentUser, ITenantContext
 {
     private const string MaskedValue = "***";
 
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    // Enum alanları API ile aynı biçimde (camelCase string) yazılır: "converted", "coldCall".
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
 
     private static readonly HashSet<string> IgnoredProperties = new(StringComparer.Ordinal)
     {

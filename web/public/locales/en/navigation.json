@@ -11,6 +11,7 @@
   "organization": "Organization",
   "users": "Users",
   "roles": "Roles & Permissions",
+  "pipelines": "Pipelines",
   "audit": "Audit Log",
   "profile": "My Profile"
 }

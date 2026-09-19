@@ -9,5 +9,10 @@
   "role": "Your role",
   "permissionCount": "{{count}} permissions",
   "quickLinks": "Quick links",
-  "modulesSoon": "Sales modules (leads, contacts, accounts, deals) are coming here soon."
+  "stats": {
+    "openLeads": "Open leads",
+    "openDeals": "Open deals",
+    "pipelineAmount": "Open pipeline amount",
+    "unavailable": "Unavailable"
+  }
 }

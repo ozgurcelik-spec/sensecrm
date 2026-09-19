@@ -68,4 +68,40 @@
   <data name="field.refresh_token" xml:space="preserve"><value>Yenileme anahtarı</value></data>
   <data name="field.organization_id" xml:space="preserve"><value>Organizasyon</value></data>
   <data name="field.user_id" xml:space="preserve"><value>Kullanıcı</value></data>
+  <!-- Sales (Milestone 2) -->
+  <data name="lead.already_converted" xml:space="preserve"><value>Bu potansiyel müşteri zaten dönüştürülmüş; değiştirilemez ve tekrar dönüştürülemez.</value></data>
+  <data name="pipeline.stage_not_found" xml:space="preserve"><value>Aşama bu satış hunisinde bulunamadı.</value></data>
+  <data name="pipeline.stage_in_use" xml:space="preserve"><value>"{stageName}" aşamasında fırsatlar var; önce fırsatları başka aşamaya taşıyın.</value></data>
+  <data name="pipeline.default_required" xml:space="preserve"><value>Organizasyonda bir varsayılan satış hunisi olmalıdır; başka bir huniyi varsayılan yapın.</value></data>
+  <data name="deal.lost_reason_required" xml:space="preserve"><value>Kaybedildi aşamasına taşımak için kayıp nedeni girilmelidir.</value></data>
+  <data name="account.has_dependents" xml:space="preserve"><value>Firmaya bağlı kişiler veya fırsatlar var; önce onları silin ya da başka firmaya taşıyın.</value></data>
+  <data name="owner.not_member" xml:space="preserve"><value>Kayıt sahibi organizasyonun aktif bir üyesi olmalıdır.</value></data>
+  <data name="validation.pipeline_stages" xml:space="preserve"><value>Huni en az bir açık aşama, tam bir kazanıldı ve tam bir kaybedildi aşaması içermeli; adlar dolu ve olasılıklar 0-100 arasında olmalıdır.</value></data>
+  <data name="validation.lead_status" xml:space="preserve"><value>Durum yalnızca dönüştürme işlemiyle "dönüştürüldü" olur.</value></data>
+  <data name="validation.currency" xml:space="preserve"><value>Geçerli bir para birimi kodu girin (ör. TRY, USD, EUR).</value></data>
+  <data name="field.first_name" xml:space="preserve"><value>Ad</value></data>
+  <data name="field.last_name" xml:space="preserve"><value>Soyad</value></data>
+  <data name="field.company" xml:space="preserve"><value>Şirket</value></data>
+  <data name="field.industry" xml:space="preserve"><value>Sektör</value></data>
+  <data name="field.website" xml:space="preserve"><value>Web sitesi</value></data>
+  <data name="field.phone" xml:space="preserve"><value>Telefon</value></data>
+  <data name="field.mobile" xml:space="preserve"><value>Cep telefonu</value></data>
+  <data name="field.title" xml:space="preserve"><value>Ünvan</value></data>
+  <data name="field.description" xml:space="preserve"><value>Açıklama</value></data>
+  <data name="field.street" xml:space="preserve"><value>Adres</value></data>
+  <data name="field.city" xml:space="preserve"><value>Şehir</value></data>
+  <data name="field.state" xml:space="preserve"><value>İl/Bölge</value></data>
+  <data name="field.postal_code" xml:space="preserve"><value>Posta kodu</value></data>
+  <data name="field.country" xml:space="preserve"><value>Ülke</value></data>
+  <data name="field.status" xml:space="preserve"><value>Durum</value></data>
+  <data name="field.amount" xml:space="preserve"><value>Tutar</value></data>
+  <data name="field.currency" xml:space="preserve"><value>Para birimi</value></data>
+  <data name="field.deal_name" xml:space="preserve"><value>Fırsat adı</value></data>
+  <data name="field.stage_id" xml:space="preserve"><value>Aşama</value></data>
+  <data name="field.account_id" xml:space="preserve"><value>Firma</value></data>
+  <data name="field.lead_id" xml:space="preserve"><value>Potansiyel müşteri</value></data>
+  <data name="field.lost_reason" xml:space="preserve"><value>Kayıp nedeni</value></data>
+  <data name="field.stages" xml:space="preserve"><value>Aşamalar</value></data>
+  <data name="field.probability" xml:space="preserve"><value>Olasılık</value></data>
+  <data name="field.id" xml:space="preserve"><value>Kimlik</value></data>
 </root>

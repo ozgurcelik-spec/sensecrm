@@ -18,6 +18,7 @@ public static class IdentityRoutes
     public const string Me = ApiRoutes.VersionedBase + "/me";
     public const string Permissions = ApiRoutes.VersionedBase + "/permissions";
     public const string Organization = ApiRoutes.VersionedBase + "/organization";
+    public const string Audit = ApiRoutes.VersionedBase + "/audit";
 }
 
 public sealed record SignUpRequest(string OrganizationName, string DisplayName, string Email, string Password, string Locale);

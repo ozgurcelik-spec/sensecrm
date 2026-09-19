@@ -1,4 +1,5 @@
 using Crm.Modules.Identity.Api;
+using Crm.Modules.Sales.Api;
 using Crm.Shared.Contracts.Modules;
 
 namespace Crm.Api;
@@ -12,5 +13,6 @@ public static class ModuleCatalog
     public static IReadOnlyList<IModule> Modules { get; } =
     [
         new IdentityModule(),
+        new SalesModule(),
     ];
 }

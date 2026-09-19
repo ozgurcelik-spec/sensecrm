@@ -1,0 +1,292 @@
+{
+  "owner": "Owner",
+  "ownerPlaceholder": "Select an owner",
+  "noOptions": "Nothing found",
+  "createdAt": "Created",
+  "updatedAt": "Updated",
+  "accountPicker": {
+    "label": "Account",
+    "placeholder": "Search and select an account",
+    "searching": "Searching..."
+  },
+  "address": {
+    "street": "Street",
+    "city": "City",
+    "state": "State / Region",
+    "postalCode": "Postal code",
+    "country": "Country"
+  },
+  "tabs": {
+    "general": "General",
+    "related": "Related records",
+    "audit": "Audit"
+  },
+  "panel": {
+    "details": "Details"
+  },
+  "notFound": {
+    "title": "Record not found",
+    "description": "The record may have been deleted or belongs to another organization."
+  },
+  "validation": {
+    "amountMin": "Amount cannot be negative"
+  },
+  "audit": {
+    "empty": "There is no audit history for this record"
+  },
+  "auditFields": {
+    "name": "Name",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "fullName": "Full name",
+    "company": "Company",
+    "industry": "Industry",
+    "website": "Website",
+    "phone": "Phone",
+    "mobile": "Mobile",
+    "email": "Email",
+    "title": "Title",
+    "description": "Description",
+    "ownerUserId": "Owner",
+    "accountId": "Account",
+    "contactId": "Contact",
+    "pipelineId": "Pipeline",
+    "stageId": "Stage",
+    "amount": "Amount",
+    "currency": "Currency",
+    "closingDate": "Closing date",
+    "lostReason": "Lost reason",
+    "closedAt": "Closed at",
+    "source": "Source",
+    "status": "Status",
+    "rating": "Rating",
+    "isDefault": "Default",
+    "billingAddress": "Billing address",
+    "mailingAddress": "Mailing address",
+    "convertedAccountId": "Converted account",
+    "convertedContactId": "Converted contact",
+    "convertedDealId": "Converted deal",
+    "convertedAt": "Converted at",
+    "deletedAt": "Deleted at"
+  },
+  "accounts": {
+    "title": "Accounts",
+    "description": "Companies and organizations",
+    "new": "New account",
+    "search": "Search accounts...",
+    "createTitle": "New account",
+    "editTitle": "Edit account",
+    "created": "Account created",
+    "updated": "Account updated",
+    "deleted": "Account deleted",
+    "deleteTitle": "Delete account?",
+    "deleteMessage": "\"{{name}}\" will be deleted. Deletion is refused while contacts or deals still reference it.",
+    "fields": {
+      "name": "Account name",
+      "industry": "Industry",
+      "website": "Website",
+      "phone": "Phone",
+      "email": "Email",
+      "billingAddress": "Billing address",
+      "description": "Description"
+    },
+    "related": {
+      "contacts": "Contacts",
+      "deals": "Deals",
+      "noContacts": "No contacts belong to this account",
+      "noDeals": "No deals belong to this account",
+      "contactCount": "Contacts: {{count}}",
+      "dealCount": "Deals: {{count}}"
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "description": "People at your accounts",
+    "new": "New contact",
+    "search": "Search contacts...",
+    "createTitle": "New contact",
+    "editTitle": "Edit contact",
+    "created": "Contact created",
+    "updated": "Contact updated",
+    "deleted": "Contact deleted",
+    "deleteTitle": "Delete contact?",
+    "deleteMessage": "\"{{name}}\" will be deleted.",
+    "fields": {
+      "name": "Full name",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "phone": "Phone",
+      "mobile": "Mobile",
+      "title": "Title",
+      "account": "Account",
+      "mailingAddress": "Mailing address"
+    },
+    "related": {
+      "deals": "Deals",
+      "noAccount": "Deals cannot be shown because the contact is not linked to an account",
+      "noDeals": "No deal names this contact"
+    }
+  },
+  "leads": {
+    "title": "Leads",
+    "description": "Prospects that are not customers yet",
+    "new": "New lead",
+    "search": "Search leads...",
+    "createTitle": "New lead",
+    "editTitle": "Edit lead",
+    "created": "Lead created",
+    "updated": "Lead updated",
+    "deleted": "Lead deleted",
+    "deleteTitle": "Delete lead?",
+    "deleteMessage": "\"{{name}}\" will be deleted.",
+    "fields": {
+      "name": "Full name",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "company": "Company",
+      "email": "Email",
+      "phone": "Phone",
+      "source": "Source",
+      "status": "Status",
+      "rating": "Rating"
+    },
+    "sources": {
+      "web": "Web",
+      "referral": "Referral",
+      "campaign": "Campaign",
+      "coldCall": "Cold call",
+      "other": "Other"
+    },
+    "statuses": {
+      "new": "New",
+      "contacted": "Contacted",
+      "qualified": "Qualified",
+      "unqualified": "Unqualified",
+      "converted": "Converted"
+    },
+    "ratings": {
+      "hot": "Hot",
+      "warm": "Warm",
+      "cold": "Cold"
+    },
+    "convert": {
+      "action": "Convert",
+      "title": "Convert lead {{name}}",
+      "intro": "A contact will be created for {{name}}. Choose the account and the deal below.",
+      "accountMode": "Account choice",
+      "newAccount": "New account: {{company}}",
+      "existingAccount": "Existing account",
+      "sameNameTitle": "An account with the same name exists",
+      "sameNameText": "An account named \"{{name}}\" is already on file. You can use it instead of creating a duplicate.",
+      "useExisting": "Use the existing account",
+      "createNew": "Create a new account",
+      "createDeal": "Also create a deal",
+      "defaultPipeline": "Default pipeline",
+      "submit": "Convert",
+      "done": "Lead converted"
+    },
+    "converted": {
+      "title": "This lead has been converted and is read-only.",
+      "account": "Open account",
+      "contact": "Open contact",
+      "deal": "Open deal",
+      "at": "Converted at"
+    }
+  },
+  "deals": {
+    "title": "Deals",
+    "description": "Sales pipeline and open deals",
+    "new": "New deal",
+    "search": "Search deals...",
+    "createTitle": "New deal",
+    "editTitle": "Edit deal",
+    "created": "Deal created",
+    "updated": "Deal updated",
+    "deleted": "Deal deleted",
+    "deleteTitle": "Delete deal?",
+    "deleteMessage": "\"{{name}}\" will be deleted.",
+    "fields": {
+      "name": "Deal name",
+      "account": "Account",
+      "contact": "Contact",
+      "pipeline": "Pipeline",
+      "stage": "Stage",
+      "stageKind": "Stage type",
+      "amount": "Amount",
+      "currency": "Currency",
+      "closingDate": "Closing date",
+      "probability": "Probability",
+      "lostReason": "Lost reason"
+    },
+    "contactNeedsAccount": "Select an account first",
+    "firstStage": "First stage",
+    "probabilityValue": "Win probability: {{value}}%",
+    "changeStage": "Change stage",
+    "kinds": {
+      "open": "Open",
+      "won": "Won",
+      "lost": "Lost"
+    },
+    "view": {
+      "label": "View",
+      "board": "Board",
+      "list": "List"
+    },
+    "board": {
+      "moveTo": "Move deal {{name}}",
+      "moveToStage": "Move to stage",
+      "drag": "Drag deal {{name}}",
+      "count": "{{count}} deals",
+      "emptyColumn": "No deals in this stage",
+      "more": "+{{count}} more (see the list)",
+      "moved": "Deal \"{{name}}\" moved to \"{{stage}}\"",
+      "a11y": {
+        "instructions": "Press Space to pick up the deal, the left and right arrow keys to change column, Space again to drop it, or Escape to cancel.",
+        "pickedUp": "Picked up deal {{name}}.",
+        "over": "Deal {{name}} is over stage {{stage}}.",
+        "dropped": "Deal {{name}} dropped on stage {{stage}}.",
+        "cancelled": "Moving deal {{name}} was cancelled."
+      }
+    },
+    "lost": {
+      "title": "Deal lost",
+      "message": "Give a reason to mark \"{{name}}\" as lost.",
+      "confirm": "Mark as lost",
+      "done": "Deal marked as lost"
+    }
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "description": "Edit deal stages, their probabilities and order",
+    "new": "New pipeline",
+    "createTitle": "New pipeline",
+    "created": "Pipeline created",
+    "saved": "Pipeline updated",
+    "select": "Pipeline",
+    "defaultTag": "default",
+    "name": "Pipeline name",
+    "isDefault": "Default pipeline",
+    "stages": "Stages",
+    "addStage": "Add stage",
+    "stageName": "Stage name",
+    "probability": "Probability",
+    "kind": "Type",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "moveUpNamed": "Move stage {{index}} up",
+    "moveDownNamed": "Move stage {{index}} down",
+    "removeStage": "Remove stage",
+    "removeStageNamed": "Remove stage {{index}}",
+    "readOnly": "You need the settings management permission to edit stages.",
+    "reset": "Discard changes",
+    "saveStages": "Save stages",
+    "stagesSaved": "Stages saved",
+    "problems": {
+      "name": "Every stage needs a name.",
+      "probability": "Probability must be between 0 and 100.",
+      "won": "There must be exactly one \"Won\" stage.",
+      "lost": "There must be exactly one \"Lost\" stage."
+    }
+  }
+}

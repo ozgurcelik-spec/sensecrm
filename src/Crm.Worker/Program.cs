@@ -1,4 +1,5 @@
 using Crm.Modules.Identity.Infrastructure.Persistence;
+using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Shared.Contracts.Configuration;
 using Crm.Shared.Infrastructure.DependencyInjection;
 using Crm.Shared.Infrastructure.Persistence;
@@ -20,6 +21,17 @@ builder.Services.AddModuleHandlers(
     typeof(Crm.Modules.Identity.Domain.IUserRepository).Assembly,
     typeof(Crm.Modules.Identity.Contracts.OrgPermissions).Assembly);
 builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<IdentityDbContext>>();
+
+// Sales: outbox'ı (LeadConverted, DealStageChanged) boşaltır; ayrıca Identity'nin OrganizationCreated olayının tüketicisi
+// (varsayılan satış hunisi tohumlama) burada elle kayıtlıdır: Application assembly'sini taramak tüm handler bağımlılıklarını gerektirirdi.
+builder.Services.AddModuleDbContext<SalesDbContext>(builder.Configuration, SalesDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    SalesDbContext.SchemaName,
+    typeof(Crm.Modules.Sales.Domain.IAccountRepository).Assembly,
+    typeof(Crm.Modules.Sales.Contracts.SalesPermissions).Assembly);
+builder.Services.AddScoped<Crm.Modules.Sales.Application.IDefaultPipelineSeeder, Crm.Modules.Sales.Infrastructure.Provisioning.DefaultPipelineSeeder>();
+builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Identity.Contracts.OrganizationCreated>, Crm.Modules.Sales.Application.Pipelines.OrganizationCreatedHandler>();
+builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<SalesDbContext>>();
 
 await builder.Build().RunAsync();
 

@@ -68,4 +68,40 @@
   <data name="field.refresh_token" xml:space="preserve"><value>Refresh token</value></data>
   <data name="field.organization_id" xml:space="preserve"><value>Organization</value></data>
   <data name="field.user_id" xml:space="preserve"><value>User</value></data>
+  <!-- Sales (Milestone 2) -->
+  <data name="lead.already_converted" xml:space="preserve"><value>This lead has already been converted; it can no longer be changed or converted again.</value></data>
+  <data name="pipeline.stage_not_found" xml:space="preserve"><value>The stage was not found in this pipeline.</value></data>
+  <data name="pipeline.stage_in_use" xml:space="preserve"><value>The "{stageName}" stage contains deals; move the deals to another stage first.</value></data>
+  <data name="pipeline.default_required" xml:space="preserve"><value>The organization must have a default pipeline; make another pipeline the default instead.</value></data>
+  <data name="deal.lost_reason_required" xml:space="preserve"><value>A lost reason is required to move a deal to the lost stage.</value></data>
+  <data name="account.has_dependents" xml:space="preserve"><value>The account has contacts or deals; delete them or move them to another account first.</value></data>
+  <data name="owner.not_member" xml:space="preserve"><value>The record owner must be an active member of the organization.</value></data>
+  <data name="validation.pipeline_stages" xml:space="preserve"><value>A pipeline needs at least one open stage, exactly one won and exactly one lost stage; names must be filled in and probabilities must be between 0 and 100.</value></data>
+  <data name="validation.lead_status" xml:space="preserve"><value>The status becomes "converted" only through the convert action.</value></data>
+  <data name="validation.currency" xml:space="preserve"><value>Enter a valid currency code (e.g. TRY, USD, EUR).</value></data>
+  <data name="field.first_name" xml:space="preserve"><value>First name</value></data>
+  <data name="field.last_name" xml:space="preserve"><value>Last name</value></data>
+  <data name="field.company" xml:space="preserve"><value>Company</value></data>
+  <data name="field.industry" xml:space="preserve"><value>Industry</value></data>
+  <data name="field.website" xml:space="preserve"><value>Website</value></data>
+  <data name="field.phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="field.mobile" xml:space="preserve"><value>Mobile</value></data>
+  <data name="field.title" xml:space="preserve"><value>Title</value></data>
+  <data name="field.description" xml:space="preserve"><value>Description</value></data>
+  <data name="field.street" xml:space="preserve"><value>Street</value></data>
+  <data name="field.city" xml:space="preserve"><value>City</value></data>
+  <data name="field.state" xml:space="preserve"><value>State/Region</value></data>
+  <data name="field.postal_code" xml:space="preserve"><value>Postal code</value></data>
+  <data name="field.country" xml:space="preserve"><value>Country</value></data>
+  <data name="field.status" xml:space="preserve"><value>Status</value></data>
+  <data name="field.amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="field.currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="field.deal_name" xml:space="preserve"><value>Deal name</value></data>
+  <data name="field.stage_id" xml:space="preserve"><value>Stage</value></data>
+  <data name="field.account_id" xml:space="preserve"><value>Account</value></data>
+  <data name="field.lead_id" xml:space="preserve"><value>Lead</value></data>
+  <data name="field.lost_reason" xml:space="preserve"><value>Lost reason</value></data>
+  <data name="field.stages" xml:space="preserve"><value>Stages</value></data>
+  <data name="field.probability" xml:space="preserve"><value>Probability</value></data>
+  <data name="field.id" xml:space="preserve"><value>Id</value></data>
 </root>

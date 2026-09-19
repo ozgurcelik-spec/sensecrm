@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../Shared/Crm.Shared.Kernel/Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

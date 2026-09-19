@@ -31,36 +31,20 @@ public static class OrgPermissions
 }
 
 /// <summary>
-/// CRM kayıt izinleri. Anahtarlar Milestone 1'de rollere atanabilsin diye şimdiden tanımlıdır; CRM modülleri (Milestone 2:
-/// Sales, Milestone 3: Activities/Reporting) geldiğinde her modül kendi anahtarlarını kendi <c>IModule.Permissions</c>'ından
-/// döndürür (katalog anahtara göre tekilleştirir) ve buradaki geçici kayıt kaldırılır. Anahtarlar sözleşmedir, değiştirilmez.
+/// Henüz kendi modülü olmayan CRM izinleri (aktiviteler, raporlar). <c>crm.accounts/contacts/leads/deals.*</c> anahtarları
+/// Milestone 2'de <c>Crm.Modules.Sales.Contracts.SalesPermissions</c>'a taşındı (anahtar dizgeleri aynı, sözleşmedir).
+/// Aktiviteler/raporlar modülleri (Milestone 3) geldiğinde bu geçici kayıt da kaldırılır.
 /// </summary>
 public static class CrmPermissions
 {
     public const string Module = "crm";
 
-    public const string AccountsRead = "crm.accounts.read";
-    public const string AccountsWrite = "crm.accounts.write";
-    public const string ContactsRead = "crm.contacts.read";
-    public const string ContactsWrite = "crm.contacts.write";
-    public const string LeadsRead = "crm.leads.read";
-    public const string LeadsWrite = "crm.leads.write";
-    public const string DealsRead = "crm.deals.read";
-    public const string DealsWrite = "crm.deals.write";
     public const string ActivitiesRead = "crm.activities.read";
     public const string ActivitiesWrite = "crm.activities.write";
     public const string ReportsRead = "crm.reports.read";
 
     public static IReadOnlyList<Permission> All { get; } =
     [
-        new(AccountsRead, Module, PermissionGroups.Crm),
-        new(AccountsWrite, Module, PermissionGroups.Crm),
-        new(ContactsRead, Module, PermissionGroups.Crm),
-        new(ContactsWrite, Module, PermissionGroups.Crm),
-        new(LeadsRead, Module, PermissionGroups.Crm),
-        new(LeadsWrite, Module, PermissionGroups.Crm),
-        new(DealsRead, Module, PermissionGroups.Crm),
-        new(DealsWrite, Module, PermissionGroups.Crm),
         new(ActivitiesRead, Module, PermissionGroups.Crm),
         new(ActivitiesWrite, Module, PermissionGroups.Crm),
         new(ReportsRead, Module, PermissionGroups.Crm),
@@ -68,10 +52,13 @@ public static class CrmPermissions
 }
 
 /// <summary>
-/// Modüller arası okuma sözleşmesi: bir kullanıcının aktif organizasyonun aktif üyesi olup olmadığı
-/// (ör. Milestone 2'de kayıt sahibi/owner doğrulaması). Aktif kiracı bağlamında çalışır.
+/// Modüller arası okuma sözleşmesi: kullanıcının aktif organizasyonun aktif üyesi olup olmadığı (kayıt sahibi/owner
+/// doğrulaması) ve üyelerin görünen adları. Aktif kiracı bağlamında çalışır.
 /// </summary>
 public interface IMemberLookup
 {
     Task<bool> IsActiveMemberAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Aktif organizasyonun (pasif olanlar dahil) üyelerinin görünen adları; üye olmayan kimlikler sonuçta yer almaz.</summary>
+    Task<IReadOnlyDictionary<Guid, string>> GetDisplayNamesAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default);
 }

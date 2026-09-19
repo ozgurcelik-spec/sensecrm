@@ -23,6 +23,12 @@
   "backHome": "Ana sayfaya dön",
   "search": "Ara",
   "confirm": "Onayla",
+  "clear": "Temizle",
+  "clearFilters": "Filtreleri temizle",
+  "sortBy": "{{column}} sütununa göre sırala",
+  "pageSize": "Sayfa başına kayıt",
+  "nextPage": "Sonraki sayfa",
+  "previousPage": "Önceki sayfa",
   "languages": {
     "tr": "Türkçe",
     "en": "English"
@@ -68,6 +74,23 @@
     "member": {
       "last_admin": "Organizasyonda en az bir aktif yönetici kalmalıdır",
       "exists": "Bu kullanıcı zaten organizasyonun üyesi"
+    },
+    "lead": {
+      "already_converted": "Bu potansiyel zaten dönüştürülmüş"
+    },
+    "deal": {
+      "lost_reason_required": "Kaybedilen fırsat için kayıp nedeni girilmelidir"
+    },
+    "account": {
+      "has_dependents": "Bu müşteriye bağlı kişi veya fırsatlar var; önce onları silin ya da başka müşteriye taşıyın"
+    },
+    "pipeline": {
+      "stage_not_found": "Aşama bulunamadı",
+      "default_required": "En az bir varsayılan satış hunisi olmalıdır",
+      "stage_in_use": "Bu aşamada fırsatlar var; önce fırsatları başka aşamaya taşıyın"
+    },
+    "owner": {
+      "not_member": "Seçilen sahip bu organizasyonun aktif üyesi değil"
     }
   }
 }

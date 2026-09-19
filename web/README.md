@@ -37,15 +37,29 @@ src/
   App.tsx                routes (/login, /signup, /app/...) with lazy pages
   main.tsx               providers (React Query, Mantine) and session handlers
   i18n.ts                i18next (http backend, TR default)
-  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/
+  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/
   config/navigation.ts   left navigation and settings items with their required permissions
-  hooks/                 usePermission, React Query hooks per resource, toast, language switch
+  hooks/                 usePermission, React Query hooks per resource, toast, language switch, useListParams
   layouts/app-layout.tsx top bar (org switcher, language, user menu) and module navigation
-  lib/                   api-client (axios, refresh-on-401), api-error, dates, locale, theme
-  pages/                 auth/, home, account, audit-log, settings/{organization,users,roles}
-  services/              typed API calls (auth, me, organization, roles)
+  lib/                   api-client (axios, refresh-on-401), api-error, dates, locale, theme, format, board
+  pages/                 auth/, home, account, audit-log, crm/ (sales module pages), settings/{organization,users,roles,pipelines}
+  services/              typed API calls (auth, me, organization, roles, accounts, contacts, leads, deals, pipelines, audit)
   store/                 zustand auth store (tokens + /me) and UI store
+  test/crm.tsx           test helpers for the mocked API (route table, ProblemDetails errors, permission fixtures)
 ```
+
+## Sales core (Milestone 2)
+
+HTTP contract: `docs/plan/m2-api-kontrat.md`. Screens: Leads, Contacts, Accounts, Deals (`/app/<module>` list, `/app/<module>/:id` detail) and Settings > Pipelines.
+
+- **List pages** share `hooks/use-list-params.ts` and `components/crm/data-table.tsx`: server-side paging (`page`, `pageSize`), debounced search (`q`), sortable columns (`sort=field` / `sort=-field`) and per-resource filters. All of it lives in the URL query string, so lists can be shared and survive reloads. The filter key arrays passed to `useListParams` must be module-level constants.
+- **Forms** are Mantine modals with react-hook-form + zod (the repo's existing stack). Server `errors` are mapped onto fields (`applyValidationErrors`, dotted paths such as `billingAddress.city` supported); anything else goes through `toastApiError`, which translates `code` via `common:errors.<code>`. Mount a form dialog only while it is open; it initialises its state on mount.
+- **Pickers**: owner from `/organization/members`; account with server-side search (`GET /accounts?q=`), so large tenants never load the whole list.
+- **Detail pages** (`components/crm/record-detail-shell.tsx`): info panel on the left, tabs General / Related / Audit (`?tab=`), audit from `GET /audit?entityType&entityId`.
+- **Lead conversion** (`lead-convert-dialog.tsx`): new or existing account (a same-named account is suggested), optional deal, then navigates to the deal (or the account).
+- **Deals** switch between a kanban board and a list (`?view=list`) with a pipeline selector. The board uses `@dnd-kit/core`: drag with mouse/touch, or keyboard (Space on the handle, Left/Right to change column, Space to drop), or the per-card "move to" menu. The move is optimistic and rolled back on error; a lost stage asks for the lost reason first.
+- **Write actions are permission-gated** with `useCrmPermissions()` (`crm.<resource>.write`; converting needs leads + accounts + contacts write; pipeline editing needs `org.settings.manage`). The server enforces them as well.
+- **Tests** mock the axios client (`vi.mock("@/lib/api-client")`) and use `installApi` from `src/test/crm.tsx`.
 
 ## Auth flow
 

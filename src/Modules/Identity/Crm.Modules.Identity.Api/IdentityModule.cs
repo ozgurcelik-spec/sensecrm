@@ -16,7 +16,7 @@ namespace Crm.Modules.Identity.Api;
 
 /// <summary>
 /// Identity modülü kompozisyon kökü: organizasyon (kiracı) kaydı ve üyelik, kullanıcı hesapları, RBAC, JWT oturumları,
-/// denetim kaydı okuma. İzin kataloğuna <c>org.*</c> ve (CRM modülleri gelene kadar) <c>crm.*</c> anahtarlarını katar.
+/// denetim kaydı okuma. İzin kataloğuna <c>org.*</c> ve (Milestone 3 modülleri gelene kadar) <c>crm.activities/reports</c> anahtarlarını katar; <c>crm.accounts/contacts/leads/deals</c> Sales modülündedir.
 /// </summary>
 public sealed class IdentityModule : IModule
 {
@@ -52,6 +52,7 @@ public sealed class IdentityModule : IModule
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IIdentityReadStore, IdentityReadStore>();
         services.AddScoped<IMemberLookup, MemberLookup>();
+        services.AddScoped<ITenantDirectory, TenantDirectory>();
         services.AddScoped<SessionIssuer>();
 
         services.AddScoped<PermissionService>();
