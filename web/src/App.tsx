@@ -31,6 +31,8 @@ const ActivitiesPage = lazy(() => import("@/pages/crm/activities"));
 // Chart-heavy: recharts stays out of every other chunk.
 const ReportsPage = lazy(() => import("@/pages/crm/reports"));
 const PipelinesPage = lazy(() => import("@/pages/settings/pipelines"));
+const WorkflowsPage = lazy(() => import("@/pages/settings/workflows"));
+const ApprovalsPage = lazy(() => import("@/pages/approvals"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
   return (
@@ -148,6 +150,8 @@ export default function App() {
                 </RequirePermission>
               }
             />
+            {/* "mine=true" needs no permission: anyone can open the page, deciding needs crm.approvals.decide. */}
+            <Route path="approvals" element={<ApprovalsPage />} />
             <Route
               path="reports"
               element={
@@ -180,6 +184,14 @@ export default function App() {
               element={
                 <RequirePermission permission={PERMISSIONS.crmDealsRead}>
                   <PipelinesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="settings/workflows"
+              element={
+                <RequirePermission permission={PERMISSIONS.orgWorkflowsManage}>
+                  <WorkflowsPage />
                 </RequirePermission>
               }
             />

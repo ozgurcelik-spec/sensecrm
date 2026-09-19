@@ -13,5 +13,7 @@
   "roles": "Roller ve İzinler",
   "pipelines": "Satış Hunileri",
   "audit": "Denetim Kaydı",
-  "profile": "Profilim"
+  "profile": "Profilim",
+  "approvals": "Onaylarım",
+  "workflows": "İş akışları"
 }

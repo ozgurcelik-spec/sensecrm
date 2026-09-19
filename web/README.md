@@ -37,13 +37,13 @@ src/
   App.tsx                routes (/login, /signup, /app/...) with lazy pages
   main.tsx               providers (React Query, Mantine) and session handlers
   i18n.ts                i18next (http backend, TR default)
-  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/, activities/, dashboard/, reports/
+  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/, activities/, dashboard/, reports/, workflows/
   config/navigation.ts   left navigation and settings items with their required permissions
   hooks/                 usePermission, React Query hooks per resource, toast, language switch, useListParams
   layouts/app-layout.tsx top bar (org switcher, language, user menu) and module navigation
   lib/                   api-client (axios, refresh-on-401), api-error, dates, locale, theme, format, board, zoned-time, report-range, csv
-  pages/                 auth/, home, account, audit-log, crm/ (sales module pages), settings/{organization,users,roles,pipelines}
-  services/              typed API calls (auth, me, organization, roles, accounts, contacts, leads, deals, pipelines, audit, activities, reports)
+  pages/                 auth/, home, account, audit-log, approvals, crm/ (sales module pages), settings/{organization,users,roles,pipelines,workflows}
+  services/              typed API calls (auth, me, organization, roles, accounts, contacts, leads, deals, pipelines, audit, activities, reports, workflows, approvals)
   store/                 zustand auth store (tokens + /me) and UI store
   test/crm.tsx           test helpers for the mocked API (route table, ProblemDetails errors, permission fixtures)
 ```
@@ -73,6 +73,16 @@ HTTP contract: `docs/plan/m3-aktivite-rapor.md`. Screens: Activities (`/app/acti
 - **Dashboard**: "Benim işlerim" needs `crm.activities.read`; funnel, won/lost (last 6 months) and lead source widgets need `crm.reports.read`. The chart widgets are a lazy chunk (recharts), only requested for users who may read reports.
 - **Reports**: range preset (`?range=thisMonth|last3Months|last12Months|custom`, custom `?from=&to=`), tab (`?tab=`), pipeline (`?pipelineId=`) and grouping (`?groupBy=week`) live in the URL. Only the active tab is requested; the funnel ignores the range. CSV is built in the browser (`lib/csv.ts`): UTF-8 BOM, `;` separator and decimal comma for Turkish (`,` and `.` for English), quoted/escaped cells, formula-looking text prefixed with `'`.
 - **Tests** that render charts mock `@mantine/charts` with `src/test/charts.tsx` (recharts measures 0x0 in jsdom).
+
+## Workflows and approvals (Milestone 4)
+
+HTTP contract: `docs/plan/m4-workflow.md`. Screens: Settings > İş akışları (`/app/settings/workflows`, `org.workflows.manage`) and Onaylarım (`/app/approvals`). New i18n namespace `workflows`; new permissions `org.workflows.manage` and `crm.approvals.decide` (labels in `users.json`, listed in the role editor from `GET /permissions`).
+
+- **Rules tab**: table with kind badge, parameter summary and an enabled switch (optimistic, rolled back with an error toast on failure). The create / edit dialog (`components/workflows/rule-form-dialog.tsx`) adapts to the kind: lead assignment = sources multi-select (empty = all), assignee role (`GET /organization/roles`), follow-up hours 1-720 (default 24); deal approval = minimum amount > 0 and approver role. The kind of an existing rule is fixed. Server field errors (`params.<field>` paths) and `workflow.role_not_found` are put on their fields.
+- **Executions tab**: status, rule and date-range filters plus paging live in the URL (`?tab=executions&status=&ruleId=&from=YYYY-MM-DD&to=&page=`); `from`/`to` are sent as UTC instants of the organization's day bounds. `?execution=<id>` opens the detail drawer (step timeline, approvals, error, Terminate for running, Retry for failed, both after a confirmation).
+- **Onaylarım**: pending and history tabs (`?tab=history&status=`, always `mine=true`); approving / rejecting needs `crm.approvals.decide`; a rejection needs a comment (client check and server `comment` error); `approval.already_decided` shows a friendly message and refreshes the lists.
+- **Top bar badge** (`components/shell/approvals-bell.tsx`): `GET /approvals/summary` polled every 60 s while the tab is visible, refetched when the tab becomes visible again and after every decision. The sidebar entry is visible to `crm.approvals.decide` or while the caller has pending approvals.
+- **Not built**: the workflow status strip on the deal / lead "Genel" tab. The contract has no endpoint that lists executions by subject (`GET /workflows/executions` filters only by status, rule and date), so it would need a new backend filter.
 
 ## Auth flow
 

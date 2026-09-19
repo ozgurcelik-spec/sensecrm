@@ -3,6 +3,7 @@ using Crm.Modules.Identity.Application;
 using Crm.Modules.Identity.Application.Auth;
 using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Identity.Domain;
+using Crm.Modules.Identity.Infrastructure;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Identity.Infrastructure.Security;
 using Crm.Shared.Contracts.Configuration;
@@ -51,8 +52,7 @@ public sealed class IdentityModule : IModule
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IIdentityReadStore, IdentityReadStore>();
-        services.AddScoped<IMemberLookup, MemberLookup>();
-        services.AddScoped<ITenantDirectory, TenantDirectory>();
+        services.AddIdentityContractServices();
         services.AddScoped<TenantCalendarService>();
         services.AddScoped<SessionIssuer>();
 

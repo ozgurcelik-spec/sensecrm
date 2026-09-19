@@ -96,6 +96,13 @@
       "related_not_found": "İlişkili kayıt bulunamadı",
       "invalid_range": "Bitiş, başlangıçtan önce olamaz",
       "note_status_fixed": "Notların durumu değiştirilemez"
+    },
+    "workflow": {
+      "role_not_found": "Seçilen rol bu organizasyonda bulunamadı",
+      "not_running": "Yürütme çalışmıyor; yalnızca çalışan yürütmeler sonlandırılabilir"
+    },
+    "approval": {
+      "already_decided": "Bu onay için zaten karar verilmiş"
     }
   }
 }

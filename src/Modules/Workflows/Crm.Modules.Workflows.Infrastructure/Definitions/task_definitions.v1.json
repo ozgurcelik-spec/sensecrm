@@ -1,0 +1,7 @@
+[
+  { "name": "crm_assign_lead_owner", "description": "CRM: lead sahibini round-robin ata" },
+  { "name": "crm_create_followup_task", "description": "CRM: takip gorevi ac" },
+  { "name": "crm_create_approvals", "description": "CRM: onay taleplerini ve gorevlerini ac" },
+  { "name": "crm_record_decision", "description": "CRM: karar sonucunu firsata not olarak isle" },
+  { "name": "crm_cancel_pending_approvals", "description": "CRM: bekleyen diger onaylari iptal et" }
+]

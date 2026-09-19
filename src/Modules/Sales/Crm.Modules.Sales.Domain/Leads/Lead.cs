@@ -69,6 +69,9 @@ public sealed class Lead : TenantAggregateRoot<Guid>, IAuditLogged, ISoftDelete
 
     public Guid OwnerUserId { get; private set; }
 
+    /// <summary>Sahibin son değiştiği an (UTC); hiç değişmediyse null (round-robin için oluşturulma anı kullanılır).</summary>
+    public DateTime? OwnerAssignedAt { get; private set; }
+
     public Guid? ConvertedAccountId { get; private set; }
 
     public Guid? ConvertedContactId { get; private set; }
@@ -132,9 +135,30 @@ public sealed class Lead : TenantAggregateRoot<Guid>, IAuditLogged, ISoftDelete
 
         LastName = Guard.MaxLength(Guard.NotEmpty(lastName), SalesLimits.PersonNameMaxLength);
         Company = Guard.MaxLength(Guard.NotEmpty(company), SalesLimits.NameMaxLength);
+        if (ownerUserId != OwnerUserId)
+        {
+            OwnerAssignedAt = DateTime.UtcNow;
+        }
+
         OwnerUserId = Guard.NotDefault(ownerUserId);
         Status = status;
         Apply(firstName, email, phone, source, rating);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Sahibi değiştirir (workflow atamasında kullanılır) ve <see cref="OwnerAssignedAt"/>'i günceller. Dönüşmüş lead için
+    /// <c>lead.already_converted</c>. Sahip aynıysa da atama anı yenilenir (round-robin sırası).
+    /// </summary>
+    public Result AssignOwner(Guid ownerUserId, DateTime nowUtc)
+    {
+        if (IsConverted)
+        {
+            return Error.Conflict(SalesErrors.LeadAlreadyConverted);
+        }
+
+        OwnerUserId = Guard.NotDefault(ownerUserId);
+        OwnerAssignedAt = nowUtc;
         return Result.Success();
     }
 

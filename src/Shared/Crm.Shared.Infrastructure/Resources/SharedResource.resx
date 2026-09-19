@@ -121,4 +121,25 @@
   <data name="field.assigned_user_id" xml:space="preserve"><value>Atanan kullanıcı</value></data>
   <data name="field.from" xml:space="preserve"><value>Başlangıç tarihi</value></data>
   <data name="field.to" xml:space="preserve"><value>Bitiş tarihi</value></data>
+  <!-- İş akışları + onaylar (Milestone 4) -->
+  <data name="workflow.role_not_found" xml:space="preserve"><value>Kuralda seçilen rol bu organizasyonda bulunamadı.</value></data>
+  <data name="workflow.not_running" xml:space="preserve"><value>Yürütme çalışmıyor; yalnızca çalışan yürütmeler sonlandırılabilir.</value></data>
+  <data name="workflow.not_failed" xml:space="preserve"><value>Yürütme başarısız değil; yalnızca başarısız yürütmeler yeniden denenebilir.</value></data>
+  <data name="workflow.engine_unavailable" xml:space="preserve"><value>İş akışı motoruna şu anda ulaşılamıyor; lütfen biraz sonra tekrar deneyin.</value></data>
+  <data name="approval.already_decided" xml:space="preserve"><value>Bu onay zaten karara bağlanmış veya iptal edilmiş.</value></data>
+  <data name="approval.comment_required" xml:space="preserve"><value>Reddetmek için yorum girmelisiniz.</value></data>
+  <data name="no_assignee" xml:space="preserve"><value>Seçilen rolde atama yapılabilecek aktif kullanıcı yok.</value></data>
+  <data name="no_approver" xml:space="preserve"><value>Seçilen onaylayıcı rolde aktif kullanıcı yok.</value></data>
+  <data name="engine_workflow_not_found" xml:space="preserve"><value>Yürütme iş akışı motorunda bulunamadı.</value></data>
+  <data name="validation.workflow_params" xml:space="preserve"><value>Kural parametreleri geçerli bir nesne olmalıdır.</value></data>
+  <data name="validation.workflow_source" xml:space="preserve"><value>Kaynaklar web, referral, campaign, coldCall veya other değerlerinden olmalıdır.</value></data>
+  <data name="validation.follow_up_hours" xml:space="preserve"><value>Takip süresi 1 ile 720 saat arasında bir tam sayı olmalıdır.</value></data>
+  <data name="validation.min_amount" xml:space="preserve"><value>Asgari tutar sıfırdan büyük bir sayı olmalıdır.</value></data>
+  <data name="validation.workflow_role_id" xml:space="preserve"><value>Geçerli bir rol kimliği girin.</value></data>
+  <data name="field.comment" xml:space="preserve"><value>Yorum</value></data>
+  <data name="field.decision" xml:space="preserve"><value>Karar</value></data>
+  <data name="field.kind" xml:space="preserve"><value>Tür</value></data>
+  <data name="field.params" xml:space="preserve"><value>Parametreler</value></data>
+  <data name="permission.org.workflows.manage" xml:space="preserve"><value>İş akışı kurallarını ve yürütmeleri yönet</value></data>
+  <data name="permission.crm.approvals.decide" xml:space="preserve"><value>Onay ver</value></data>
 </root>

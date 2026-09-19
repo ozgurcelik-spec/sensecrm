@@ -121,4 +121,25 @@
   <data name="field.assigned_user_id" xml:space="preserve"><value>Assigned user</value></data>
   <data name="field.from" xml:space="preserve"><value>From date</value></data>
   <data name="field.to" xml:space="preserve"><value>To date</value></data>
+  <!-- Workflows + approvals (Milestone 4) -->
+  <data name="workflow.role_not_found" xml:space="preserve"><value>The role selected in the rule was not found in this organization.</value></data>
+  <data name="workflow.not_running" xml:space="preserve"><value>The execution is not running; only running executions can be terminated.</value></data>
+  <data name="workflow.not_failed" xml:space="preserve"><value>The execution has not failed; only failed executions can be retried.</value></data>
+  <data name="workflow.engine_unavailable" xml:space="preserve"><value>The workflow engine is currently unreachable; please try again shortly.</value></data>
+  <data name="approval.already_decided" xml:space="preserve"><value>This approval has already been decided or cancelled.</value></data>
+  <data name="approval.comment_required" xml:space="preserve"><value>A comment is required to reject.</value></data>
+  <data name="no_assignee" xml:space="preserve"><value>The selected role has no active user to assign to.</value></data>
+  <data name="no_approver" xml:space="preserve"><value>The selected approver role has no active user.</value></data>
+  <data name="engine_workflow_not_found" xml:space="preserve"><value>The execution was not found in the workflow engine.</value></data>
+  <data name="validation.workflow_params" xml:space="preserve"><value>Rule params must be a valid object.</value></data>
+  <data name="validation.workflow_source" xml:space="preserve"><value>Sources must be one of web, referral, campaign, coldCall or other.</value></data>
+  <data name="validation.follow_up_hours" xml:space="preserve"><value>Follow-up hours must be a whole number between 1 and 720.</value></data>
+  <data name="validation.min_amount" xml:space="preserve"><value>The minimum amount must be a number greater than zero.</value></data>
+  <data name="validation.workflow_role_id" xml:space="preserve"><value>Enter a valid role id.</value></data>
+  <data name="field.comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="field.decision" xml:space="preserve"><value>Decision</value></data>
+  <data name="field.kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="field.params" xml:space="preserve"><value>Params</value></data>
+  <data name="permission.org.workflows.manage" xml:space="preserve"><value>Manage workflow rules and executions</value></data>
+  <data name="permission.crm.approvals.decide" xml:space="preserve"><value>Decide approvals</value></data>
 </root>

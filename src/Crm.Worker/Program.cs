@@ -1,6 +1,11 @@
+using Crm.Modules.Activities.Infrastructure;
 using Crm.Modules.Activities.Infrastructure.Persistence;
+using Crm.Modules.Identity.Infrastructure;
 using Crm.Modules.Identity.Infrastructure.Persistence;
+using Crm.Modules.Sales.Infrastructure;
 using Crm.Modules.Sales.Infrastructure.Persistence;
+using Crm.Modules.Workflows.Infrastructure;
+using Crm.Modules.Workflows.Infrastructure.Persistence;
 using Crm.Shared.Contracts.Configuration;
 using Crm.Shared.Infrastructure.DependencyInjection;
 using Crm.Shared.Infrastructure.Persistence;
@@ -32,6 +37,8 @@ builder.Services.AddModuleHandlers(
     typeof(Crm.Modules.Sales.Contracts.SalesPermissions).Assembly);
 builder.Services.AddScoped<Crm.Modules.Sales.Application.IDefaultPipelineSeeder, Crm.Modules.Sales.Infrastructure.Provisioning.DefaultPipelineSeeder>();
 builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Identity.Contracts.OrganizationCreated>, Crm.Modules.Sales.Application.Pipelines.OrganizationCreatedHandler>();
+// M4: Sales'in DealStageChanged domain event'ini modüller arası DealStageChangedIntegration'a çevirir (Workflows tüketir).
+builder.Services.AddScoped<Crm.Shared.Infrastructure.Persistence.Outbox.IDomainEventHandler<Crm.Modules.Sales.Domain.Deals.DealStageChanged>, Crm.Modules.Sales.Infrastructure.Events.DealStageChangedIntegrationPublisher>();
 builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<SalesDbContext>>();
 
 // Activities: outbox'ı boşaltır (bugün olay üretmez; ileride bildirim/hatırlatma için hazır).
@@ -41,6 +48,26 @@ builder.Services.AddModuleHandlers(
     typeof(Crm.Modules.Activities.Domain.IActivityRepository).Assembly,
     typeof(Crm.Modules.Activities.Contracts.ActivitiesPermissions).Assembly);
 builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<ActivitiesDbContext>>();
+
+// Workflows (Milestone 4): outbox'ı boşaltır; lead/fırsat olaylarının tüketicilerini (kural değerlendirme + yürütme başlatma) barındırır
+// (InProcessEventBus olayı bu süreçte dağıtır) ve Conductor görev işleyicilerini + yürütme durumu senkronunu çalıştırır. Worker Application
+// assembly'lerini taramaz; Workflows'un ihtiyaç duyduğu diğer modüllerin Contracts uygulamaları (üye/rol arama, lead sahipliği, aktivite
+// oluşturma, kayıt arama) ve olay tüketicileri burada elle kaydedilir.
+builder.Services.AddModuleDbContext<WorkflowsDbContext>(builder.Configuration, WorkflowsDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    WorkflowsDbContext.SchemaName,
+    typeof(Crm.Modules.Workflows.Domain.IWorkflowRuleRepository).Assembly,
+    typeof(Crm.Modules.Workflows.Contracts.WorkflowsPermissions).Assembly);
+builder.Services.AddIdentityContractServices();
+builder.Services.AddSalesContractServices();
+builder.Services.AddActivitiesContractServices();
+builder.Services.AddWorkflowsRuntime(builder.Configuration);
+builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Sales.Contracts.LeadCreated>, Crm.Modules.Workflows.Application.Triggering.LeadCreatedWorkflowHandler>();
+builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Sales.Contracts.DealStageChangedIntegration>, Crm.Modules.Workflows.Application.Triggering.DealStageChangedWorkflowHandler>();
+builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<WorkflowsDbContext>>();
+builder.Services.AddWorkflowDefinitionRegistration();
+builder.Services.AddHostedService<Crm.Worker.Workflows.ConductorTaskPollingService>();
+builder.Services.AddHostedService<Crm.Worker.Workflows.ExecutionStatusSyncService>();
 
 await builder.Build().RunAsync();
 

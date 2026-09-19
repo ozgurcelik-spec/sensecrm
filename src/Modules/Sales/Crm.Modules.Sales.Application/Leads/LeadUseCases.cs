@@ -76,7 +76,8 @@ public sealed record CreateLeadCommand(
 
 public sealed class CreateLeadValidator : LeadFieldsValidator<CreateLeadCommand>;
 
-public sealed class CreateLeadHandler(ILeadRepository leads, OwnerResolver owners, ITenantContext tenant) : ICommandHandler<CreateLeadCommand, Guid>
+public sealed class CreateLeadHandler(ILeadRepository leads, OwnerResolver owners, ITenantContext tenant, IIntegrationEventOutbox outbox, ICurrentUser user)
+    : ICommandHandler<CreateLeadCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateLeadCommand command, CancellationToken cancellationToken)
     {
@@ -97,6 +98,16 @@ public sealed class CreateLeadHandler(ILeadRepository leads, OwnerResolver owner
             command.Email,
             command.Phone);
         leads.Add(lead);
+
+        // M4: workflow tetikleyicisi (aynı transaction'da outbox'a yazılır; komut başarısız olursa yayınlanmaz).
+        outbox.Enqueue(new LeadCreated(
+            tenant.TenantId,
+            lead.Id,
+            lead.FullName,
+            lead.Company,
+            LeadSourceNames.ToWire(lead.Source),
+            lead.OwnerUserId,
+            user.UserId));
         return lead.Id;
     }
 }
@@ -310,4 +321,17 @@ public sealed class ConvertLeadHandler(
         outbox.Enqueue(new LeadConverted(tenant.TenantId, lead.Id, account.Id, contact.Id, deal?.Id, user.UserId));
         return new ConvertLeadResult(account.Id, contact.Id, deal?.Id);
     }
+}
+
+/// <summary>Lead kaynağının tel adı (camelCase; API/olay sözleşmesi).</summary>
+public static class LeadSourceNames
+{
+    public static string ToWire(LeadSource source) => source switch
+    {
+        LeadSource.Web => "web",
+        LeadSource.Referral => "referral",
+        LeadSource.Campaign => "campaign",
+        LeadSource.ColdCall => "coldCall",
+        _ => "other",
+    };
 }

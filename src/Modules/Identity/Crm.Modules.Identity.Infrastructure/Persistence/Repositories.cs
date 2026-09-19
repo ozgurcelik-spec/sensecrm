@@ -99,6 +99,31 @@ public sealed class MemberLookup(IdentityDbContext db, ITenantContext tenant) : 
     }
 }
 
+/// <summary><see cref="IRoleMemberLookup"/>: rol ve üyelikler kiracı filtresi altında; yalnız aktif üyelikler ve aktif hesaplar döner.</summary>
+public sealed class RoleMemberLookup(IdentityDbContext db, ITenantContext tenant) : IRoleMemberLookup
+{
+    public Task<bool> RoleExistsAsync(Guid roleId, CancellationToken cancellationToken = default) =>
+        tenant.IsResolved ? db.Roles.AsNoTracking().AnyAsync(r => r.Id == roleId, cancellationToken) : Task.FromResult(false);
+
+    public async Task<IReadOnlyList<RoleMember>> GetActiveMembersAsync(Guid roleId, CancellationToken cancellationToken = default)
+    {
+        if (!tenant.IsResolved)
+        {
+            return [];
+        }
+
+        var rows = await (from m in db.Memberships.AsNoTracking()
+                          where m.RoleId == roleId && m.IsActive
+                          join u in db.Users.AsNoTracking() on m.UserId equals u.Id
+                          where u.IsActive
+                          orderby u.Id
+                          select new { u.Id, u.DisplayName })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return rows.Select(r => new RoleMember(r.Id, r.DisplayName)).ToList();
+    }
+}
+
 /// <summary><see cref="ITenantDirectory"/>: organizasyonlar küresel tablodur (kiracı filtresi yok); yalnız sistem işleri kullanır.</summary>
 public sealed class TenantDirectory(IdentityDbContext db) : ITenantDirectory
 {

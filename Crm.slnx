@@ -26,6 +26,13 @@
     <Project Path="src/Modules/Sales/Crm.Modules.Sales.Domain/Crm.Modules.Sales.Domain.csproj" />
     <Project Path="src/Modules/Sales/Crm.Modules.Sales.Infrastructure/Crm.Modules.Sales.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Workflows/">
+    <Project Path="src/Modules/Workflows/Crm.Modules.Workflows.Api/Crm.Modules.Workflows.Api.csproj" />
+    <Project Path="src/Modules/Workflows/Crm.Modules.Workflows.Application/Crm.Modules.Workflows.Application.csproj" />
+    <Project Path="src/Modules/Workflows/Crm.Modules.Workflows.Contracts/Crm.Modules.Workflows.Contracts.csproj" />
+    <Project Path="src/Modules/Workflows/Crm.Modules.Workflows.Domain/Crm.Modules.Workflows.Domain.csproj" />
+    <Project Path="src/Modules/Workflows/Crm.Modules.Workflows.Infrastructure/Crm.Modules.Workflows.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
     <Project Path="src/Shared/Crm.Shared.Infrastructure/Crm.Shared.Infrastructure.csproj" />
@@ -41,6 +48,7 @@
     <Project Path="tests/Modules/Crm.Modules.Activities.Tests/Crm.Modules.Activities.Tests.csproj" />
     <Project Path="tests/Modules/Crm.Modules.Identity.Tests/Crm.Modules.Identity.Tests.csproj" />
     <Project Path="tests/Modules/Crm.Modules.Sales.Tests/Crm.Modules.Sales.Tests.csproj" />
+    <Project Path="tests/Modules/Crm.Modules.Workflows.Tests/Crm.Modules.Workflows.Tests.csproj" />
     <Project Path="tests/Modules/Crm.Shared.Infrastructure.Tests/Crm.Shared.Infrastructure.Tests.csproj" />
     <Project Path="tests/Modules/Crm.Shared.Kernel.Tests/Crm.Shared.Kernel.Tests.csproj" />
   </Folder>

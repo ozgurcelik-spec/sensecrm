@@ -58,6 +58,9 @@
       },
       "audit": {
         "read": "Denetim kaydını görüntüleme"
+      },
+      "workflows": {
+        "manage": "İş akışı kurallarını ve yürütmelerini yönetme"
       }
     },
     "crm": {
@@ -83,6 +86,9 @@
       },
       "reports": {
         "read": "Raporları görüntüleme"
+      },
+      "approvals": {
+        "decide": "Onay taleplerine karar verme"
       }
     }
   }

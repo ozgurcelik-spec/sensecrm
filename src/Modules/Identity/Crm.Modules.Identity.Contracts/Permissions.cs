@@ -58,3 +58,18 @@ public interface IMemberLookup
     /// <summary>Aktif organizasyonun (pasif olanlar dahil) üyelerinin görünen adları; üye olmayan kimlikler sonuçta yer almaz.</summary>
     Task<IReadOnlyDictionary<Guid, string>> GetDisplayNamesAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default);
 }
+
+/// <summary>Bir rolün aktif üyesi (workflow atama/onay için).</summary>
+public sealed record RoleMember(Guid UserId, string DisplayName);
+
+/// <summary>
+/// Modüller arası rol üyeliği sözleşmesi (Identity uygular): rol kiracıda var mı ve rolün <b>aktif</b> üyeleri kimler.
+/// Aktif kiracı bağlamında çalışır; başka organizasyonun rolü asla dönmez.
+/// </summary>
+public interface IRoleMemberLookup
+{
+    Task<bool> RoleExistsAsync(Guid roleId, CancellationToken cancellationToken = default);
+
+    /// <summary>Rolün aktif üyeleri (kullanıcı kimliğine göre sıralı, kararlı). Rol yoksa boş liste.</summary>
+    Task<IReadOnlyList<RoleMember>> GetActiveMembersAsync(Guid roleId, CancellationToken cancellationToken = default);
+}

@@ -464,6 +464,10 @@ namespace Crm.Modules.Sales.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("modified_user_id");
 
+                    b.Property<DateTime?>("OwnerAssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("owner_assigned_at");
+
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_user_id");

@@ -1,0 +1,54 @@
+{
+  "name": "crm_deal_approval",
+  "description": "CRM v1: kazanilan buyuk tutarli firsat icin onay talepleri acar, karari bekler, sonucu firsata not olarak isler.",
+  "version": 1,
+  "schemaVersion": 2,
+  "ownerEmail": "crm@algosense.com.tr",
+  "restartable": true,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 0,
+  "inputParameters": ["tenantId", "executionId", "ruleId", "dealId", "dealName", "amount", "currency", "approverRoleId"],
+  "tasks": [
+    {
+      "name": "crm_create_approvals",
+      "taskReferenceName": "create_approvals",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "tenantId": "${workflow.input.tenantId}",
+        "executionId": "${workflow.input.executionId}",
+        "dealId": "${workflow.input.dealId}",
+        "dealName": "${workflow.input.dealName}",
+        "amount": "${workflow.input.amount}",
+        "currency": "${workflow.input.currency}",
+        "approverRoleId": "${workflow.input.approverRoleId}"
+      }
+    },
+    {
+      "name": "wait_for_decision",
+      "taskReferenceName": "wait_decision",
+      "type": "HUMAN"
+    },
+    {
+      "name": "crm_record_decision",
+      "taskReferenceName": "record_decision",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "tenantId": "${workflow.input.tenantId}",
+        "executionId": "${workflow.input.executionId}",
+        "dealId": "${workflow.input.dealId}",
+        "decision": "${wait_decision.output.decision}",
+        "comment": "${wait_decision.output.comment}",
+        "approverUserId": "${wait_decision.output.approverUserId}"
+      }
+    },
+    {
+      "name": "crm_cancel_pending_approvals",
+      "taskReferenceName": "cancel_pending",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "tenantId": "${workflow.input.tenantId}",
+        "executionId": "${workflow.input.executionId}"
+      }
+    }
+  ]
+}

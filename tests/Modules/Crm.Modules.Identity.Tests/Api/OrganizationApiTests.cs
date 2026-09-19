@@ -205,7 +205,7 @@ public sealed class OrganizationApiTests(CrmApiFactory factory)
         var permissions = await admin.GetFromJsonAsync<JsonElement>($"{Base}/permissions", Ct);
 
         var list = permissions.EnumerateArray().Select(p => (Key: p.GetProperty("key").GetString()!, Group: p.GetProperty("group").GetString()!)).ToList();
-        list.Count.ShouldBe(16);
+        list.Count.ShouldBe(18);
         list.ShouldAllBe(p => p.Group == "org" || p.Group == "crm");
         list.ShouldContain(("org.users.read", "org"));
         list.ShouldContain(("crm.reports.read", "crm"));

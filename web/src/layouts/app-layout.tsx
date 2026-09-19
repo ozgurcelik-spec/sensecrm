@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { useDisclosure } from "@mantine/hooks";
 import { AppShell, Burger, Divider, Group, NavLink, ScrollArea, Text } from "@mantine/core";
 import { NAV_ITEMS, SETTINGS_ITEMS, type NavItem } from "@/config/navigation";
+import { usePendingApprovalCount } from "@/hooks/use-approvals";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
 import RouteBoundary from "@/components/route-boundary";
+import { ApprovalsBell } from "@/components/shell/approvals-bell";
 import { LanguageMenu } from "@/components/shell/language-menu";
 import { OrganizationSwitcher } from "@/components/shell/organization-switcher";
 import { UserMenu } from "@/components/shell/user-menu";
@@ -47,7 +49,8 @@ function NavSection({ items, onNavigate }: { items: NavItem[]; onNavigate: () =>
 export default function AppLayout() {
   const { t } = useTranslation(["common", "navigation"]);
   const [mobileOpened, { toggle, close }] = useDisclosure(false);
-  const modules = useVisibleItems(NAV_ITEMS);
+  const { data: pendingApprovals = 0 } = usePendingApprovalCount();
+  const modules = useVisibleItems(NAV_ITEMS, { pendingApprovals: pendingApprovals > 0 });
   const settings = useVisibleItems(SETTINGS_ITEMS);
 
   return (
@@ -79,6 +82,7 @@ export default function AppLayout() {
             </Group>
           </Group>
           <Group gap="xs" wrap="nowrap">
+            <ApprovalsBell />
             <OrganizationSwitcher />
             <LanguageMenu />
             <UserMenu />

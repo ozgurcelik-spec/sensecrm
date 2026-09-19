@@ -96,6 +96,13 @@
       "related_not_found": "The related record was not found",
       "invalid_range": "End cannot be before start",
       "note_status_fixed": "The status of a note cannot be changed"
+    },
+    "workflow": {
+      "role_not_found": "The selected role was not found in this organization",
+      "not_running": "The execution is not running; only running executions can be terminated"
+    },
+    "approval": {
+      "already_decided": "A decision has already been made on this approval"
     }
   }
 }

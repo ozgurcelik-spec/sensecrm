@@ -13,5 +13,7 @@
   "roles": "Roles & Permissions",
   "pipelines": "Pipelines",
   "audit": "Audit Log",
-  "profile": "My Profile"
+  "profile": "My Profile",
+  "approvals": "My approvals",
+  "workflows": "Workflows"
 }

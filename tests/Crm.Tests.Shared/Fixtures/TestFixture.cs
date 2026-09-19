@@ -1,13 +1,16 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Crm.Modules.Identity.Application;
+using Crm.Modules.Workflows.Application;
 using Crm.Shared.Infrastructure.DependencyInjection;
 using Crm.Shared.Infrastructure.Persistence;
 using Crm.Shared.Infrastructure.Persistence.Audit;
+using Crm.Tests.Shared.Workflows;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Respawn;
@@ -25,7 +28,7 @@ namespace Crm.Tests.Shared.Fixtures;
 public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestingEnvironment = "Testing";
-    private static readonly string[] Schemas = ["identity", "sales", "activities", AuditDbContext.SchemaName];
+    private static readonly string[] Schemas = ["identity", "sales", "activities", "workflows", AuditDbContext.SchemaName];
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("crm_test")
@@ -76,6 +79,13 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
         builder.UseSetting("ProblemDetails:IncludeExceptionDetails", "true");
         builder.ConfigureServices(services =>
         {
+            // Workflow motoru: gerçek Conductor yerine gerçek tanım + görev işleyicilerini çalıştıran sahte motor (tüm test projeleri).
+            services.RemoveAll<IWorkflowEngine>();
+            services.RemoveAll<IWorkflowDefinitionRegistrar>();
+            services.AddSingleton<FakeWorkflowEngine>();
+            services.AddSingleton<IWorkflowEngine>(sp => sp.GetRequiredService<FakeWorkflowEngine>());
+            services.AddSingleton<IWorkflowDefinitionRegistrar>(sp => sp.GetRequiredService<FakeWorkflowEngine>());
+
             // Ortak audit şemasının sahibi context (API'de kayıtlı değil; migration için).
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Database"] = ConnectionString })

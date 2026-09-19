@@ -1,6 +1,6 @@
 # Backend (.NET) — mimari özet ve HTTP sözleşmesi
 
-Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli), Milestone 2 (satış çekirdeği) ve Milestone 3 (aktiviteler + raporlar) sonunda backend'in gerçek durumunu anlatır.
+Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli), Milestone 2 (satış çekirdeği), Milestone 3 (aktiviteler + raporlar) ve Milestone 4 (workflow'lar: Conductor OSS) sonunda backend'in gerçek durumunu anlatır.
 Altyapı, senseik (HR SaaS) deposundan taşınmıştır: aynı teknoloji yığını (.NET 10, EF Core + Npgsql, xUnit v3) ve aynı proje yapısı.
 
 ## 1. Proje yapısı
@@ -9,7 +9,7 @@ Altyapı, senseik (HR SaaS) deposundan taşınmıştır: aynı teknoloji yığı
 Crm.slnx
 src/
   Crm.Api/              API host'u (Program.cs, JWT, güvenlik başlıkları, correlation id, health)
-  Crm.Worker/           Modüllerin outbox'ını boşaltan arka plan süreci (OutboxPollingService<T>)
+  Crm.Worker/           Modüllerin outbox'ını boşaltan arka plan süreci (OutboxPollingService<T>) + Conductor görev işleyicileri ve yürütme durumu senkronu (M4)
   Crm.Migrator/         EF migration'larını uygular (migrate | reset)
   Shared/
     Crm.Shared.Kernel/          Entity/AggregateRoot/TenantAggregateRoot, Result/Error, EmailAddress, Money, DateRange, TenantCalendar (kiracı saat dilimi takvimi)
@@ -20,12 +20,14 @@ src/
     Identity/           Domain · Application · Contracts · Infrastructure · Api   (şema: identity)
     Sales/              Domain · Application · Contracts · Infrastructure · Api   (şema: sales; Milestone 2; satış raporları Milestone 3)
     Activities/         Domain · Application · Contracts · Infrastructure · Api   (şema: activities; Milestone 3)
+    Workflows/          Domain · Application · Contracts · Infrastructure · Api   (şema: workflows; Milestone 4; Conductor OSS)
 tests/
   Crm.Tests.Architecture/      Onion/modül sınırı kuralları (NetArchTest)
   Crm.Tests.TenantIsolation/   EF modelinde kiracı filtresi/indeks denetimi (veritabanısız)
   Crm.Tests.Shared/            Testcontainers (postgres:17-alpine) + WebApplicationFactory<Program> + Respawn
-  Modules/                     Crm.Modules.Identity.Tests + Crm.Modules.Sales.Tests + Crm.Modules.Activities.Tests (birim + HTTP entegrasyon), Shared.Kernel/Infrastructure testleri
-infra/docker-compose.yml       postgres + redis (host portları standart + 10000)
+  Modules/                     Crm.Modules.Identity.Tests + Crm.Modules.Sales.Tests + Crm.Modules.Activities.Tests + Crm.Modules.Workflows.Tests (birim + HTTP entegrasyon; sahte workflow motoruyla), Shared.Kernel/Infrastructure testleri
+infra/docker-compose.yml       postgres + redis + Conductor OSS (host portları standart + 10000; Conductor 18090)
+build/smoke-workflows.ps1      Gerçek Conductor'a karşı canlı duman testi (M4)
 build/new-module.ps1           Yeni modül iskeleti
 ```
 
@@ -48,7 +50,7 @@ Denetim kaydı ortak `audit.audit_log_entries` tablosuna, her modülde otomatik 
 | `EmployeeId`/`eid`, çalışan aramaları, birim yetkilendirme, `DataScope`/`IScopedRequest` (veri kapsamı) | Milestone 3+: kayıt sahipliği bazlı görünürlük (Zoho rol hiyerarşisi + paylaşım kuralları) |
 | Impersonation (`act`), API anahtarları, erişim ayarları, modül aç/kapa filtresi, gizlilik/anonimleştirme | SaaS hazırlığı (Milestone 7) / KVKK işleri |
 | MFA, e-posta ile davet, parola sıfırlama | Sonraki aşama (e-posta altyapısıyla birlikte); bugün üye ekleme parola ile doğrudan yapılır |
-| Hangfire/zamanlanmış işler | Gerektiğinde (Worker'a eklenir); workflow için Conductor (K9, Milestone 4) |
+| Hangfire/zamanlanmış işler | Gerektiğinde (Worker'a eklenir); workflow için Conductor (K9) Milestone 4'te geldi (bkz. §13); zamanlanmış tetikleyiciler hâlâ yok |
 | SignalR/bildirimler, MailKit/e-posta | E-posta bildirimi (2. aşama) |
 | MinIO/S3 depolama | Dosya ekleri geldiğinde (K11) |
 | Dışa aktarma (QuestPDF/ClosedXML/CsvHelper), Scriban | Raporlar/CSV içe-dışa aktarma |
@@ -58,10 +60,10 @@ Denetim kaydı ortak `audit.audit_log_entries` tablosuna, her modülde otomatik 
 ## 3. Çalıştırma
 
 ```powershell
-docker compose -f infra/docker-compose.yml up -d          # postgres (localhost:15432), redis (localhost:16379, isteğe bağlı)
-dotnet run --project src/Crm.Migrator                     # migration'ları uygular (audit + identity + sales + activities); "-- reset" yalnız Development
+docker compose -f infra/docker-compose.yml up -d          # postgres (localhost:15432), redis (localhost:16379, isteğe bağlı), Conductor (localhost:18090)
+dotnet run --project src/Crm.Migrator                     # migration'ları uygular (audit + identity + sales + activities + workflows); "-- reset" yalnız Development
 dotnet run --project src/Crm.Api                          # http://localhost:5080  (Scalar: /scalar, OpenAPI: /openapi/v1.json)
-dotnet run --project src/Crm.Worker                       # outbox işleyici
+dotnet run --project src/Crm.Worker                       # outbox işleyici + Conductor görev işleyicileri + yürütme durumu senkronu
 dotnet test Crm.slnx                                      # entegrasyon testleri için Docker gerekir
 ```
 
@@ -70,14 +72,14 @@ dotnet test Crm.slnx                                      # entegrasyon testleri
 - Web geliştirme sunucusu `/api` isteklerini `http://localhost:5080`'e yönlendirir; CORS `http://localhost:5173` için açıktır (`Cors:AllowedOrigins`).
 - Migration üretimi (yerel araç `dotnet-ef`, `dotnet-tools.json`):
   `dotnet dotnet-ef migrations add <Ad> --project src/Modules/Identity/Crm.Modules.Identity.Infrastructure --startup-project src/Crm.Migrator --context IdentityDbContext -o Persistence/Migrations`
-  Ortak denetim şeması için `--project src/Shared/Crm.Shared.Infrastructure --context AuditDbContext`. Mevcut migration'lar: `InitialIdentity`, `InitialAudit`, `InitialSales` (`--project src/Modules/Sales/Crm.Modules.Sales.Infrastructure --context SalesDbContext`), `InitialActivities` (`--project src/Modules/Activities/Crm.Modules.Activities.Infrastructure --context ActivitiesDbContext`).
+  Ortak denetim şeması için `--project src/Shared/Crm.Shared.Infrastructure --context AuditDbContext`. Mevcut migration'lar: `InitialIdentity`, `InitialAudit`, `InitialSales` (`--project src/Modules/Sales/Crm.Modules.Sales.Infrastructure --context SalesDbContext`), `InitialActivities` (`--project src/Modules/Activities/Crm.Modules.Activities.Infrastructure --context ActivitiesDbContext`), `LeadOwnerAssignedAt` (Sales; M4), `InitialWorkflows` (`--project src/Modules/Workflows/Crm.Modules.Workflows.Infrastructure --context WorkflowsDbContext`).
 
 ## 4. Yeni modül ekleme
 
 1. `./build/new-module.ps1 -Name Sales` — 5 projeyi (Domain/Application/Contracts/Infrastructure/Api) açar, `Crm.slnx`'e ekler, derler.
 2. `src/Crm.Api/ModuleCatalog.cs`'e `new SalesModule()` ekleyin.
 3. `Crm.Migrator` ve `Crm.Worker`'a modülün Infrastructure projesini referans verip `AddModuleDbContext` (Worker'da ayrıca `AddModuleHandlers` + `AddHostedService<OutboxPollingService<SalesDbContext>>`) ekleyin.
-4. İzinleri `Contracts/SalesPermissions.cs`'te tanımlayın (`crm.<kaynak>.<eylem>`, grup `crm`); modül `IModule.Permissions` ile katalogla paylaşır. Yeni anahtarlar mevcut organizasyonların sistem rollerine API açılışında `SystemRolePermissionSynchronizer` ile yayılır (`SystemRoleDefinitions`: Administrator = tümü, Standard = tüm `crm.*` + `org.users.read`). Milestone 2'de `crm.accounts/contacts/leads/deals.*` anahtarları Identity.Contracts'taki `CrmPermissions`'tan `SalesPermissions`'a taşındı (anahtar dizgeleri aynı); Milestone 3'te `crm.activities.*` anahtarları `Activities.Contracts.ActivitiesPermissions`'a taşındı (aynı dizgeler); `crm.reports.read` iki modülün (Sales + Activities raporları) ortak izni olduğu için `Identity.Contracts.CrmPermissions.ReportsRead`'de kaldı.
+4. İzinleri `Contracts/SalesPermissions.cs`'te tanımlayın (`crm.<kaynak>.<eylem>`, grup `crm`); modül `IModule.Permissions` ile katalogla paylaşır. Yeni anahtarlar mevcut organizasyonların sistem rollerine API açılışında `SystemRolePermissionSynchronizer` ile yayılır (`SystemRoleDefinitions`: Administrator = tümü, Standard = tüm `crm.*` (M4'ten beri `crm.approvals.decide` hariç: onay yetkisi bilinçli olarak yalnız Administrator'da/özel rollerdedir) + `org.users.read`). Milestone 2'de `crm.accounts/contacts/leads/deals.*` anahtarları Identity.Contracts'taki `CrmPermissions`'tan `SalesPermissions`'a taşındı (anahtar dizgeleri aynı); Milestone 3'te `crm.activities.*` anahtarları `Activities.Contracts.ActivitiesPermissions`'a taşındı (aynı dizgeler); `crm.reports.read` iki modülün (Sales + Activities raporları) ortak izni olduğu için `Identity.Contracts.CrmPermissions.ReportsRead`'de kaldı.
 5. Kiracıya ait varlıklar `TenantAggregateRoot`, denetlenecekler `IAuditLogged` olur; global kiracı filtresi, `TenantId` indeksi ve denetim kaydı otomatik gelir. Kiracısız (küresel) bir tablo eklemek bilinçli karardır: `TenantQueryFilterConventionTests.GlobalEntities` listesine eklenir.
 6. Handler'ları **Application** assembly'sinden kaydedin (`AddModuleHandlers`; Domain/Contracts assembly'leri de verilir — outbox olay tipleri buradan çözülür). Integration event'i handler içinde `IIntegrationEventOutbox.Enqueue(...)` ile yayınlayın.
 
@@ -118,7 +120,7 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 ### Profil ve katalog
 - `GET /me` → `{ user: { id, email, displayName, locale, isPlatformAdmin }, organization: { id, name, slug, defaultLocale, timeZone }, role: { id, name }, permissions: string[], organizations: [{ id, name, slug }] }`
 - `PATCH /me` `{ displayName?, locale? }` → 204
-- `GET /permissions` → `[{ key, group }]` (`group`: `org` | `crm`); 16 anahtar: `org.settings.manage, org.users.read, org.users.manage, org.roles.manage, org.audit.read`, `crm.{accounts,contacts,leads,deals}.{read,write}` (Sales modülü), `crm.activities.{read,write}` (Activities modülü) ve `crm.reports.read` (Identity.Contracts, ortak).
+- `GET /permissions` → `[{ key, group }]` (`group`: `org` | `crm`); 18 anahtar: `org.settings.manage, org.users.read, org.users.manage, org.roles.manage, org.audit.read`, `crm.{accounts,contacts,leads,deals}.{read,write}` (Sales modülü), `crm.activities.{read,write}` (Activities modülü), `crm.reports.read` (Identity.Contracts, ortak) ve M4'te `org.workflows.manage` + `crm.approvals.decide` (Workflows modülü).
 
 ### Organizasyon
 - `GET /organization` → `{ id, name, slug, defaultLocale, timeZone }` (aktif üye); `PUT /organization` `{ name, defaultLocale, timeZone }` → 204 (`org.settings.manage`; `timeZone` geçerli IANA kimliği olmalı)
@@ -143,6 +145,7 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 - Kayıt sahipliği bazlı görünürlük/rol hiyerarşisi (K7), organizasyon grubu ve konsolidasyon (K4), PostgreSQL RLS (K2 ikinci savunma hattı).
 - E-posta ile davet, parola sıfırlama, MFA; SSO (K6).
 - Üretim gözlemlenebilirliği; Dockerfile'lar taşındı ama henüz bir imaj derlemesiyle doğrulanmadı.
+- Workflows açık işleri: bkz. §13 sonu.
 - Activities/rapor açık işleri: bağlı kaydı silinmiş aktivitelerin temizlik işi (ilişki bugün yumuşak: `relatedName` boş döner), tekrarlayan görevler, hatırlatma bildirimleri (bildirim altyapısı M4+); aktivite listesindeki `relatedName` bağlı kaydın okuma iznine bakmaz (`crm.activities.read` yeter); raporlar çok para birimli tutarı ayırmadan toplar (M2 sınırlaması); rapor sorguları büyük kiracılar için henüz önbelleklenmez.
 - Sales açık işleri: yinelenen firma/kişi tespiti, CSV içe aktarma, özel alanlar (kapsam dışı, bkz. [m2-satis-cekirdegi.md](../plan/m2-satis-cekirdegi.md)); pano `totalAmount` alanı para birimlerini ayırmadan toplar (TRY gösterimi; çok para birimli toplam sonraki iş); `GET /organization/members` hâlâ `org.users.read` ister (Administrator ve Standard'da var; bu izni taşımayan özel rollerde sahip seçici çalışmaz).
 
@@ -278,3 +281,55 @@ Uygulama: Sales'te `ISalesReportStore` (`SalesReportStore`, veritabanında topla
 - `Identity.Contracts`: `crm.activities.*` anahtarları `ActivitiesPermissions`'a taşındı (dizgeler aynı; Administrator = tüm 16 anahtar, Standard = tüm `crm.*` + `org.users.read` kuralı korunur — `SystemRolePermissionSynchronizer` API açılışında mevcut organizasyonlara da uygular); `CrmPermissions` yalnız `crm.reports.read` taşır; `TenantInfo.TimeZone` ve `TenantCalendarService` eklendi.
 - `Kernel`: `Time.TenantCalendar`.
 - `SharedResource` tr/en: `activity.*` hata anahtarları, `validation.activity_related`, `validation.date_range`, yeni `field.*` adları.
+
+## 13. Workflows modülü (Milestone 4 — Conductor OSS)
+
+HTTP sözleşmesinin bağlayıcı kaynağı [m4-workflow.md](../plan/m4-workflow.md); bu bölüm uygulanan hâli, Conductor kurulumunu ve olay akışını anlatır.
+
+**Modül:** `Crm.Modules.Workflows.{Domain,Application,Contracts,Infrastructure,Api}`, şema `workflows`, tek `WorkflowsDbContext` (migration `InitialWorkflows`). Sales/Activities/Identity'ye yalnız `*.Contracts` üzerinden bağlıdır (mimari testler yeşil).
+
+**Agregatlar** (hepsi `TenantAggregateRoot`, `IAuditLogged`; kimlikler `Guid.CreateVersion7`):
+
+| Agregat / tablo | Kurallar |
+|---|---|
+| `WorkflowRule` / `workflow_rules` (yumuşak silinir) | `kind` = `leadAssignment` veya `dealApproval`; `params` tür şemasına göre doğrulanır ve `jsonb` saklanır. `leadAssignment`: `{ sources?, assigneeRoleId, followUpHours (1–720, varsayılan 24) }`, `dealApproval`: `{ minAmount (>0), approverRoleId }`. Hatalar `params.<alan>` altında (`RuleParamsParser`, birim testli); rol kiracıda yoksa `workflow.role_not_found` (400). POST'ta `isEnabled` verilmezse etkin başlar; PUT tür + parametreleri tümden değiştirir, etkin durumu `enable`/`disable` uçlarıyla değişir. Aynı türden birden çok etkin kural hepsi çalışır. Kural değişiklikleri denetim kaydına yazılır (`GET /audit?entityType=WorkflowRule&entityId=`, `org.workflows.manage`) |
+| `WorkflowExecution` / `workflow_executions` | Kural adı/türü/konu adı anlık görüntüdür (kural silinse geçmiş okunur). `status`: `running`, sonra `completed`, `failed` veya `terminated` (bir kez sonlanınca değişmez); `error` (kararlı kod: `no_assignee`, `no_approver`, `workflow.engine_unavailable`, `engine_workflow_not_found` ya da motorun ham nedeni). İdempotency: `(tenant, rule, trigger_event_id, attempt)` benzersiz indeks; "yeniden dene" aynı olay için bir sonraki `attempt`'i (yeni yürütme) açar |
+| `Approval` / `approvals` | `pending`, sonra `approved`, `rejected` veya `cancelled`; reddetmede yorum zorunlu (`validation`, alan `comment`); karar verilmiş/iptal edilen talep değişmez (`approval.already_decided` 409); `(execution, approver)` benzersiz. Tek onay yeter: **ilk karar** (onay ya da red) sonucu belirler, diğer bekleyen talepler aynı transaction'da `cancelled` olur. Başlık/konu adı/tutar anlık görüntüdür |
+
+**Uç noktalar** (hepsi `/api/v1`, Bearer): `GET/POST /workflows/rules` (liste **düz dizi**, oluşturma 201 + gövde), `GET/PUT/DELETE /workflows/rules/{id}`, `POST .../enable` ve `.../disable`, `GET /workflows/executions?status&ruleId&from&to&subjectType&subjectId&page&pageSize` (en yeni önce; `from`/`to` UTC anları, uçlar dahil; `subjectType`/`subjectId` lead/fırsat detayındaki durum şeridi içindir), `GET /workflows/executions/{id}` (özet + `steps` Conductor'dan ham durum metniyle `COMPLETED`, `IN_PROGRESS`, `FAILED_WITH_TERMINAL_ERROR`… + varsa `approvals`; motora ulaşılamazsa `steps` boş), `POST .../terminate` (yalnız running, aksi `workflow.not_running` 409; bekleyen onaylar iptal), `POST .../retry` (yalnız failed, aksi `workflow.not_failed` 409; kural silinmişse 404; güncel kural parametrelerini kullanır), `GET /approvals?status&mine&page&pageSize` (`mine` varsayılan `true`, ek izin gerekmez; `mine=false` `org.workflows.manage` ister), `GET /approvals/{id}` (kendi onayı ya da `org.workflows.manage`, aksi 403), `POST /approvals/{id}/decision` (`{ decision: "approve" veya "reject", comment? }`, `crm.approvals.decide` + onay çağırana ait olmalı), `GET /approvals/summary` (`{ pendingCount }`, kimliği doğrulanmış **her** üye için 200). Kural/yürütme uçları `org.workflows.manage` ister.
+
+**Yeni hata kodları** (metinler `SharedResource.resx` tr/en): `workflow.role_not_found` (400), `workflow.not_running` (409), `workflow.not_failed` (409), `workflow.engine_unavailable` (500), `approval.already_decided` (409), `approval.comment_required`, yürütme hata kodları `no_assignee`, `no_approver`, `engine_workflow_not_found`; doğrulama mesajları `validation.workflow_params`, `validation.workflow_source`, `validation.follow_up_hours`, `validation.min_amount`, `validation.workflow_role_id`. İzin adları istemcide çevrilir (K8); `permission.*` anahtarları da resx'e eklendi.
+
+### Conductor OSS kurulumu (`infra/docker-compose.yml`, `infra/conductor/config-postgres.properties`)
+- **İmaj/sürüm:** `conductoross/conductor:3.32.4` (2026-09 itibarıyla son kararlı; `latest` kullanılmaz). İmaj sunucu + UI'yı tek konteynerde taşır, host portu **18090** (`CONDUCTOR_PORT` ile değişir): UI `/`, REST `/api`, sağlık `/health`.
+- **Kalıcılık: PostgreSQL, Redis/Elasticsearch yok.** `conductor.db.type`, `conductor.queue.type` ve `conductor.indexing.type` = `postgres` + `conductor.elasticsearch.version=0`; veri `crm-postgres` içindeki ayrı `conductor` veritabanındadır (tek seferlik `conductor-db-init` servisi veritabanını idempotent oluşturur — postgres `init.sql` yalnız ilk kurulumda çalıştığı için mevcut hacimlerde de çalışır). Gömülü SQLite varsayılanı yerine bunun seçilme nedeni: eşzamanlı poll/güncelleme yükü ve yeniden başlatma dayanıklılığı; ek servis maliyeti sıfır (mevcut postgres). Bağlantı bilgisi ortam değişkeninden gelir (`CONDUCTOR_DB_USER`/`CONDUCTOR_DB_PASSWORD`, yalnız yerel geliştirme parolası).
+- **Başlatma:** `POSTGRES_PORT=15433 docker compose -f infra/docker-compose.yml up -d --no-deps conductor-db-init conductor` (bu makinede postgres host portu 15433'tür; `--no-deps` mevcut postgres konteynerini yeniden yaratmaz).
+- **Uygulama ayarı:** `Conductor:BaseUrl` (Api ve Worker; Development'ta `http://localhost:18090`, boşsa motor yapılandırılmamış sayılır: başlatmalar `failed`/`workflow.engine_unavailable` olur, süreçler çalışmaya devam eder), `Conductor:PollBatchSize`, `PollTimeoutMs`, `StatusSyncIntervalSeconds`, `WorkerId`.
+- **Doğrulanan REST uçları:** tanım kaydı `PUT /api/metadata/workflow` (dizi, idempotent üzerine yazar), görev tanımı `PUT` veya `POST /api/metadata/taskdefs` (PUT yoksa 404 döner → istemci POST'a düşer), başlat `POST /api/workflow`, oku `GET /api/workflow/{id}?includeTasks=true`, sonlandır `DELETE /api/workflow/{id}`, poll `GET /api/tasks/poll/batch/{tip}`, sonuç `POST /api/tasks`, HUMAN görevini tamamla `POST /api/tasks/{workflowId}/{taskRefName}/COMPLETED`. Conductor'un `idempotencyKey` alanı bu sürümde işe yaramadığından idempotency CRM tarafında (benzersiz indeks) sağlanır.
+
+### Motor portu ve tanımlar
+- `IWorkflowEngine` (Application): `StartAsync`, `GetAsync`, `TerminateAsync`, `CompleteWaitTaskAsync`. Uygulaması `ConductorWorkflowEngine` (tipli `HttpClient` + `Microsoft.Extensions.Http.Resilience` standart işleyicisi; yeniden deneme yalnız güvenli yöntemlerde). Testlerde `Crm.Tests.Shared.Workflows.FakeWorkflowEngine`: gerçek tanım JSON'larını ve gerçek görev işleyicilerini çalıştıran sahte motor (kesinti simülasyonu bayrakları).
+- **Tanımlar kodda, sürümlü:** `Infrastructure/Definitions/crm_lead_assignment.v1.json`, `crm_deal_approval.v1.json`, `task_definitions.v1.json` (gömülü kaynak). API ve Worker başlangıcında arka planda `PUT` ile idempotent kaydedilir (`WorkflowDefinitionRegistrationService`; Conductor henüz ayakta değilse 6 kez dener, ilk workflow başlatmasında da `EnsureRegisteredAsync` yeniden dener). Tanım değişirse yeni sürüm dosyası eklenir ve `WorkflowNames.DefinitionVersion` artırılır. Görev tanımları ortak olarak 3 yeniden deneme + üstel geri çekilme + 120 sn yanıt zaman aşımıdır.
+- **Workflow 1 `crm_lead_assignment`:** `crm_assign_lead_owner` → `crm_create_followup_task`. **Workflow 2 `crm_deal_approval`:** `crm_create_approvals` → HUMAN `wait_for_decision` (ref `wait_decision`) → `crm_record_decision` → `crm_cancel_pending_approvals`.
+
+### Olay akışı
+1. **Lead:** `CreateLeadHandler` `LeadCreated` integration olayını (`Sales.Contracts`) aynı transaction'da Sales outbox'ına yazar. **Fırsat:** mevcut `DealStageChanged` domain olayı Worker'da `DealStageChangedIntegrationPublisher` (Sales.Infrastructure) ile `DealStageChangedIntegration`'a çevrilip outbox'a eklenir; olay kimliği domain olay kimliğinden deterministik türetilir (yeniden işlemede aynı kimlik). Mevcut Sales davranışı değişmedi.
+2. Worker'ın `OutboxPollingService<SalesDbContext>`'i olayı `IEventBus`'a yayınlar; **Worker'da** kayıtlı `LeadCreatedWorkflowHandler` / `DealStageChangedWorkflowHandler` (`WorkflowTrigger`) kiracının **etkin kurallarını** okur: lead için kaynak filtresi; fırsat için aşama türü `won` ve `amount >= minAmount`.
+3. Uyan her kural için `workflow_executions` satırı **önce** yazılır (idempotency anahtarı `ruleId + eventId`), sonra motor başlatılır ve `engine_workflow_id` işlenir. Olay yeniden teslim edilirse ikinci yürütme/workflow açılmaz. Motor hatasında yürütme `failed` (`workflow.engine_unavailable`) olur ve arayüzden yeniden denenebilir.
+4. **Görev işleyicileri** (`Crm.Worker/Workflows/ConductorTaskPollingService`): her görev türünü toplu poll eder, `WorkflowTaskRunner` ile **kiracı = `input.tenantId`** + sistem bağlamı + görev başına DI kapsamında çalıştırır; iş kuralı hatası `FAILED_WITH_TERMINAL_ERROR` (yeniden denenmez, neden kararlı kod), geçici hata `FAILED` (motor yeniden dener). Görevler bir Worker'da sıralı işlenir (round-robin yarışsız). Conductor at-least-once teslim eder; onay kaydı `(execution, approver)` benzersiz olduğundan tekrar güvenlidir.
+   - `crm_assign_lead_owner`: `IRoleMemberLookup` (Identity.Contracts) ile rolün aktif üyeleri; `ILeadOwnerService` (Sales.Contracts) ile açık lead sayıları ve son atanma zamanı; `RoundRobinSelector`: en az açık lead, eşitlikte en eski atama (hiç atanmamış önce), sonra kimlik. Rolde aktif üye yoksa `no_assignee` (lead sahibi değişmez). Atama `Lead.AssignOwner` (yeni `owner_assigned_at` kolonu) ile yapılır.
+   - `crm_create_followup_task`, `crm_create_approvals`, `crm_record_decision`: `IActivityCreator` (Activities.Contracts) ile "Yeni potansiyel: <ad>" görevi (`dueAt = şimdi + followUpHours`), onaylayıcı başına "Fırsat onayı: <ad>" görevi + `approvals` kaydı, karar notu "Onay: onaylandı/reddedildi (yorum)" (kararı veren kullanıcıya atanmış `note`). Metinler organizasyonun dilinde (tr/en). Rolde onaylayıcı yoksa `no_approver`.
+   - `crm_cancel_pending_approvals`: güvenlik ağı (karar ucu diğer talepleri zaten iptal eder).
+5. **Karar:** `POST /approvals/{id}/decision` onayı kaydeder, kardeş onayları iptal eder ve workflow'un HUMAN görevini **API içinden** (`IWorkflowEngine.CompleteWaitTaskAsync`) tamamlar; motor reddederse hiçbir şey kaydedilmez (500 `workflow.engine_unavailable`, tekrar denenebilir). HUMAN görevi henüz zamanlanmadıysa motor istemcisi kısa süre bekler; görev zaten tamamlanmışsa idempotent başarıdır.
+6. **Durum senkronu:** Worker'daki `ExecutionStatusSyncService` her 5 sn çalışan yürütmeleri Conductor'dan okur (`ExecutionStatusSynchronizer`): `running` → `completed`, `failed` veya `terminated`; hata nedeni önce başarısız görevin `reasonForIncompletion`'ından alınır; başarısız/sonlanan yürütmenin bekleyen onayları iptal edilir; motora hiç iletilememiş yürütme 2 dk sonra `failed` olur; motorda bulunamayan workflow `failed` (`engine_workflow_not_found`) olur. **Kiracılar arası tek okuma** `RunningExecutionSource`'tur (`IgnoreQueryFilters`, yalnız `(kiracı, yürütme)` projeksiyonu; §6'daki iki bilinçli filtre atlamaya üçüncü olarak eklenmiştir); her yürütme sonra kendi kiracı kapsamında işlenir.
+
+**Cross-module Contracts (yeni):** `Sales.Contracts`: `LeadCreated`, `DealStageChangedIntegration`, `DealStageKinds`, `ILeadOwnerService`. `Activities.Contracts`: `IActivityCreator`. `Identity.Contracts`: `IRoleMemberLookup`, `RoleMember`. Uygulamalar Worker'da da gerekli olduğundan her modülde `Add<Modül>ContractServices()` uzantısıyla toplanır (Worker Application assembly'lerini taramaz).
+
+**Testler:** `Crm.Modules.Workflows.Tests` — birim (parametre doğrulaması, round-robin seçimi, agregat kuralları, Conductor JSON eşlemesi, tanım/görev katalog tutarlılığı) + Testcontainers HTTP (sahte motor + gerçek tanımlar/işleyiciler): kural CRUD/doğrulama/izin/denetim/kiracı izolasyonu; lead atama uçtan uca (round-robin, en az açık lead, kaynak filtresi, idempotent tetikleme, `no_assignee` + retry, pasif üyeler, motor kesintisi); fırsat onayı uçtan uca (onay + iptal + not + tamamlandı, red yorumu zorunlu, eşik/aşama koşulları, terminate, `no_approver`, karar sırasında motor kesintisi, izinler, kiracı izolasyonu, olay yayını). **Canlı duman testi:** `build/smoke-workflows.ps1` (gerçek Conductor konteyneri + API + Worker; iki workflow + hata yolu + terminate).
+
+## 14. Milestone 4'te değişenler (backend)
+- Yeni modül `Workflows` (şema `workflows`, migration `InitialWorkflows`: `workflow_rules`, `workflow_executions`, `approvals`; indeksler kiracı ön ekli: yürütme `(tenant, status, started_at)`, `(tenant, rule, trigger_event, attempt)` benzersiz, `(tenant, subject)`; onay `(tenant, approver, status)`, `(tenant, execution, approver)` benzersiz; kural `(tenant, kind, is_enabled)`); `Crm.Api` (`ModuleCatalog`), `Crm.Migrator`, `Crm.Worker`'a bağlandı; yeni test projesi `Crm.Modules.Workflows.Tests`; `CrmApiFactory` Respawn şemalarına `workflows` eklendi ve tüm testlerde sahte workflow motoruyla çalışır.
+- `Sales`: `LeadCreated` (lead oluşturulunca outbox), `DealStageChangedIntegration` (mevcut domain olayından), `ILeadOwnerService` (+ `LeadOwnerService`), `Lead.OwnerAssignedAt` + `AssignOwner` (migration `LeadOwnerAssignedAt`; elle sahip değişikliği de atama anını günceller). Mevcut davranış değişmedi.
+- `Activities`: `IActivityCreator` (+ `ActivityCreator`; aynı kurallar: aktif üye, ilişkili kayıt var). `Identity`: `IRoleMemberLookup` (+ `RoleMemberLookup`); yeni izinler `org.workflows.manage`, `crm.approvals.decide` (Administrator tümünü alır, Standard almaz; mevcut organizasyonlar API açılışında `SystemRolePermissionSynchronizer` ile senkronlanır); `GET /permissions` 18 anahtar.
+- Altyapı: `infra/docker-compose.yml`'a Conductor OSS (+ `conductor-db-init`), `infra/conductor/config-postgres.properties`; `Directory.Packages.props`'a `Microsoft.Extensions.Http.Resilience`; `appsettings`'e `Conductor` bölümü (Api + Worker) ve `Polly`/`HttpClient` log seviyesi.
+- **Açık işler:** çok adımlı/sıralı onay zincirleri, onayın aşama geçişini engellemesi, zamanlanmış tetikleyiciler, e-posta/SMS bildirimi, Conductor kimlik doğrulaması/çok kiracılı Conductor (kapsam dışı, bkz. plan); onay verilince onaylayıcının açık "Fırsat onayı" **görevi** kendiliğinden tamamlanmaz (kullanıcı tamamlar); görev işleyicileri at-least-once (yalnız onay kaydı idempotent; çökme anında takip görevi/not ikilenebilir); çok Worker örneğinde round-robin adaleti küçük sapabilir (advisory lock yok); durum senkronu poll tabanlıdır (webhook/`workflowStatusListener` yok, gecikme en çok ~5 sn); Conductor üretim kurulumu (Redis/Elasticsearch, kimlik doğrulama, Helm) K13 kapsamındadır.

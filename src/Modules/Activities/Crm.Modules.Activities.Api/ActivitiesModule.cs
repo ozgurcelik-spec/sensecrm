@@ -2,6 +2,7 @@ using System.Reflection;
 using Crm.Modules.Activities.Application;
 using Crm.Modules.Activities.Contracts;
 using Crm.Modules.Activities.Domain;
+using Crm.Modules.Activities.Infrastructure;
 using Crm.Modules.Activities.Infrastructure.Persistence;
 using Crm.Modules.Identity.Contracts;
 using Crm.Shared.Contracts.Modules;
@@ -45,6 +46,8 @@ public sealed class ActivitiesModule : IModule
 
         services.AddScoped<IActivityRepository, ActivityRepository>();
         services.AddScoped<IActivityReadStore, ActivityReadStore>();
+
+        services.AddActivitiesContractServices();
 
         services.AddScoped<AssigneeResolver>();
         services.AddScoped<RelatedRecordVerifier>();

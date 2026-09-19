@@ -1,0 +1,174 @@
+{
+  "title": "Workflows",
+  "description": "Manage lead assignment and deal approval rules and follow their executions",
+  "tabs": {
+    "label": "Workflow sections",
+    "rules": "Rules",
+    "executions": "Executions"
+  },
+  "kinds": {
+    "leadAssignment": "Lead assignment",
+    "dealApproval": "Deal approval"
+  },
+  "kindHints": {
+    "leadAssignment": "When a lead is created it is assigned round-robin to the users of the chosen role and a follow-up task is opened.",
+    "dealApproval": "When a deal moves to the won stage and its amount reaches the threshold, the users of the approver role are asked to approve."
+  },
+  "sources": {
+    "web": "Web",
+    "referral": "Referral",
+    "campaign": "Campaign",
+    "coldCall": "Cold call",
+    "other": "Other"
+  },
+  "rules": {
+    "new": "New rule",
+    "createTitle": "New rule",
+    "editTitle": "Edit rule",
+    "name": "Rule name",
+    "kind": "Type",
+    "kindFixed": "The type of a rule cannot be changed afterwards.",
+    "sources": "Lead sources",
+    "sourcesPlaceholder": "All sources",
+    "sourcesHint": "Leave empty to run for leads from every source.",
+    "assigneeRole": "Role to assign to",
+    "approverRole": "Approver role",
+    "rolePlaceholder": "Select a role",
+    "rolesUnavailable": "Roles could not be loaded",
+    "followUpHours": "Follow-up time (hours)",
+    "followUpHint": "The follow-up task is due this many hours after the assignment (1-720).",
+    "minAmount": "Minimum amount",
+    "minAmountHint": "Approval is requested when the won deal's amount is at least this value.",
+    "enabled": "Enabled",
+    "enableNamed": "Enable rule {{name}}",
+    "column": {
+      "name": "Name",
+      "kind": "Type",
+      "params": "Parameters",
+      "enabled": "Enabled"
+    },
+    "summary": {
+      "leadAssignment": "{{sources}} · Role: {{role}} · follow-up within {{hours}} h",
+      "dealApproval": "Amount ≥ {{amount}} · Approver: {{role}}",
+      "allSources": "All sources",
+      "unknownRole": "unknown role"
+    },
+    "empty": "No rules yet",
+    "created": "Rule created",
+    "updated": "Rule updated",
+    "deleted": "Rule deleted",
+    "deleteTitle": "Delete rule",
+    "deleteMessage": "Rule \"{{name}}\" will be deleted. Running executions are not affected. Are you sure?"
+  },
+  "validation": {
+    "roleRequired": "Select a role",
+    "followUpRange": "Enter a whole number between 1 and 720",
+    "minAmountPositive": "Enter an amount greater than 0"
+  },
+  "executions": {
+    "title": "Executions",
+    "filters": {
+      "status": "Status",
+      "rule": "Rule",
+      "from": "Started from",
+      "to": "Started until"
+    },
+    "statuses": {
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "terminated": "Terminated"
+    },
+    "column": {
+      "rule": "Rule",
+      "subject": "Record",
+      "status": "Status",
+      "startedAt": "Started",
+      "endedAt": "Ended"
+    },
+    "subjectTypes": {
+      "lead": "Lead",
+      "deal": "Deal"
+    },
+    "empty": "No executions found",
+    "open": "Details of the {{name}} execution",
+    "detailTitle": "Execution details",
+    "detailLoadFailed": "The execution could not be loaded",
+    "subject": "Related record",
+    "startedAt": "Started",
+    "endedAt": "Ended",
+    "steps": "Steps",
+    "noSteps": "No steps yet",
+    "approvals": "Approvals",
+    "noApprovals": "This execution has no approvals",
+    "error": "Error",
+    "errors": {
+      "no_assignee": "The selected role has no active user to assign to"
+    },
+    "stepStatuses": {
+      "COMPLETED": "Completed",
+      "IN_PROGRESS": "In progress",
+      "SCHEDULED": "Scheduled",
+      "FAILED": "Failed",
+      "FAILED_WITH_TERMINAL_ERROR": "Failed",
+      "CANCELED": "Canceled",
+      "SKIPPED": "Skipped",
+      "TIMED_OUT": "Timed out"
+    },
+    "stepOutput": "Output",
+    "terminate": "Terminate",
+    "terminateTitle": "Terminate execution",
+    "terminateMessage": "The \"{{name}}\" execution will be terminated and its pending approvals cancelled. Are you sure?",
+    "terminated": "Execution terminated",
+    "retry": "Retry",
+    "retryTitle": "Retry execution",
+    "retryMessage": "A new execution will be started for \"{{name}}\". Are you sure?",
+    "retried": "Retry started"
+  },
+  "approvals": {
+    "title": "My approvals",
+    "description": "Approvals requested from you and the decisions you made",
+    "tabs": {
+      "label": "Approval lists",
+      "pending": "Pending",
+      "history": "History"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "statusFilter": "Status",
+    "allStatuses": "All",
+    "column": {
+      "title": "Approval",
+      "subject": "Record",
+      "amount": "Amount",
+      "requestedAt": "Requested",
+      "status": "Status",
+      "decidedAt": "Decided",
+      "comment": "Comment"
+    },
+    "emptyPending": "You have no pending approvals",
+    "emptyHistory": "No approvals found",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveNamed": "Approve {{title}}",
+    "rejectNamed": "Reject {{title}}",
+    "dialog": {
+      "title": "Approval decision",
+      "decision": "Decision",
+      "comment": "Comment",
+      "commentRequired": "Enter a comment to reject",
+      "commentOptional": "Optional",
+      "submitApprove": "Approve",
+      "submitReject": "Reject"
+    },
+    "approved": "Approval given",
+    "rejected": "Approval rejected",
+    "alreadyDecided": "A decision has already been made on this approval. The list was refreshed.",
+    "bell": "Pending approvals",
+    "bellCount": "Pending approvals: {{count}}"
+  }
+}

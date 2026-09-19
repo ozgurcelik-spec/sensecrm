@@ -8,6 +8,11 @@ name: crm
 # Şema:      dotnet run --project src/Crm.Migrator
 # API:       dotnet run --project src/Crm.Api          (http://localhost:5080)
 # Worker:    dotnet run --project src/Crm.Worker
+#
+# Conductor OSS (Milestone 4 workflow motoru): http://localhost:18090 (API: /api, UI: /, sağlık: /health)
+#   POSTGRES_PORT=15433 docker compose -f infra/docker-compose.yml up -d conductor
+# NOT: POSTGRES_PORT bu makinede 15433'tür (15432 başka projeye aittir); mevcut postgres konteynerini yeniden
+# yaratmamak için yalnız conductor servisini `up -d --no-deps conductor-db-init conductor` ile başlatabilirsiniz.
 
 services:
   postgres:
@@ -41,6 +46,49 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # --- Conductor OSS (workflow motoru, K9) ---------------------------------------------------------
+  # Neden bu kurulum: conductoross/conductor imajı sunucu + UI'yı tek konteynerde taşır; varsayılanı gömülü
+  # SQLite'tır ancak eşzamanlı poll/güncelleme yükü ve yeniden başlatma dayanıklılığı için crm-postgres'te ayrı
+  # bir "conductor" veritabanı kullanılır (Redis ve Elasticsearch GEREKMEZ: db/queue/indexing = postgres).
+  # Sürüm sabitlenir (latest yok): 3.32.4 = 2026-09 itibarıyla son kararlı sürüm. Yapılandırma: conductor/config-postgres.properties.
+  # Veritabanı yoksa tek seferlik conductor-db-init oluşturur (postgres init.sql yalnız ilk kurulumda çalıştığı için
+  # mevcut veri hacimlerinde de çalışır; idempotenttir).
+  conductor-db-init:
+    image: postgres:17-alpine
+    container_name: crm-conductor-db-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-crm}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        psql -h postgres -U ${POSTGRES_USER:-crm} -d ${POSTGRES_DB:-crm} -tAc "SELECT 1 FROM pg_database WHERE datname='conductor'" | grep -q 1           || psql -h postgres -U ${POSTGRES_USER:-crm} -d ${POSTGRES_DB:-crm} -c "CREATE DATABASE conductor"
+
+  conductor:
+    image: conductoross/conductor:3.32.4
+    container_name: crm-conductor
+    depends_on:
+      conductor-db-init:
+        condition: service_completed_successfully
+    environment:
+      CONFIG_PROP: config-postgres.properties
+      CONDUCTOR_DB_USER: ${POSTGRES_USER:-crm}
+      CONDUCTOR_DB_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      JAVA_OPTS: -Xms256m -Xmx768m
+    ports:
+      - "${CONDUCTOR_PORT:-18090}:8080"
+    volumes:
+      - ./conductor/config-postgres.properties:/app/config/config-postgres.properties:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
 
 volumes:
   crm_pg:

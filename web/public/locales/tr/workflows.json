@@ -1,0 +1,174 @@
+{
+  "title": "İş akışları",
+  "description": "Potansiyel atama ve fırsat onayı kurallarını yönetin, yürütmeleri izleyin",
+  "tabs": {
+    "label": "İş akışı bölümleri",
+    "rules": "Kurallar",
+    "executions": "Yürütmeler"
+  },
+  "kinds": {
+    "leadAssignment": "Potansiyel atama",
+    "dealApproval": "Fırsat onayı"
+  },
+  "kindHints": {
+    "leadAssignment": "Yeni potansiyel oluşturulunca seçilen roldeki kullanıcılara sırayla atanır ve bir takip görevi açılır.",
+    "dealApproval": "Fırsat kazanıldı aşamasına taşınınca tutar eşiğe ulaşıyorsa onaylayıcı roldeki kullanıcılardan onay istenir."
+  },
+  "sources": {
+    "web": "Web",
+    "referral": "Tavsiye",
+    "campaign": "Kampanya",
+    "coldCall": "Soğuk arama",
+    "other": "Diğer"
+  },
+  "rules": {
+    "new": "Yeni kural",
+    "createTitle": "Yeni kural",
+    "editTitle": "Kuralı düzenle",
+    "name": "Kural adı",
+    "kind": "Tür",
+    "kindFixed": "Kuralın türü sonradan değiştirilemez.",
+    "sources": "Potansiyel kaynakları",
+    "sourcesPlaceholder": "Tüm kaynaklar",
+    "sourcesHint": "Boş bırakırsanız her kaynaktan gelen potansiyel için çalışır.",
+    "assigneeRole": "Atanacak rol",
+    "approverRole": "Onaylayıcı rol",
+    "rolePlaceholder": "Rol seçin",
+    "rolesUnavailable": "Roller yüklenemedi",
+    "followUpHours": "Takip süresi (saat)",
+    "followUpHint": "Takip görevinin son tarihi: atamadan sonra bu kadar saat (1-720).",
+    "minAmount": "En düşük tutar",
+    "minAmountHint": "Kazanılan fırsatın tutarı bu değere eşit veya büyükse onay istenir.",
+    "enabled": "Etkin",
+    "enableNamed": "{{name}} kuralını etkinleştir",
+    "column": {
+      "name": "Ad",
+      "kind": "Tür",
+      "params": "Parametreler",
+      "enabled": "Etkin"
+    },
+    "summary": {
+      "leadAssignment": "{{sources}} · Rol: {{role}} · {{hours}} saat içinde takip",
+      "dealApproval": "Tutar ≥ {{amount}} · Onaylayıcı: {{role}}",
+      "allSources": "Tüm kaynaklar",
+      "unknownRole": "bilinmeyen rol"
+    },
+    "empty": "Henüz kural yok",
+    "created": "Kural oluşturuldu",
+    "updated": "Kural güncellendi",
+    "deleted": "Kural silindi",
+    "deleteTitle": "Kuralı sil",
+    "deleteMessage": "\"{{name}}\" kuralı silinecek. Çalışan yürütmeler etkilenmez. Emin misiniz?"
+  },
+  "validation": {
+    "roleRequired": "Bir rol seçin",
+    "followUpRange": "1 ile 720 arasında bir tam sayı girin",
+    "minAmountPositive": "0'dan büyük bir tutar girin"
+  },
+  "executions": {
+    "title": "Yürütmeler",
+    "filters": {
+      "status": "Durum",
+      "rule": "Kural",
+      "from": "Başlangıç (en erken)",
+      "to": "Başlangıç (en geç)"
+    },
+    "statuses": {
+      "running": "Çalışıyor",
+      "completed": "Tamamlandı",
+      "failed": "Hata",
+      "terminated": "Sonlandırıldı"
+    },
+    "column": {
+      "rule": "Kural",
+      "subject": "Kayıt",
+      "status": "Durum",
+      "startedAt": "Başlangıç",
+      "endedAt": "Bitiş"
+    },
+    "subjectTypes": {
+      "lead": "Potansiyel",
+      "deal": "Fırsat"
+    },
+    "empty": "Yürütme bulunamadı",
+    "open": "{{name}} yürütmesinin ayrıntıları",
+    "detailTitle": "Yürütme ayrıntısı",
+    "detailLoadFailed": "Yürütme yüklenemedi",
+    "subject": "İlgili kayıt",
+    "startedAt": "Başlangıç",
+    "endedAt": "Bitiş",
+    "steps": "Adımlar",
+    "noSteps": "Henüz adım yok",
+    "approvals": "Onaylar",
+    "noApprovals": "Bu yürütmede onay yok",
+    "error": "Hata",
+    "errors": {
+      "no_assignee": "Seçilen rolde atanabilecek aktif kullanıcı yok"
+    },
+    "stepStatuses": {
+      "COMPLETED": "Tamamlandı",
+      "IN_PROGRESS": "Sürüyor",
+      "SCHEDULED": "Sırada",
+      "FAILED": "Hata",
+      "FAILED_WITH_TERMINAL_ERROR": "Hata",
+      "CANCELED": "İptal",
+      "SKIPPED": "Atlandı",
+      "TIMED_OUT": "Zaman aşımı"
+    },
+    "stepOutput": "Çıktı",
+    "terminate": "Sonlandır",
+    "terminateTitle": "Yürütmeyi sonlandır",
+    "terminateMessage": "\"{{name}}\" yürütmesi sonlandırılacak; bekleyen onaylar iptal edilir. Emin misiniz?",
+    "terminated": "Yürütme sonlandırıldı",
+    "retry": "Yeniden dene",
+    "retryTitle": "Yürütmeyi yeniden dene",
+    "retryMessage": "\"{{name}}\" için yeni bir yürütme başlatılacak. Emin misiniz?",
+    "retried": "Yeniden deneme başlatıldı"
+  },
+  "approvals": {
+    "title": "Onaylarım",
+    "description": "Sizden istenen onaylar ve verdiğiniz kararlar",
+    "tabs": {
+      "label": "Onay listeleri",
+      "pending": "Bekleyenler",
+      "history": "Geçmiş"
+    },
+    "statuses": {
+      "pending": "Bekliyor",
+      "approved": "Onaylandı",
+      "rejected": "Reddedildi",
+      "cancelled": "İptal edildi"
+    },
+    "statusFilter": "Durum",
+    "allStatuses": "Tümü",
+    "column": {
+      "title": "Onay",
+      "subject": "Kayıt",
+      "amount": "Tutar",
+      "requestedAt": "İstenme",
+      "status": "Durum",
+      "decidedAt": "Karar",
+      "comment": "Yorum"
+    },
+    "emptyPending": "Bekleyen onayınız yok",
+    "emptyHistory": "Onay kaydı bulunamadı",
+    "approve": "Onayla",
+    "reject": "Reddet",
+    "approveNamed": "{{title}} onayını onayla",
+    "rejectNamed": "{{title}} onayını reddet",
+    "dialog": {
+      "title": "Onay kararı",
+      "decision": "Karar",
+      "comment": "Yorum",
+      "commentRequired": "Reddetmek için yorum girmelisiniz",
+      "commentOptional": "İsteğe bağlı",
+      "submitApprove": "Onayla",
+      "submitReject": "Reddet"
+    },
+    "approved": "Onay verildi",
+    "rejected": "Onay reddedildi",
+    "alreadyDecided": "Bu onay için zaten karar verilmiş. Liste yenilendi.",
+    "bell": "Bekleyen onaylar",
+    "bellCount": "Bekleyen onaylar: {{count}}"
+  }
+}

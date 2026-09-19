@@ -1,6 +1,7 @@
 using Crm.Modules.Activities.Api;
 using Crm.Modules.Identity.Api;
 using Crm.Modules.Sales.Api;
+using Crm.Modules.Workflows.Api;
 using Crm.Shared.Contracts.Modules;
 
 namespace Crm.Api;
@@ -16,5 +17,6 @@ public static class ModuleCatalog
         new IdentityModule(),
         new SalesModule(),
         new ActivitiesModule(),
+        new WorkflowsModule(),
     ];
 }

@@ -1,0 +1,37 @@
+{
+  "name": "crm_lead_assignment",
+  "description": "CRM v1: yeni potansiyel musteriyi rolun uyeleri arasinda round-robin atar ve takip gorevi acar.",
+  "version": 1,
+  "schemaVersion": 2,
+  "ownerEmail": "crm@algosense.com.tr",
+  "restartable": true,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 0,
+  "inputParameters": ["tenantId", "executionId", "ruleId", "leadId", "leadName", "assigneeRoleId", "followUpHours"],
+  "tasks": [
+    {
+      "name": "crm_assign_lead_owner",
+      "taskReferenceName": "assign_owner",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "tenantId": "${workflow.input.tenantId}",
+        "executionId": "${workflow.input.executionId}",
+        "leadId": "${workflow.input.leadId}",
+        "assigneeRoleId": "${workflow.input.assigneeRoleId}"
+      }
+    },
+    {
+      "name": "crm_create_followup_task",
+      "taskReferenceName": "create_followup",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "tenantId": "${workflow.input.tenantId}",
+        "executionId": "${workflow.input.executionId}",
+        "leadId": "${workflow.input.leadId}",
+        "leadName": "${workflow.input.leadName}",
+        "ownerUserId": "${assign_owner.output.ownerUserId}",
+        "followUpHours": "${workflow.input.followUpHours}"
+      }
+    }
+  ]
+}

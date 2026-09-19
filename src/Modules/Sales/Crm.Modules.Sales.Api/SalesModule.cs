@@ -3,6 +3,7 @@ using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Sales.Application;
 using Crm.Modules.Sales.Contracts;
 using Crm.Modules.Sales.Domain;
+using Crm.Modules.Sales.Infrastructure;
 using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Modules.Sales.Infrastructure.Provisioning;
 using Crm.Shared.Contracts.Modules;
@@ -51,7 +52,7 @@ public sealed class SalesModule : IModule
         services.AddScoped<IDealRepository, DealRepository>();
         services.AddScoped<ISalesReadStore, SalesReadStore>();
         services.AddScoped<ISalesReportStore, SalesReportStore>();
-        services.AddScoped<IRecordLookup, RecordLookup>();
+        services.AddSalesContractServices();
 
         services.AddScoped<OwnerResolver>();
         services.AddScoped<DefaultPipelineResolver>();

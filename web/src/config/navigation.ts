@@ -3,6 +3,7 @@ import {
   BarChart3,
   Building2,
   CalendarCheck,
+  ClipboardCheck,
   Contact,
   Handshake,
   Home,
@@ -11,6 +12,7 @@ import {
   Target,
   Users,
   Workflow,
+  Zap,
 } from "lucide-react";
 import { PERMISSIONS } from "@/types";
 
@@ -22,6 +24,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** At least one of these permissions is required to see the item (empty = always visible). */
   permissions?: string[];
+  /** Also visible without the permissions while this flag (see `useVisibleItems`) is true. */
+  visibleWhen?: string;
   /** Match the path exactly (index routes). */
   end?: boolean;
 }
@@ -65,6 +69,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     permissions: [PERMISSIONS.crmActivitiesRead],
   },
   {
+    key: "approvals",
+    labelKey: "approvals",
+    path: "/app/approvals",
+    icon: ClipboardCheck,
+    // Visible to approvers and to anyone who has a pending approval (mine=true needs no permission).
+    permissions: [PERMISSIONS.crmApprovalsDecide],
+    visibleWhen: "pendingApprovals",
+  },
+  {
     key: "reports",
     labelKey: "reports",
     path: "/app/reports",
@@ -101,6 +114,13 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
     path: "/app/settings/pipelines",
     icon: Workflow,
     permissions: [PERMISSIONS.crmDealsRead],
+  },
+  {
+    key: "workflows",
+    labelKey: "workflows",
+    path: "/app/settings/workflows",
+    icon: Zap,
+    permissions: [PERMISSIONS.orgWorkflowsManage],
   },
   {
     key: "audit",
