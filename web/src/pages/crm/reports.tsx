@@ -9,7 +9,9 @@ import {
   LeadSourcesReport,
   WonLostReport,
 } from "@/components/reports/report-tabs";
+import { MarketingReport } from "@/components/reports/marketing-report-tab";
 import { PageHeader } from "@/components/page-header";
+import { usePermission } from "@/hooks/use-permission";
 import {
   DEFAULT_RANGE_PRESET,
   RANGE_PRESETS,
@@ -18,10 +20,12 @@ import {
   type RangePreset,
 } from "@/lib/report-range";
 import { useAuthStore } from "@/store/auth.store";
-import type { WonLostGroupBy } from "@/types";
+import { PERMISSIONS, type WonLostGroupBy } from "@/types";
 
 const REPORT_TABS = ["funnel", "wonLost", "leadSources", "byOwner", "activities"] as const;
-type ReportTab = (typeof REPORT_TABS)[number];
+/** Marketing report (Milestone 6C): its tab label lives in the `campaigns` namespace. */
+const MARKETING_TAB = "marketing";
+type ReportTab = (typeof REPORT_TABS)[number] | typeof MARKETING_TAB;
 
 const DEFAULT_TAB: ReportTab = "funnel";
 const DEFAULT_GROUP_BY: WonLostGroupBy = "month";
@@ -32,7 +36,7 @@ const DEFAULT_GROUP_BY: WonLostGroupBy = "month";
  * Only the active tab is mounted, so only its report is requested.
  */
 export default function ReportsPage() {
-  const { t } = useTranslation(["reports"]);
+  const { t } = useTranslation(["reports", "campaigns"]);
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -41,7 +45,10 @@ export default function ReportsPage() {
   const customFrom = searchParams.get("from") ?? "";
   const customTo = searchParams.get("to") ?? "";
   const tabParam = searchParams.get("tab");
-  const tab: ReportTab = REPORT_TABS.find((value) => value === tabParam) ?? DEFAULT_TAB;
+  const canMarketing = usePermission(PERMISSIONS.crmReportsRead);
+  const tab: ReportTab =
+    REPORT_TABS.find((value) => value === tabParam) ??
+    (canMarketing && tabParam === MARKETING_TAB ? MARKETING_TAB : DEFAULT_TAB);
   const groupBy: WonLostGroupBy =
     searchParams.get("groupBy") === "week" ? "week" : DEFAULT_GROUP_BY;
   const pipelineId = searchParams.get("pipelineId") ?? "";
@@ -126,6 +133,9 @@ export default function ReportsPage() {
                 {t(`reports:tabs.${value}`)}
               </Tabs.Tab>
             ))}
+            {canMarketing && (
+              <Tabs.Tab value={MARKETING_TAB}>{t("campaigns:report.tab")}</Tabs.Tab>
+            )}
           </Tabs.List>
 
           {needsRange && !range && (
@@ -164,6 +174,11 @@ export default function ReportsPage() {
               <Tabs.Panel value="activities">
                 <ActivitiesReport range={range} />
               </Tabs.Panel>
+              {canMarketing && (
+                <Tabs.Panel value={MARKETING_TAB}>
+                  <MarketingReport range={range} />
+                </Tabs.Panel>
+              )}
             </>
           )}
         </Tabs>

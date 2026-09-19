@@ -7,6 +7,7 @@ import {
   Contact,
   Handshake,
   Home,
+  Megaphone,
   ScrollText,
   ShieldCheck,
   Target,
@@ -60,6 +61,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     path: "/app/deals",
     icon: Handshake,
     permissions: [PERMISSIONS.crmDealsRead],
+  },
+  {
+    key: "campaigns",
+    labelKey: "campaigns",
+    path: "/app/campaigns",
+    icon: Megaphone,
+    permissions: [PERMISSIONS.crmCampaignsRead],
   },
   {
     key: "activities",

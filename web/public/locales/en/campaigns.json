@@ -1,0 +1,211 @@
+{
+  "title": "Campaigns",
+  "description": "Plan marketing campaigns, add leads and contacts to them and track the results.",
+  "new": "New campaign",
+  "search": "Search campaign name or description",
+  "createTitle": "New campaign",
+  "editTitle": "Edit campaign",
+  "created": "Campaign created",
+  "updated": "Campaign updated",
+  "deleted": "Campaign deleted",
+  "deleteTitle": "Delete campaign?",
+  "deleteMessage": "The campaign \"{{name}}\" will be deleted. Memberships are kept but are no longer visible anywhere.",
+  "types": {
+    "email": "Email",
+    "event": "Event",
+    "webinar": "Webinar",
+    "advertising": "Advertising",
+    "other": "Other"
+  },
+  "statuses": {
+    "planned": "Planned",
+    "active": "Active",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "memberStatuses": {
+    "added": "Added",
+    "sent": "Sent",
+    "responded": "Responded",
+    "converted": "Converted",
+    "unsubscribed": "Unsubscribed"
+  },
+  "memberTypes": {
+    "lead": "Lead",
+    "contact": "Contact"
+  },
+  "fields": {
+    "name": "Campaign name",
+    "type": "Type",
+    "status": "Status",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "dates": "Dates",
+    "currency": "Currency",
+    "budget": "Budget",
+    "expectedRevenue": "Expected revenue",
+    "actualCost": "Actual cost",
+    "description": "Description",
+    "owner": "Owner",
+    "memberCount": "Members"
+  },
+  "filters": {
+    "type": "Type",
+    "status": "Status",
+    "owner": "Owner"
+  },
+  "validation": {
+    "endBeforeStart": "The end date cannot be before the start date",
+    "amountMin": "The amount cannot be negative",
+    "currency": "Enter a 3-letter currency code (e.g. TRY)"
+  },
+  "tabs": {
+    "general": "General",
+    "members": "Members",
+    "audit": "Audit",
+    "record": "Campaigns"
+  },
+  "panel": {
+    "details": "Campaign details"
+  },
+  "statusMenu": {
+    "label": "Change status",
+    "start": "Start",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "reopen": "Reopen",
+    "replan": "Replan",
+    "changed": "Campaign status updated"
+  },
+  "metrics": {
+    "members": "Members",
+    "membersHint": "{{leads}} leads, {{contacts}} contacts",
+    "responseRate": "Response rate",
+    "responseHint": "{{responded}} responded / {{contacted}} reached",
+    "converted": "Converted",
+    "convertedHint": "Conversion rate {{rate}}",
+    "costPerLead": "Cost per lead",
+    "costPerLeadNone": "No actual cost or no leads",
+    "breakdown": "Status breakdown",
+    "failed": "Campaign metrics could not be loaded"
+  },
+  "members": {
+    "add": "Add members",
+    "closedHint": "Members cannot be added to a completed or cancelled campaign.",
+    "type": "Type",
+    "name": "Name",
+    "status": "Status",
+    "addedAt": "Added",
+    "addedBy": "Added by",
+    "missing": "Record deleted",
+    "empty": "This campaign has no members yet",
+    "filterType": "Member type",
+    "filterStatus": "Member status",
+    "selectRow": "Select member {{name}}",
+    "selected": "{{count}} members selected",
+    "changeStatus": "Change member status",
+    "remove": "Remove from campaign",
+    "removeTitle": "Remove members from the campaign?",
+    "removeMessage": "The {{count}} selected members will be removed from the campaign.",
+    "removeOne": "Remove {{name}} from the campaign",
+    "removed": "{{count}} members removed",
+    "statusOf": "Status of member {{name}}",
+    "locked": "The status of a converted member cannot be changed"
+  },
+  "addMembers": {
+    "title": "Add members to the campaign",
+    "type": "Member type",
+    "records": "Records",
+    "placeholder": "Type to search, you can pick several",
+    "searching": "Searching...",
+    "submit": "Add",
+    "noneSelected": "Select at least one record",
+    "tooMany": "At most {{max}} records can be selected"
+  },
+  "addToCampaign": {
+    "action": "Add to campaign",
+    "title": "Add to campaign",
+    "summary": "{{count}} records selected",
+    "selectRow": "Select {{name}}",
+    "campaign": "Campaign",
+    "placeholder": "Search planned or active campaigns",
+    "searching": "Searching...",
+    "submit": "Add",
+    "noCampaigns": "No planned or active campaign found",
+    "campaignRequired": "Select a campaign"
+  },
+  "recordTab": {
+    "empty": "This record is not in any campaign yet",
+    "campaign": "Campaign",
+    "type": "Type",
+    "campaignStatus": "Campaign status",
+    "memberStatus": "Membership status",
+    "addedAt": "Added",
+    "remove": "Remove from {{name}}",
+    "removeTitle": "Remove from campaign?",
+    "removeMessage": "The record will be removed from the campaign \"{{name}}\".",
+    "removedOne": "Removed from the campaign"
+  },
+  "result": {
+    "added": "{{count}} added",
+    "already": "{{count}} already members",
+    "skipped": "{{count}} skipped ({{reasons}})",
+    "skippedConverted": "{{count}} converted",
+    "skippedNotFound": "{{count}} not found",
+    "nothing": "There are no new members to add",
+    "updated": "{{count}} members updated",
+    "lockedSkipped": "{{count}} converted members skipped"
+  },
+  "report": {
+    "tab": "Marketing",
+    "byStatus": "Campaigns by status",
+    "byType": "Campaigns by type",
+    "budgetVsCost": "Budget / actual cost (per type)",
+    "budget": "Budget",
+    "actualCost": "Actual cost",
+    "campaignCount": "Campaigns",
+    "responseRate": "Response rate",
+    "conversionRate": "Conversion rate",
+    "costPerLead": "Cost per lead",
+    "expectedRevenue": "Expected revenue",
+    "memberCount": "Members",
+    "convertedCount": "Converted",
+    "topCampaigns": "Top campaigns",
+    "campaign": "Campaign",
+    "type": "Type",
+    "status": "Status",
+    "count": "Count",
+    "noTop": "No campaigns in this period",
+    "amountsNote": "Amounts are summed regardless of currency.",
+    "file": "marketing-report"
+  },
+  "dashboard": {
+    "title": "Campaign summary",
+    "campaigns": "Campaigns",
+    "active": "Active",
+    "responseRate": "Response rate",
+    "converted": "Converted",
+    "viewAll": "Campaigns",
+    "empty": "No campaigns in this period",
+    "failed": "The campaign summary could not be loaded"
+  },
+  "auditFields": {
+    "name": "Campaign name",
+    "type": "Type",
+    "status": "Status",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "currency": "Currency",
+    "budget": "Budget",
+    "expectedRevenue": "Expected revenue",
+    "actualCost": "Actual cost",
+    "description": "Description",
+    "ownerUserId": "Owner",
+    "campaignId": "Campaign",
+    "memberType": "Member type",
+    "memberId": "Member",
+    "statusChangedAt": "Status changed at",
+    "addedAt": "Added at",
+    "addedByUserId": "Added by"
+  }
+}

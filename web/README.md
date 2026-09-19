@@ -37,7 +37,7 @@ src/
   App.tsx                routes (/login, /signup, /app/...) with lazy pages
   main.tsx               providers (React Query, Mantine) and session handlers
   i18n.ts                i18next (http backend, TR default)
-  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/, activities/, dashboard/, reports/, workflows/
+  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/, activities/, dashboard/, reports/, workflows/, marketing/
   config/navigation.ts   left navigation and settings items with their required permissions
   hooks/                 usePermission, React Query hooks per resource, toast, language switch, useListParams
   layouts/app-layout.tsx top bar (org switcher, language, user menu) and module navigation
@@ -83,6 +83,17 @@ HTTP contract: `docs/plan/m4-workflow.md`. Screens: Settings > İş akışları 
 - **Onaylarım**: pending and history tabs (`?tab=history&status=`, always `mine=true`); approving / rejecting needs `crm.approvals.decide`; a rejection needs a comment (client check and server `comment` error); `approval.already_decided` shows a friendly message and refreshes the lists.
 - **Top bar badge** (`components/shell/approvals-bell.tsx`): `GET /approvals/summary` polled every 60 s while the tab is visible, refetched when the tab becomes visible again and after every decision. The sidebar entry is visible to `crm.approvals.decide` or while the caller has pending approvals.
 - **Not built**: the workflow status strip on the deal / lead "Genel" tab. The contract has no endpoint that lists executions by subject (`GET /workflows/executions` filters only by status, rule and date), so it would need a new backend filter.
+
+## Marketing (Milestone 6C)
+
+HTTP contract: `docs/plan/m6c-pazarlama.md`. Screens: Campaigns (`/app/campaigns`, `/app/campaigns/:id`, `crm.campaigns.read`), the "Kampanyalar" tab on lead and contact details, the "Pazarlama" tab of Reports and the "Kampanya özeti" dashboard card. New i18n namespace `campaigns` (also holds the report / dashboard / audit-field strings); new permissions `crm.campaigns.read` / `crm.campaigns.write` (labels in `users.json`).
+
+- **List** (`pages/crm/campaigns.tsx`): type and status are multi-selects sent as comma separated values (`?status=planned,active`); filters, search, sort and page live in the URL like the other lists.
+- **Detail** (`pages/crm/campaign-detail.tsx`): tabs General (metric cards from `GET /campaigns/{id}/metrics`, computed on the server) / Members / Audit. The status menu (`components/marketing/campaign-status-menu.tsx`) offers only the targets of the transition table in `types/campaigns.ts`; a 409 becomes an error toast. Editing never sends `status`.
+- **Members tab**: row status selector (`converted` is shown locked and can never be chosen), bulk status change and removal with a confirmation, "Add members" (type select + server-side search, at most 500 ids per call). A completed or cancelled campaign disables "Add members" (status change and removal stay open). Membership ids (`CampaignMember.id`) are used for status and removal, record ids (`memberId`) for adding.
+- **Bulk "Kampanyaya ekle"**: `DataTable` has an opt-in `selection` prop (checkbox column; without it nothing changes). Leads and Contacts enable it with `crm.campaigns.write`. `hooks/use-row-selection.ts` binds the selection to the current page / filters / sort, so it reads as empty after any change. The add dialog lists only planned and active campaigns.
+- **Report and dashboard**: the Marketing report tab (`components/reports/marketing-report-tab.tsx`, `crm.reports.read`) follows the shared range picker; amounts are summed across currencies (server limitation). The dashboard card needs `crm.reports.read` and `crm.campaigns.read` and uses the report's default range.
+- **Audit**: the campaign Audit tab reads `entityType=Campaign`; field labels that `crm:auditFields` lacks fall back to `campaigns:auditFields`.
 
 ## Auth flow
 

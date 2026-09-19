@@ -14,6 +14,7 @@ import {
   Title,
 } from "@mantine/core";
 import { Building2, Handshake, Target, Wallet } from "lucide-react";
+import { CampaignSummaryWidget } from "@/components/dashboard/campaign-summary-widget";
 import { MyWorkWidget } from "@/components/dashboard/my-work-widget";
 import { CRM_MODULE_ITEMS, SETTINGS_ITEMS } from "@/config/navigation";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
@@ -107,10 +108,13 @@ const SalesCharts = lazy(() => import("@/components/dashboard/sales-charts"));
 function DashboardWidgets() {
   const canActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReports = usePermission(PERMISSIONS.crmReportsRead);
+  // The campaign summary is a marketing report: it needs both permissions.
+  const canCampaignSummary = usePermission(PERMISSIONS.crmCampaignsRead) && canReports;
   if (!canActivities && !canReports) return null;
   return (
     <Stack gap="lg">
       {canActivities && <MyWorkWidget />}
+      {canCampaignSummary && <CampaignSummaryWidget />}
       {canReports && (
         <Suspense fallback={<Skeleton h={260} data-testid="charts-loading" />}>
           <SalesCharts />

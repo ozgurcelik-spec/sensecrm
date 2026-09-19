@@ -10,9 +10,11 @@ import { LeadFormDialog } from "@/components/crm/lead-form-dialog";
 import { ListPageFrame, RowActions } from "@/components/crm/list-page-frame";
 import { OwnerSelect } from "@/components/crm/owner-select";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { BulkAddToCampaign } from "@/components/marketing/bulk-add-to-campaign";
 import { useCrmPermissions } from "@/hooks/use-crm-permissions";
 import { useDeleteLead, useLeads } from "@/hooks/use-leads";
 import { useListParams } from "@/hooks/use-list-params";
+import { useRowSelection } from "@/hooks/use-row-selection";
 import { toast, toastApiError } from "@/hooks/use-toast";
 import { orDash } from "@/lib/format";
 import { LEAD_SOURCES, LEAD_STATUSES, type Lead } from "@/types";
@@ -20,10 +22,12 @@ import { LEAD_SOURCES, LEAD_STATUSES, type Lead } from "@/types";
 const FILTERS = ["status", "source", "ownerUserId"] as const;
 
 export default function LeadsPage() {
-  const { t } = useTranslation(["crm", "common"]);
+  const { t } = useTranslation(["crm", "common", "campaigns"]);
   const navigate = useNavigate();
-  const { canWriteLeads, canConvertLeads, canWriteDeals } = useCrmPermissions();
+  const { canWriteLeads, canConvertLeads, canWriteDeals, canWriteCampaigns } = useCrmPermissions();
   const params = useListParams(FILTERS);
+  // The selection is bound to the current page / filters / sort: it reads as empty after a change.
+  const selection = useRowSelection(JSON.stringify(params.query));
   const { data, isLoading, isFetching, error, refetch } = useLeads(params.query);
   const remove = useDeleteLead();
 
@@ -153,10 +157,24 @@ export default function LeadsPage() {
           </>
         }
       >
+        <BulkAddToCampaign
+          memberType="lead"
+          selectedIds={[...selection.selected]}
+          onDone={selection.clear}
+        />
         <DataTable
           columns={columns}
           rows={data?.items}
           rowKey={(l) => l.id}
+          selection={
+            canWriteCampaigns
+              ? {
+                  selected: selection.selected,
+                  onChange: selection.onChange,
+                  rowLabel: (l) => t("campaigns:addToCampaign.selectRow", { name: l.fullName }),
+                }
+              : undefined
+          }
           isLoading={isLoading}
           isFetching={isFetching}
           error={error}

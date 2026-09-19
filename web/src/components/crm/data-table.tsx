@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Card,
+  Checkbox,
   Group,
   Pagination,
   Select,
@@ -40,6 +41,16 @@ interface DataTableProps<T> {
   onPageSizeChange: (pageSize: number) => void;
   emptyMessage?: ReactNode;
   minWidth?: number;
+  /** Opt-in row selection (checkbox column); omitted = no selection column. */
+  selection?: RowSelectionProps<T>;
+}
+
+/** Selection is limited to the rows of the current page (the caller clears it on page/filter changes). */
+export interface RowSelectionProps<T> {
+  selected: ReadonlySet<string>;
+  onChange: (keys: ReadonlySet<string>) => void;
+  /** Accessible name of a row's checkbox. */
+  rowLabel: (row: T) => string;
 }
 
 function SortIcon({ active, descending }: { active: boolean; descending: boolean }) {
@@ -72,9 +83,26 @@ export function DataTable<T>({
   onPageSizeChange,
   emptyMessage,
   minWidth = 760,
+  selection,
 }: DataTableProps<T>) {
   const { t } = useTranslation(["common"]);
   const totalPages = totalCount ? Math.max(1, Math.ceil(totalCount / pageSize)) : 1;
+  const columnCount = columns.length + (selection ? 1 : 0);
+  const rowKeys = rows?.map(rowKey) ?? [];
+  const selectedOnPage = selection ? rowKeys.filter((key) => selection.selected.has(key)).length : 0;
+  const allSelected = rowKeys.length > 0 && selectedOnPage === rowKeys.length;
+
+  function toggleRow(key: string, checked: boolean) {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    if (checked) next.add(key);
+    else next.delete(key);
+    selection.onChange(next);
+  }
+
+  function toggleAll(checked: boolean) {
+    selection?.onChange(new Set(checked ? rowKeys : []));
+  }
 
   return (
     <>
@@ -89,6 +117,17 @@ export function DataTable<T>({
           >
             <Table.Thead>
               <Table.Tr>
+                {selection && (
+                  <Table.Th w={40}>
+                    <Checkbox
+                      aria-label={t("common:selectAll")}
+                      checked={allSelected}
+                      indeterminate={selectedOnPage > 0 && !allSelected}
+                      disabled={rowKeys.length === 0}
+                      onChange={(event) => toggleAll(event.currentTarget.checked)}
+                    />
+                  </Table.Th>
+                )}
                 {columns.map((column) => {
                   const active = !!column.sortField && sort?.field === column.sortField;
                   return (
@@ -123,13 +162,25 @@ export function DataTable<T>({
               {isLoading &&
                 Array.from({ length: 5 }, (_, i) => (
                   <Table.Tr key={i} data-testid="row-skeleton">
-                    <Table.Td colSpan={columns.length}>
+                    <Table.Td colSpan={columnCount}>
                       <Skeleton h={24} />
                     </Table.Td>
                   </Table.Tr>
                 ))}
               {rows?.map((row) => (
-                <Table.Tr key={rowKey(row)}>
+                <Table.Tr
+                  key={rowKey(row)}
+                  bg={selection?.selected.has(rowKey(row)) ? "var(--mantine-primary-color-light)" : undefined}
+                >
+                  {selection && (
+                    <Table.Td>
+                      <Checkbox
+                        aria-label={selection.rowLabel(row)}
+                        checked={selection.selected.has(rowKey(row))}
+                        onChange={(event) => toggleRow(rowKey(row), event.currentTarget.checked)}
+                      />
+                    </Table.Td>
+                  )}
                   {columns.map((column) => (
                     <Table.Td key={column.key}>{column.render(row)}</Table.Td>
                   ))}
@@ -137,7 +188,7 @@ export function DataTable<T>({
               ))}
               {rows && rows.length === 0 && (
                 <Table.Tr>
-                  <Table.Td colSpan={columns.length}>
+                  <Table.Td colSpan={columnCount}>
                     <Text size="sm" c="dimmed" ta="center" py="md">
                       {emptyMessage ?? t("common:noData")}
                     </Text>

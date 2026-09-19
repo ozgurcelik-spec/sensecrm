@@ -28,6 +28,8 @@ const AccountDetailPage = lazy(() => import("@/pages/crm/account-detail"));
 const DealsPage = lazy(() => import("@/pages/crm/deals"));
 const DealDetailPage = lazy(() => import("@/pages/crm/deal-detail"));
 const ActivitiesPage = lazy(() => import("@/pages/crm/activities"));
+const CampaignsPage = lazy(() => import("@/pages/crm/campaigns"));
+const CampaignDetailPage = lazy(() => import("@/pages/crm/campaign-detail"));
 // Chart-heavy: recharts stays out of every other chunk.
 const ReportsPage = lazy(() => import("@/pages/crm/reports"));
 const PipelinesPage = lazy(() => import("@/pages/settings/pipelines"));
@@ -139,6 +141,22 @@ export default function App() {
               element={
                 <RequirePermission permission={PERMISSIONS.crmDealsRead}>
                   <DealDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="campaigns"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmCampaignsRead}>
+                  <CampaignsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="campaigns/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmCampaignsRead}>
+                  <CampaignDetailPage />
                 </RequirePermission>
               }
             />

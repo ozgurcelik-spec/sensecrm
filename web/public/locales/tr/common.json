@@ -29,6 +29,7 @@
   "pageSize": "Sayfa başına kayıt",
   "nextPage": "Sonraki sayfa",
   "previousPage": "Önceki sayfa",
+  "selectAll": "Sayfadaki tümünü seç",
   "languages": {
     "tr": "Türkçe",
     "en": "English"
@@ -103,6 +104,11 @@
     },
     "approval": {
       "already_decided": "Bu onay için zaten karar verilmiş"
+    },
+    "campaign": {
+      "invalid_date_range": "Bitiş tarihi, başlangıç tarihinden önce olamaz",
+      "invalid_status_transition": "Kampanya bu durumdan seçilen duruma geçirilemez",
+      "closed": "Tamamlanan veya iptal edilen kampanyaya üye eklenemez"
     }
   }
 }
