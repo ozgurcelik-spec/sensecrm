@@ -103,6 +103,28 @@
     },
     "approval": {
       "already_decided": "A decision has already been made on this approval"
+    },
+    "commerce": {
+      "related_not_found": "The account, contact or deal was not found",
+      "contact_account_mismatch": "The selected contact does not belong to this account",
+      "deal_account_mismatch": "The selected deal does not belong to this account",
+      "concurrent_update": "The record was changed by someone else; reload the page and try again"
+    },
+    "product": {
+      "code_taken": "This product code is already in use"
+    },
+    "quote": {
+      "not_editable": "Only draft quotes can be edited or deleted",
+      "invalid_transition": "This action is not possible in the quote's current status",
+      "expired": "The quote has expired; extend its validity or move it back to draft first",
+      "no_lines": "Add at least one line before sending the quote",
+      "not_accepted": "Only accepted quotes can be converted to an order",
+      "already_converted": "This quote has already been converted to an order"
+    },
+    "order": {
+      "not_editable": "Only draft orders can be edited or deleted",
+      "invalid_transition": "This action is not possible in the order's current status",
+      "no_lines": "Add at least one line before confirming the order"
     }
   }
 }

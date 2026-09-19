@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Alert, Group, SegmentedControl, Stack, Tabs, TextInput } from "@mantine/core";
+import { CommerceReport } from "@/components/commerce/commerce-report";
 import {
   ActivitiesReport,
   ByOwnerReport,
@@ -20,7 +21,14 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import type { WonLostGroupBy } from "@/types";
 
-const REPORT_TABS = ["funnel", "wonLost", "leadSources", "byOwner", "activities"] as const;
+const REPORT_TABS = [
+  "funnel",
+  "wonLost",
+  "leadSources",
+  "byOwner",
+  "activities",
+  "commerce",
+] as const;
 type ReportTab = (typeof REPORT_TABS)[number];
 
 const DEFAULT_TAB: ReportTab = "funnel";
@@ -32,7 +40,7 @@ const DEFAULT_GROUP_BY: WonLostGroupBy = "month";
  * Only the active tab is mounted, so only its report is requested.
  */
 export default function ReportsPage() {
-  const { t } = useTranslation(["reports"]);
+  const { t } = useTranslation(["reports", "commerce"]);
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -123,7 +131,7 @@ export default function ReportsPage() {
           <Tabs.List mb="md">
             {REPORT_TABS.map((value) => (
               <Tabs.Tab key={value} value={value}>
-                {t(`reports:tabs.${value}`)}
+                {value === "commerce" ? t("commerce:reports.tab") : t(`reports:tabs.${value}`)}
               </Tabs.Tab>
             ))}
           </Tabs.List>
@@ -163,6 +171,9 @@ export default function ReportsPage() {
               </Tabs.Panel>
               <Tabs.Panel value="activities">
                 <ActivitiesReport range={range} />
+              </Tabs.Panel>
+              <Tabs.Panel value="commerce">
+                <CommerceReport range={range} />
               </Tabs.Panel>
             </>
           )}

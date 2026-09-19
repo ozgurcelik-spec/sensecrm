@@ -89,6 +89,18 @@
       },
       "approvals": {
         "decide": "Decide on approval requests"
+      },
+      "products": {
+        "read": "View products",
+        "write": "Create/edit products"
+      },
+      "quotes": {
+        "read": "View quotes",
+        "write": "Create/edit quotes"
+      },
+      "orders": {
+        "read": "View sales orders",
+        "write": "Create/edit sales orders"
       }
     }
   }

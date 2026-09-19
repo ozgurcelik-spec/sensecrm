@@ -214,4 +214,13 @@ export interface RecordAuditEntry {
   occurredAt: string;
 }
 
-export type AuditEntityType = "Account" | "Contact" | "Lead" | "Deal" | "Pipeline" | "Activity";
+export type AuditEntityType =
+  | "Account"
+  | "Contact"
+  | "Lead"
+  | "Deal"
+  | "Pipeline"
+  | "Activity"
+  | "Product"
+  | "Quote"
+  | "SalesOrder";

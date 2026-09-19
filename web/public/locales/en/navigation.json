@@ -15,5 +15,8 @@
   "audit": "Audit Log",
   "profile": "My Profile",
   "approvals": "My approvals",
-  "workflows": "Workflows"
+  "workflows": "Workflows",
+  "products": "Products",
+  "quotes": "Quotes",
+  "orders": "Orders"
 }

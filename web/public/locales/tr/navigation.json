@@ -15,5 +15,8 @@
   "audit": "Denetim Kaydı",
   "profile": "Profilim",
   "approvals": "Onaylarım",
-  "workflows": "İş akışları"
+  "workflows": "İş akışları",
+  "products": "Ürünler",
+  "quotes": "Teklifler",
+  "orders": "Siparişler"
 }

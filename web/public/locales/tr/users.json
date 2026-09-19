@@ -89,6 +89,18 @@
       },
       "approvals": {
         "decide": "Onay taleplerine karar verme"
+      },
+      "products": {
+        "read": "Ürünleri görüntüleme",
+        "write": "Ürün oluşturma/düzenleme"
+      },
+      "quotes": {
+        "read": "Teklifleri görüntüleme",
+        "write": "Teklif oluşturma/düzenleme"
+      },
+      "orders": {
+        "read": "Satış siparişlerini görüntüleme",
+        "write": "Satış siparişi oluşturma/düzenleme"
       }
     }
   }

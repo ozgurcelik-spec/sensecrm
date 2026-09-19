@@ -103,6 +103,28 @@
     },
     "approval": {
       "already_decided": "Bu onay için zaten karar verilmiş"
+    },
+    "commerce": {
+      "related_not_found": "Müşteri, kişi veya fırsat bulunamadı",
+      "contact_account_mismatch": "Seçilen kişi bu müşteriye ait değil",
+      "deal_account_mismatch": "Seçilen fırsat bu müşteriye ait değil",
+      "concurrent_update": "Kayıt başka biri tarafından değiştirildi; sayfa yenilenip tekrar deneyin"
+    },
+    "product": {
+      "code_taken": "Bu ürün kodu zaten kullanılıyor"
+    },
+    "quote": {
+      "not_editable": "Yalnızca taslak teklifler düzenlenebilir veya silinebilir",
+      "invalid_transition": "Teklifin mevcut durumunda bu işlem yapılamaz",
+      "expired": "Teklifin geçerlilik süresi dolmuş; önce süreyi uzatın veya taslağa alın",
+      "no_lines": "Teklifi göndermek için en az bir kalem ekleyin",
+      "not_accepted": "Yalnızca kabul edilmiş teklifler siparişe dönüştürülebilir",
+      "already_converted": "Bu teklif zaten siparişe dönüştürülmüş"
+    },
+    "order": {
+      "not_editable": "Yalnızca taslak siparişler düzenlenebilir veya silinebilir",
+      "invalid_transition": "Siparişin mevcut durumunda bu işlem yapılamaz",
+      "no_lines": "Siparişi onaylamak için en az bir kalem ekleyin"
     }
   }
 }
