@@ -101,6 +101,8 @@ export const PERMISSIONS = {
   crmReportsRead: "crm.reports.read",
   orgWorkflowsManage: "org.workflows.manage",
   crmApprovalsDecide: "crm.approvals.decide",
+  crmCampaignsRead: "crm.campaigns.read",
+  crmCampaignsWrite: "crm.campaigns.write",
 } as const;
 
 /** Milestone 2 list envelope (`GET /accounts`, `/contacts`, `/leads`, `/deals`). */
@@ -113,3 +115,4 @@ export interface ListResult<T> {
 export * from "./crm";
 export * from "./activities";
 export * from "./workflows";
+export * from "./campaigns";

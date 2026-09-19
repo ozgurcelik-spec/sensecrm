@@ -37,7 +37,7 @@ src/
   App.tsx                routes (/login, /signup, /app/...) with lazy pages
   main.tsx               providers (React Query, Mantine) and session handlers
   i18n.ts                i18next (http backend, TR default)
-  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/, activities/, dashboard/, reports/, workflows/
+  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/, activities/, dashboard/, reports/, workflows/, marketing/
   config/navigation.ts   left navigation and settings items with their required permissions
   hooks/                 usePermission, React Query hooks per resource, toast, language switch, useListParams
   layouts/app-layout.tsx top bar (org switcher, language, user menu) and module navigation
@@ -89,6 +89,17 @@ HTTP contract: `docs/plan/m4-workflow.md`. Screens: Settings > İş akışları 
 - **Image**: `web/Dockerfile` (build context = repo root): `node:24-alpine` builds with `VITE_API_BASE_URL=/api/v1` (same origin, no host name baked in), `nginxinc/nginx-unprivileged` serves `dist`. `web/nginx/default.conf.template` is rendered at container start (`API_UPSTREAM`, `DNS_RESOLVER`, `TRUSTED_PROXY_CIDR`): SPA history fallback, gzip, `/assets` cached for a year (`immutable`), `index.html` and `/locales` revalidated, security headers with a strict CSP (`default-src 'self'`; inline styles allowed for Mantine), `/api/*` reverse proxy, `/healthz` for the container health check. TLS is terminated outside (see `deploy/tls/`).
 - **Sign-up link**: `GET /auth/config` (`hooks/use-auth-config.ts`) decides whether the login page shows "Ücretsiz kaydolun" and whether `/signup` renders (otherwise it redirects to `/login`). Public registration is disabled by default in Production (`Registration:Mode`); anything but an explicit `signupEnabled: true` counts as closed. Organizations are created by the platform admin (`POST /platform/organizations`), see `docs/operations/runbook.md`.
 - Full stack, secrets, backup and upgrade procedure: `docs/operations/runbook.md`, `deploy/docker-compose.prod.yml`.
+
+## Marketing (Milestone 6C)
+
+HTTP contract: `docs/plan/m6c-pazarlama.md`. Screens: Campaigns (`/app/campaigns`, `/app/campaigns/:id`, `crm.campaigns.read`), the "Kampanyalar" tab on lead and contact details, the "Pazarlama" tab of Reports and the "Kampanya özeti" dashboard card. New i18n namespace `campaigns` (also holds the report / dashboard / audit-field strings); new permissions `crm.campaigns.read` / `crm.campaigns.write` (labels in `users.json`).
+
+- **List** (`pages/crm/campaigns.tsx`): type and status are multi-selects sent as comma separated values (`?status=planned,active`); filters, search, sort and page live in the URL like the other lists.
+- **Detail** (`pages/crm/campaign-detail.tsx`): tabs General (metric cards from `GET /campaigns/{id}/metrics`, computed on the server) / Members / Audit. The status menu (`components/marketing/campaign-status-menu.tsx`) offers only the targets of the transition table in `types/campaigns.ts`; a 409 becomes an error toast. Editing never sends `status`.
+- **Members tab**: row status selector (`converted` is shown locked and can never be chosen), bulk status change and removal with a confirmation, "Add members" (type select + server-side search, at most 500 ids per call). A completed or cancelled campaign disables "Add members" (status change and removal stay open). Membership ids (`CampaignMember.id`) are used for status and removal, record ids (`memberId`) for adding.
+- **Bulk "Kampanyaya ekle"**: `DataTable` has an opt-in `selection` prop (checkbox column; without it nothing changes). Leads and Contacts enable it with `crm.campaigns.write`. `hooks/use-row-selection.ts` binds the selection to the current page / filters / sort, so it reads as empty after any change. The add dialog lists only planned and active campaigns.
+- **Report and dashboard**: the Marketing report tab (`components/reports/marketing-report-tab.tsx`, `crm.reports.read`) follows the shared range picker; amounts are summed across currencies (server limitation). The dashboard card needs `crm.reports.read` and `crm.campaigns.read` and uses the report's default range.
+- **Audit**: the campaign Audit tab reads `entityType=Campaign`; field labels that `crm:auditFields` lacks fall back to `campaigns:auditFields`.
 
 ## Auth flow
 

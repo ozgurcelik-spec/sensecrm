@@ -89,6 +89,10 @@
       },
       "approvals": {
         "decide": "Onay taleplerine karar verme"
+      },
+      "campaigns": {
+        "read": "Kampanyaları görüntüleme",
+        "write": "Kampanya ve kampanya üyesi oluşturma/düzenleme"
       }
     }
   }

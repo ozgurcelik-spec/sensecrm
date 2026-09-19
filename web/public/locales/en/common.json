@@ -29,6 +29,7 @@
   "pageSize": "Rows per page",
   "nextPage": "Next page",
   "previousPage": "Previous page",
+  "selectAll": "Select all on this page",
   "languages": {
     "tr": "Türkçe",
     "en": "English"
@@ -104,6 +105,11 @@
     },
     "approval": {
       "already_decided": "A decision has already been made on this approval"
+    },
+    "campaign": {
+      "invalid_date_range": "The end date cannot be before the start date",
+      "invalid_status_transition": "The campaign cannot move from its current status to the selected one",
+      "closed": "Members cannot be added to a completed or cancelled campaign"
     }
   }
 }

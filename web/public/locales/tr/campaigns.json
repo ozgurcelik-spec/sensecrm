@@ -1,0 +1,211 @@
+{
+  "title": "Kampanyalar",
+  "description": "Pazarlama kampanyalarınızı planlayın, potansiyel müşterileri ve kişileri ekleyin, sonuçları izleyin.",
+  "new": "Yeni kampanya",
+  "search": "Kampanya adı veya açıklama ara",
+  "createTitle": "Yeni kampanya",
+  "editTitle": "Kampanyayı düzenle",
+  "created": "Kampanya oluşturuldu",
+  "updated": "Kampanya güncellendi",
+  "deleted": "Kampanya silindi",
+  "deleteTitle": "Kampanya silinsin mi?",
+  "deleteMessage": "\"{{name}}\" kampanyası silinecek. Üyelikler korunur ancak hiçbir yerde görünmez.",
+  "types": {
+    "email": "E-posta",
+    "event": "Etkinlik",
+    "webinar": "Web semineri",
+    "advertising": "Reklam",
+    "other": "Diğer"
+  },
+  "statuses": {
+    "planned": "Planlandı",
+    "active": "Aktif",
+    "completed": "Tamamlandı",
+    "cancelled": "İptal edildi"
+  },
+  "memberStatuses": {
+    "added": "Eklendi",
+    "sent": "Gönderildi",
+    "responded": "Yanıtladı",
+    "converted": "Dönüştü",
+    "unsubscribed": "Ayrıldı"
+  },
+  "memberTypes": {
+    "lead": "Potansiyel",
+    "contact": "Kişi"
+  },
+  "fields": {
+    "name": "Kampanya adı",
+    "type": "Tür",
+    "status": "Durum",
+    "startDate": "Başlangıç tarihi",
+    "endDate": "Bitiş tarihi",
+    "dates": "Tarihler",
+    "currency": "Para birimi",
+    "budget": "Bütçe",
+    "expectedRevenue": "Beklenen gelir",
+    "actualCost": "Gerçekleşen maliyet",
+    "description": "Açıklama",
+    "owner": "Sahip",
+    "memberCount": "Üye"
+  },
+  "filters": {
+    "type": "Tür",
+    "status": "Durum",
+    "owner": "Sahip"
+  },
+  "validation": {
+    "endBeforeStart": "Bitiş tarihi, başlangıç tarihinden önce olamaz",
+    "amountMin": "Tutar sıfırdan küçük olamaz",
+    "currency": "3 harfli para birimi kodu girin (örn. TRY)"
+  },
+  "tabs": {
+    "general": "Genel",
+    "members": "Üyeler",
+    "audit": "Denetim",
+    "record": "Kampanyalar"
+  },
+  "panel": {
+    "details": "Kampanya bilgileri"
+  },
+  "statusMenu": {
+    "label": "Durumu değiştir",
+    "start": "Başlat",
+    "complete": "Tamamla",
+    "cancel": "İptal et",
+    "reopen": "Yeniden aç",
+    "replan": "Yeniden planla",
+    "changed": "Kampanya durumu güncellendi"
+  },
+  "metrics": {
+    "members": "Üye sayısı",
+    "membersHint": "{{leads}} potansiyel, {{contacts}} kişi",
+    "responseRate": "Yanıt oranı",
+    "responseHint": "{{responded}} yanıt / {{contacted}} ulaşılan",
+    "converted": "Dönüşen",
+    "convertedHint": "Dönüşüm oranı {{rate}}",
+    "costPerLead": "Potansiyel başına maliyet",
+    "costPerLeadNone": "Gerçekleşen maliyet veya potansiyel yok",
+    "breakdown": "Durum dağılımı",
+    "failed": "Kampanya metrikleri yüklenemedi"
+  },
+  "members": {
+    "add": "Üye ekle",
+    "closedHint": "Tamamlanan veya iptal edilen kampanyaya üye eklenemez.",
+    "type": "Tür",
+    "name": "Ad",
+    "status": "Durum",
+    "addedAt": "Eklenme",
+    "addedBy": "Ekleyen",
+    "missing": "Kayıt silinmiş",
+    "empty": "Bu kampanyada henüz üye yok",
+    "filterType": "Üye türü",
+    "filterStatus": "Üye durumu",
+    "selectRow": "{{name}} üyesini seç",
+    "selected": "{{count}} üye seçildi",
+    "changeStatus": "Üye durumunu değiştir",
+    "remove": "Kampanyadan çıkar",
+    "removeTitle": "Üyeler kampanyadan çıkarılsın mı?",
+    "removeMessage": "Seçilen {{count}} üye kampanyadan çıkarılacak.",
+    "removeOne": "{{name}} kampanyadan çıkar",
+    "removed": "{{count}} üye çıkarıldı",
+    "statusOf": "{{name}} üyesinin durumu",
+    "locked": "Dönüşen üyenin durumu değiştirilemez"
+  },
+  "addMembers": {
+    "title": "Kampanyaya üye ekle",
+    "type": "Üye türü",
+    "records": "Kayıtlar",
+    "placeholder": "Aramak için yazın, birden fazla seçebilirsiniz",
+    "searching": "Aranıyor...",
+    "submit": "Ekle",
+    "noneSelected": "En az bir kayıt seçin",
+    "tooMany": "En fazla {{max}} kayıt seçilebilir"
+  },
+  "addToCampaign": {
+    "action": "Kampanyaya ekle",
+    "title": "Kampanyaya ekle",
+    "summary": "{{count}} kayıt seçili",
+    "selectRow": "{{name}} kaydını seç",
+    "campaign": "Kampanya",
+    "placeholder": "Planlanan veya aktif kampanya ara",
+    "searching": "Aranıyor...",
+    "submit": "Ekle",
+    "noCampaigns": "Planlanan veya aktif kampanya bulunamadı",
+    "campaignRequired": "Bir kampanya seçin"
+  },
+  "recordTab": {
+    "empty": "Bu kayıt henüz hiçbir kampanyada değil",
+    "campaign": "Kampanya",
+    "type": "Tür",
+    "campaignStatus": "Kampanya durumu",
+    "memberStatus": "Üyelik durumu",
+    "addedAt": "Eklenme",
+    "remove": "{{name}} kampanyasından çıkar",
+    "removeTitle": "Kampanyadan çıkarılsın mı?",
+    "removeMessage": "Kayıt \"{{name}}\" kampanyasından çıkarılacak.",
+    "removedOne": "Kampanyadan çıkarıldı"
+  },
+  "result": {
+    "added": "{{count}} eklendi",
+    "already": "{{count}} zaten üyeydi",
+    "skipped": "{{count}} atlandı ({{reasons}})",
+    "skippedConverted": "{{count}} dönüşmüş",
+    "skippedNotFound": "{{count}} bulunamadı",
+    "nothing": "Eklenecek yeni üye yok",
+    "updated": "{{count}} üyenin durumu güncellendi",
+    "lockedSkipped": "{{count}} dönüşmüş üye atlandı"
+  },
+  "report": {
+    "tab": "Pazarlama",
+    "byStatus": "Duruma göre kampanyalar",
+    "byType": "Türe göre kampanyalar",
+    "budgetVsCost": "Bütçe / gerçekleşen maliyet (tür başına)",
+    "budget": "Bütçe",
+    "actualCost": "Gerçekleşen maliyet",
+    "campaignCount": "Kampanya",
+    "responseRate": "Yanıt oranı",
+    "conversionRate": "Dönüşüm oranı",
+    "costPerLead": "Potansiyel başına maliyet",
+    "expectedRevenue": "Beklenen gelir",
+    "memberCount": "Üye",
+    "convertedCount": "Dönüşen",
+    "topCampaigns": "En başarılı kampanyalar",
+    "campaign": "Kampanya",
+    "type": "Tür",
+    "status": "Durum",
+    "count": "Adet",
+    "noTop": "Bu dönemde kampanya yok",
+    "amountsNote": "Tutarlar para birimine bakılmadan toplanır.",
+    "file": "pazarlama-raporu"
+  },
+  "dashboard": {
+    "title": "Kampanya özeti",
+    "campaigns": "Kampanya",
+    "active": "Aktif",
+    "responseRate": "Yanıt oranı",
+    "converted": "Dönüşen",
+    "viewAll": "Kampanyalar",
+    "empty": "Bu dönemde kampanya yok",
+    "failed": "Kampanya özeti yüklenemedi"
+  },
+  "auditFields": {
+    "name": "Kampanya adı",
+    "type": "Tür",
+    "status": "Durum",
+    "startDate": "Başlangıç tarihi",
+    "endDate": "Bitiş tarihi",
+    "currency": "Para birimi",
+    "budget": "Bütçe",
+    "expectedRevenue": "Beklenen gelir",
+    "actualCost": "Gerçekleşen maliyet",
+    "description": "Açıklama",
+    "ownerUserId": "Sahip",
+    "campaignId": "Kampanya",
+    "memberType": "Üye türü",
+    "memberId": "Üye",
+    "statusChangedAt": "Durum değişim zamanı",
+    "addedAt": "Eklenme zamanı",
+    "addedByUserId": "Ekleyen"
+  }
+}

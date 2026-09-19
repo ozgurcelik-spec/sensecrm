@@ -6,6 +6,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { StageBadge } from "@/components/crm/badges";
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
+import { RecordCampaignsTab } from "@/components/marketing/record-campaigns-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -81,7 +82,7 @@ function ContactDeals({ contact }: { contact: Contact }) {
 
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common", "activities"]);
+  const { t } = useTranslation(["crm", "common", "activities", "campaigns"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteContacts } = useCrmPermissions();
@@ -105,6 +106,7 @@ export default function ContactDetailPage() {
   }
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
+  const canReadCampaigns = usePermission(PERMISSIONS.crmCampaignsRead);
   const tabs = contact
     ? [
         {
@@ -145,6 +147,15 @@ export default function ContactDetailPage() {
                     related={{ type: "contact", id: contact.id, name: contact.fullName }}
                   />
                 ),
+              },
+            ]
+          : []),
+        ...(canReadCampaigns
+          ? [
+              {
+                value: "campaigns",
+                label: t("campaigns:tabs.record"),
+                content: <RecordCampaignsTab memberType="contact" memberId={contact.id} />,
               },
             ]
           : []),

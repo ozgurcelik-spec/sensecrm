@@ -89,6 +89,10 @@
       },
       "approvals": {
         "decide": "Decide on approval requests"
+      },
+      "campaigns": {
+        "read": "View campaigns",
+        "write": "Create/edit campaigns and campaign members"
       }
     }
   }

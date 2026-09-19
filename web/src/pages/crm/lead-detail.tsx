@@ -8,6 +8,7 @@ import { LeadConvertDialog } from "@/components/crm/lead-convert-dialog";
 import { LeadFormDialog } from "@/components/crm/lead-form-dialog";
 import { WorkflowStatusStrip } from "@/components/workflows/workflow-status-strip";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
+import { RecordCampaignsTab } from "@/components/marketing/record-campaigns-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -61,7 +62,7 @@ function ConvertedLinks({ lead }: { lead: Lead }) {
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common", "activities"]);
+  const { t } = useTranslation(["crm", "common", "activities", "campaigns"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteLeads, canConvertLeads, canWriteDeals } = useCrmPermissions();
@@ -85,6 +86,7 @@ export default function LeadDetailPage() {
   }
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
+  const canReadCampaigns = usePermission(PERMISSIONS.crmCampaignsRead);
   const tabs = lead
     ? [
         {
@@ -112,6 +114,17 @@ export default function LeadDetailPage() {
                   <RecordActivitiesTab
                     related={{ type: "lead", id: lead.id, name: lead.fullName }}
                   />
+                ),
+              },
+            ]
+          : []),
+        ...(canReadCampaigns
+          ? [
+              {
+                value: "campaigns",
+                label: t("campaigns:tabs.record"),
+                content: (
+                  <RecordCampaignsTab memberType="lead" memberId={lead.id} converted={converted} />
                 ),
               },
             ]
