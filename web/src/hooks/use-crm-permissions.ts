@@ -13,11 +13,13 @@ export function useCrmPermissions() {
   const products = usePermission(PERMISSIONS.crmProductsWrite);
   const quotes = usePermission(PERMISSIONS.crmQuotesWrite);
   const orders = usePermission(PERMISSIONS.crmOrdersWrite);
+  const cases = usePermission(PERMISSIONS.crmCasesWrite);
   return {
     canWriteCampaigns: campaigns,
     canWriteProducts: products,
     canWriteQuotes: quotes,
     canWriteOrders: orders,
+    canWriteCases: cases,
     canWriteAccounts: accounts,
     canWriteContacts: contacts,
     canWriteLeads: leads,

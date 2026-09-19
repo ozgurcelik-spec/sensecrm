@@ -13,6 +13,7 @@ import {
 import { MarketingReport } from "@/components/reports/marketing-report-tab";
 import { PageHeader } from "@/components/page-header";
 import { usePermission } from "@/hooks/use-permission";
+import { ServiceReport } from "@/components/service/service-report";
 import {
   DEFAULT_RANGE_PRESET,
   RANGE_PRESETS,
@@ -30,6 +31,7 @@ const REPORT_TABS = [
   "byOwner",
   "activities",
   "commerce",
+  "service",
 ] as const;
 /** Marketing report (Milestone 6C): its tab label lives in the `campaigns` namespace. */
 const MARKETING_TAB = "marketing";
@@ -189,6 +191,9 @@ export default function ReportsPage() {
               )}
               <Tabs.Panel value="commerce">
                 <CommerceReport range={range} />
+              </Tabs.Panel>
+              <Tabs.Panel value="service">
+                <ServiceReport range={range} />
               </Tabs.Panel>
             </>
           )}

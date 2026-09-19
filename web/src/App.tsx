@@ -43,6 +43,9 @@ const ReportsPage = lazy(() => import("@/pages/crm/reports"));
 const PipelinesPage = lazy(() => import("@/pages/settings/pipelines"));
 const WorkflowsPage = lazy(() => import("@/pages/settings/workflows"));
 const ApprovalsPage = lazy(() => import("@/pages/approvals"));
+const CasesPage = lazy(() => import("@/pages/crm/cases"));
+const CaseDetailPage = lazy(() => import("@/pages/crm/case-detail"));
+const SlaSettingsPage = lazy(() => import("@/pages/settings/sla"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
   return (
@@ -258,6 +261,22 @@ export default function App() {
                 </RequirePermission>
               }
             />
+            <Route
+              path="cases"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmCasesRead}>
+                  <CasesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="cases/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmCasesRead}>
+                  <CaseDetailPage />
+                </RequirePermission>
+              }
+            />
             {/* "mine=true" needs no permission: anyone can open the page, deciding needs crm.approvals.decide. */}
             <Route path="approvals" element={<ApprovalsPage />} />
             <Route
@@ -300,6 +319,14 @@ export default function App() {
               element={
                 <RequirePermission permission={PERMISSIONS.orgWorkflowsManage}>
                   <WorkflowsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="settings/sla"
+              element={
+                <RequirePermission permission={PERMISSIONS.orgSettingsManage}>
+                  <SlaSettingsPage />
                 </RequirePermission>
               }
             />

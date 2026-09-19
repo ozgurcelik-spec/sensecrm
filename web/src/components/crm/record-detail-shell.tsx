@@ -62,6 +62,8 @@ interface RecordDetailShellProps {
   error?: unknown;
   onRetry: () => void;
   panel?: ReactNode;
+  /** Which side the info panel sits on (default left; the case detail keeps it on the right). */
+  panelSide?: "left" | "right";
   tabs: DetailTab[];
 }
 
@@ -80,6 +82,7 @@ export function RecordDetailShell({
   error,
   onRetry,
   panel,
+  panelSide = "left",
   tabs,
 }: RecordDetailShellProps) {
   const { t } = useTranslation(["crm"]);
@@ -137,8 +140,16 @@ export function RecordDetailShell({
           </Group>
 
           <Grid gap="md">
-            <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>{panel}</Grid.Col>
-            <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+            <Grid.Col
+              span={{ base: 12, md: 4, lg: 3 }}
+              order={panelSide === "right" ? { base: 2, md: 2 } : undefined}
+            >
+              {panel}
+            </Grid.Col>
+            <Grid.Col
+              span={{ base: 12, md: 8, lg: 9 }}
+              order={panelSide === "right" ? { base: 1, md: 1 } : undefined}
+            >
               <Tabs
                 value={active}
                 onChange={(value) =>

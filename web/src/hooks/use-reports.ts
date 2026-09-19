@@ -4,6 +4,8 @@ import {
   getLeadsBySource,
   getSalesByOwner,
   getSalesFunnel,
+  getServiceByAssignee,
+  getServiceSummary,
   getWonLost,
   reportKeys,
   type DateRangeQuery,
@@ -57,6 +59,26 @@ export function useActivitiesByUser(query: DateRangeQuery, enabled = true) {
   return useQuery({
     queryKey: reportKeys.activitiesByUser(query),
     queryFn: () => getActivitiesByUser(query),
+    placeholderData: keepPreviousData,
+    staleTime: REPORT_STALE_MS,
+    enabled,
+  });
+}
+
+export function useServiceSummary(query: DateRangeQuery, enabled = true) {
+  return useQuery({
+    queryKey: reportKeys.serviceSummary(query),
+    queryFn: () => getServiceSummary(query),
+    placeholderData: keepPreviousData,
+    staleTime: REPORT_STALE_MS,
+    enabled,
+  });
+}
+
+export function useServiceByAssignee(query: DateRangeQuery, enabled = true) {
+  return useQuery({
+    queryKey: reportKeys.serviceByAssignee(query),
+    queryFn: () => getServiceByAssignee(query),
     placeholderData: keepPreviousData,
     staleTime: REPORT_STALE_MS,
     enabled,

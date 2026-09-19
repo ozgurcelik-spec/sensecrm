@@ -113,6 +113,17 @@ HTTP contract and rules: `docs/plan/m6a-ticaret.md`. Screens: Ürünler (`/app/p
 - **Without `crm.products.read`** the product column is off and lines are typed by hand; without `crm.accounts.read` the account can only come from a "Teklif oluştur" prefill (shown read-only). The prefill (`?accountId&contactId&dealId`) carries only ids; names, currency and the subject come from the deal / account lookups.
 - Test timeout is 20 s (`vitest.config.ts`): form tests are slow when the machine is loaded.
 
+## Service: cases and SLA (Milestone 6B)
+
+HTTP contract: `docs/plan/m6b-servis.md`. Screens: Talepler (`/app/cases`, `/app/cases/:id`, `crm.cases.read`), Settings > SLA politikaları (`/app/settings/sla`, `org.settings.manage`), the "Talepler" tab and "Talep aç" button on account / contact details, the "Servis" reports tab and the home "Servis" card. New i18n namespace `service`; new permissions `crm.cases.read` / `crm.cases.write` (labels in `users.json`); `case.*` and `general.concurrency_conflict` error texts in `common.json`.
+
+- **List** (`pages/crm/cases.tsx`): all state is in the URL (`?page&pageSize&q&sort&status&priority&channel&assignedUserId&unassigned&slaState&accountId&contactId`); `status` / `priority` are comma separated multi values (`status=new,open,pending`), the request always sends `sort` (`-createdAt` by default). Quick chips Açık / Bana atanan / Atanmamış / SLA aşıldı / Tümü set several filters at once with `setFilters`; assignee and "unassigned" exclude each other (the server rejects both together).
+- **SLA badge** (`components/service/case-badges.tsx`): green ok, yellow at risk, red breached, from the server's `slaState`; the tooltip shows both targets with the time left / past. A resolved or closed case only shows a badge when its SLA was breached.
+- **Detail** (`pages/crm/case-detail.tsx`): timeline (comments + events, newest first, `pageSize=50`, "Daha fazla göster") and reply box on the left, info panel on the right (`RecordDetailShell panelSide="right"`). The reply type (public reply / internal note) has **no default**; Send stays disabled until one is chosen and it is reset after sending. Internal notes have a yellow background and a "Dahili" label. A closed case shows a banner instead of the box.
+- **Actions** (`components/service/case-actions.tsx`, `crm.cases.write`): the Durum menu is built from `lib/case.ts` `CASE_TRANSITIONS` (the §3.2 table): resolving, and closing an unresolved case, ask for a resolution note first (an empty note is never sent); a closed case older than 14 days has no Reopen (the server decides: `case.reopen_window_expired` is toasted). Edit, priority and assignee are disabled outside new / open / pending. Any 409 (`general.concurrency_conflict`, `case.not_active`, ...) toasts the translated error and reloads the case and its timeline.
+- **Create dialog** (`case-form-dialog.tsx`): picking a contact fills an empty account, picking an account narrows the contacts (`GET /contacts?accountId=`); `fixedAccount` / `fixedContact` preset and lock the record for "Talep aç". Success opens the new case.
+- **Tests** mock the axios client and use `installApi`; `src/test/service.ts` has the case / timeline fixtures. `service-locales.test.ts` keeps `service.json` in step between tr and en.
+
 ## Auth flow
 
 - Tokens are stored in localStorage (`auth_token`, `refresh_token`). The `/me` profile is persisted by the auth store.

@@ -1,0 +1,197 @@
+{
+  "title": "Talepler",
+  "description": "Müşteri taleplerini takip edin, yanıtlayın ve SLA sürelerine göre çözün.",
+  "new": "Yeni talep",
+  "openCase": "Talep aç",
+  "search": "Numara veya konuda ara",
+  "empty": "Talep bulunamadı",
+  "recordFilter": "Listeye bir müşteri veya kişi süzgeci uygulanıyor.",
+  "created": "Talep oluşturuldu",
+  "updated": "Talep güncellendi",
+  "deleted": "Talep silindi",
+  "statusUpdated": "Durum güncellendi",
+  "priorityUpdated": "Öncelik güncellendi",
+  "assigneeUpdated": "Atama güncellendi",
+  "createTitle": "Yeni talep",
+  "editTitle": "Talebi düzenle",
+  "deleteTitle": "Talebi sil",
+  "deleteMessage": "{{name}} numaralı talep silinecek. Bu işlem geri alınamaz.",
+  "unassigned": "Atanmamış",
+  "contactPlaceholder": "Kişi seçin",
+  "fields": {
+    "number": "Numara",
+    "subject": "Konu",
+    "description": "Açıklama",
+    "account": "Müşteri",
+    "contact": "Kişi",
+    "status": "Durum",
+    "priority": "Öncelik",
+    "channel": "Kanal",
+    "assignee": "Atanan",
+    "sla": "SLA",
+    "createdAt": "Oluşturma",
+    "dueAt": "Çözüm hedefi",
+    "createdBy": "Oluşturan",
+    "firstResponse": "İlk yanıt",
+    "resolvedAt": "Çözülme",
+    "closedAt": "Kapanış",
+    "resolutionNote": "Çözüm notu",
+    "reopenCount": "Yeniden açma sayısı",
+    "updatedAt": "Son güncelleme"
+  },
+  "statuses": {
+    "new": "Yeni",
+    "open": "Açık",
+    "pending": "Beklemede",
+    "resolved": "Çözüldü",
+    "closed": "Kapalı"
+  },
+  "priorities": {
+    "low": "Düşük",
+    "normal": "Normal",
+    "high": "Yüksek",
+    "urgent": "Acil"
+  },
+  "channels": {
+    "email": "E-posta",
+    "phone": "Telefon",
+    "web": "Web",
+    "other": "Diğer"
+  },
+  "validation": {
+    "subjectMax": "Konu en fazla 200 karakter olabilir",
+    "descriptionMax": "Açıklama en fazla 8000 karakter olabilir"
+  },
+  "quick": {
+    "label": "Hızlı süzgeçler",
+    "open": "Açık",
+    "mine": "Bana atanan",
+    "unassigned": "Atanmamış",
+    "breached": "SLA aşıldı",
+    "all": "Tümü"
+  },
+  "duration": {
+    "day": "gün",
+    "hour": "sa",
+    "minute": "dk"
+  },
+  "sla": {
+    "firstResponse": "İlk yanıt",
+    "resolution": "Çözüm",
+    "states": {
+      "ok": "Zamanında",
+      "atRisk": "Risk altında",
+      "breached": "Aşıldı"
+    },
+    "remaining": "{{duration}} kaldı",
+    "overdue": "{{duration}} geçti",
+    "target": "hedef {{date}} · {{delta}}",
+    "answered": "yanıtlandı {{date}} · hedef {{target}}",
+    "resolvedLine": "çözüldü {{date}} · hedef {{target}}",
+    "settings": {
+      "title": "SLA politikaları",
+      "description": "Her öncelik için ilk yanıt ve çözüm hedef sürelerini belirleyin.",
+      "note": "Süreler duvar saati dakikasıdır (iş saatleri yok); değişiklik yalnız yeni talepleri, öncelik değişimlerini ve yeniden açmaları etkiler.",
+      "firstResponse": "İlk yanıt (dk)",
+      "resolution": "Çözüm (dk)",
+      "saved": "SLA politikaları kaydedildi",
+      "rangeError": "1 ile {{max}} arasında tam sayı girin",
+      "orderError": "İlk yanıt süresi çözüm süresinden uzun olamaz"
+    }
+  },
+  "tabs": {
+    "general": "Genel",
+    "audit": "Denetim"
+  },
+  "tab": {
+    "title": "Talepler",
+    "titleCount": "Talepler ({{count}})",
+    "empty": "Bu kayda bağlı talep yok",
+    "total": "Toplam {{count}} talep",
+    "viewAll": "Tümünü gör"
+  },
+  "panel": {
+    "details": "Talep bilgileri",
+    "awaitingResponse": "Bekleniyor — hedef {{date}}",
+    "sla": "SLA"
+  },
+  "timeline": {
+    "unknownUser": "Bilinmeyen kullanıcı",
+    "internal": "Dahili",
+    "public": "Herkese açık",
+    "created": "talebi oluşturdu",
+    "statusChanged": "durumu değiştirdi: {{from}} → {{to}}",
+    "priorityChanged": "önceliği değiştirdi: {{from}} → {{to}}",
+    "assigned": "atamayı değiştirdi: {{from}} → {{to}}",
+    "note": "Not: {{note}}",
+    "empty": "Henüz bir hareket yok",
+    "showMore": "Daha fazla göster"
+  },
+  "reply": {
+    "closedBanner": "Talep kapalı",
+    "visibilityLabel": "Yanıt türü",
+    "public": "Herkese açık yanıt",
+    "internal": "Dahili not",
+    "body": "Yanıt metni",
+    "placeholder": "Önce yanıt türünü seçin, sonra yazın",
+    "placeholderPublic": "Müşteriye görünecek yanıtı yazın",
+    "placeholderInternal": "Yalnızca ekibin göreceği notu yazın",
+    "hint": "Ctrl+Enter ile gönderin",
+    "send": "Gönder",
+    "sent": "Yorum eklendi"
+  },
+  "actions": {
+    "status": "Durum"
+  },
+  "transitions": {
+    "open": "Açık yap",
+    "pending": "Beklemeye al",
+    "resolved": "Çöz",
+    "close": "Kapat",
+    "closeUnresolved": "Çözülmeden kapat",
+    "reopen": "Yeniden aç"
+  },
+  "resolution": {
+    "description": "Bu işlem için bir çözüm notu gerekli; not zaman çizelgesinde görünür.",
+    "note": "Çözüm notu",
+    "required": "Çözüm notu zorunludur",
+    "title": {
+      "resolved": "Talebi çöz",
+      "closeUnresolved": "Talebi çözülmeden kapat"
+    },
+    "submit": {
+      "resolved": "Çöz",
+      "closeUnresolved": "Çözülmeden kapat"
+    }
+  },
+  "home": {
+    "title": "Servis",
+    "viewAll": "Tüm talepler",
+    "open": "Açık",
+    "overdue": "Geciken",
+    "mine": "Bana atanan",
+    "unassigned": "Atanmamış"
+  },
+  "report": {
+    "file": "servis",
+    "kpi": {
+      "total": "Toplam talep",
+      "resolved": "Çözülen",
+      "avgFirstResponse": "Ort. ilk yanıt",
+      "avgResolution": "Ort. çözüm",
+      "slaBreached": "SLA ihlali"
+    },
+    "byStatus": "Duruma göre",
+    "byPriority": "Önceliğe göre",
+    "byAssignee": "Temsilci bazlı",
+    "columns": {
+      "assignee": "Temsilci",
+      "total": "Toplam",
+      "open": "Açık",
+      "resolved": "Çözülen",
+      "avgFirstResponse": "Ort. ilk yanıt",
+      "avgResolution": "Ort. çözüm",
+      "slaBreached": "SLA ihlali"
+    }
+  }
+}

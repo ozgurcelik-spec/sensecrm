@@ -19,5 +19,7 @@
   "campaigns": "Kampanyalar",
   "products": "Ürünler",
   "quotes": "Teklifler",
-  "orders": "Siparişler"
+  "orders": "Siparişler",
+  "cases": "Talepler",
+  "sla": "SLA politikaları"
 }

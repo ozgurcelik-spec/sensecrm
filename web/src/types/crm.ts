@@ -224,4 +224,5 @@ export type AuditEntityType =
   | "Campaign"
   | "Product"
   | "Quote"
-  | "SalesOrder";
+  | "SalesOrder"
+  | "Case";

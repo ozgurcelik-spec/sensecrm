@@ -105,6 +105,10 @@
       "orders": {
         "read": "Satış siparişlerini görüntüleme",
         "write": "Satış siparişi oluşturma/düzenleme"
+      },
+      "cases": {
+        "read": "Talepleri görüntüleme",
+        "write": "Talep oluşturma/düzenleme/yanıtlama"
       }
     }
   }

@@ -1,0 +1,197 @@
+{
+  "title": "Cases",
+  "description": "Track customer cases, reply to them and resolve them within their SLA targets.",
+  "new": "New case",
+  "openCase": "Open case",
+  "search": "Search by number or subject",
+  "empty": "No cases found",
+  "recordFilter": "The list is filtered by an account or contact.",
+  "created": "Case created",
+  "updated": "Case updated",
+  "deleted": "Case deleted",
+  "statusUpdated": "Status updated",
+  "priorityUpdated": "Priority updated",
+  "assigneeUpdated": "Assignment updated",
+  "createTitle": "New case",
+  "editTitle": "Edit case",
+  "deleteTitle": "Delete case",
+  "deleteMessage": "Case {{name}} will be deleted. This cannot be undone.",
+  "unassigned": "Unassigned",
+  "contactPlaceholder": "Select a contact",
+  "fields": {
+    "number": "Number",
+    "subject": "Subject",
+    "description": "Description",
+    "account": "Account",
+    "contact": "Contact",
+    "status": "Status",
+    "priority": "Priority",
+    "channel": "Channel",
+    "assignee": "Assignee",
+    "sla": "SLA",
+    "createdAt": "Created",
+    "dueAt": "Resolution target",
+    "createdBy": "Created by",
+    "firstResponse": "First response",
+    "resolvedAt": "Resolved",
+    "closedAt": "Closed",
+    "resolutionNote": "Resolution note",
+    "reopenCount": "Times reopened",
+    "updatedAt": "Last updated"
+  },
+  "statuses": {
+    "new": "New",
+    "open": "Open",
+    "pending": "Pending",
+    "resolved": "Resolved",
+    "closed": "Closed"
+  },
+  "priorities": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "channels": {
+    "email": "Email",
+    "phone": "Phone",
+    "web": "Web",
+    "other": "Other"
+  },
+  "validation": {
+    "subjectMax": "The subject can be at most 200 characters",
+    "descriptionMax": "The description can be at most 8000 characters"
+  },
+  "quick": {
+    "label": "Quick filters",
+    "open": "Open",
+    "mine": "Assigned to me",
+    "unassigned": "Unassigned",
+    "breached": "SLA breached",
+    "all": "All"
+  },
+  "duration": {
+    "day": "d",
+    "hour": "h",
+    "minute": "m"
+  },
+  "sla": {
+    "firstResponse": "First response",
+    "resolution": "Resolution",
+    "states": {
+      "ok": "On track",
+      "atRisk": "At risk",
+      "breached": "Breached"
+    },
+    "remaining": "{{duration}} left",
+    "overdue": "{{duration}} overdue",
+    "target": "target {{date}} · {{delta}}",
+    "answered": "answered {{date}} · target {{target}}",
+    "resolvedLine": "resolved {{date}} · target {{target}}",
+    "settings": {
+      "title": "SLA policies",
+      "description": "Set the first response and resolution targets for each priority.",
+      "note": "Times are wall-clock minutes (no business hours); a change only affects new cases, priority changes and reopenings.",
+      "firstResponse": "First response (min)",
+      "resolution": "Resolution (min)",
+      "saved": "SLA policies saved",
+      "rangeError": "Enter a whole number between 1 and {{max}}",
+      "orderError": "The first response time cannot be longer than the resolution time"
+    }
+  },
+  "tabs": {
+    "general": "General",
+    "audit": "Audit"
+  },
+  "tab": {
+    "title": "Cases",
+    "titleCount": "Cases ({{count}})",
+    "empty": "No cases linked to this record",
+    "total": "{{count}} cases in total",
+    "viewAll": "View all"
+  },
+  "panel": {
+    "details": "Case details",
+    "awaitingResponse": "Awaiting response — target {{date}}",
+    "sla": "SLA"
+  },
+  "timeline": {
+    "unknownUser": "Unknown user",
+    "internal": "Internal",
+    "public": "Public",
+    "created": "created the case",
+    "statusChanged": "changed the status: {{from}} → {{to}}",
+    "priorityChanged": "changed the priority: {{from}} → {{to}}",
+    "assigned": "changed the assignment: {{from}} → {{to}}",
+    "note": "Note: {{note}}",
+    "empty": "Nothing has happened yet",
+    "showMore": "Show more"
+  },
+  "reply": {
+    "closedBanner": "The case is closed",
+    "visibilityLabel": "Reply type",
+    "public": "Public reply",
+    "internal": "Internal note",
+    "body": "Reply text",
+    "placeholder": "Choose the reply type first, then write",
+    "placeholderPublic": "Write the reply the customer will see",
+    "placeholderInternal": "Write a note only your team will see",
+    "hint": "Send with Ctrl+Enter",
+    "send": "Send",
+    "sent": "Comment added"
+  },
+  "actions": {
+    "status": "Status"
+  },
+  "transitions": {
+    "open": "Mark open",
+    "pending": "Put on hold",
+    "resolved": "Resolve",
+    "close": "Close",
+    "closeUnresolved": "Close without resolving",
+    "reopen": "Reopen"
+  },
+  "resolution": {
+    "description": "This action needs a resolution note; it shows on the timeline.",
+    "note": "Resolution note",
+    "required": "The resolution note is required",
+    "title": {
+      "resolved": "Resolve the case",
+      "closeUnresolved": "Close the case without resolving"
+    },
+    "submit": {
+      "resolved": "Resolve",
+      "closeUnresolved": "Close without resolving"
+    }
+  },
+  "home": {
+    "title": "Service",
+    "viewAll": "All cases",
+    "open": "Open",
+    "overdue": "Overdue",
+    "mine": "Assigned to me",
+    "unassigned": "Unassigned"
+  },
+  "report": {
+    "file": "service",
+    "kpi": {
+      "total": "Total cases",
+      "resolved": "Resolved",
+      "avgFirstResponse": "Avg. first response",
+      "avgResolution": "Avg. resolution",
+      "slaBreached": "SLA breaches"
+    },
+    "byStatus": "By status",
+    "byPriority": "By priority",
+    "byAssignee": "By assignee",
+    "columns": {
+      "assignee": "Assignee",
+      "total": "Total",
+      "open": "Open",
+      "resolved": "Resolved",
+      "avgFirstResponse": "Avg. first response",
+      "avgResolution": "Avg. resolution",
+      "slaBreached": "SLA breaches"
+    }
+  }
+}

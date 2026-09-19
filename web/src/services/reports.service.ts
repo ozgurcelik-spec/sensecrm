@@ -5,6 +5,8 @@ import type {
   LeadSourceRow,
   OwnerReportRow,
   SalesFunnelReport,
+  ServiceAssigneeRow,
+  ServiceSummaryReport,
   WonLostGroupBy,
   WonLostRow,
 } from "@/types";
@@ -32,6 +34,9 @@ export const reportKeys = {
   leadSources: (query: DateRangeQuery) => ["reports", "lead-sources", query] as const,
   byOwner: (query: DateRangeQuery) => ["reports", "by-owner", query] as const,
   activitiesByUser: (query: DateRangeQuery) => ["reports", "activities-by-user", query] as const,
+  serviceSummary: (query: DateRangeQuery) => ["reports", "service", "summary", query] as const,
+  serviceByAssignee: (query: DateRangeQuery) =>
+    ["reports", "service", "by-assignee", query] as const,
 };
 
 async function fetchReport<T>(
@@ -56,3 +61,9 @@ export const getSalesByOwner = (query: DateRangeQuery) =>
 
 export const getActivitiesByUser = (query: DateRangeQuery) =>
   fetchReport<ActivityUserRow[]>("/reports/activities/by-user", { ...query });
+
+export const getServiceSummary = (query: DateRangeQuery) =>
+  fetchReport<ServiceSummaryReport>("/reports/service/summary", { ...query });
+
+export const getServiceByAssignee = (query: DateRangeQuery) =>
+  fetchReport<ServiceAssigneeRow[]>("/reports/service/by-assignee", { ...query });

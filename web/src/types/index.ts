@@ -139,6 +139,8 @@ export const PERMISSIONS = {
   crmQuotesWrite: "crm.quotes.write",
   crmOrdersRead: "crm.orders.read",
   crmOrdersWrite: "crm.orders.write",
+  crmCasesRead: "crm.cases.read",
+  crmCasesWrite: "crm.cases.write",
 } as const;
 
 /** Milestone 2 list envelope (`GET /accounts`, `/contacts`, `/leads`, `/deals`). */
@@ -153,3 +155,4 @@ export * from "./activities";
 export * from "./workflows";
 export * from "./campaigns";
 export * from "./commerce";
+export * from "./service";

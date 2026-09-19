@@ -16,6 +16,7 @@ import {
 import { Building2, Handshake, Target, Wallet } from "lucide-react";
 import { CampaignSummaryWidget } from "@/components/dashboard/campaign-summary-widget";
 import { MyWorkWidget } from "@/components/dashboard/my-work-widget";
+import { HomeCasesWidget } from "@/components/service/home-cases-widget";
 import { CRM_MODULE_ITEMS, SETTINGS_ITEMS } from "@/config/navigation";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
 import { useOpenDealsSummary, useOpenLeadsCount } from "@/hooks/use-home-stats";
@@ -108,12 +109,14 @@ const SalesCharts = lazy(() => import("@/components/dashboard/sales-charts"));
 function DashboardWidgets() {
   const canActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReports = usePermission(PERMISSIONS.crmReportsRead);
+  const canCases = usePermission(PERMISSIONS.crmCasesRead);
   // The campaign summary is a marketing report: it needs both permissions.
   const canCampaignSummary = usePermission(PERMISSIONS.crmCampaignsRead) && canReports;
-  if (!canActivities && !canReports) return null;
+  if (!canActivities && !canReports && !canCases) return null;
   return (
     <Stack gap="lg">
       {canActivities && <MyWorkWidget />}
+      {canCases && <HomeCasesWidget />}
       {canCampaignSummary && <CampaignSummaryWidget />}
       {canReports && (
         <Suspense fallback={<Skeleton h={260} data-testid="charts-loading" />}>

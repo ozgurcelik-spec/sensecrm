@@ -19,5 +19,7 @@
   "campaigns": "Campaigns",
   "products": "Products",
   "quotes": "Quotes",
-  "orders": "Orders"
+  "orders": "Orders",
+  "cases": "Cases",
+  "sla": "SLA policies"
 }

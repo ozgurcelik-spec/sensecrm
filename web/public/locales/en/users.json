@@ -105,6 +105,10 @@
       "orders": {
         "read": "View sales orders",
         "write": "Create/edit sales orders"
+      },
+      "cases": {
+        "read": "View cases",
+        "write": "Create, edit and reply to cases"
       }
     }
   }
