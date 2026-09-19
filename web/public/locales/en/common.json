@@ -103,6 +103,19 @@
     },
     "approval": {
       "already_decided": "A decision has already been made on this approval"
+    },
+    "general": {
+      "concurrency_conflict": "The record was changed by someone else while you were working; the latest version was loaded, please try again"
+    },
+    "case": {
+      "account_not_found": "The selected account was not found",
+      "contact_not_found": "The selected contact was not found",
+      "contact_account_mismatch": "The selected contact does not belong to the selected account",
+      "invalid_transition": "The case cannot move from its current status to the selected one",
+      "resolution_required": "A resolution note is required to resolve a case or to close it without resolving",
+      "reopen_window_expired": "The case was closed more than 14 days ago and can no longer be reopened",
+      "not_active": "The case is no longer new, open or pending and cannot be edited",
+      "closed": "The case is closed; comments cannot be added"
     }
   }
 }

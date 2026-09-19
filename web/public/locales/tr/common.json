@@ -103,6 +103,19 @@
     },
     "approval": {
       "already_decided": "Bu onay için zaten karar verilmiş"
+    },
+    "general": {
+      "concurrency_conflict": "Kayıt siz işlem yaparken başkası tarafından değiştirildi; güncel hali yüklendi, lütfen tekrar deneyin"
+    },
+    "case": {
+      "account_not_found": "Seçilen müşteri bulunamadı",
+      "contact_not_found": "Seçilen kişi bulunamadı",
+      "contact_account_mismatch": "Seçilen kişi, seçilen müşteriye ait değil",
+      "invalid_transition": "Talep bu durumdan seçilen duruma geçirilemez",
+      "resolution_required": "Talebi çözmek veya çözülmeden kapatmak için çözüm notu girilmelidir",
+      "reopen_window_expired": "Kapatılalı 14 günden fazla oldu; talep yeniden açılamaz",
+      "not_active": "Talep artık yeni, açık veya beklemede değil; düzenlenemez",
+      "closed": "Talep kapalı; yorum eklenemez"
     }
   }
 }

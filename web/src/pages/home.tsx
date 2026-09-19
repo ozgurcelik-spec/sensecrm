@@ -15,6 +15,7 @@ import {
 } from "@mantine/core";
 import { Building2, Handshake, Target, Wallet } from "lucide-react";
 import { MyWorkWidget } from "@/components/dashboard/my-work-widget";
+import { HomeCasesWidget } from "@/components/service/home-cases-widget";
 import { CRM_MODULE_ITEMS, SETTINGS_ITEMS } from "@/config/navigation";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
 import { useOpenDealsSummary, useOpenLeadsCount } from "@/hooks/use-home-stats";
@@ -107,10 +108,12 @@ const SalesCharts = lazy(() => import("@/components/dashboard/sales-charts"));
 function DashboardWidgets() {
   const canActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReports = usePermission(PERMISSIONS.crmReportsRead);
-  if (!canActivities && !canReports) return null;
+  const canCases = usePermission(PERMISSIONS.crmCasesRead);
+  if (!canActivities && !canReports && !canCases) return null;
   return (
     <Stack gap="lg">
       {canActivities && <MyWorkWidget />}
+      {canCases && <HomeCasesWidget />}
       {canReports && (
         <Suspense fallback={<Skeleton h={260} data-testid="charts-loading" />}>
           <SalesCharts />

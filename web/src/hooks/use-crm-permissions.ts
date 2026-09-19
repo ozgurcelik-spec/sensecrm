@@ -9,7 +9,9 @@ export function useCrmPermissions() {
   const deals = usePermission(PERMISSIONS.crmDealsWrite);
   const activities = usePermission(PERMISSIONS.crmActivitiesWrite);
   const settings = usePermission(PERMISSIONS.orgSettingsManage);
+  const cases = usePermission(PERMISSIONS.crmCasesWrite);
   return {
+    canWriteCases: cases,
     canWriteAccounts: accounts,
     canWriteContacts: contacts,
     canWriteLeads: leads,

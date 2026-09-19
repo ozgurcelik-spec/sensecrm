@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Anchor, Button, Card, Skeleton, Table, Text } from "@mantine/core";
-import { Pencil, Trash2 } from "lucide-react";
+import { LifeBuoy, Pencil, Trash2 } from "lucide-react";
+import { CaseFormDialog } from "@/components/service/case-form-dialog";
+import { RecordCasesTab } from "@/components/service/record-cases-tab";
+import { useRecordCases } from "@/hooks/use-cases";
 import { StageBadge } from "@/components/crm/badges";
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
@@ -81,10 +84,13 @@ function ContactDeals({ contact }: { contact: Contact }) {
 
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common", "activities"]);
+  const { t } = useTranslation(["crm", "common", "activities", "service"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
-  const { canWriteContacts } = useCrmPermissions();
+  const { canWriteContacts, canWriteCases } = useCrmPermissions();
+  const canReadCases = usePermission(PERMISSIONS.crmCasesRead);
+  const recordCases = useRecordCases({ type: "contact", id: id ?? "" }, canReadCases);
+  const [openingCase, setOpeningCase] = useState(false);
   const canReadAccounts = usePermission(PERMISSIONS.crmAccountsRead);
   const canReadDeals = usePermission(PERMISSIONS.crmDealsRead);
   const { data: contact, isLoading, error, refetch } = useContact(id);
@@ -148,6 +154,18 @@ export default function ContactDetailPage() {
               },
             ]
           : []),
+        ...(canReadCases
+          ? [
+              {
+                value: "cases",
+                label:
+                  recordCases.data !== undefined
+                    ? t("service:tab.titleCount", { count: recordCases.data.totalCount })
+                    : t("service:tab.title"),
+                content: <RecordCasesTab record={{ type: "contact", id: contact.id }} />,
+              },
+            ]
+          : []),
         {
           value: "audit",
           label: t("crm:tabs.audit"),
@@ -164,24 +182,36 @@ export default function ContactDetailPage() {
         title={contact?.fullName}
         subtitle={contact?.title}
         actions={
-          contact &&
-          canWriteContacts && (
+          contact && (
             <>
-              <Button
-                variant="default"
-                leftSection={<Pencil size={16} />}
-                onClick={() => setEditing(true)}
-              >
-                {t("common:edit")}
-              </Button>
-              <Button
-                variant="default"
-                color="red"
-                leftSection={<Trash2 size={16} />}
-                onClick={() => setDeleting(true)}
-              >
-                {t("common:delete")}
-              </Button>
+              {canWriteCases && (
+                <Button
+                  variant="default"
+                  leftSection={<LifeBuoy size={16} />}
+                  onClick={() => setOpeningCase(true)}
+                >
+                  {t("service:openCase")}
+                </Button>
+              )}
+              {canWriteContacts && (
+                <>
+                  <Button
+                    variant="default"
+                    leftSection={<Pencil size={16} />}
+                    onClick={() => setEditing(true)}
+                  >
+                    {t("common:edit")}
+                  </Button>
+                  <Button
+                    variant="default"
+                    color="red"
+                    leftSection={<Trash2 size={16} />}
+                    onClick={() => setDeleting(true)}
+                  >
+                    {t("common:delete")}
+                  </Button>
+                </>
+              )}
             </>
           )
         }
@@ -218,6 +248,17 @@ export default function ContactDetailPage() {
       />
       {editing && contact && (
         <ContactFormDialog contact={contact} onClose={() => setEditing(false)} />
+      )}
+      {openingCase && contact && (
+        <CaseFormDialog
+          fixedContact={{
+            id: contact.id,
+            name: contact.fullName,
+            accountId: contact.accountId,
+            accountName: contact.accountName,
+          }}
+          onClose={() => setOpeningCase(false)}
+        />
       )}
       <ConfirmDialog
         opened={deleting}

@@ -16,7 +16,8 @@
     "wonLost": "Kazanılan / Kaybedilen",
     "leadSources": "Potansiyel kaynakları",
     "byOwner": "Satış temsilcisi",
-    "activities": "Aktivite"
+    "activities": "Aktivite",
+    "service": "Servis"
   },
   "pipeline": "Satış hunisi",
   "groupBy": {

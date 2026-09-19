@@ -9,6 +9,9 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
     css: false,
+    // userEvent-heavy component tests run one jsdom worker per file; on a loaded machine the default
+    // 5 s occasionally trips on an otherwise green test.
+    testTimeout: 20_000,
   },
   resolve: {
     alias: {

@@ -16,7 +16,8 @@
     "wonLost": "Won / Lost",
     "leadSources": "Lead sources",
     "byOwner": "Sales rep",
-    "activities": "Activities"
+    "activities": "Activities",
+    "service": "Service"
   },
   "pipeline": "Pipeline",
   "groupBy": {

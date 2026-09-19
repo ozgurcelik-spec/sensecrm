@@ -89,6 +89,10 @@
       },
       "approvals": {
         "decide": "Onay taleplerine karar verme"
+      },
+      "cases": {
+        "read": "Talepleri görüntüleme",
+        "write": "Talep oluşturma/düzenleme/yanıtlama"
       }
     }
   }

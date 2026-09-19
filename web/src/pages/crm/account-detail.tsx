@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Anchor, Badge, Button, Card, Group, Skeleton, Stack, Table, Text } from "@mantine/core";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { LifeBuoy, Pencil, Plus, Trash2 } from "lucide-react";
+import { CaseFormDialog } from "@/components/service/case-form-dialog";
+import { RecordCasesTab } from "@/components/service/record-cases-tab";
+import { useRecordCases } from "@/hooks/use-cases";
 import { StageBadge } from "@/components/crm/badges";
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
 import { AccountFormDialog } from "@/components/crm/account-form-dialog";
@@ -172,10 +175,13 @@ function RelatedDeals({ account, canWrite }: { account: Account; canWrite: boole
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common", "activities"]);
+  const { t } = useTranslation(["crm", "common", "activities", "service"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
-  const { canWriteAccounts, canWriteContacts, canWriteDeals } = useCrmPermissions();
+  const { canWriteAccounts, canWriteContacts, canWriteDeals, canWriteCases } = useCrmPermissions();
+  const canReadCases = usePermission(PERMISSIONS.crmCasesRead);
+  const recordCases = useRecordCases({ type: "account", id: id ?? "" }, canReadCases);
+  const [openingCase, setOpeningCase] = useState(false);
   const canReadContacts = usePermission(PERMISSIONS.crmContactsRead);
   const canReadDeals = usePermission(PERMISSIONS.crmDealsRead);
   const { data: account, isLoading, error, refetch } = useAccount(id);
@@ -244,6 +250,18 @@ export default function AccountDetailPage() {
               },
             ]
           : []),
+        ...(canReadCases
+          ? [
+              {
+                value: "cases",
+                label:
+                  recordCases.data !== undefined
+                    ? t("service:tab.titleCount", { count: recordCases.data.totalCount })
+                    : t("service:tab.title"),
+                content: <RecordCasesTab record={{ type: "account", id: account.id }} />,
+              },
+            ]
+          : []),
         {
           value: "audit",
           label: t("crm:tabs.audit"),
@@ -272,24 +290,36 @@ export default function AccountDetailPage() {
           )
         }
         actions={
-          account &&
-          canWriteAccounts && (
+          account && (
             <>
-              <Button
-                variant="default"
-                leftSection={<Pencil size={16} />}
-                onClick={() => setEditing(true)}
-              >
-                {t("common:edit")}
-              </Button>
-              <Button
-                variant="default"
-                color="red"
-                leftSection={<Trash2 size={16} />}
-                onClick={() => setDeleting(true)}
-              >
-                {t("common:delete")}
-              </Button>
+              {canWriteCases && (
+                <Button
+                  variant="default"
+                  leftSection={<LifeBuoy size={16} />}
+                  onClick={() => setOpeningCase(true)}
+                >
+                  {t("service:openCase")}
+                </Button>
+              )}
+              {canWriteAccounts && (
+                <>
+                  <Button
+                    variant="default"
+                    leftSection={<Pencil size={16} />}
+                    onClick={() => setEditing(true)}
+                  >
+                    {t("common:edit")}
+                  </Button>
+                  <Button
+                    variant="default"
+                    color="red"
+                    leftSection={<Trash2 size={16} />}
+                    onClick={() => setDeleting(true)}
+                  >
+                    {t("common:delete")}
+                  </Button>
+                </>
+              )}
             </>
           )
         }
@@ -341,6 +371,12 @@ export default function AccountDetailPage() {
       />
       {editing && account && (
         <AccountFormDialog account={account} onClose={() => setEditing(false)} />
+      )}
+      {openingCase && account && (
+        <CaseFormDialog
+          fixedAccount={{ id: account.id, name: account.name }}
+          onClose={() => setOpeningCase(false)}
+        />
       )}
       <ConfirmDialog
         opened={deleting}

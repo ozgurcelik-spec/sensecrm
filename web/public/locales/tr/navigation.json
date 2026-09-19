@@ -15,5 +15,7 @@
   "audit": "Denetim Kaydı",
   "profile": "Profilim",
   "approvals": "Onaylarım",
-  "workflows": "İş akışları"
+  "workflows": "İş akışları",
+  "cases": "Talepler",
+  "sla": "SLA politikaları"
 }

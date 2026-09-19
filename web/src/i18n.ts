@@ -17,6 +17,7 @@ export const NAMESPACES = [
   "activities",
   "reports",
   "workflows",
+  "service",
 ] as const;
 
 i18n

@@ -10,6 +10,7 @@ import {
   WonLostReport,
 } from "@/components/reports/report-tabs";
 import { PageHeader } from "@/components/page-header";
+import { ServiceReport } from "@/components/service/service-report";
 import {
   DEFAULT_RANGE_PRESET,
   RANGE_PRESETS,
@@ -20,7 +21,14 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import type { WonLostGroupBy } from "@/types";
 
-const REPORT_TABS = ["funnel", "wonLost", "leadSources", "byOwner", "activities"] as const;
+const REPORT_TABS = [
+  "funnel",
+  "wonLost",
+  "leadSources",
+  "byOwner",
+  "activities",
+  "service",
+] as const;
 type ReportTab = (typeof REPORT_TABS)[number];
 
 const DEFAULT_TAB: ReportTab = "funnel";
@@ -163,6 +171,9 @@ export default function ReportsPage() {
               </Tabs.Panel>
               <Tabs.Panel value="activities">
                 <ActivitiesReport range={range} />
+              </Tabs.Panel>
+              <Tabs.Panel value="service">
+                <ServiceReport range={range} />
               </Tabs.Panel>
             </>
           )}

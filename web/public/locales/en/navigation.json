@@ -15,5 +15,7 @@
   "audit": "Audit Log",
   "profile": "My Profile",
   "approvals": "My approvals",
-  "workflows": "Workflows"
+  "workflows": "Workflows",
+  "cases": "Cases",
+  "sla": "SLA policies"
 }
