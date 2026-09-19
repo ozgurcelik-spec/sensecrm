@@ -67,7 +67,7 @@ internal static class MarketingApiKit
 
         var response = await client.SendAsync(request, Ct);
         var text = await response.Content.ReadAsStringAsync(Ct);
-        response.StatusCode.ShouldBe(expected, text);
+        response.StatusCode.ShouldBe(expected, $"{method} {url} -> {(int)response.StatusCode} {response.StatusCode}: {text}");
         return string.IsNullOrEmpty(text) ? default : JsonDocument.Parse(text).RootElement.Clone();
     }
 

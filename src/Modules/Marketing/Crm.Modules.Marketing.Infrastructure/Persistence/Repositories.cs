@@ -19,6 +19,14 @@ public sealed class CampaignRepository(MarketingDbContext db) : ICampaignReposit
 
 public sealed class CampaignMemberRepository(MarketingDbContext db) : ICampaignMemberRepository
 {
+    public async Task LockCampaignMembersAsync(Guid campaignId, CancellationToken ct)
+    {
+        // Kampanya başına transaction düzeyinde advisory lock (hashtextextended: 64 bit). Kilit, UnitOfWork transaction'ının
+        // commit/rollback'ine kadar tutulur; sonraki ön kontrol sorgusu (READ COMMITTED) önceki yazarın işlenmiş satırlarını görür.
+        var key = "marketing.campaign_members:" + campaignId.ToString("N");
+        await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", ct).ConfigureAwait(false);
+    }
+
     public async Task<IReadOnlySet<Guid>> GetExistingMemberIdsAsync(Guid campaignId, CampaignMemberType type, IReadOnlyCollection<Guid> memberIds, CancellationToken ct)
     {
         var ids = memberIds.ToArray();

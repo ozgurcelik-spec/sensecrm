@@ -80,6 +80,9 @@ public sealed class AddCampaignMembersHandler(
         var type = command.MemberType!.Value;
         var ids = command.MemberIds!.Distinct().ToList();
 
+        // Aynı kampanyaya eşzamanlı eklemeleri transaction boyunca sıraya koyar: ön kontrol ve ekleme tek yazar altında yapılır.
+        await members.LockCampaignMembersAsync(campaign.Id, cancellationToken).ConfigureAwait(false);
+
         var already = await members.GetExistingMemberIdsAsync(campaign.Id, type, ids, cancellationToken).ConfigureAwait(false);
         var candidates = ids.Where(id => !already.Contains(id)).ToList();
 
