@@ -142,4 +142,47 @@
   <data name="field.params" xml:space="preserve"><value>Params</value></data>
   <data name="permission.org.workflows.manage" xml:space="preserve"><value>Manage workflow rules and executions</value></data>
   <data name="permission.crm.approvals.decide" xml:space="preserve"><value>Decide approvals</value></data>
+  <data name="commerce.related_not_found" xml:space="preserve"><value>The record you tried to link (account, contact or deal) was not found.</value></data>
+  <data name="commerce.contact_account_mismatch" xml:space="preserve"><value>The selected contact does not belong to the document's account.</value></data>
+  <data name="commerce.deal_account_mismatch" xml:space="preserve"><value>The selected deal does not belong to the document's account.</value></data>
+  <data name="commerce.concurrent_update" xml:space="preserve"><value>The record was changed concurrently by another operation; refresh and try again.</value></data>
+  <data name="commerce.total_too_large" xml:space="preserve"><value>The document total exceeds the supported maximum; reduce quantities or unit prices.</value></data>
+  <data name="product.code_taken" xml:space="preserve"><value>This product code is already in use.</value></data>
+  <data name="quote.not_editable" xml:space="preserve"><value>Only draft quotes can be edited or deleted.</value></data>
+  <data name="quote.invalid_transition" xml:space="preserve"><value>The quote cannot move from "{from}" to "{to}".</value></data>
+  <data name="quote.expired" xml:space="preserve"><value>The quote has expired; extend its validity or revert it to draft first.</value></data>
+  <data name="quote.no_lines" xml:space="preserve"><value>The quote must have at least one line.</value></data>
+  <data name="quote.not_accepted" xml:space="preserve"><value>Only accepted quotes can be converted to a sales order.</value></data>
+  <data name="quote.already_converted" xml:space="preserve"><value>This quote has already been converted to a sales order.</value></data>
+  <data name="order.not_editable" xml:space="preserve"><value>Only draft orders can be edited or deleted.</value></data>
+  <data name="order.invalid_transition" xml:space="preserve"><value>The order cannot move from "{from}" to "{to}".</value></data>
+  <data name="order.no_lines" xml:space="preserve"><value>The order must have at least one line.</value></data>
+  <data name="validation.valid_until_past" xml:space="preserve"><value>The validity date cannot be earlier than today.</value></data>
+  <data name="validation.line_product_not_found" xml:space="preserve"><value>The selected product was not found.</value></data>
+  <data name="validation.line_product_inactive" xml:space="preserve"><value>An inactive product cannot be added to a new line.</value></data>
+  <data name="validation.line_product_currency" xml:space="preserve"><value>The product's currency must match the document currency.</value></data>
+  <data name="validation.too_many_lines" xml:space="preserve"><value>A document can have at most 100 lines.</value></data>
+  <data name="validation.decimals" xml:space="preserve"><value>Too many decimal places.</value></data>
+  <data name="field.code" xml:space="preserve"><value>Code</value></data>
+  <data name="field.unit" xml:space="preserve"><value>Unit</value></data>
+  <data name="field.unit_price" xml:space="preserve"><value>Unit price</value></data>
+  <data name="field.tax_rate" xml:space="preserve"><value>Tax rate</value></data>
+  <data name="field.discount_percent" xml:space="preserve"><value>Discount percent</value></data>
+  <data name="field.quantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="field.product_id" xml:space="preserve"><value>Product</value></data>
+  <data name="field.contact_id" xml:space="preserve"><value>Contact</value></data>
+  <data name="field.deal_id" xml:space="preserve"><value>Deal</value></data>
+  <data name="field.owner_user_id" xml:space="preserve"><value>Owner</value></data>
+  <data name="field.terms" xml:space="preserve"><value>Terms</value></data>
+  <data name="field.notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="field.valid_until" xml:space="preserve"><value>Valid until</value></data>
+  <data name="field.order_date" xml:space="preserve"><value>Order date</value></data>
+  <data name="field.lines" xml:space="preserve"><value>Lines</value></data>
+  <data name="field.reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="permission.crm.products.read" xml:space="preserve"><value>View products</value></data>
+  <data name="permission.crm.products.write" xml:space="preserve"><value>Create, edit and delete products</value></data>
+  <data name="permission.crm.quotes.read" xml:space="preserve"><value>View quotes</value></data>
+  <data name="permission.crm.quotes.write" xml:space="preserve"><value>Create, edit, delete and change the status of quotes</value></data>
+  <data name="permission.crm.orders.read" xml:space="preserve"><value>View sales orders</value></data>
+  <data name="permission.crm.orders.write" xml:space="preserve"><value>Create, edit, delete and change the status of sales orders</value></data>
 </root>

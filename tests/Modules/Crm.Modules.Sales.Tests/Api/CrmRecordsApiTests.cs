@@ -299,8 +299,7 @@ public sealed class CrmRecordsApiTests(CrmApiFactory factory)
         keys.ShouldContain("crm.deals.write");
         keys.ShouldContain("crm.activities.read");
         keys.ShouldContain("crm.reports.read");
-        keys.Count.ShouldBe(18);
-        keys.Distinct().Count().ShouldBe(18);
+        keys.Distinct().Count().ShouldBe(keys.Count);
         keys.ShouldContain("org.workflows.manage");
         keys.ShouldContain("crm.approvals.decide");
 

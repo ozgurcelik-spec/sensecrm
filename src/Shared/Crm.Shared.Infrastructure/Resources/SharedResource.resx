@@ -142,4 +142,47 @@
   <data name="field.params" xml:space="preserve"><value>Parametreler</value></data>
   <data name="permission.org.workflows.manage" xml:space="preserve"><value>İş akışı kurallarını ve yürütmeleri yönet</value></data>
   <data name="permission.crm.approvals.decide" xml:space="preserve"><value>Onay ver</value></data>
+  <data name="commerce.related_not_found" xml:space="preserve"><value>Bağlanmak istenen kayıt (firma, kişi veya fırsat) bulunamadı.</value></data>
+  <data name="commerce.contact_account_mismatch" xml:space="preserve"><value>Seçilen kişi, belgenin firmasına ait değil.</value></data>
+  <data name="commerce.deal_account_mismatch" xml:space="preserve"><value>Seçilen fırsat, belgenin firmasına ait değil.</value></data>
+  <data name="commerce.concurrent_update" xml:space="preserve"><value>Kayıt başka bir işlemle eş zamanlı değiştirildi; sayfayı yenileyip tekrar deneyin.</value></data>
+  <data name="commerce.total_too_large" xml:space="preserve"><value>Belge toplamı desteklenen üst sınırı aşıyor; adet veya birim fiyatları azaltın.</value></data>
+  <data name="product.code_taken" xml:space="preserve"><value>Bu ürün kodu zaten kullanılıyor.</value></data>
+  <data name="quote.not_editable" xml:space="preserve"><value>Yalnızca taslak durumundaki teklifler düzenlenebilir veya silinebilir.</value></data>
+  <data name="quote.invalid_transition" xml:space="preserve"><value>Teklif "{from}" durumundan "{to}" durumuna geçirilemez.</value></data>
+  <data name="quote.expired" xml:space="preserve"><value>Teklifin geçerlilik süresi dolmuş; önce süreyi uzatın veya taslağa alın.</value></data>
+  <data name="quote.no_lines" xml:space="preserve"><value>Teklifte en az bir kalem olmalıdır.</value></data>
+  <data name="quote.not_accepted" xml:space="preserve"><value>Yalnızca kabul edilmiş teklifler siparişe dönüştürülebilir.</value></data>
+  <data name="quote.already_converted" xml:space="preserve"><value>Bu teklif zaten siparişe dönüştürülmüş.</value></data>
+  <data name="order.not_editable" xml:space="preserve"><value>Yalnızca taslak durumundaki siparişler düzenlenebilir veya silinebilir.</value></data>
+  <data name="order.invalid_transition" xml:space="preserve"><value>Sipariş "{from}" durumundan "{to}" durumuna geçirilemez.</value></data>
+  <data name="order.no_lines" xml:space="preserve"><value>Siparişte en az bir kalem olmalıdır.</value></data>
+  <data name="validation.valid_until_past" xml:space="preserve"><value>Geçerlilik tarihi bugünden önce olamaz.</value></data>
+  <data name="validation.line_product_not_found" xml:space="preserve"><value>Seçilen ürün bulunamadı.</value></data>
+  <data name="validation.line_product_inactive" xml:space="preserve"><value>Pasif ürün yeni bir kaleme eklenemez.</value></data>
+  <data name="validation.line_product_currency" xml:space="preserve"><value>Ürünün para birimi belgenin para birimiyle aynı olmalıdır.</value></data>
+  <data name="validation.too_many_lines" xml:space="preserve"><value>Bir belgede en fazla 100 kalem olabilir.</value></data>
+  <data name="validation.decimals" xml:space="preserve"><value>Ondalık basamak sayısı izin verilenden fazla.</value></data>
+  <data name="field.code" xml:space="preserve"><value>Kod</value></data>
+  <data name="field.unit" xml:space="preserve"><value>Birim</value></data>
+  <data name="field.unit_price" xml:space="preserve"><value>Birim fiyat</value></data>
+  <data name="field.tax_rate" xml:space="preserve"><value>KDV oranı</value></data>
+  <data name="field.discount_percent" xml:space="preserve"><value>İskonto yüzdesi</value></data>
+  <data name="field.quantity" xml:space="preserve"><value>Adet</value></data>
+  <data name="field.product_id" xml:space="preserve"><value>Ürün</value></data>
+  <data name="field.contact_id" xml:space="preserve"><value>Kişi</value></data>
+  <data name="field.deal_id" xml:space="preserve"><value>Fırsat</value></data>
+  <data name="field.owner_user_id" xml:space="preserve"><value>Sahip</value></data>
+  <data name="field.terms" xml:space="preserve"><value>Şartlar</value></data>
+  <data name="field.notes" xml:space="preserve"><value>Notlar</value></data>
+  <data name="field.valid_until" xml:space="preserve"><value>Geçerlilik tarihi</value></data>
+  <data name="field.order_date" xml:space="preserve"><value>Sipariş tarihi</value></data>
+  <data name="field.lines" xml:space="preserve"><value>Kalemler</value></data>
+  <data name="field.reason" xml:space="preserve"><value>Neden</value></data>
+  <data name="permission.crm.products.read" xml:space="preserve"><value>Ürünleri görüntüle</value></data>
+  <data name="permission.crm.products.write" xml:space="preserve"><value>Ürünleri oluştur, düzenle ve sil</value></data>
+  <data name="permission.crm.quotes.read" xml:space="preserve"><value>Teklifleri görüntüle</value></data>
+  <data name="permission.crm.quotes.write" xml:space="preserve"><value>Teklifleri oluştur, düzenle, sil ve durumunu değiştir</value></data>
+  <data name="permission.crm.orders.read" xml:space="preserve"><value>Satış siparişlerini görüntüle</value></data>
+  <data name="permission.crm.orders.write" xml:space="preserve"><value>Satış siparişlerini oluştur, düzenle, sil ve durumunu değiştir</value></data>
 </root>

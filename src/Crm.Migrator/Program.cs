@@ -1,5 +1,6 @@
 using Crm.Migrator;
 using Crm.Modules.Activities.Infrastructure.Persistence;
+using Crm.Modules.Commerce.Infrastructure.Persistence;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Modules.Workflows.Infrastructure.Persistence;
@@ -18,6 +19,7 @@ builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, Id
 builder.Services.AddModuleDbContext<SalesDbContext>(builder.Configuration, SalesDbContext.SchemaName);
 builder.Services.AddModuleDbContext<ActivitiesDbContext>(builder.Configuration, ActivitiesDbContext.SchemaName);
 builder.Services.AddModuleDbContext<WorkflowsDbContext>(builder.Configuration, WorkflowsDbContext.SchemaName);
+builder.Services.AddModuleDbContext<CommerceDbContext>(builder.Configuration, CommerceDbContext.SchemaName);
 
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);

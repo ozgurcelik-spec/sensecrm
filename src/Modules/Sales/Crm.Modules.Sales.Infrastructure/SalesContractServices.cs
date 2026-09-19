@@ -13,6 +13,7 @@ public static class SalesContractServices
     public static IServiceCollection AddSalesContractServices(this IServiceCollection services)
     {
         services.AddScoped<IRecordLookup, RecordLookup>();
+        services.AddScoped<IRecordRelationLookup, RecordRelationLookup>();
         services.AddScoped<ILeadOwnerService, LeadOwnerService>();
         return services;
     }

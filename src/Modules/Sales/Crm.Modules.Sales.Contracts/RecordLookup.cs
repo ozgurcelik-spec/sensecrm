@@ -28,3 +28,21 @@ public interface IRecordLookup
     /// <summary>Toplu ad çözümü (tür başına tek sorgu). Bulunamayan kayıtlar sonuçta yer almaz.</summary>
     Task<IReadOnlyDictionary<RecordRef, string>> GetDisplayNamesAsync(IReadOnlyCollection<RecordRef> records, CancellationToken cancellationToken = default);
 }
+
+/// <summary>Kişinin tutarlılık denetimi için gereken özeti (tam ad + bağlı firma; firmasız kişi <c>AccountId = null</c>).</summary>
+public sealed record ContactLink(Guid Id, string FullName, Guid? AccountId);
+
+/// <summary>Fırsatın tutarlılık denetimi için gereken özeti (ad, firma, isteğe bağlı kişi, para birimi).</summary>
+public sealed record DealLink(Guid Id, string Name, Guid AccountId, Guid? ContactId, string Currency);
+
+/// <summary>
+/// Kayıt ilişkilerini okuma sözleşmesi (Sales uygular; Commerce teklif/sipariş tutarlılık kuralları için kullanır: kişi firmaya,
+/// fırsat firmaya uymalı). <see cref="IRecordLookup"/> ile aynı kural: aktif kiracı + yumuşak silme filtresi altında çalışır;
+/// başka organizasyonun veya silinmiş kayıt <c>null</c> döner.
+/// </summary>
+public interface IRecordRelationLookup
+{
+    Task<ContactLink?> GetContactAsync(Guid contactId, CancellationToken cancellationToken = default);
+
+    Task<DealLink?> GetDealAsync(Guid dealId, CancellationToken cancellationToken = default);
+}
