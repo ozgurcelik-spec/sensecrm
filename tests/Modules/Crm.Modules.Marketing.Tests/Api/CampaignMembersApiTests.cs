@@ -192,6 +192,41 @@ public sealed class CampaignMembersApiTests(CrmApiFactory factory)
     }
 
     [Fact]
+    public async Task ConcurrentAdds_Stress_OverlappingBatchesInMixedOrder_AlwaysSucceedWithExactCounts()
+    {
+        var admin = (await factory.NewOrgAsync("Mkt Concurrent Stress")).Admin;
+        var leads = await admin.NewLeadIdsAsync(6);
+
+        for (var round = 0; round < 12; round++)
+        {
+            var campaign = await admin.NewCampaignIdAsync($"Stres {round}");
+            var url = $"{CampaignsPath}/{campaign}/members";
+
+            // 12 eşzamanlı istek: aynı 6 lead, yarısı ters sırada, biri kısmi küme; her yanıtın durumu + gövdesi hata mesajında görünür.
+            var requests = Enumerable.Range(0, 12).Select(async i =>
+            {
+                var ids = i % 2 == 0 ? leads : Enumerable.Reverse(leads).ToList();
+                if (i == 5)
+                {
+                    ids = leads.Take(3).ToList();
+                }
+
+                var response = await admin.PostAsJsonAsync(url, new { memberType = "lead", memberIds = ids }, Ct);
+                var body = await response.Content.ReadAsStringAsync(Ct);
+                response.StatusCode.ShouldBe(HttpStatusCode.OK, $"round {round} request {i}: {(int)response.StatusCode} {body}");
+                var json = JsonDocument.Parse(body).RootElement;
+                (json.GetProperty("addedCount").GetInt32() + json.GetProperty("alreadyMemberCount").GetInt32()).ShouldBe(ids.Count, $"round {round} request {i}: {body}");
+                json.GetProperty("skipped").GetArrayLength().ShouldBe(0, body);
+                return json.GetProperty("addedCount").GetInt32();
+            }).ToList();
+
+            var added = await Task.WhenAll(requests);
+            added.Sum().ShouldBe(6, $"round {round}: eklenen toplamı tam olarak üye sayısı olmalı");
+            (await admin.MembersAsync(campaign)).Count.ShouldBe(6);
+        }
+    }
+
+    [Fact]
     public async Task MemberList_FiltersSortsPages_AndResolvesNamesInBatch()
     {
         var org = await factory.NewOrgAsync("Mkt Member List");

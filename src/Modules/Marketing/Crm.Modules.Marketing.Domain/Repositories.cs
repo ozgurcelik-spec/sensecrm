@@ -18,6 +18,13 @@ public interface ICampaignRepository
 
 public interface ICampaignMemberRepository
 {
+    /// <summary>
+    /// Kampanyanın üyelik yazımlarını <b>işlem (transaction) süresince</b> serileştirir (PostgreSQL advisory lock; commit/rollback'te
+    /// kendiliğinden düşer). Toplu ekleme, ön kontrolü (zaten üye mi) ve eklemeyi bu kilidin altında yapar; böylece eşzamanlı iki
+    /// istek aynı üyeleri aynı anda eklemeye çalışmaz (benzersiz ihlali/deadlock oluşmaz). Açık bir transaction gerektirir.
+    /// </summary>
+    Task LockCampaignMembersAsync(Guid campaignId, CancellationToken ct);
+
     /// <summary>Verilen kampanyada, verilen türde ve kimliklerle zaten üye olanların kayıt (Sales) kimlikleri.</summary>
     Task<IReadOnlySet<Guid>> GetExistingMemberIdsAsync(Guid campaignId, CampaignMemberType type, IReadOnlyCollection<Guid> memberIds, CancellationToken ct);
 
