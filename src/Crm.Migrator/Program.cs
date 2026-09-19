@@ -5,6 +5,7 @@ using Crm.Modules.Identity.Application;
 using Crm.Modules.Identity.Infrastructure;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Sales.Infrastructure.Persistence;
+using Crm.Modules.Service.Infrastructure.Persistence;
 using Crm.Modules.Workflows.Infrastructure.Persistence;
 using Crm.Shared.Infrastructure.DependencyInjection;
 using Crm.Shared.Infrastructure.Persistence;
@@ -30,6 +31,7 @@ builder.Services.AddModuleDbContext<ActivitiesDbContext>(builder.Configuration, 
 builder.Services.AddModuleDbContext<WorkflowsDbContext>(builder.Configuration, WorkflowsDbContext.SchemaName);
 builder.Services.AddModuleDbContext<Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext>(builder.Configuration, Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext.SchemaName);
 builder.Services.AddModuleDbContext<CommerceDbContext>(builder.Configuration, CommerceDbContext.SchemaName);
+builder.Services.AddModuleDbContext<ServiceDbContext>(builder.Configuration, ServiceDbContext.SchemaName);
 
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);

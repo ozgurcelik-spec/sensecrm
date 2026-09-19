@@ -16,6 +16,7 @@ public static class SalesContractServices
         services.AddScoped<IRecordRelationLookup, RecordRelationLookup>();
         services.AddScoped<ILeadOwnerService, LeadOwnerService>();
         services.AddScoped<ILeadStatusLookup, LeadStatusLookup>();
+        services.AddScoped<IContactAccountLookup, ContactAccountLookup>();
         return services;
     }
 }

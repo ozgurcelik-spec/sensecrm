@@ -206,6 +206,8 @@ public sealed class OrganizationApiTests(CrmApiFactory factory)
 
         var list = permissions.EnumerateArray().Select(p => (Key: p.GetProperty("key").GetString()!, Group: p.GetProperty("group").GetString()!)).ToList();
         list.Select(p => p.Key).Distinct().Count().ShouldBe(list.Count);
+        list.ShouldContain(("crm.cases.read", "crm"));
+        list.ShouldContain(("crm.cases.write", "crm"));
         list.ShouldAllBe(p => p.Group == "org" || p.Group == "crm");
         list.ShouldContain(("crm.campaigns.read", "crm"));
         list.ShouldContain(("crm.campaigns.write", "crm"));

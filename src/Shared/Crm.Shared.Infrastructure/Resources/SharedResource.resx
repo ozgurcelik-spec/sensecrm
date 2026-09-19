@@ -207,4 +207,28 @@
   <data name="permission.crm.quotes.write" xml:space="preserve"><value>Teklifleri oluştur, düzenle, sil ve durumunu değiştir</value></data>
   <data name="permission.crm.orders.read" xml:space="preserve"><value>Satış siparişlerini görüntüle</value></data>
   <data name="permission.crm.orders.write" xml:space="preserve"><value>Satış siparişlerini oluştur, düzenle, sil ve durumunu değiştir</value></data>
+  <!-- Servis/Destek: talepler, yorumlar, SLA (Milestone 6B) -->
+  <data name="case.account_not_found" xml:space="preserve"><value>Talebe bağlanmak istenen firma bulunamadı.</value></data>
+  <data name="case.contact_not_found" xml:space="preserve"><value>Talebe bağlanmak istenen kişi bulunamadı.</value></data>
+  <data name="case.contact_account_mismatch" xml:space="preserve"><value>Seçilen kişi, seçilen firmaya ait değil.</value></data>
+  <data name="case.invalid_transition" xml:space="preserve"><value>Talep "{from}" durumundan "{to}" durumuna geçirilemez.</value></data>
+  <data name="case.resolution_required" xml:space="preserve"><value>Talebi çözmek veya çözmeden kapatmak için çözüm notu girmelisiniz.</value></data>
+  <data name="case.reopen_window_expired" xml:space="preserve"><value>Kapatılan talep, kapanıştan sonra izin verilen süre geçtiği için yeniden açılamaz.</value></data>
+  <data name="case.not_active" xml:space="preserve"><value>Bu talep aktif değil (çözülmüş veya kapalı); önce yeniden açın.</value></data>
+  <data name="case.closed" xml:space="preserve"><value>Talep kapalı; yorum eklemek için önce yeniden açın.</value></data>
+  <data name="validation.sla_policies" xml:space="preserve"><value>SLA politikaları dört önceliğin (low, normal, high, urgent) her birini tam bir kez içermelidir.</value></data>
+  <data name="validation.sla_minutes" xml:space="preserve"><value>Süreler 1 dakikadan az olamaz; ilk yanıt süresi çözüm süresinden büyük olamaz ve çözüm süresi en fazla 525600 dakika (1 yıl) olabilir.</value></data>
+  <data name="validation.case_filter" xml:space="preserve"><value>Süzgeç değeri geçerli değil.</value></data>
+  <data name="validation.case_unassigned" xml:space="preserve"><value>"Atanmamış" süzgeci, atanan kullanıcı süzgeciyle birlikte kullanılamaz.</value></data>
+  <data name="field.visibility" xml:space="preserve"><value>Görünürlük</value></data>
+  <data name="field.body" xml:space="preserve"><value>Yorum metni</value></data>
+  <data name="field.resolution_note" xml:space="preserve"><value>Çözüm notu</value></data>
+  <data name="field.channel" xml:space="preserve"><value>Kanal</value></data>
+  <data name="field.policies" xml:space="preserve"><value>SLA politikaları</value></data>
+  <data name="field.first_response_minutes" xml:space="preserve"><value>İlk yanıt süresi (dk)</value></data>
+  <data name="field.resolution_minutes" xml:space="preserve"><value>Çözüm süresi (dk)</value></data>
+  <data name="field.unassigned" xml:space="preserve"><value>Atanmamış</value></data>
+  <data name="field.sla_state" xml:space="preserve"><value>SLA durumu</value></data>
+  <data name="permission.crm.cases.read" xml:space="preserve"><value>Talepleri görüntüle</value></data>
+  <data name="permission.crm.cases.write" xml:space="preserve"><value>Talep oluştur ve yönet</value></data>
 </root>

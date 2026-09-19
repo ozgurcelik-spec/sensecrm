@@ -12,6 +12,7 @@
     <ProjectReference Include="../Modules/Commerce/Crm.Modules.Commerce.Infrastructure/Crm.Modules.Commerce.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Workflows/Crm.Modules.Workflows.Infrastructure/Crm.Modules.Workflows.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Marketing/Crm.Modules.Marketing.Infrastructure/Crm.Modules.Marketing.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Service/Crm.Modules.Service.Infrastructure/Crm.Modules.Service.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
