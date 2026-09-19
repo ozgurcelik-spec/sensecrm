@@ -5,7 +5,7 @@ araçları ve kurulum/yedek/yükseltme prosedürlerini getirir. Operasyon rehber
 
 ## Yapılanlar
 
-**İmajlar** (hepsi gerçekten derlendi; kök dizin bağlamı, `.dockerignore`): `src/Crm.Api/Dockerfile`, `src/Crm.Worker/Dockerfile`, `src/Crm.Migrator/Dockerfile` (yeni),
+**İmajlar** (hepsi gerçekten derlendi; kök dizin bağlamı, `.dockerignore`): `src/Sense.Crm.Api/Dockerfile`, `src/Sense.Crm.Worker/Dockerfile`, `src/Sense.Crm.Migrator/Dockerfile` (yeni),
 `web/Dockerfile` (yeni; node:24-alpine derleme → `nginxinc/nginx-unprivileged`, `web/nginx/*`). Root olmayan kullanıcılar (`app` 1654, `nginx` 101), her imajda healthcheck
 (API `/health`, Worker sinyal dosyası, web `/healthz`; Migrator tek seferlik iş). Web: SPA history fallback, gzip, `/assets` 1 yıl `immutable`, `index.html`/`locales` `no-cache`,
 güvenlik başlıkları + sıkı CSP (`default-src 'self'` …), `/api` ters vekil (çalışma zamanında yeniden çözümleme, gerçek istemci IP'si), HSTS yalnız `X-Forwarded-Proto: https` ile.
@@ -61,4 +61,4 @@ Conductor'da tanımlar kayıtlı ve 5 görev kuyruğu Worker tarafından poll ed
 - WAL arşivleme/PITR (RPO'yu dakikalara indirmek), yüksek erişilebilirlik (Postgres replikasyonu, ikinci düğüm), Kubernetes/Helm (K13).
 - Gözlemlenebilirlik yığını (metrik/iz/merkezî log), `/health` uçlarının kimlik doğrulamalı dış izleme yolu.
 - Conductor kimlik doğrulaması (bugün yalnız ağ izolasyonu), imaj imzalama/tarama (Trivy) ve registry'ye itme akışının açılması (`ENABLE_IMAGE_PUSH`).
-- Migrator `create-platform-admin` izin kataloğu `Crm.Migrator/PlatformAdminCommand.StaticPermissionCatalog`'da elle listelenir; yeni modül eklenirse buraya da eklenmelidir (eklenmese de API açılışında sistem rolleri eşitlenir).
+- Migrator `create-platform-admin` izin kataloğu `Sense.Crm.Migrator/PlatformAdminCommand.StaticPermissionCatalog`'da elle listelenir; yeni modül eklenirse buraya da eklenmelidir (eklenmese de API açılışında sistem rolleri eşitlenir).

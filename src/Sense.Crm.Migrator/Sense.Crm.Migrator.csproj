@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Shared/Sense.Crm.Shared.Infrastructure/Sense.Crm.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/Sense.Crm.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Sense.Crm.Modules.Sales.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Activities/Sense.Crm.Modules.Activities.Infrastructure/Sense.Crm.Modules.Activities.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Commerce/Sense.Crm.Modules.Commerce.Infrastructure/Sense.Crm.Modules.Commerce.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Workflows/Sense.Crm.Modules.Workflows.Infrastructure/Sense.Crm.Modules.Workflows.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Marketing/Sense.Crm.Modules.Marketing.Infrastructure/Sense.Crm.Modules.Marketing.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Service/Sense.Crm.Modules.Service.Infrastructure/Sense.Crm.Modules.Service.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

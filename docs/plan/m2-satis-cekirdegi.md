@@ -5,7 +5,7 @@ PRD: [zoho-crm-klonu.prd.md](../../.claude/prds/zoho-crm-klonu.prd.md) · Kararl
 **Çıktı:** Kullanıcı potansiyel müşteri (lead) girer, onu firma + kişi + fırsata dönüştürür, fırsatları kanban satış hunisinde aşamadan aşamaya taşır. Her şey kiracı bazlı, yetkiye bağlı ve denetim kaydında.
 
 ## Modül kararı
-Tek modül: `Crm.Modules.Sales` (Domain/Application/Contracts/Infrastructure/Api, şema `sales`). Lead dönüştürme firma, kişi ve fırsatı tek transaction'da oluşturduğu için bunlar aynı modülde. Aktiviteler (M3) ayrı modül olacak ve kayıtlara `Contracts` üzerinden bağlanacak. İskelet `build/new-module.ps1` ile açılır.
+Tek modül: `Sense.Crm.Modules.Sales` (Domain/Application/Contracts/Infrastructure/Api, şema `sales`). Lead dönüştürme firma, kişi ve fırsatı tek transaction'da oluşturduğu için bunlar aynı modülde. Aktiviteler (M3) ayrı modül olacak ve kayıtlara `Contracts` üzerinden bağlanacak. İskelet `build/new-module.ps1` ile açılır.
 
 ## Varlıklar (Zoho karşılıkları)
 | Varlık | Temel alanlar | Not |

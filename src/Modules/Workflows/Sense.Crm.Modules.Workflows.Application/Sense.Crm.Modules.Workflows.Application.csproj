@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Sense.Crm.Modules.Workflows.Contracts/Sense.Crm.Modules.Workflows.Contracts.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.Workflows.Domain/Sense.Crm.Modules.Workflows.Domain.csproj" />
+    <ProjectReference Include="../../Identity/Sense.Crm.Modules.Identity.Contracts/Sense.Crm.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="../../Sales/Sense.Crm.Modules.Sales.Contracts/Sense.Crm.Modules.Sales.Contracts.csproj" />
+    <ProjectReference Include="../../Activities/Sense.Crm.Modules.Activities.Contracts/Sense.Crm.Modules.Activities.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Contracts/Sense.Crm.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+</Project>

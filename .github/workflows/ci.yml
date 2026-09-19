@@ -36,10 +36,10 @@ jobs:
           cache-dependency-path: |
             Directory.Packages.props
             **/*.csproj
-      - run: dotnet restore Crm.slnx --locked-mode
-      - run: dotnet format Crm.slnx --verify-no-changes --no-restore
-      - run: dotnet build Crm.slnx -c Release --no-restore
-      - run: dotnet test Crm.slnx -c Release --no-build
+      - run: dotnet restore Sense.Crm.slnx --locked-mode
+      - run: dotnet format Sense.Crm.slnx --verify-no-changes --no-restore
+      - run: dotnet build Sense.Crm.slnx -c Release --no-restore
+      - run: dotnet test Sense.Crm.slnx -c Release --no-build
 
   web:
     runs-on: ubuntu-latest
@@ -85,11 +85,11 @@ jobs:
       matrix:
         include:
           - image: api
-            dockerfile: src/Crm.Api/Dockerfile
+            dockerfile: src/Sense.Crm.Api/Dockerfile
           - image: worker
-            dockerfile: src/Crm.Worker/Dockerfile
+            dockerfile: src/Sense.Crm.Worker/Dockerfile
           - image: migrator
-            dockerfile: src/Crm.Migrator/Dockerfile
+            dockerfile: src/Sense.Crm.Migrator/Dockerfile
           - image: web
             dockerfile: web/Dockerfile
     steps:

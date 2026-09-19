@@ -14,7 +14,7 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
     proxy: {
-      // Backend (src/Crm.Api) listens on 5080 in development.
+      // Backend (src/Sense.Crm.Api) listens on 5080 in development.
       "/api": {
         target: process.env.VITE_API_PROXY_TARGET || "http://localhost:5080",
         changeOrigin: true,

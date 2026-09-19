@@ -7,17 +7,17 @@
 .DESCRIPTION
   Generates the 5-project skeleton for a new module, wires up a minimal but working
   DbContext + design-time factory + IModule composition root, and adds all 5 projects
-  to Crm.slnx under a "/src/Modules/<Name>/" solution folder.
+  to Sense.Crm.slnx under a "/src/Modules/<Name>/" solution folder.
 
   The generated module is buildable on its own, but is NOT yet loaded by the host: you
-  still need to register it in src/Crm.Api/ModuleCatalog.cs (see "Next steps" printed
+  still need to register it in src/Sense.Crm.Api/ModuleCatalog.cs (see "Next steps" printed
   at the end) before it participates in the running API. This is deliberate - it mirrors
   how every existing module was added, and keeps a half-finished scaffold from silently
   becoming part of the running app.
 
 .PARAMETER Name
   PascalCase module name, e.g. "Payroll", "Leave", "Attendance". Used verbatim for the
-  project/namespace names (Crm.Modules.<Name>.*) and, lowercased, as the PostgreSQL
+  project/namespace names (Sense.Crm.Modules.<Name>.*) and, lowercased, as the PostgreSQL
   schema name and permission-key module prefix ("<name>.<resource_plural>.<action>").
 
 .PARAMETER Force
@@ -41,12 +41,12 @@ if ($Name -notmatch '^[A-Z][A-Za-z0-9]*$') {
 }
 
 $RepoRoot = Split-Path $PSScriptRoot -Parent
-$SlnPath = Join-Path $RepoRoot 'Crm.slnx'
+$SlnPath = Join-Path $RepoRoot 'Sense.Crm.slnx'
 $ModuleKey = $Name.ToLowerInvariant()
 $ModuleBase = Join-Path $RepoRoot "src/Modules/$Name"
 
 if (-not (Test-Path $SlnPath)) {
-    throw "Could not find Crm.slnx at '$SlnPath' - run this script from the repo (build/new-module.ps1)."
+    throw "Could not find Sense.Crm.slnx at '$SlnPath' - run this script from the repo (build/new-module.ps1)."
 }
 
 if (Test-Path $ModuleBase) {
@@ -62,20 +62,20 @@ function New-ProjectDir {
     New-Item -ItemType Directory -Force -Path $Path | Out-Null
 }
 
-$DomainDir = Join-Path $ModuleBase "Crm.Modules.$Name.Domain"
-$ContractsDir = Join-Path $ModuleBase "Crm.Modules.$Name.Contracts"
-$ApplicationDir = Join-Path $ModuleBase "Crm.Modules.$Name.Application"
-$InfrastructureDir = Join-Path $ModuleBase "Crm.Modules.$Name.Infrastructure"
+$DomainDir = Join-Path $ModuleBase "Sense.Crm.Modules.$Name.Domain"
+$ContractsDir = Join-Path $ModuleBase "Sense.Crm.Modules.$Name.Contracts"
+$ApplicationDir = Join-Path $ModuleBase "Sense.Crm.Modules.$Name.Application"
+$InfrastructureDir = Join-Path $ModuleBase "Sense.Crm.Modules.$Name.Infrastructure"
 $PersistenceDir = Join-Path $InfrastructureDir 'Persistence'
-$ApiDir = Join-Path $ModuleBase "Crm.Modules.$Name.Api"
+$ApiDir = Join-Path $ModuleBase "Sense.Crm.Modules.$Name.Api"
 
 foreach ($dir in @($DomainDir, $ContractsDir, $ApplicationDir, $PersistenceDir, $ApiDir)) {
     New-ProjectDir -Path $dir
 }
 
 # --- Domain ------------------------------------------------------------------------
-# Onion rule (enforced by Crm.Tests.Architecture.OnionArchitectureTests.Domain_DependsOnlyOnKernel):
-# Domain may reference Crm.Shared.Kernel and nothing else Crm.*, no NuGet packages.
+# Onion rule (enforced by Sense.Crm.Tests.Architecture.OnionArchitectureTests.Domain_DependsOnlyOnKernel):
+# Domain may reference Sense.Crm.Shared.Kernel and nothing else Sense.Crm.*, no NuGet packages.
 @"
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -83,11 +83,11 @@ foreach ($dir in @($DomainDir, $ContractsDir, $ApplicationDir, $PersistenceDir, 
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../Shared/Crm.Shared.Kernel/Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
   </ItemGroup>
 
 </Project>
-"@ | Set-Content -Path (Join-Path $DomainDir "Crm.Modules.$Name.Domain.csproj") -Encoding utf8
+"@ | Set-Content -Path (Join-Path $DomainDir "Sense.Crm.Modules.$Name.Domain.csproj") -Encoding utf8
 
 # --- Contracts -----------------------------------------------------------------------
 # Cross-module surface: DTOs, permission keys. Other modules may depend on this project only.
@@ -98,17 +98,17 @@ foreach ($dir in @($DomainDir, $ContractsDir, $ApplicationDir, $PersistenceDir, 
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../Shared/Crm.Shared.Kernel/Crm.Shared.Kernel.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Contracts/Sense.Crm.Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
-"@ | Set-Content -Path (Join-Path $ContractsDir "Crm.Modules.$Name.Contracts.csproj") -Encoding utf8
+"@ | Set-Content -Path (Join-Path $ContractsDir "Sense.Crm.Modules.$Name.Contracts.csproj") -Encoding utf8
 
 @"
-using Crm.Shared.Contracts.Security;
+using Sense.Crm.Shared.Contracts.Security;
 
-namespace Crm.Modules.$Name.Contracts;
+namespace Sense.Crm.Modules.$Name.Contracts;
 
 /// <summary>$Name module permission definitions.</summary>
 public static class ${Name}Permissions
@@ -116,7 +116,7 @@ public static class ${Name}Permissions
     private const string Module = "$ModuleKey";
 
     // TODO: define permissions here, following {module}.{resource_plural}.{action} snake_case
-    // (enforced by Crm.Tests.Architecture.OnionArchitectureTests.PermissionKeys_FollowNamingConvention), e.g.:
+    // (enforced by Sense.Crm.Tests.Architecture.OnionArchitectureTests.PermissionKeys_FollowNamingConvention), e.g.:
     //
     // public static readonly Permission ItemsRead = new(
     //     "$ModuleKey.items.read", Module, "Read Items", "$Name", "View items");
@@ -136,10 +136,10 @@ public static class ${Name}Permissions
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Crm.Modules.$Name.Contracts/Crm.Modules.$Name.Contracts.csproj" />
-    <ProjectReference Include="../Crm.Modules.$Name.Domain/Crm.Modules.$Name.Domain.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Kernel/Crm.Shared.Kernel.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.$Name.Contracts/Sense.Crm.Modules.$Name.Contracts.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.$Name.Domain/Sense.Crm.Modules.$Name.Domain.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Contracts/Sense.Crm.Shared.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -147,7 +147,7 @@ public static class ${Name}Permissions
   </ItemGroup>
 
 </Project>
-"@ | Set-Content -Path (Join-Path $ApplicationDir "Crm.Modules.$Name.Application.csproj") -Encoding utf8
+"@ | Set-Content -Path (Join-Path $ApplicationDir "Sense.Crm.Modules.$Name.Application.csproj") -Encoding utf8
 
 # --- Infrastructure --------------------------------------------------------------------
 @"
@@ -157,11 +157,11 @@ public static class ${Name}Permissions
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Crm.Modules.$Name.Domain/Crm.Modules.$Name.Domain.csproj" />
-    <ProjectReference Include="../Crm.Modules.$Name.Application/Crm.Modules.$Name.Application.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Kernel/Crm.Shared.Kernel.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Infrastructure/Crm.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.$Name.Domain/Sense.Crm.Modules.$Name.Domain.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.$Name.Application/Sense.Crm.Modules.$Name.Application.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Contracts/Sense.Crm.Shared.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Infrastructure/Sense.Crm.Shared.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -171,14 +171,14 @@ public static class ${Name}Permissions
   </ItemGroup>
 
 </Project>
-"@ | Set-Content -Path (Join-Path $InfrastructureDir "Crm.Modules.$Name.Infrastructure.csproj") -Encoding utf8
+"@ | Set-Content -Path (Join-Path $InfrastructureDir "Sense.Crm.Modules.$Name.Infrastructure.csproj") -Encoding utf8
 
 @"
 using Microsoft.EntityFrameworkCore;
-using Crm.Shared.Contracts.Context;
-using Crm.Shared.Infrastructure.Persistence;
+using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Infrastructure.Persistence;
 
-namespace Crm.Modules.$Name.Infrastructure.Persistence;
+namespace Sense.Crm.Modules.$Name.Infrastructure.Persistence;
 
 /// <summary>$Name module DbContext (ADR 0003: one DbContext per module, own PostgreSQL schema).</summary>
 public sealed class ${Name}DbContext(DbContextOptions<${Name}DbContext> options, ITenantContext tenantContext)
@@ -189,7 +189,7 @@ public sealed class ${Name}DbContext(DbContextOptions<${Name}DbContext> options,
     public override string Schema => SchemaName;
 
     // TODO: add DbSet<TEntity> properties + IEntityTypeConfiguration<TEntity> classes here
-    // as Domain entities are defined (see Crm.Modules.Documents.Infrastructure.Persistence
+    // as Domain entities are defined (see Sense.Crm.Modules.Documents.Infrastructure.Persistence
     // for a worked example with tenant-isolation indexes).
 }
 "@ | Set-Content -Path (Join-Path $PersistenceDir "${Name}DbContext.cs") -Encoding utf8
@@ -197,11 +197,11 @@ public sealed class ${Name}DbContext(DbContextOptions<${Name}DbContext> options,
 @"
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Crm.Shared.Infrastructure.Context;
-using Crm.Shared.Infrastructure.DependencyInjection;
-using Crm.Shared.Infrastructure.Persistence;
+using Sense.Crm.Shared.Infrastructure.Context;
+using Sense.Crm.Shared.Infrastructure.DependencyInjection;
+using Sense.Crm.Shared.Infrastructure.Persistence;
 
-namespace Crm.Modules.$Name.Infrastructure.Persistence;
+namespace Sense.Crm.Modules.$Name.Infrastructure.Persistence;
 
 /// <summary>Design-time context for ``dotnet ef migrations add`` (connection: CRM_DATABASE env var or local default).</summary>
 public sealed class ${Name}DbContextFactory : IDesignTimeDbContextFactory<${Name}DbContext>
@@ -230,27 +230,27 @@ public sealed class ${Name}DbContextFactory : IDesignTimeDbContextFactory<${Name
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Crm.Modules.$Name.Application/Crm.Modules.$Name.Application.csproj" />
-    <ProjectReference Include="../Crm.Modules.$Name.Contracts/Crm.Modules.$Name.Contracts.csproj" />
-    <ProjectReference Include="../Crm.Modules.$Name.Infrastructure/Crm.Modules.$Name.Infrastructure.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Web/Crm.Shared.Web.csproj" />
-    <ProjectReference Include="../../../Shared/Crm.Shared.Infrastructure/Crm.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.$Name.Application/Sense.Crm.Modules.$Name.Application.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.$Name.Contracts/Sense.Crm.Modules.$Name.Contracts.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.$Name.Infrastructure/Sense.Crm.Modules.$Name.Infrastructure.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Web/Sense.Crm.Shared.Web.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Infrastructure/Sense.Crm.Shared.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
-"@ | Set-Content -Path (Join-Path $ApiDir "Crm.Modules.$Name.Api.csproj") -Encoding utf8
+"@ | Set-Content -Path (Join-Path $ApiDir "Sense.Crm.Modules.$Name.Api.csproj") -Encoding utf8
 
 @"
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Crm.Modules.$Name.Contracts;
-using Crm.Modules.$Name.Infrastructure.Persistence;
-using Crm.Shared.Contracts.Modules;
-using Crm.Shared.Contracts.Security;
-using Crm.Shared.Infrastructure.DependencyInjection;
+using Sense.Crm.Modules.$Name.Contracts;
+using Sense.Crm.Modules.$Name.Infrastructure.Persistence;
+using Sense.Crm.Shared.Contracts.Modules;
+using Sense.Crm.Shared.Contracts.Security;
+using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 
-namespace Crm.Modules.$Name.Api;
+namespace Sense.Crm.Modules.$Name.Api;
 
 /// <summary>$Name module composition root.</summary>
 public sealed class ${Name}Module : IModule
@@ -280,14 +280,14 @@ public sealed class ${Name}Module : IModule
 }
 "@ | Set-Content -Path (Join-Path $ApiDir "${Name}Module.cs") -Encoding utf8
 
-# --- Wire into Crm.slnx -----------------------------------------------------------------
-Write-Host "Adding projects to Crm.slnx ..." -ForegroundColor Cyan
+# --- Wire into Sense.Crm.slnx -----------------------------------------------------------------
+Write-Host "Adding projects to Sense.Crm.slnx ..." -ForegroundColor Cyan
 $projects = @(
-    (Join-Path $DomainDir "Crm.Modules.$Name.Domain.csproj"),
-    (Join-Path $ApplicationDir "Crm.Modules.$Name.Application.csproj"),
-    (Join-Path $ContractsDir "Crm.Modules.$Name.Contracts.csproj"),
-    (Join-Path $InfrastructureDir "Crm.Modules.$Name.Infrastructure.csproj"),
-    (Join-Path $ApiDir "Crm.Modules.$Name.Api.csproj")
+    (Join-Path $DomainDir "Sense.Crm.Modules.$Name.Domain.csproj"),
+    (Join-Path $ApplicationDir "Sense.Crm.Modules.$Name.Application.csproj"),
+    (Join-Path $ContractsDir "Sense.Crm.Modules.$Name.Contracts.csproj"),
+    (Join-Path $InfrastructureDir "Sense.Crm.Modules.$Name.Infrastructure.csproj"),
+    (Join-Path $ApiDir "Sense.Crm.Modules.$Name.Api.csproj")
 )
 & dotnet sln $SlnPath add @projects --solution-folder "src/Modules/$Name" --include-references:false
 if ($LASTEXITCODE -ne 0) {
@@ -296,7 +296,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # --- Build check ----------------------------------------------------------------------------
 Write-Host "Building the new module ..." -ForegroundColor Cyan
-& dotnet build (Join-Path $ApiDir "Crm.Modules.$Name.Api.csproj") -v quiet
+& dotnet build (Join-Path $ApiDir "Sense.Crm.Modules.$Name.Api.csproj") -v quiet
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet build failed for the generated module (exit code $LASTEXITCODE) - see output above."
 }
@@ -305,24 +305,24 @@ Write-Host ""
 Write-Host "Module '$Name' scaffolded at src/Modules/$Name and built successfully." -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Wire the module into the host - add to src/Crm.Api/ModuleCatalog.cs:"
-Write-Host "       using Crm.Modules.$Name.Api;"
+Write-Host "  1. Wire the module into the host - add to src/Sense.Crm.Api/ModuleCatalog.cs:"
+Write-Host "       using Sense.Crm.Modules.$Name.Api;"
 Write-Host "       ... new ${Name}Module(), // inside ModuleCatalog.Modules"
 Write-Host ""
-Write-Host "  2. So 'dotnet run --project src/Crm.Migrator -- migrate' also migrates this schema,"
-Write-Host "     add to src/Crm.Migrator/Program.cs:"
+Write-Host "  2. So 'dotnet run --project src/Sense.Crm.Migrator -- migrate' also migrates this schema,"
+Write-Host "     add to src/Sense.Crm.Migrator/Program.cs:"
 Write-Host "       builder.Services.AddModuleDbContext<${Name}DbContext>(builder.Configuration, ${Name}DbContext.SchemaName);"
 Write-Host ""
 Write-Host "  3. Define entities in Domain, then generate the initial migration:"
 Write-Host "       dotnet ef migrations add Initial$Name ``"
-Write-Host "         --project src/Modules/$Name/Crm.Modules.$Name.Infrastructure ``"
-Write-Host "         --startup-project src/Crm.Migrator -o Persistence/Migrations"
-Write-Host "     The Worker drains the module outbox: add to src/Crm.Worker/Program.cs (AddModuleDbContext + AddModuleHandlers with the Domain/Contracts assemblies + AddHostedService<Crm.Worker.OutboxPollingService<${Name}DbContext>>)."
-Write-Host "     Also reference the Infrastructure project from src/Crm.Migrator and src/Crm.Worker."
+Write-Host "         --project src/Modules/$Name/Sense.Crm.Modules.$Name.Infrastructure ``"
+Write-Host "         --startup-project src/Sense.Crm.Migrator -o Persistence/Migrations"
+Write-Host "     The Worker drains the module outbox: add to src/Sense.Crm.Worker/Program.cs (AddModuleDbContext + AddModuleHandlers with the Domain/Contracts assemblies + AddHostedService<Sense.Crm.Worker.OutboxPollingService<${Name}DbContext>>)."
+Write-Host "     Also reference the Infrastructure project from src/Sense.Crm.Migrator and src/Sense.Crm.Worker."
 Write-Host ""
 Write-Host "  4. Add permission keys in Contracts/${Name}Permissions.cs ('$ModuleKey.<resource_plural>.<action>', snake_case)."
 Write-Host "  5. Add command/query handlers in Application named '{Action}Handler' (sealed)  (docs/architecture/backend.md)."
-Write-Host "  6. Add a controller in Api inheriting Crm.Shared.Web.Controllers.ApiControllerBase."
-Write-Host "  7. Optionally add tests/Modules/Crm.Modules.$Name.Tests."
-Write-Host "  8. Verify: dotnet build Crm.slnx && dotnet test tests/Crm.Tests.Architecture/ -c Release"
+Write-Host "  6. Add a controller in Api inheriting Sense.Crm.Shared.Web.Controllers.ApiControllerBase."
+Write-Host "  7. Optionally add tests/Modules/Sense.Crm.Modules.$Name.Tests."
+Write-Host "  8. Verify: dotnet build Sense.Crm.slnx && dotnet test tests/Sense.Crm.Tests.Architecture/ -c Release"
 Write-Host ""

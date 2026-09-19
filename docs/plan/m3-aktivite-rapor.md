@@ -5,7 +5,7 @@ PRD: [zoho-crm-klonu.prd.md](../../.claude/prds/zoho-crm-klonu.prd.md) · Öncek
 **Çıktı:** Kullanıcı görev/arama/toplantı/not kaydeder, bunları firma-kişi-potansiyel-fırsata bağlar, gecikenleri görür; ana sayfada satış hunisi ve kişisel iş listesi, raporlar sayfasında satış raporları vardır.
 
 ## Modül kararı
-- Yeni modül `Crm.Modules.Activities` (şema `activities`). İlişkili kaydın varlığı `Sales.Contracts` içindeki `IRecordLookup` ile doğrulanır (modüller yalnız Contracts ile konuşur).
+- Yeni modül `Sense.Crm.Modules.Activities` (şema `activities`). İlişkili kaydın varlığı `Sales.Contracts` içindeki `IRecordLookup` ile doğrulanır (modüller yalnız Contracts ile konuşur).
 - Satış raporları `Sales` modülünde (kendi verisi), aktivite raporu `Activities` modülünde. Ayrı Reporting modülü yok (YAGNI; çapraz JOIN gerektiren rapor çıkarsa açılır).
 - İzinler `crm.activities.read/write` ve `crm.reports.read` (M1'de tanımlı) → `ActivitiesPermissions`, raporlar için `crm.reports.read` `Sales.Contracts` veya Identity.Contracts'ta kalabilir.
 

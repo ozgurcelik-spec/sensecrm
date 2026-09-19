@@ -5,9 +5,9 @@
 .DESCRIPTION
   On kosullar (hepsi calisir durumda olmali):
     - postgres + Conductor:  POSTGRES_PORT=15433 docker compose -f infra/docker-compose.yml up -d conductor   (http://localhost:18090)
-    - Migrator uygulanmis:   dotnet run --project src/Crm.Migrator
-    - API:                   dotnet run --project src/Crm.Api    --no-launch-profile --urls http://localhost:5080   (Development)
-    - Worker:                dotnet run --project src/Crm.Worker --no-launch-profile                                  (Development)
+    - Migrator uygulanmis:   dotnet run --project src/Sense.Crm.Migrator
+    - API:                   dotnet run --project src/Sense.Crm.Api    --no-launch-profile --urls http://localhost:5080   (Development)
+    - Worker:                dotnet run --project src/Sense.Crm.Worker --no-launch-profile                                  (Development)
   Yeni bir organizasyon acar (her calistirmada benzersiz), roller/uyeler/kurallar kurar ve dogrular:
     1. Potansiyel atama: 3 lead -> round-robin atama + takip gorevi + yurutme "completed" (Conductor'da COMPLETED)
     2. Firsat onayi: buyuk firsat kazan -> onay talepleri -> karar -> not + diger onay iptal + yurutme "completed"

@@ -13,12 +13,12 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | **Security** | İnceleme ve sertleştirme düzeltmeleri |
 
 ## Sıcak dosyalar (yalnız ekleme, çakışmayı entegratör çözer)
-`src/Crm.Api/ModuleCatalog.cs`, `src/Crm.Migrator/Program.cs`, `src/Crm.Worker/Program.cs`, `tests/Crm.Tests.Shared/Fixtures/TestFixture.cs` (Respawn şemaları), `Identity.Contracts/Permissions.cs`, `SystemRoleDefinitions.cs`, `SharedResource{,.en}.resx`, `docs/architecture/backend.md`, `web/src/App.tsx`, `web/src/config/navigation.ts`, `web/src/i18n.ts`, `web/public/locales/*/{common,navigation}.json`, `web/README.md`, `web/package.json`, `pnpm-lock.yaml`.
+`src/Sense.Crm.Api/ModuleCatalog.cs`, `src/Sense.Crm.Migrator/Program.cs`, `src/Sense.Crm.Worker/Program.cs`, `tests/Sense.Crm.Tests.Shared/Fixtures/TestFixture.cs` (Respawn şemaları), `Identity.Contracts/Permissions.cs`, `SystemRoleDefinitions.cs`, `SharedResource{,.en}.resx`, `docs/architecture/backend.md`, `web/src/App.tsx`, `web/src/config/navigation.ts`, `web/src/i18n.ts`, `web/public/locales/*/{common,navigation}.json`, `web/README.md`, `web/package.json`, `pnpm-lock.yaml`.
 
 ## Kurallar
 - Kart, kanıt (test çıktısı) olmadan Review'a geçmez; Review'dan Merged'a yalnız Lead'in bağımsız doğrulaması sonrası geçer.
 - Canlı duman testleri kart başına ayrılmış port ve veritabanında yapılır (çakışma yok): API 5081/5082/5083, veritabanı `crm_<kart>` (dev postgres `crm-postgres:15433`).
-- Merge kapısı (tüm kartlar): `dotnet build Crm.slnx --no-incremental` 0 uyarı, `dotnet format --verify-no-changes`, `dotnet test Crm.slnx` yeşil, web `tsc`/`eslint`/`vitest`/`build` yeşil, mimari + kiracı izolasyon testleri yeşil, yeni her kiracı varlığı için çapraz-kiracı testi.
+- Merge kapısı (tüm kartlar): `dotnet build Sense.Crm.slnx --no-incremental` 0 uyarı, `dotnet format --verify-no-changes`, `dotnet test Sense.Crm.slnx` yeşil, web `tsc`/`eslint`/`vitest`/`build` yeşil, mimari + kiracı izolasyon testleri yeşil, yeni her kiracı varlığı için çapraz-kiracı testi.
 
 ## Kartlar
 | ID | Başlık | Sahip | Durum | Dal / worktree | Merge kapısı |

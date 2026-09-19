@@ -24,13 +24,13 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) Or $(MSBuildProjectName.StartsWith('Crm.Tests.'))">
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) Or $(MSBuildProjectName.StartsWith('Sense.Crm.Tests.'))">
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
-  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Crm.Shared.Web' Or $(MSBuildProjectName.EndsWith('.Api'))">
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Sense.Crm.Shared.Web' Or $(MSBuildProjectName.EndsWith('.Api'))">
     <Using Include="Microsoft.AspNetCore.Builder" />
     <Using Include="Microsoft.AspNetCore.Http" />
     <Using Include="Microsoft.AspNetCore.Routing" />

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Sense.Crm.Modules.Commerce.Contracts/Sense.Crm.Modules.Commerce.Contracts.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.Commerce.Domain/Sense.Crm.Modules.Commerce.Domain.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.Commerce.Application/Sense.Crm.Modules.Commerce.Application.csproj" />
+    <ProjectReference Include="../../Identity/Sense.Crm.Modules.Identity.Contracts/Sense.Crm.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="../../Sales/Sense.Crm.Modules.Sales.Contracts/Sense.Crm.Modules.Sales.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Contracts/Sense.Crm.Shared.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Infrastructure/Sense.Crm.Shared.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+
+</Project>

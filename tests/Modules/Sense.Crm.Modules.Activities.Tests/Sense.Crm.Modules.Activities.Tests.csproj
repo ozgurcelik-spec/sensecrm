@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Modules/Activities/Sense.Crm.Modules.Activities.Domain/Sense.Crm.Modules.Activities.Domain.csproj" />
+    <ProjectReference Include="../../../src/Modules/Activities/Sense.Crm.Modules.Activities.Application/Sense.Crm.Modules.Activities.Application.csproj" />
+    <ProjectReference Include="../../../src/Modules/Activities/Sense.Crm.Modules.Activities.Infrastructure/Sense.Crm.Modules.Activities.Infrastructure.csproj" />
+    <ProjectReference Include="../../Sense.Crm.Tests.Shared/Sense.Crm.Tests.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+</Project>

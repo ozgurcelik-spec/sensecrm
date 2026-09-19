@@ -130,7 +130,7 @@ services:
     image: ${CRM_REGISTRY:-}crm-migrator:${CRM_VERSION:-latest}
     build:
       context: ..
-      dockerfile: src/Crm.Migrator/Dockerfile
+      dockerfile: src/Sense.Crm.Migrator/Dockerfile
     restart: "no"
     depends_on:
       postgres:
@@ -154,7 +154,7 @@ services:
     image: ${CRM_REGISTRY:-}crm-api:${CRM_VERSION:-latest}
     build:
       context: ..
-      dockerfile: src/Crm.Api/Dockerfile
+      dockerfile: src/Sense.Crm.Api/Dockerfile
     restart: unless-stopped
     depends_on:
       migrator:
@@ -199,7 +199,7 @@ services:
     image: ${CRM_REGISTRY:-}crm-worker:${CRM_VERSION:-latest}
     build:
       context: ..
-      dockerfile: src/Crm.Worker/Dockerfile
+      dockerfile: src/Sense.Crm.Worker/Dockerfile
     restart: unless-stopped
     depends_on:
       migrator:

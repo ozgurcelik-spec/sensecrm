@@ -1,0 +1,79 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Sense.Crm.Api/Sense.Crm.Api.csproj" />
+    <Project Path="src/Sense.Crm.Migrator/Sense.Crm.Migrator.csproj" />
+    <Project Path="src/Sense.Crm.Worker/Sense.Crm.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Activities/">
+    <Project Path="src/Modules/Activities/Sense.Crm.Modules.Activities.Api/Sense.Crm.Modules.Activities.Api.csproj" />
+    <Project Path="src/Modules/Activities/Sense.Crm.Modules.Activities.Application/Sense.Crm.Modules.Activities.Application.csproj" />
+    <Project Path="src/Modules/Activities/Sense.Crm.Modules.Activities.Contracts/Sense.Crm.Modules.Activities.Contracts.csproj" />
+    <Project Path="src/Modules/Activities/Sense.Crm.Modules.Activities.Domain/Sense.Crm.Modules.Activities.Domain.csproj" />
+    <Project Path="src/Modules/Activities/Sense.Crm.Modules.Activities.Infrastructure/Sense.Crm.Modules.Activities.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Commerce/">
+    <Project Path="src/Modules/Commerce/Sense.Crm.Modules.Commerce.Api/Sense.Crm.Modules.Commerce.Api.csproj" />
+    <Project Path="src/Modules/Commerce/Sense.Crm.Modules.Commerce.Application/Sense.Crm.Modules.Commerce.Application.csproj" />
+    <Project Path="src/Modules/Commerce/Sense.Crm.Modules.Commerce.Contracts/Sense.Crm.Modules.Commerce.Contracts.csproj" />
+    <Project Path="src/Modules/Commerce/Sense.Crm.Modules.Commerce.Domain/Sense.Crm.Modules.Commerce.Domain.csproj" />
+    <Project Path="src/Modules/Commerce/Sense.Crm.Modules.Commerce.Infrastructure/Sense.Crm.Modules.Commerce.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Api/Sense.Crm.Modules.Identity.Api.csproj" />
+    <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Application/Sense.Crm.Modules.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Contracts/Sense.Crm.Modules.Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Domain/Sense.Crm.Modules.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/Sense.Crm.Modules.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Marketing/">
+    <Project Path="src/Modules/Marketing/Sense.Crm.Modules.Marketing.Api/Sense.Crm.Modules.Marketing.Api.csproj" />
+    <Project Path="src/Modules/Marketing/Sense.Crm.Modules.Marketing.Application/Sense.Crm.Modules.Marketing.Application.csproj" />
+    <Project Path="src/Modules/Marketing/Sense.Crm.Modules.Marketing.Contracts/Sense.Crm.Modules.Marketing.Contracts.csproj" />
+    <Project Path="src/Modules/Marketing/Sense.Crm.Modules.Marketing.Domain/Sense.Crm.Modules.Marketing.Domain.csproj" />
+    <Project Path="src/Modules/Marketing/Sense.Crm.Modules.Marketing.Infrastructure/Sense.Crm.Modules.Marketing.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Sales/">
+    <Project Path="src/Modules/Sales/Sense.Crm.Modules.Sales.Api/Sense.Crm.Modules.Sales.Api.csproj" />
+    <Project Path="src/Modules/Sales/Sense.Crm.Modules.Sales.Application/Sense.Crm.Modules.Sales.Application.csproj" />
+    <Project Path="src/Modules/Sales/Sense.Crm.Modules.Sales.Contracts/Sense.Crm.Modules.Sales.Contracts.csproj" />
+    <Project Path="src/Modules/Sales/Sense.Crm.Modules.Sales.Domain/Sense.Crm.Modules.Sales.Domain.csproj" />
+    <Project Path="src/Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Sense.Crm.Modules.Sales.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Service/">
+    <Project Path="src/Modules/Service/Sense.Crm.Modules.Service.Api/Sense.Crm.Modules.Service.Api.csproj" />
+    <Project Path="src/Modules/Service/Sense.Crm.Modules.Service.Application/Sense.Crm.Modules.Service.Application.csproj" />
+    <Project Path="src/Modules/Service/Sense.Crm.Modules.Service.Contracts/Sense.Crm.Modules.Service.Contracts.csproj" />
+    <Project Path="src/Modules/Service/Sense.Crm.Modules.Service.Domain/Sense.Crm.Modules.Service.Domain.csproj" />
+    <Project Path="src/Modules/Service/Sense.Crm.Modules.Service.Infrastructure/Sense.Crm.Modules.Service.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Workflows/">
+    <Project Path="src/Modules/Workflows/Sense.Crm.Modules.Workflows.Api/Sense.Crm.Modules.Workflows.Api.csproj" />
+    <Project Path="src/Modules/Workflows/Sense.Crm.Modules.Workflows.Application/Sense.Crm.Modules.Workflows.Application.csproj" />
+    <Project Path="src/Modules/Workflows/Sense.Crm.Modules.Workflows.Contracts/Sense.Crm.Modules.Workflows.Contracts.csproj" />
+    <Project Path="src/Modules/Workflows/Sense.Crm.Modules.Workflows.Domain/Sense.Crm.Modules.Workflows.Domain.csproj" />
+    <Project Path="src/Modules/Workflows/Sense.Crm.Modules.Workflows.Infrastructure/Sense.Crm.Modules.Workflows.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Sense.Crm.Shared.Contracts/Sense.Crm.Shared.Contracts.csproj" />
+    <Project Path="src/Shared/Sense.Crm.Shared.Infrastructure/Sense.Crm.Shared.Infrastructure.csproj" />
+    <Project Path="src/Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
+    <Project Path="src/Shared/Sense.Crm.Shared.Web/Sense.Crm.Shared.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Sense.Crm.Tests.Architecture/Sense.Crm.Tests.Architecture.csproj" />
+    <Project Path="tests/Sense.Crm.Tests.Shared/Sense.Crm.Tests.Shared.csproj" />
+    <Project Path="tests/Sense.Crm.Tests.TenantIsolation/Sense.Crm.Tests.TenantIsolation.csproj" />
+  </Folder>
+  <Folder Name="/tests/Modules/">
+    <Project Path="tests/Modules/Sense.Crm.Modules.Activities.Tests/Sense.Crm.Modules.Activities.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Commerce.Tests/Sense.Crm.Modules.Commerce.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Identity.Tests/Sense.Crm.Modules.Identity.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Marketing.Tests/Sense.Crm.Modules.Marketing.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Sales.Tests/Sense.Crm.Modules.Sales.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Service.Tests/Sense.Crm.Modules.Service.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Workflows.Tests/Sense.Crm.Modules.Workflows.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Shared.Infrastructure.Tests/Sense.Crm.Shared.Infrastructure.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Shared.Kernel.Tests/Sense.Crm.Shared.Kernel.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Sense.Crm.Modules.Identity.Application/Sense.Crm.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="../Sense.Crm.Modules.Identity.Infrastructure/Sense.Crm.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Web/Sense.Crm.Shared.Web.csproj" />
+  </ItemGroup>
+
+</Project>

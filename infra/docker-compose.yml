@@ -6,9 +6,9 @@ name: crm
 # üretim için deploy/docker-compose.prod.yml kullanılır.
 #
 # Başlatma:  docker compose -f infra/docker-compose.yml up -d
-# Şema:      dotnet run --project src/Crm.Migrator
-# API:       dotnet run --project src/Crm.Api          (http://localhost:5080)
-# Worker:    dotnet run --project src/Crm.Worker
+# Şema:      dotnet run --project src/Sense.Crm.Migrator
+# API:       dotnet run --project src/Sense.Crm.Api          (http://localhost:5080)
+# Worker:    dotnet run --project src/Sense.Crm.Worker
 #
 # Conductor OSS (Milestone 4 workflow motoru): http://localhost:18090 (API: /api, UI: /, sağlık: /health)
 #   POSTGRES_PORT=15433 docker compose -f infra/docker-compose.yml up -d conductor
