@@ -4,6 +4,7 @@ using Crm.Modules.Identity.Infrastructure;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Sales.Infrastructure;
 using Crm.Modules.Sales.Infrastructure.Persistence;
+using Crm.Modules.Service.Infrastructure.Persistence;
 using Crm.Modules.Workflows.Infrastructure;
 using Crm.Modules.Workflows.Infrastructure.Persistence;
 using Crm.Shared.Contracts.Configuration;
@@ -68,6 +69,17 @@ builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<WorkflowsDbCon
 builder.Services.AddWorkflowDefinitionRegistration();
 builder.Services.AddHostedService<Crm.Worker.Workflows.ConductorTaskPollingService>();
 builder.Services.AddHostedService<Crm.Worker.Workflows.ExecutionStatusSyncService>();
+
+// Service (Milestone 6B): outbox'ı boşaltır (CaseResolved; bugün tüketicisi yok, bildirim/workflow için hazır); ayrıca Identity'nin
+// OrganizationCreated olayının ikinci tüketicisi (varsayılan SLA politikaları tohumlama) burada elle kayıtlıdır.
+builder.Services.AddModuleDbContext<ServiceDbContext>(builder.Configuration, ServiceDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    ServiceDbContext.SchemaName,
+    typeof(Crm.Modules.Service.Domain.ICaseRepository).Assembly,
+    typeof(Crm.Modules.Service.Contracts.ServicePermissions).Assembly);
+builder.Services.AddScoped<Crm.Modules.Service.Application.IDefaultSlaPolicySeeder, Crm.Modules.Service.Infrastructure.Provisioning.DefaultSlaPolicySeeder>();
+builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Identity.Contracts.OrganizationCreated>, Crm.Modules.Service.Application.Sla.OrganizationCreatedSlaHandler>();
+builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<ServiceDbContext>>();
 
 await builder.Build().RunAsync();
 
