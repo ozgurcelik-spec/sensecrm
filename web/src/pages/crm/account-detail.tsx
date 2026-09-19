@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Anchor, Badge, Button, Card, Group, Skeleton, Stack, Table, Text } from "@mantine/core";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { CreateQuoteButton } from "@/components/commerce/create-quote-button";
+import { RelatedOrdersTab, RelatedQuotesTab } from "@/components/commerce/related-tabs";
 import { StageBadge } from "@/components/crm/badges";
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
 import { AccountFormDialog } from "@/components/crm/account-form-dialog";
@@ -173,7 +175,7 @@ function RelatedDeals({ account, canWrite }: { account: Account; canWrite: boole
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common", "activities"]);
+  const { t } = useTranslation(["crm", "common", "activities", "commerce"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteAccounts, canWriteContacts, canWriteDeals } = useCrmPermissions();
@@ -198,6 +200,8 @@ export default function AccountDetailPage() {
   }
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
+  const canReadQuotes = usePermission(PERMISSIONS.crmQuotesRead);
+  const canReadOrders = usePermission(PERMISSIONS.crmOrdersRead);
   const tabs = account
     ? [
         {
@@ -245,6 +249,24 @@ export default function AccountDetailPage() {
               },
             ]
           : []),
+        ...(canReadQuotes
+          ? [
+              {
+                value: "quotes",
+                label: t("commerce:tabs.quotes"),
+                content: <RelatedQuotesTab accountId={account.id} />,
+              },
+            ]
+          : []),
+        ...(canReadOrders
+          ? [
+              {
+                value: "orders",
+                label: t("commerce:tabs.orders"),
+                content: <RelatedOrdersTab accountId={account.id} />,
+              },
+            ]
+          : []),
         {
           value: "audit",
           label: t("crm:tabs.audit"),
@@ -273,8 +295,10 @@ export default function AccountDetailPage() {
           )
         }
         actions={
-          account &&
-          canWriteAccounts && (
+          account && (
+            <>
+              <CreateQuoteButton accountId={account.id} />
+              {canWriteAccounts && (
             <>
               <Button
                 variant="default"
@@ -291,6 +315,8 @@ export default function AccountDetailPage() {
               >
                 {t("common:delete")}
               </Button>
+            </>
+              )}
             </>
           )
         }

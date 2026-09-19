@@ -30,7 +30,7 @@ export interface CampaignListQuery extends ListQuery {
 
 export interface MemberListQuery extends ListQuery {
   memberType?: string;
-  /** Comma separated MemberStatus values. */
+  /** Comma separated CampaignMemberStatus values. */
   status?: string;
 }
 

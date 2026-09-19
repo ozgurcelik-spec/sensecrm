@@ -33,7 +33,7 @@ export const MEMBER_TYPES = ["lead", "contact"] as const;
 export type MemberType = (typeof MEMBER_TYPES)[number];
 
 export const MEMBER_STATUSES = ["added", "sent", "responded", "converted", "unsubscribed"] as const;
-export type MemberStatus = (typeof MEMBER_STATUSES)[number];
+export type CampaignMemberStatus = (typeof MEMBER_STATUSES)[number];
 
 /** Statuses that can be set by hand: `converted` only comes from a lead conversion. */
 export const MEMBER_MANUAL_STATUSES = [
@@ -41,7 +41,7 @@ export const MEMBER_MANUAL_STATUSES = [
   "sent",
   "responded",
   "unsubscribed",
-] as const satisfies readonly MemberStatus[];
+] as const satisfies readonly CampaignMemberStatus[];
 export type MemberManualStatus = (typeof MEMBER_MANUAL_STATUSES)[number];
 
 export interface Campaign {
@@ -87,7 +87,7 @@ export interface CampaignMember {
   /** Absent when the record was deleted (`memberMissing`). */
   memberName?: string;
   memberMissing: boolean;
-  status: MemberStatus;
+  status: CampaignMemberStatus;
   addedAt: string;
   statusChangedAt: string;
   addedByUserId?: string;
@@ -116,7 +116,7 @@ export interface CampaignMetrics {
   memberCount: number;
   leadCount: number;
   contactCount: number;
-  statusCounts: Record<MemberStatus, number>;
+  statusCounts: Record<CampaignMemberStatus, number>;
   contactedCount: number;
   responseCount: number;
   /** 0-100. */
@@ -136,7 +136,7 @@ export interface RecordCampaignMembership {
   campaignType: CampaignType;
   campaignStatus: CampaignStatus;
   membershipId: string;
-  memberStatus: MemberStatus;
+  memberStatus: CampaignMemberStatus;
   addedAt: string;
 }
 

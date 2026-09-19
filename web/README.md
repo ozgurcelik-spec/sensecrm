@@ -101,6 +101,18 @@ HTTP contract: `docs/plan/m6c-pazarlama.md`. Screens: Campaigns (`/app/campaigns
 - **Report and dashboard**: the Marketing report tab (`components/reports/marketing-report-tab.tsx`, `crm.reports.read`) follows the shared range picker; amounts are summed across currencies (server limitation). The dashboard card needs `crm.reports.read` and `crm.campaigns.read` and uses the report's default range.
 - **Audit**: the campaign Audit tab reads `entityType=Campaign`; field labels that `crm:auditFields` lacks fall back to `campaigns:auditFields`.
 
+## Commerce (Milestone 6A)
+
+HTTP contract and rules: `docs/plan/m6a-ticaret.md`. Screens: Ürünler (`/app/products`), Teklifler (`/app/quotes`, `/new`, `/:id`, `/:id/edit`), Siparişler (`/app/orders`, `/new`, `/:id`, `/:id/edit`), the "Teklifler" / "Siparişler" tabs on account and deal details, "Teklif oluştur" on both, and the "Ticaret" tab of Reports. New i18n namespace `commerce`; new permissions `crm.products|quotes|orders.read|write` (labels in `users.json`, error codes under `common:errors.{commerce,product,quote,order}`).
+
+- **Pages** live in `pages/commerce/`, parts in `components/commerce/`, services `products|quotes|orders|commerce-reports.service.ts`, hooks `use-products|quotes|orders|commerce-report`. Lists reuse `useListParams` + `DataTable` (filters in the URL); "accepted, not yet converted" sets `status=accepted&converted=false`.
+- **Line item grid** (`components/commerce/line-items-grid.tsx`) is shared by the quote and the order editor (`document-editor.tsx`): product picker (server-side search of active products, other-currency products disabled, fills description / unit price / tax rate), add / remove / move rows with buttons, per-row totals and a live totals card. Numeric cells keep the raw input (a number or text like `2.`), so typing decimals never clears a field.
+- **Totals preview** (`lib/commerce-totals.ts`): the plan's algorithm with BigInt scaled integers (quantity and price 1e4, percentages 1e2, half-up rounding per line, totals are sums of rounded lines). It is display only; the editor sends the contract body without any computed field and the detail pages show the server's values. `lib/commerce-totals.test.ts` uses the plan's reference vectors (same table as the backend).
+- **Server errors**: `errors["lines[i].field"]` land on the grid cell (`lib/commerce-lines.ts`), header fields on their inputs, other messages in an alert, coded errors (`commerce.*`, `quote.*`, `order.*`) through `toastApiError`.
+- **Detail actions** (`lib/commerce-actions.ts`) are the status machine crossed with permissions: quote draft (edit, send, delete), sent (accept, reject, extend, revert), expired (extend, revert, reject), rejected (revert), accepted (convert with `crm.orders.write`, or the order link once converted); order draft (edit, confirm, cancel, delete), confirmed (fulfill, cancel). Only drafts have an edit route; other statuses redirect to the detail page. The editors need `crm.quotes.write` / `crm.orders.write` (read-only users get the no-access page).
+- **Without `crm.products.read`** the product column is off and lines are typed by hand; without `crm.accounts.read` the account can only come from a "Teklif oluştur" prefill (shown read-only). The prefill (`?accountId&contactId&dealId`) carries only ids; names, currency and the subject come from the deal / account lookups.
+- Test timeout is 20 s (`vitest.config.ts`): form tests are slow when the machine is loaded.
+
 ## Auth flow
 
 - Tokens are stored in localStorage (`auth_token`, `refresh_token`). The `/me` profile is persisted by the auth store.

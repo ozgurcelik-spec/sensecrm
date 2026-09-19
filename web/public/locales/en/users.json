@@ -93,6 +93,18 @@
       "campaigns": {
         "read": "View campaigns",
         "write": "Create/edit campaigns and campaign members"
+      },
+      "products": {
+        "read": "View products",
+        "write": "Create/edit products"
+      },
+      "quotes": {
+        "read": "View quotes",
+        "write": "Create/edit quotes"
+      },
+      "orders": {
+        "read": "View sales orders",
+        "write": "Create/edit sales orders"
       }
     }
   }

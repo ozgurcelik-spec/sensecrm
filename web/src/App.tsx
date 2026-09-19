@@ -31,6 +31,13 @@ const DealDetailPage = lazy(() => import("@/pages/crm/deal-detail"));
 const ActivitiesPage = lazy(() => import("@/pages/crm/activities"));
 const CampaignsPage = lazy(() => import("@/pages/crm/campaigns"));
 const CampaignDetailPage = lazy(() => import("@/pages/crm/campaign-detail"));
+const ProductsPage = lazy(() => import("@/pages/commerce/products"));
+const QuotesPage = lazy(() => import("@/pages/commerce/quotes"));
+const QuoteDetailPage = lazy(() => import("@/pages/commerce/quote-detail"));
+const QuoteEditorPage = lazy(() => import("@/pages/commerce/quote-editor"));
+const OrdersPage = lazy(() => import("@/pages/commerce/orders"));
+const OrderDetailPage = lazy(() => import("@/pages/commerce/order-detail"));
+const OrderEditorPage = lazy(() => import("@/pages/commerce/order-editor"));
 // Chart-heavy: recharts stays out of every other chunk.
 const ReportsPage = lazy(() => import("@/pages/crm/reports"));
 const PipelinesPage = lazy(() => import("@/pages/settings/pipelines"));
@@ -163,10 +170,83 @@ export default function App() {
               }
             />
             <Route
+              path="products"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmProductsRead}>
+                  <ProductsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
               path="campaigns/:id"
               element={
                 <RequirePermission permission={PERMISSIONS.crmCampaignsRead}>
                   <CampaignDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="quotes"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmQuotesRead}>
+                  <QuotesPage />
+                </RequirePermission>
+              }
+            />
+            {/* The editors only exist for writers: reading alone gets NoAccess, not a form the server would refuse. */}
+            <Route
+              path="quotes/new"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmQuotesWrite}>
+                  <QuoteEditorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="quotes/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmQuotesRead}>
+                  <QuoteDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="quotes/:id/edit"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmQuotesWrite}>
+                  <QuoteEditorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="orders"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmOrdersRead}>
+                  <OrdersPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="orders/new"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmOrdersWrite}>
+                  <OrderEditorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="orders/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmOrdersRead}>
+                  <OrderDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="orders/:id/edit"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmOrdersWrite}>
+                  <OrderEditorPage />
                 </RequirePermission>
               }
             />

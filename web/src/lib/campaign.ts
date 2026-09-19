@@ -4,7 +4,7 @@ import type {
   AddMembersResult,
   CampaignStatus,
   CampaignType,
-  MemberStatus,
+  CampaignMemberStatus,
   SetMembersStatusResult,
 } from "@/types";
 
@@ -23,7 +23,7 @@ export const CAMPAIGN_TYPE_COLOR: Record<CampaignType, string> = {
   other: "gray",
 };
 
-export const MEMBER_STATUS_COLOR: Record<MemberStatus, string> = {
+export const MEMBER_STATUS_COLOR: Record<CampaignMemberStatus, string> = {
   added: "gray",
   sent: "blue",
   responded: "teal",

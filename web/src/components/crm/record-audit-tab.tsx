@@ -23,7 +23,7 @@ interface RecordAuditTabProps {
 
 /** "Audit" tab of a detail page: who changed which field of this record, and when. */
 export function RecordAuditTab({ entityType, entityId }: RecordAuditTabProps) {
-  const { t } = useTranslation(["crm", "audit", "common", "campaigns"]);
+  const { t } = useTranslation(["crm", "audit", "common", "campaigns", "commerce"]);
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const [page, setPage] = useState(1);
   const { data, isLoading, error, refetch } = useRecordAudit(entityType, entityId, page, PAGE_SIZE);
@@ -73,7 +73,9 @@ export function RecordAuditTab({ entityType, entityId }: RecordAuditTabProps) {
                       <Table.Td w={180} fw={600}>
                         {t(`crm:auditFields.${row.field}`, {
                           defaultValue: t(`campaigns:auditFields.${row.field}`, {
-                            defaultValue: row.field,
+                            defaultValue: t(`commerce:auditFields.${row.field}`, {
+                              defaultValue: row.field,
+                            }),
                           }),
                         })}
                       </Table.Td>

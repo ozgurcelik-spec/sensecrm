@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Anchor, Button, Card, Menu, Stack, Text } from "@mantine/core";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { CreateQuoteButton } from "@/components/commerce/create-quote-button";
+import { RelatedQuotesTab } from "@/components/commerce/related-tabs";
 import { StageBadge } from "@/components/crm/badges";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { LostReasonDialog } from "@/components/crm/lost-reason-dialog";
@@ -23,7 +25,7 @@ import { PERMISSIONS } from "@/types";
 
 export default function DealDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common", "activities"]);
+  const { t } = useTranslation(["crm", "common", "activities", "commerce"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteDeals } = useCrmPermissions();
@@ -89,6 +91,7 @@ export default function DealDetailPage() {
   }
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
+  const canReadQuotes = usePermission(PERMISSIONS.crmQuotesRead);
   const tabs = deal
     ? [
         {
@@ -130,6 +133,15 @@ export default function DealDetailPage() {
               },
             ]
           : []),
+        ...(canReadQuotes
+          ? [
+              {
+                value: "quotes",
+                label: t("commerce:tabs.quotes"),
+                content: <RelatedQuotesTab dealId={deal.id} />,
+              },
+            ]
+          : []),
         {
           value: "audit",
           label: t("crm:tabs.audit"),
@@ -147,8 +159,10 @@ export default function DealDetailPage() {
         subtitle={deal?.accountName}
         badges={deal && <StageBadge name={deal.stageName} kind={deal.stageKind} />}
         actions={
-          deal &&
-          canWriteDeals && (
+          deal && (
+            <>
+              <CreateQuoteButton accountId={deal.accountId} contactId={deal.contactId} dealId={deal.id} />
+              {canWriteDeals && (
             <>
               <Menu position="bottom-end">
                 <Menu.Target>
@@ -181,6 +195,8 @@ export default function DealDetailPage() {
               >
                 {t("common:delete")}
               </Button>
+            </>
+              )}
             </>
           )
         }

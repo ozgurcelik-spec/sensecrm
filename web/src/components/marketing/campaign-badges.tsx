@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@mantine/core";
 import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_TYPE_COLOR, MEMBER_STATUS_COLOR } from "@/lib/campaign";
-import type { CampaignStatus, CampaignType, MemberStatus } from "@/types";
+import type { CampaignStatus, CampaignType, CampaignMemberStatus } from "@/types";
 
 export function CampaignTypeBadge({ type }: { type: CampaignType }) {
   const { t } = useTranslation(["campaigns"]);
@@ -21,7 +21,7 @@ export function CampaignStatusBadge({ status }: { status: CampaignStatus }) {
   );
 }
 
-export function MemberStatusBadge({ status }: { status: MemberStatus }) {
+export function MemberStatusBadge({ status }: { status: CampaignMemberStatus }) {
   const { t } = useTranslation(["campaigns"]);
   return (
     <Badge variant="light" color={MEMBER_STATUS_COLOR[status] ?? "gray"}>

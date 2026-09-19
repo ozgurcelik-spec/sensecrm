@@ -16,5 +16,8 @@
   "profile": "My Profile",
   "approvals": "My approvals",
   "workflows": "Workflows",
-  "campaigns": "Campaigns"
+  "campaigns": "Campaigns",
+  "products": "Products",
+  "quotes": "Quotes",
+  "orders": "Orders"
 }

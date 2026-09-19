@@ -19,6 +19,7 @@ export const NAMESPACES = [
   "workflows",
   "campaigns",
   "security",
+  "commerce",
 ] as const;
 
 i18n
