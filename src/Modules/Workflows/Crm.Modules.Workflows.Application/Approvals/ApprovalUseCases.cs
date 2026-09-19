@@ -15,6 +15,7 @@ namespace Crm.Modules.Workflows.Application.Approvals;
 /// Onay listesi. <c>Mine = true</c> (varsayılan) çağıranın onaylarıdır ve ek izin gerektirmez; <c>Mine = false</c> tüm organizasyonun
 /// onaylarını verir ve <c>org.workflows.manage</c> ister. En yeni talep önce.
 /// </summary>
+[AnyAuthenticatedUser("mine=true (varsayılan) çağıranın kendi onaylarıdır ve ek izin gerektirmez; mine=false handler içinde org.workflows.manage ister")]
 public sealed record ListApprovalsQuery(PagedQuery Paging, ApprovalStatus? Status, bool Mine) : IQuery<PagedResult<ApprovalDto>>;
 
 public sealed class ListApprovalsHandler(IWorkflowReadStore store, ICurrentUser user, IPermissionService permissions)
@@ -37,6 +38,7 @@ public sealed class ListApprovalsHandler(IWorkflowReadStore store, ICurrentUser 
 }
 
 /// <summary>Tek onay: çağıranın kendi onayı veya <c>org.workflows.manage</c>; aksi <c>forbidden</c>.</summary>
+[AnyAuthenticatedUser("Kendi onayı; başkasının onayı için handler org.workflows.manage ister")]
 public sealed record GetApprovalQuery(Guid Id) : IQuery<ApprovalDto>;
 
 public sealed class GetApprovalHandler(IWorkflowReadStore store, ICurrentUser user, IPermissionService permissions) : IQueryHandler<GetApprovalQuery, ApprovalDto>
@@ -64,6 +66,7 @@ public sealed class GetApprovalHandler(IWorkflowReadStore store, ICurrentUser us
 }
 
 /// <summary>Çağıranın bekleyen onay sayısı (üst çubuk rozeti); her kimliği doğrulanmış üye için 200.</summary>
+[AnyAuthenticatedUser("Üst çubuk rozeti: yalnız çağıranın kendi bekleyen onay sayısı")]
 public sealed record GetApprovalSummaryQuery : IQuery<ApprovalSummaryDto>;
 
 public sealed class GetApprovalSummaryHandler(IWorkflowReadStore store, ICurrentUser user) : IQueryHandler<GetApprovalSummaryQuery, ApprovalSummaryDto>

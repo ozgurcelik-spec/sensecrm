@@ -1,12 +1,14 @@
 using Crm.Modules.Identity.Domain;
 using Crm.Shared.Contracts.Context;
 using Crm.Shared.Contracts.Messaging;
+using Crm.Shared.Contracts.Security;
 using Crm.Shared.Kernel.Results;
 using FluentValidation;
 
 namespace Crm.Modules.Identity.Application.Me;
 
 /// <summary>Oturum açmış kullanıcı: profil, aktif organizasyon, rol, izinler ve üyesi olduğu organizasyonlar.</summary>
+[AnyAuthenticatedUser("Kullanıcı yalnız kendi profilini okur")]
 public sealed record GetMeQuery : IQuery<MeDto>;
 
 public sealed class GetMeHandler(
@@ -42,7 +44,7 @@ public sealed class GetMeHandler(
         var organizations = await readStore.ListOrganizationsOfUserAsync(userId, cancellationToken).ConfigureAwait(false);
 
         return new MeDto(
-            new MeUserDto(user.Id, user.Email, user.DisplayName, user.Locale, user.IsPlatformAdmin),
+            new MeUserDto(user.Id, user.Email, user.DisplayName, user.Locale, user.IsPlatformAdmin, user.MustChangePassword),
             new OrganizationDto(organization.Id, organization.Name, organization.Slug, organization.DefaultLocale, organization.TimeZone),
             new RoleRefDto(role.Id, role.Name),
             role.Permissions,
@@ -51,6 +53,7 @@ public sealed class GetMeHandler(
 }
 
 /// <summary>Profil güncelleme: görünen ad ve dil tercihi (tr | en). Verilmeyen alan değişmez.</summary>
+[AnyAuthenticatedUser("Kullanıcı yalnız kendi profilini günceller")]
 public sealed record UpdateMeCommand(string? DisplayName, string? Locale) : ICommand;
 
 public sealed class UpdateMeValidator : AbstractValidator<UpdateMeCommand>

@@ -13,7 +13,7 @@ namespace Crm.Modules.Identity.Api.Controllers;
 
 public sealed record UpdateOrganizationRequest(string Name, string DefaultLocale, string TimeZone);
 
-public sealed record AddMemberRequest(string Email, string? DisplayName, string? Password, Guid RoleId);
+public sealed record AddMemberRequest(string Email, string? DisplayName, Guid RoleId);
 
 public sealed record UpdateMemberRequest(Guid? RoleId, bool? IsActive);
 
@@ -44,17 +44,16 @@ public sealed class OrganizationController : ApiControllerBase
     [ProducesResponseType<IReadOnlyList<MemberDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ListMembers(CancellationToken ct) => FromResult(await Dispatcher.Query(new ListMembersQuery(), ct));
 
+    /// <summary>
+    /// Üye ekle. Yeni e-posta → hesap açılır, yanıtta bir kez <c>temporaryPassword</c> döner (yönetici parola seçmez);
+    /// mevcut e-posta → bekleyen davet (<c>status: pending</c>), otomatik katılım yok. Yanıt saklanmaz (<c>no-store</c>).
+    /// </summary>
     [HttpPost("members")]
-    [ProducesResponseType<MemberDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType<AddMemberResultDto>(StatusCodes.Status201Created)]
     public async Task<IActionResult> AddMember([FromBody] AddMemberRequest request, CancellationToken ct)
     {
-        var added = await Dispatcher.Send(new AddMemberCommand(request.Email, request.DisplayName, request.Password, request.RoleId), ct);
-        if (added.IsFailure)
-        {
-            return Problem(added.Error);
-        }
-
-        return CreatedWithBody(await Dispatcher.Query(new GetMemberQuery(added.Value), ct));
+        Response.Headers.CacheControl = "no-store";
+        return CreatedWithBody(await Dispatcher.Send(new AddMemberCommand(request.Email, request.DisplayName, request.RoleId), ct));
     }
 
     [HttpPatch(UserIdParam)]

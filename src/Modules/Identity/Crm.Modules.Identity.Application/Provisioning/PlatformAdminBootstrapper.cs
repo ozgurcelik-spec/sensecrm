@@ -70,6 +70,12 @@ public sealed class PlatformAdminBootstrapper(
                 $"PLATFORM_ADMIN_PASSWORD must be {IdentityDefaults.PlatformAdminMinPasswordLength}-{IdentityLimits.PasswordMaxLength} characters.");
         }
 
+        // Parola politikası (yaygın parola listesi, e-posta kullanıcı adı) platform yöneticisi için de geçerlidir (H4-e).
+        if (PasswordPolicy.Evaluate(password, email, IdentityDefaults.PlatformAdminMinPasswordLength) is { Count: > 0 } violations)
+        {
+            return new PlatformAdminResult(PlatformAdminOutcome.Invalid, "PLATFORM_ADMIN_PASSWORD violates the password policy: " + string.Join(", ", violations.Select(v => v.Code)));
+        }
+
         var name = string.IsNullOrWhiteSpace(displayName) ? DefaultDisplayName : displayName.Trim();
         if (name.Length > IdentityLimits.DisplayNameMaxLength)
         {

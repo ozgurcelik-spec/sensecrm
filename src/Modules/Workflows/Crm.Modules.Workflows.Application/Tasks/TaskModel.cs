@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Crm.Modules.Identity.Contracts;
+using Crm.Modules.Workflows.Domain.Executions;
+using Crm.Modules.Workflows.Domain.Rules;
 using Crm.Shared.Contracts.Configuration;
 using Crm.Shared.Contracts.Context;
 
@@ -28,7 +30,52 @@ public interface IWorkflowTaskWorker
     /// <summary>Conductor görev adı (<see cref="WorkflowNames"/>).</summary>
     string TaskType { get; }
 
-    Task<WorkflowTaskResult> ExecuteAsync(TaskInput input, CancellationToken cancellationToken);
+    /// <summary>Görevin işlendiği yürütme türü: görev yalnız bu türden bir yürütmenin workflow'unda geçerlidir (H1).</summary>
+    WorkflowRuleKind ExecutionKind { get; }
+
+    /// <summary>
+    /// <paramref name="task"/> doğrulanmış bağlamdır (yürütme + kural veritabanından). Görev girdisi (Conductor <c>inputData</c>)
+    /// güvenilmezdir: rol kimlikleri, parametreler, konu ve karar <b>asla</b> ondan okunmaz.
+    /// </summary>
+    Task<WorkflowTaskResult> ExecuteAsync(TrustedTask task, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Doğrulanmış görev bağlamı (H1): <c>(tenantId, executionId, motor workflow kimliği)</c> çalışan bir <c>workflow_executions</c> satırıyla
+/// eşleşti. Konu (lead/fırsat kimliği, ad, tutar, para birimi) yürütmenin saklı anlık görüntüsünden, rol kimlikleri ve parametreler
+/// yürütmenin <c>ruleId</c>'sindeki kayıtlı kuraldan okunur. <see cref="RawInput"/> yalnız yeniden doğrulanacak değerler için (ör. önceki
+/// görevin çıktısı olan atanan kullanıcı) ve güvenilmezdir.
+/// </summary>
+public sealed class TrustedTask
+{
+    private readonly Lazy<JsonObject> _subject;
+
+    public TrustedTask(WorkflowExecution execution, WorkflowRule? rule, TaskInput rawInput)
+    {
+        Execution = execution;
+        Rule = rule;
+        RawInput = rawInput;
+        _subject = new Lazy<JsonObject>(() => JsonNode.Parse(execution.InputJson) as JsonObject ?? []);
+    }
+
+    public WorkflowExecution Execution { get; }
+
+    /// <summary>Yürütmenin kuralı; silinmişse null (rol/parametre gerektiren görev terminal <c>rule_not_found</c> döner).</summary>
+    public WorkflowRule? Rule { get; }
+
+    /// <summary>Güvensiz Conductor girdisi.</summary>
+    public TaskInput RawInput { get; }
+
+    public Guid ExecutionId => Execution.Id;
+
+    /// <summary>Lead/fırsat kimliği (yürütmenin konusu).</summary>
+    public Guid SubjectId => Execution.SubjectId;
+
+    public string SubjectName => Execution.SubjectName ?? string.Empty;
+
+    public decimal? Amount => _subject.Value["amount"] is JsonValue v && v.TryGetValue<decimal>(out var amount) ? amount : null;
+
+    public string? Currency => _subject.Value["currency"] is JsonValue v && v.TryGetValue<string>(out var currency) ? currency : null;
 }
 
 /// <summary>Conductor görev girdisi (<c>inputData</c>) üzerinde tipli okuma yardımcıları.</summary>

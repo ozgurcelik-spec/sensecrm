@@ -11,7 +11,7 @@ COPY Directory.Build.props Directory.Packages.props global.json .editorconfig ./
 COPY src/ src/
 
 RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
-    dotnet restore src/Crm.Worker/Crm.Worker.csproj
+    dotnet restore src/Crm.Worker/Crm.Worker.csproj --locked-mode
 
 RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
     dotnet publish src/Crm.Worker/Crm.Worker.csproj \
@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
       --output /app/publish
 
 # aspnet rather than runtime: Crm.Shared.Infrastructure references the ASP.NET Core shared framework.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.12 AS runtime
 WORKDIR /app
 
 COPY --from=build /app/publish .

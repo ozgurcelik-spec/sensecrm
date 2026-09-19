@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Crm.Modules.Identity.Application;
+using Crm.Modules.Identity.Domain.Memberships;
 using Crm.Shared.Infrastructure.Persistence;
 using Crm.Shared.Infrastructure.Persistence.Audit;
 using Microsoft.EntityFrameworkCore;
@@ -14,14 +15,24 @@ public sealed class IdentityReadStore(IdentityDbContext db) : IIdentityReadStore
 {
     public async Task<IReadOnlyList<MemberDto>> ListMembersAsync(CancellationToken ct)
     {
-        var rows = await MemberRows(userId: null).ToListAsync(ct);
+        var rows = await MemberRows().ToListAsync(ct);
         return rows.Select(ToDto).ToList();
     }
 
-    public async Task<MemberDto?> GetMemberAsync(Guid userId, CancellationToken ct)
+    public async Task<IReadOnlyList<InvitationDto>> ListInvitationsOfUserAsync(Guid userId, CancellationToken ct)
     {
-        var row = await MemberRows(userId).FirstOrDefaultAsync(ct);
-        return row is null ? null : ToDto(row);
+        // Bilinçli kiracı filtresi aşımı: yalnız verilen kullanıcının kendi bekleyen davetleri; organizasyon adı ve rol adı davet edilene
+        // gösterilmesi gereken bilgidir (başka hiçbir hesap verisi dönmez).
+        var rows = await (from m in db.Memberships.IgnoreQueryFilters([ModuleDbContext.TenantFilter]).AsNoTracking()
+                          where m.UserId == userId && m.Status == MembershipStatus.Pending
+                          join t in db.Tenants.AsNoTracking() on m.TenantId equals t.Id
+                          where t.IsActive
+                          join r in db.Roles.IgnoreQueryFilters([ModuleDbContext.TenantFilter]).AsNoTracking() on m.RoleId equals r.Id
+                          orderby m.JoinedAt descending
+                          select new { m.Id, OrganizationId = t.Id, OrganizationName = t.Name, RoleName = r.Name, InvitedAt = m.JoinedAt })
+            .ToListAsync(ct);
+
+        return rows.Select(r => new InvitationDto(r.Id, r.OrganizationId, r.OrganizationName, r.RoleName, new DateTimeOffset(DateTime.SpecifyKind(r.InvitedAt, DateTimeKind.Utc)))).ToList();
     }
 
     public async Task<IReadOnlyList<RoleDto>> ListRolesAsync(CancellationToken ct)
@@ -56,7 +67,7 @@ public sealed class IdentityReadStore(IdentityDbContext db) : IIdentityReadStore
         var rows = await query
             .OrderByDescending(e => e.OccurredAt)
             .ThenByDescending(e => e.Id)
-            .Skip((page - 1) * pageSize)
+            .Skip(Crm.Shared.Contracts.Paging.PagedQuery.SkipFor(page, pageSize))
             .Take(pageSize)
             .ToListAsync(ct);
 
@@ -66,16 +77,29 @@ public sealed class IdentityReadStore(IdentityDbContext db) : IIdentityReadStore
         return new AuditPageDto(items, total);
     }
 
-    private IQueryable<MemberRow> MemberRows(Guid? userId) =>
+    /// <summary>
+    /// Etkin üyeler tam satırdır. Bekleyen davetler (mevcut hesaplar) YALNIZ e-posta ile görünür: ad boş, <c>userId</c> yerine davetin
+    /// (üyelik satırının) kimliği döner — başka organizasyonlarla paylaşılan hesabın kimliği/adı bu organizasyona sızmaz.
+    /// </summary>
+    private IQueryable<MemberRow> MemberRows() =>
         from m in db.Memberships.AsNoTracking()
-        where userId == null || m.UserId == userId
         join u in db.Users.AsNoTracking() on m.UserId equals u.Id
         join r in db.Roles.AsNoTracking() on m.RoleId equals r.Id
         orderby m.JoinedAt
-        select new MemberRow(m.UserId, u.Email, u.DisplayName, r.Id, r.Name, m.IsActive, m.JoinedAt);
+        select new MemberRow(
+            m.Status == MembershipStatus.Pending ? m.Id : m.UserId,
+            u.Email,
+            m.Status == MembershipStatus.Pending ? string.Empty : u.DisplayName,
+            r.Id,
+            r.Name,
+            m.IsActive,
+            m.JoinedAt,
+            m.Status == MembershipStatus.Pending);
 
     private static MemberDto ToDto(MemberRow r) =>
-        new(r.UserId, r.Email, r.DisplayName, r.RoleId, r.RoleName, r.IsActive, new DateTimeOffset(DateTime.SpecifyKind(r.JoinedAt, DateTimeKind.Utc)));
+        new(r.UserId, r.Email, r.DisplayName, r.RoleId, r.RoleName, r.IsActive, new DateTimeOffset(DateTime.SpecifyKind(r.JoinedAt, DateTimeKind.Utc)),
+            r.IsPending ? MemberStatuses.Pending : MemberStatuses.Active,
+            r.IsPending ? new DateTimeOffset(DateTime.SpecifyKind(r.JoinedAt, DateTimeKind.Utc)) : null);
 
     private static JsonElement ParseChanges(string json)
     {
@@ -83,5 +107,5 @@ public sealed class IdentityReadStore(IdentityDbContext db) : IIdentityReadStore
         return document.RootElement.Clone();
     }
 
-    private sealed record MemberRow(Guid UserId, string Email, string DisplayName, Guid RoleId, string RoleName, bool IsActive, DateTime JoinedAt);
+    private sealed record MemberRow(Guid UserId, string Email, string DisplayName, Guid RoleId, string RoleName, bool IsActive, DateTime JoinedAt, bool IsPending);
 }

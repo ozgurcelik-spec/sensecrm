@@ -105,11 +105,8 @@ internal static class SalesApiKit
     public static async Task<(HttpClient Client, Guid UserId)> AddMemberAsync(this CrmApiFactory factory, Org org, string displayName, params string[] permissions)
     {
         var role = await org.Admin.PostJsonAsync($"{Base}/organization/roles", new { name = "Role " + Guid.NewGuid().ToString("N")[..8], permissions });
-        var email = UniqueEmail("member");
-        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, password = DefaultPassword, roleId = role.Id() });
-        var client = factory.CreateClient();
-        client.WithToken((await client.LoginAsync(email)).AccessToken);
-        return (client, member.GetProperty("userId").GetGuid());
+        var member = await ApiTestClient.AddMemberAsync(factory, org.Admin, displayName, role.Id());
+        return (member.Client, member.UserId);
     }
 
     public static async Task<List<OutboxMessage>> OutboxMessagesAsync<TContext>(this CrmApiFactory factory, string type, string payloadContains)

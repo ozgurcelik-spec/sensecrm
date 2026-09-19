@@ -26,6 +26,22 @@ public static class IdentityErrors
     public const string MemberLastAdmin = "member.last_admin";
     public const string MemberExists = "member.exists";
 
+    /// <summary>Kullanıcı kendi rolünü değiştiremez / kendi üyeliğini pasifleştiremez (M7).</summary>
+    public const string MemberCannotModifySelf = "member.cannot_modify_self";
+
+    /// <summary>Çağıran kendinde olmayan bir izni/rolü veremez (M7).</summary>
+    public const string RolePermissionEscalation = "role.permission_escalation";
+
+    /// <summary>Geçici parola (<c>MustChangePassword</c>) değiştirilene kadar çoğu uç 403 bu kodla döner (H4).</summary>
+    public const string PasswordChangeRequired = "auth.password_change_required";
+
+    /// <summary>Davet yok, kabul edilmiş, başkasına ait ya da organizasyon pasif (kimin olduğu ayırt edilmez: varlık sızdırılmaz).</summary>
+    public const string InvitationNotFound = "invitation.not_found";
+
+    public const string PasswordTooCommon = "validation.password_too_common";
+    public const string PasswordContainsEmail = "validation.password_contains_email";
+    public const string PasswordTooLong = "validation.password_too_long";
+
     public const string InvalidLocale = "validation.locale";
     public const string InvalidTimeZone = "validation.time_zone";
     public const string PasswordTooShort = "validation.password_too_short";

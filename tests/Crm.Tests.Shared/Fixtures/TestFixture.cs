@@ -76,6 +76,7 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
         builder.UseSetting("ConnectionStrings:Database", ConnectionString);
         builder.UseSetting("ConnectionStrings:Redis", string.Empty);
         builder.UseSetting("RateLimiting:Auth:PermitLimit", "100000");
+        builder.UseSetting("RateLimiting:LoginEmail:PermitLimit", "100000");
         builder.UseSetting("ProblemDetails:IncludeExceptionDetails", "true");
         builder.ConfigureServices(services =>
         {
@@ -85,6 +86,7 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
             services.AddSingleton<FakeWorkflowEngine>();
             services.AddSingleton<IWorkflowEngine>(sp => sp.GetRequiredService<FakeWorkflowEngine>());
             services.AddSingleton<IWorkflowDefinitionRegistrar>(sp => sp.GetRequiredService<FakeWorkflowEngine>());
+            services.AddSingleton<Microsoft.AspNetCore.Hosting.IStartupFilter, FakeEngineDrainStartupFilter>();
 
             // Ortak audit şemasının sahibi context (API'de kayıtlı değil; migration için).
             var configuration = new ConfigurationBuilder()
@@ -94,6 +96,9 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
         });
     }
 }
+
+/// <summary>Testlerde <see cref="ApiTestClient.AddMemberAsync"/> ile açılmış üye: kimlik, e-posta, yetkili istemci ve güncel oturum.</summary>
+public sealed record NewMember(Guid UserId, string Email, HttpClient Client, AuthResponse Auth);
 
 /// <summary>Testlerde tekrar eden HTTP akışları.</summary>
 public static class ApiTestClient
@@ -122,6 +127,33 @@ public static class ApiTestClient
         var response = await client.PostAsJsonAsync($"{Base}/auth/login", new { email, password });
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
+    }
+
+    /// <summary>
+    /// Yönetici istemcisiyle yeni hesaplı üye ekler (H4): sunucu geçici parola üretir (yanıtta <c>temporaryPassword</c>); test bu parolayla
+    /// giriş yapıp parolayı <paramref name="password"/> (varsayılan <see cref="DefaultPassword"/>) olarak değiştirir (geçici parola
+    /// zorlaması). Dönen istemci, değiştirilmiş parolayla açılan güncel oturumla yetkilidir.
+    /// </summary>
+    public static async Task<NewMember> AddMemberAsync(
+        this CrmApiFactory factory, HttpClient adminClient, string displayName, Guid roleId, string? email = null, string password = DefaultPassword)
+    {
+        email ??= UniqueEmail("member");
+        var added = await adminClient.PostAsJsonAsync($"{Base}/organization/members", new { email, displayName, roleId });
+        var body = await added.Content.ReadAsStringAsync();
+        added.StatusCode.ShouldBe(System.Net.HttpStatusCode.Created, body);
+        using var json = System.Text.Json.JsonDocument.Parse(body);
+        var userId = json.RootElement.GetProperty("userId").GetGuid();
+        var temporary = json.RootElement.GetProperty("temporaryPassword").GetString()!;
+
+        var client = factory.CreateClient();
+        var first = await client.LoginAsync(email, temporary);
+        first.MustChangePassword.ShouldBeTrue();
+        client.WithToken(first.AccessToken);
+        var changed = await client.PostAsJsonAsync($"{Base}/me/password", new { currentPassword = temporary, newPassword = password });
+        changed.EnsureSuccessStatusCode();
+        var auth = (await changed.Content.ReadFromJsonAsync<AuthResponse>())!;
+        client.WithToken(auth.AccessToken);
+        return new NewMember(userId, email, client, auth);
     }
 
     public static HttpClient WithToken(this HttpClient client, string accessToken)

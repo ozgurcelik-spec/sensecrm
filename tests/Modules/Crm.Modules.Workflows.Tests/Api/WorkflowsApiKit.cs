@@ -98,11 +98,8 @@ internal static class WorkflowsApiKit
     /// <summary>Verilen role yeni bir aktif üye ekler; üye olarak oturum açmış istemciyi döner.</summary>
     public static async Task<Member> AddMemberAsync(this CrmApiFactory factory, Org org, Guid roleId, string displayName)
     {
-        var email = UniqueEmail("member");
-        var member = await org.Admin.PostJsonAsync($"{Base}/organization/members", new { email, displayName, password = DefaultPassword, roleId });
-        var client = factory.CreateClient();
-        client.WithToken((await client.LoginAsync(email)).AccessToken);
-        return new Member(client, member.GetProperty("userId").GetGuid(), displayName);
+        var member = await ApiTestClient.AddMemberAsync(factory, org.Admin, displayName, roleId);
+        return new Member(member.Client, member.UserId, displayName);
     }
 
     /// <summary>Verilen izinlerle yeni bir rol + o rolde bir üye (tek adım).</summary>
@@ -164,17 +161,23 @@ internal static class WorkflowsApiKit
             using var scope = factory.Services.CreateScope();
             if (await scope.ServiceProvider.GetRequiredService<OutboxProcessor<TContext>>().ProcessAsync(Ct) == 0)
             {
-                return;
+                break;
             }
         }
+
+        // Olaylar commit edildi: sahte motorun bekleyen görevleri (Worker taklidi) şimdi çalışır.
+        await factory.Engine().DrainAsync();
     }
 
     /// <summary>Sales outbox'ını boşaltır: lead/fırsat olayları Workflows tüketicilerine ulaşır, sahte motor yürütmeyi çalıştırır.</summary>
     public static Task DrainSalesAsync(this CrmApiFactory factory) => factory.DrainOutboxAsync<SalesDbContext>();
 
     /// <summary>Worker'daki durum senkronunun bir turu: çalışan yürütmelerin durumu motordan yansıtılır.</summary>
-    public static Task<int> SyncExecutionsAsync(this CrmApiFactory factory) =>
-        factory.Services.GetRequiredService<ExecutionSyncRunner>().RunOnceAsync(Ct);
+    public static async Task<int> SyncExecutionsAsync(this CrmApiFactory factory)
+    {
+        await factory.Engine().DrainAsync();
+        return await factory.Services.GetRequiredService<ExecutionSyncRunner>().RunOnceAsync(Ct);
+    }
 
     public static async Task<List<OutboxMessage>> OutboxMessagesAsync<TContext>(this CrmApiFactory factory, string type, string payloadContains)
         where TContext : ModuleDbContext

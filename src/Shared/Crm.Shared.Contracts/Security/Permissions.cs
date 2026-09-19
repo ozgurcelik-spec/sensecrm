@@ -23,6 +23,18 @@ public interface IPermissionService
     Task<IReadOnlySet<string>> GetPermissionsAsync(Guid userId, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// İstek (command/query) için bilinçli "izin gerekmez, her kimliği doğrulanmış kullanıcı çağırabilir" işaretidir (M6: her istek ya
+/// <see cref="RequiresPermissionAttribute"/> ya da bu işareti taşımalıdır; mimari test yeni işaretsiz istekleri reddeder).
+/// Yalnız kullanıcının kendi verisi / kendi organizasyonunun temel bilgisi gibi yerlerde kullanılır; handler kendi içinde
+/// çağıranı sınırlar (kendi kaydı, kiracı filtresi). <see cref="Reason"/> gerekçedir.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class AnyAuthenticatedUserAttribute(string reason) : Attribute
+{
+    public string Reason { get; } = reason;
+}
+
 /// <summary>Handler üzerinde gerekli izni bildirir; AuthorizationBehaviour denetler.</summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public sealed class RequiresPermissionAttribute(string permission) : Attribute

@@ -25,6 +25,12 @@ public interface IRecordLookup
     /// <summary>Kaydın görünen adı; kayıt yoksa/silinmişse/başka organizasyondaysa null.</summary>
     Task<string?> GetDisplayNameAsync(RecordType type, Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Kaydın sahibi (kullanıcı kimliği); kayıt yoksa/silinmişse/başka organizasyondaysa null. Workflow, fırsat sahibini onaylayıcılardan
+    /// çıkarmak için kullanır (kimse kendi fırsatını onaylayamaz).
+    /// </summary>
+    Task<Guid?> GetOwnerUserIdAsync(RecordType type, Guid id, CancellationToken cancellationToken = default);
+
     /// <summary>Toplu ad çözümü (tür başına tek sorgu). Bulunamayan kayıtlar sonuçta yer almaz.</summary>
     Task<IReadOnlyDictionary<RecordRef, string>> GetDisplayNamesAsync(IReadOnlyCollection<RecordRef> records, CancellationToken cancellationToken = default);
 }

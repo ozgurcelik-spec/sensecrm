@@ -98,8 +98,9 @@ public sealed class AuthApiTests(CrmApiFactory factory)
         second.RefreshToken.ShouldNotBe(first.RefreshToken);
         second.AccessToken.ShouldNotBe(first.AccessToken);
 
-        // Eski (döndürülmüş) token tekrar kullanılırsa: reddedilir ve aile kapanır → yeni token da artık geçersiz.
-        await (await RefreshAsync(client, first.RefreshToken)).ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.invalid_refresh_token");
+        // Eski (döndürülmüş) token BAŞKA bir istemciden (farklı User-Agent) tekrar kullanılırsa: hırsızlık sayılır, reddedilir ve aile kapanır
+        // → yeni token da artık geçersiz.
+        await (await RefreshAsync(client, first.RefreshToken, "thief/1.0")).ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.invalid_refresh_token");
         await (await RefreshAsync(client, second.RefreshToken)).ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.invalid_refresh_token");
     }
 
@@ -130,15 +131,25 @@ public sealed class AuthApiTests(CrmApiFactory factory)
         var userClient = factory.CreateClient();
         var own = await userClient.SignUpAsync("Own Org", userEmail);
 
-        // Başka bir organizasyonun yöneticisi mevcut hesabı Standard rolüyle üye olarak ekler (parola yok sayılır).
+        // Başka bir organizasyonun yöneticisi mevcut hesabı Standard rolüyle davet eder: BEKLEYEN davet (otomatik katılım yok).
         var adminClient = factory.CreateClient();
         var admin = await adminClient.SignUpAsync("Other Org", UniqueEmail("other-admin"));
         adminClient.WithToken(admin.AccessToken);
         var standardRoleId = await RoleIdAsync(adminClient, "Standard");
-        var add = await adminClient.PostAsJsonAsync($"{Base}/organization/members", new { email = userEmail, displayName = "Ignored", password = "ignored-password", roleId = standardRoleId }, TestContext.Current.CancellationToken);
+        var add = await adminClient.PostAsJsonAsync($"{Base}/organization/members", new { email = userEmail, displayName = "Ignored", roleId = standardRoleId }, TestContext.Current.CancellationToken);
         add.StatusCode.ShouldBe(HttpStatusCode.Created, await add.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
-        var me = await userClient.WithToken(own.AccessToken).GetFromJsonAsync<JsonElement>($"{Base}/me", TestContext.Current.CancellationToken);
+        var meBefore = await userClient.WithToken(own.AccessToken).GetFromJsonAsync<JsonElement>($"{Base}/me", TestContext.Current.CancellationToken);
+        meBefore.GetProperty("organizations").GetArrayLength().ShouldBe(1, "bekleyen davet aktif organizasyon sayılmaz");
+
+        var invitations = await userClient.GetFromJsonAsync<JsonElement>($"{Base}/me/invitations", TestContext.Current.CancellationToken);
+        var invitation = invitations.EnumerateArray().Single();
+        invitation.GetProperty("organizationName").GetString().ShouldBe("Other Org");
+        (await userClient.PostAsJsonAsync($"{Base}/auth/switch-organization", new { organizationId = invitation.GetProperty("organizationId").GetGuid() }, TestContext.Current.CancellationToken))
+            .StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        (await userClient.PostAsync($"{Base}/me/invitations/{invitation.GetProperty("id").GetGuid()}/accept", null, TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var me = await userClient.GetFromJsonAsync<JsonElement>($"{Base}/me", TestContext.Current.CancellationToken);
         var organizations = me.GetProperty("organizations").EnumerateArray().ToList();
         organizations.Count.ShouldBe(2);
         var otherOrgId = organizations.Single(o => o.GetProperty("name").GetString() == "Other Org").GetProperty("id").GetGuid();
@@ -168,6 +179,14 @@ public sealed class AuthApiTests(CrmApiFactory factory)
         return roles.EnumerateArray().Single(r => r.GetProperty("name").GetString() == roleName).GetProperty("id").GetGuid();
     }
 
-    private static Task<HttpResponseMessage> RefreshAsync(HttpClient client, string refreshToken) =>
-        client.PostAsJsonAsync($"{Base}/auth/refresh", new { refreshToken }, TestContext.Current.CancellationToken);
+    internal static Task<HttpResponseMessage> RefreshAsync(HttpClient client, string refreshToken, string? userAgent = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{Base}/auth/refresh") { Content = JsonContent.Create(new { refreshToken }) };
+        if (userAgent is not null)
+        {
+            request.Headers.UserAgent.ParseAdd(userAgent);
+        }
+
+        return client.SendAsync(request, TestContext.Current.CancellationToken);
+    }
 }

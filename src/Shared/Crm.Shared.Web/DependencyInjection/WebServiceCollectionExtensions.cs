@@ -166,14 +166,40 @@ public static class WebServiceCollectionExtensions
     {
         var options = configuration.GetSection(ConfigurationSections.RateLimiting).Get<RateLimitingOptions>() ?? new RateLimitingOptions();
 
+        services.AddOptions<RateLimitingOptions>().Bind(configuration.GetSection(ConfigurationSections.RateLimiting));
+
         services.AddRateLimiter(limiter =>
         {
             limiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             limiter.AddPolicy(RateLimitPolicyNames.Auth, httpContext => CreatePartition(httpContext, options.Auth));
+
+            // M2: kimliği doğrulanmış her istek için kullanıcı başına VE kiracı başına genel sınır (zincirlenmiş; ikisi de geçmeli).
+            // Anonim istekler bu sınırlayıcıya takılmaz (auth uçları yukarıdaki IP politikasıyla, health uçları sınırsız).
+            limiter.GlobalLimiter = PartitionedRateLimiter.CreateChained(
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthenticatedPartition(ctx, ClaimNames.Subject, "user", options.User)),
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthenticatedPartition(ctx, ClaimNames.Tenant, "tenant", options.Tenant)));
             limiter.OnRejected = WriteRateLimitProblemAsync;
         });
 
         return services;
+    }
+
+    /// <summary>JWT claim'i (sub/tid) ile bölümlenmiş sabit pencere; claim yoksa (anonim) sınırsız.</summary>
+    private static RateLimitPartition<string> AuthenticatedPartition(HttpContext httpContext, string claimName, string scope, RateLimitPolicyOptions policyOptions)
+    {
+        var id = httpContext.User.Identity?.IsAuthenticated == true ? httpContext.User.FindFirst(claimName)?.Value : null;
+        if (string.IsNullOrEmpty(id))
+        {
+            return RateLimitPartition.GetNoLimiter(string.Concat(scope, ":anonymous"));
+        }
+
+        return RateLimitPartition.GetFixedWindowLimiter(string.Concat(scope, ":", id), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = policyOptions.PermitLimit,
+            Window = TimeSpan.FromSeconds(policyOptions.WindowSeconds),
+            QueueLimit = policyOptions.QueueLimit,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        });
     }
 
     /// <summary>IP adresine göre bölümlenmiş sabit pencere; ters proxy arkasında Forwarded Headers middleware'i gerekir.</summary>

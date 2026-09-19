@@ -75,6 +75,11 @@ public static class InfrastructureServiceCollectionExtensions
         {
             services.AddStackExchangeRedisCache(o => o.Configuration = redis);
         }
+        else if (!configuration.GetSection($"{ConfigurationSections.Caching}:{nameof(CachingOptions.PermissionExpirationMinutes)}").Exists())
+        {
+            // M9: paylaşımlı önbellek yok (tek örnek, yalnız bellek içi) → izin bayatlığı üst sınırı kısa (2 dk). Açık ayar bunu ezer.
+            services.PostConfigure<CachingOptions>(o => o.PermissionExpirationMinutes = CachingDefaults.PermissionExpirationMinutesWithoutRedis);
+        }
 
         services.AddHybridCache();
         services.AddOptions<Microsoft.Extensions.Caching.Hybrid.HybridCacheOptions>()

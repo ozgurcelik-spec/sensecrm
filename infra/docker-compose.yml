@@ -17,7 +17,7 @@ name: crm
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine
     container_name: crm-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-crm}
@@ -37,7 +37,7 @@ services:
 
   # Redis isteğe bağlıdır: ConnectionStrings:Redis verilirse HybridCache'in L2 katmanı olur, verilmezse yalnız bellek içi önbellek çalışır.
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.11-alpine
     container_name: crm-redis
     command: ["redis-server", "--appendonly", "no", "--save", ""]
     ports:
@@ -56,7 +56,7 @@ services:
   # Veritabanı yoksa tek seferlik conductor-db-init oluşturur (postgres init.sql yalnız ilk kurulumda çalıştığı için
   # mevcut veri hacimlerinde de çalışır; idempotenttir).
   conductor-db-init:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine
     container_name: crm-conductor-db-init
     depends_on:
       postgres:

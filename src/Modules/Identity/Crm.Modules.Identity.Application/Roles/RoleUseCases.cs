@@ -1,3 +1,4 @@
+using Crm.Modules.Identity.Application.Members;
 using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Identity.Domain;
 using Crm.Modules.Identity.Domain.Roles;
@@ -38,10 +39,16 @@ public sealed class CreateRoleValidator : AbstractValidator<CreateRoleCommand>
     public CreateRoleValidator(IPermissionCatalog catalog) => RoleRules.Apply(this, x => x.Name, x => x.Permissions, catalog);
 }
 
-public sealed class CreateRoleHandler(ITenantContext tenant, IRoleRepository roles) : ICommandHandler<CreateRoleCommand, RoleDto>
+public sealed class CreateRoleHandler(ITenantContext tenant, IRoleRepository roles, DelegationGuard delegation) : ICommandHandler<CreateRoleCommand, RoleDto>
 {
     public async Task<Result<RoleDto>> Handle(CreateRoleCommand command, CancellationToken cancellationToken)
     {
+        // M7: rol, çağıranın kendinde olmayan izinleri içeremez (Administrator sistem rolü hariç).
+        if (!await delegation.CanGrantAsync(command.Permissions, cancellationToken).ConfigureAwait(false))
+        {
+            return Error.Forbidden(IdentityErrors.RolePermissionEscalation);
+        }
+
         if (await roles.NameExistsAsync(command.Name.Trim(), excludeId: null, cancellationToken).ConfigureAwait(false))
         {
             return Error.Conflict(IdentityErrors.RoleNameTaken);
@@ -61,7 +68,7 @@ public sealed class UpdateRoleValidator : AbstractValidator<UpdateRoleCommand>
     public UpdateRoleValidator(IPermissionCatalog catalog) => RoleRules.Apply(this, x => x.Name, x => x.Permissions, catalog);
 }
 
-public sealed class UpdateRoleHandler(ITenantContext tenant, IRoleRepository roles, IPermissionCacheInvalidator permissionCache) : ICommandHandler<UpdateRoleCommand>
+public sealed class UpdateRoleHandler(ITenantContext tenant, IRoleRepository roles, DelegationGuard delegation, IPermissionCacheInvalidator permissionCache) : ICommandHandler<UpdateRoleCommand>
 {
     public async Task<Result> Handle(UpdateRoleCommand command, CancellationToken cancellationToken)
     {
@@ -74,6 +81,11 @@ public sealed class UpdateRoleHandler(ITenantContext tenant, IRoleRepository rol
         if (role.IsSystem)
         {
             return Error.Rule(IdentityErrors.RoleSystemReadOnly);
+        }
+
+        if (!await delegation.CanGrantAsync(command.Permissions, cancellationToken).ConfigureAwait(false))
+        {
+            return Error.Forbidden(IdentityErrors.RolePermissionEscalation);
         }
 
         if (await roles.NameExistsAsync(command.Name.Trim(), role.Id, cancellationToken).ConfigureAwait(false))

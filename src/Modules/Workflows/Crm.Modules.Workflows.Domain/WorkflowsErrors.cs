@@ -32,8 +32,25 @@ public static class WorkflowsErrors
     /// <summary>Atanacak rolde aktif üye yok; lead sahibi değişmez.</summary>
     public const string NoAssignee = "no_assignee";
 
-    /// <summary>Onaylayıcı rolde aktif üye yok.</summary>
+    /// <summary>
+    /// Onaylayıcı yok: rolde aktif üye yok ya da tek üye fırsatın sahibi (sahip kendi fırsatını onaylayamaz, L3).
+    /// </summary>
     public const string NoApprover = "no_approver";
+
+    /// <summary>
+    /// Görev girdisi güvenilmez (H1): <c>(tenantId, executionId, motor workflow kimliği)</c> üçlüsü çalışan bir yürütmeyle eşleşmiyor
+    /// (sahte/başka kiracı/başka örnek/bitmiş yürütme). Yan etkisiz, terminal hata.
+    /// </summary>
+    public const string UntrustedTask = "untrusted_task";
+
+    /// <summary>Yürütme motor kimliğini henüz kaydetmedi (başlatma ile kayıt arasındaki kısa yarış): geçici hata, motor yeniden dener.</summary>
+    public const string EngineIdPending = "engine_id_pending";
+
+    /// <summary>Yürütmenin kuralı silinmiş: rol/parametreler okunamaz, terminal hata.</summary>
+    public const string RuleNotFound = "rule_not_found";
+
+    /// <summary>Karar veritabanındaki onay kayıtlarından türetilir; henüz karar yok (commit gecikmesi olabilir: geçici hata).</summary>
+    public const string DecisionNotFound = "decision_not_found";
 }
 
 /// <summary>Domain sınırları (uzunluklar vb.). Ayar değil, veri modeli kısıtı.</summary>

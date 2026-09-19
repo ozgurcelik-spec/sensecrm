@@ -7,6 +7,7 @@ using Crm.Modules.Workflows.Application.Tasks;
 using Crm.Modules.Workflows.Domain.Executions;
 using Crm.Modules.Workflows.Infrastructure;
 using Crm.Modules.Workflows.Infrastructure.Conductor;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Crm.Tests.Shared.Workflows;
@@ -37,7 +38,7 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
 
     public Task EnsureRegisteredAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public async Task<string> StartAsync(StartWorkflowRequest request, CancellationToken cancellationToken)
+    public Task<string> StartAsync(StartWorkflowRequest request, CancellationToken cancellationToken)
     {
         if (FailStart)
         {
@@ -47,8 +48,26 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
         var definition = WorkflowDefinitions.Workflow(request.Name, request.Version);
         var workflow = new FakeWorkflow(Guid.NewGuid().ToString(), request.Name, request.Input, (JsonArray)definition["tasks"]!);
         _workflows[workflow.Id] = workflow;
-        await RunAsync(workflow, cancellationToken).ConfigureAwait(false);
-        return workflow.Id;
+
+        // Gerçek Conductor gibi: başlatma hemen döner, görevler ayrı bir işlemde (Worker) ve başlatan işlem commit edildikten SONRA
+        // çalışır (görev işleyicileri yürütme satırını/onayları veritabanından okur ve motor kimliğini doğrular). Bekleyen iş
+        // <see cref="DrainAsync"/> ile (istek bitince ve outbox boşaltılınca) yürütülür.
+        _pending.Enqueue(() => RunAsync(workflow, CancellationToken.None));
+        return Task.FromResult(workflow.Id);
+    }
+
+    private readonly ConcurrentQueue<Func<Task>> _pending = new();
+
+    /// <summary>
+    /// Bekleyen workflow işlerini (başlatma sonrası görevler, HUMAN görevi sonrası devam) çalıştırır. Test altyapısı her HTTP isteğinin
+    /// ve outbox boşaltmanın ardından çağırır: böylece gerçek motorun "commit sonrası, ayrı işlemde" davranışı deterministik taklit edilir.
+    /// </summary>
+    public async Task DrainAsync()
+    {
+        while (_pending.TryDequeue(out var work))
+        {
+            await work().ConfigureAwait(false);
+        }
     }
 
     public Task<WorkflowState?> GetAsync(string workflowId, CancellationToken cancellationToken) =>
@@ -66,7 +85,7 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
         return Task.CompletedTask;
     }
 
-    public async Task CompleteWaitTaskAsync(string workflowId, string taskReferenceName, IReadOnlyDictionary<string, object?> output, CancellationToken cancellationToken)
+    public Task CompleteWaitTaskAsync(string workflowId, string taskReferenceName, IReadOnlyDictionary<string, object?> output, CancellationToken cancellationToken)
     {
         if (FailComplete)
         {
@@ -76,7 +95,7 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
         var workflow = _workflows[workflowId];
         if (workflow.Status != ExecutionStatus.Running || workflow.Waiting is not { } waiting || waiting.Ref != taskReferenceName)
         {
-            return; // idempotent
+            return Task.CompletedTask; // idempotent
         }
 
         var body = new JsonObject();
@@ -89,7 +108,8 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
         workflow.CompleteStep(body);
         workflow.Waiting = null;
         workflow.Index++;
-        await RunAsync(workflow, cancellationToken).ConfigureAwait(false);
+        _pending.Enqueue(() => RunAsync(workflow, CancellationToken.None));
+        return Task.CompletedTask;
     }
 
     private async Task RunAsync(FakeWorkflow workflow, CancellationToken ct)
@@ -114,7 +134,7 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
             WorkflowTaskResult result = WorkflowTaskResult.Retry("not run");
             for (var attempt = 0; attempt < MaxTaskAttempts; attempt++)
             {
-                result = await runner.ExecuteAsync(name, inputElement, ct).ConfigureAwait(false);
+                result = await runner.ExecuteAsync(name, workflow.Id, inputElement, ct).ConfigureAwait(false);
                 if (result.Succeeded || result.Terminal)
                 {
                     break;
@@ -212,3 +232,22 @@ public sealed class FakeWorkflow(string id, string name, JsonObject input, JsonA
 
 /// <summary>Sahte motorda HUMAN görevinin beklediği referans adı.</summary>
 public sealed record WaitingTask(string Ref);
+
+/// <summary>
+/// Her HTTP isteği bittikten SONRA (işlem commit edilmiş, yanıt gövdesi tamamlanmadan) sahte motorun bekleyen işlerini çalıştırır.
+/// <c>HttpClient</c> varsayılan olarak yanıtın tamamlanmasını beklediği için testler, workflow görevlerinin (Worker taklidi) bittiği
+/// durumu görür — gerçek motorun "commit sonrası, ayrı işlemde" davranışıyla aynı sıra.
+/// </summary>
+public sealed class FakeEngineDrainStartupFilter : Microsoft.AspNetCore.Hosting.IStartupFilter
+{
+    public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next) =>
+        app =>
+        {
+            app.Use(async (context, pipeline) =>
+            {
+                await pipeline().ConfigureAwait(false);
+                await context.RequestServices.GetRequiredService<FakeWorkflowEngine>().DrainAsync().ConfigureAwait(false);
+            });
+            next(app);
+        };
+}

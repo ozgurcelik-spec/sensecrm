@@ -44,6 +44,7 @@ internal static class IdentityTables
     public const int HashLength = 128;
     public const int StampLength = 64;
     public const int IpLength = 64;
+    public const int StatusLength = 16;
 }
 
 public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
@@ -84,6 +85,8 @@ public sealed class MembershipConfiguration : IEntityTypeConfiguration<Membershi
     {
         b.ToTable(IdentityTables.Memberships);
         b.HasKey(x => x.Id);
+        b.Property(x => x.Status).HasConversion<string>().HasMaxLength(IdentityTables.StatusLength).IsRequired();
+        b.HasIndex(x => new { x.UserId, x.Status });
         b.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.RoleId });
         b.HasIndex(x => x.UserId);

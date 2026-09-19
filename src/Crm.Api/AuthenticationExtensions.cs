@@ -15,7 +15,11 @@ public sealed class AuthOptions
 
     public string Audience { get; set; } = AuthDefaults.Audience;
 
-    public string KeyId { get; set; } = AuthDefaults.KeyId;
+    /// <summary>
+    /// JWT başlığındaki <c>kid</c>. Boşsa (varsayılan) imza anahtarının açık kısmından türetilen parmak izi kullanılır (L4): anahtar
+    /// döndürüldüğünde <c>kid</c> kendiliğinden değişir; üretimde sabit bir "dev" değeri yoktur.
+    /// </summary>
+    public string? KeyId { get; set; }
 
     /// <summary>
     /// RSA özel anahtar (PEM). Üretimde ortam değişkeni/secret store'dan (<c>Auth__SigningKeyPem</c>) verilmelidir; depoya
@@ -30,8 +34,8 @@ public static class AuthDefaults
 {
     public const string Issuer = "crm";
     public const string Audience = "crm-api";
-    public const string KeyId = "crm-dev";
     public const int ClockSkewSeconds = 30;
+    public const int KeyThumbprintLength = 16;
     public const int DevKeySize = 2048;
     public const string TestingEnvironment = "Testing";
     public const string MissingKeyMessage = "Auth:SigningKeyPem is required outside Development/Testing (ephemeral keys are dev-only).";
@@ -61,7 +65,7 @@ public static class AuthenticationExtensions
             throw new InvalidOperationException(AuthDefaults.MissingKeyMessage);
         }
 
-        var key = new RsaSecurityKey(rsa) { KeyId = auth.KeyId };
+        var key = new RsaSecurityKey(rsa) { KeyId = string.IsNullOrWhiteSpace(auth.KeyId) ? Thumbprint(rsa) : auth.KeyId };
         services.AddSingleton(key);
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -76,6 +80,9 @@ public static class AuthenticationExtensions
                     ValidAudience = auth.Audience,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = key,
+
+                    // L4: yalnız RS256 kabul edilir ("alg" başlığı saldırıları / algoritma karışıklığı kapanır).
+                    ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(auth.ClockSkewSeconds),
                     NameClaimType = ClaimNames.Subject,
@@ -94,4 +101,8 @@ public static class AuthenticationExtensions
 
         return services;
     }
+
+    /// <summary>Açık anahtarın (SubjectPublicKeyInfo) SHA-256 özetinin ilk baytlarının base64url'ü: anahtara bağlı, sırsız <c>kid</c>.</summary>
+    internal static string Thumbprint(RSA rsa) =>
+        Base64UrlEncoder.Encode(SHA256.HashData(rsa.ExportSubjectPublicKeyInfo()))[..AuthDefaults.KeyThumbprintLength];
 }

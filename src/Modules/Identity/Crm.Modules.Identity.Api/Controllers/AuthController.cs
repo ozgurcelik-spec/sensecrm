@@ -8,6 +8,7 @@ using Crm.Modules.Identity.Domain;
 using Crm.Shared.Contracts.Configuration;
 using Crm.Shared.Kernel.Results;
 using Crm.Shared.Web.Controllers;
+using Crm.Shared.Web.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -39,6 +40,8 @@ public sealed record RefreshRequest(string RefreshToken);
 public sealed record SwitchOrganizationRequest(Guid OrganizationId);
 
 public sealed record UpdateMeRequest(string? DisplayName, string? Locale);
+
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 /// <summary>Kayıt, giriş, token yenileme, çıkış, organizasyon değiştirme. Anonim uçlar IP bazlı hız sınırlıdır.</summary>
 [ApiVersion(ApiRoutes.DefaultVersion)]
@@ -112,6 +115,7 @@ public sealed class AuthController(IRegistrationPolicy registration) : ApiContro
 public sealed class MeController : ApiControllerBase
 {
     [HttpGet]
+    [AllowWhenPasswordChangeRequired]
     [ProducesResponseType<MeDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken ct) => FromResult(await Dispatcher.Query(new GetMeQuery(), ct));
 
@@ -119,6 +123,37 @@ public sealed class MeController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update([FromBody] UpdateMeRequest request, CancellationToken ct) =>
         FromResult(await Dispatcher.Send(new UpdateMeCommand(request.DisplayName, request.Locale), ct));
+
+    /// <summary>
+    /// Parola değiştirme: mevcut parola doğrulanır (yanlış → 401 <c>auth.invalid_credentials</c>), politika ihlali → 400 <c>validation</c>
+    /// (alan <c>newPassword</c>). Başarıda kullanıcının TÜM oturumları kapanır ve aktif organizasyon için yeni <c>AuthResponse</c> döner;
+    /// <c>MustChangePassword</c> temizlenir.
+    /// </summary>
+    [HttpPost("password")]
+    [AllowWhenPasswordChangeRequired]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "no-store";
+        return FromResult(await Dispatcher.Send(
+            new ChangePasswordCommand(request.CurrentPassword, request.NewPassword, Request.Headers.UserAgent.ToString() is { Length: > 0 } ua ? ua : null, HttpContext.Connection.RemoteIpAddress?.ToString()), ct));
+    }
+
+    /// <summary>Hesap sahibinin bekleyen organizasyon davetleri (başka organizasyonların yöneticisi tarafından açılmış).</summary>
+    [HttpGet("invitations")]
+    [AllowWhenPasswordChangeRequired]
+    [ProducesResponseType<IReadOnlyList<InvitationDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListInvitations(CancellationToken ct) => FromResult(await Dispatcher.Query(new ListMyInvitationsQuery(), ct));
+
+    [HttpPost("invitations/{id:guid}/accept")]
+    [AllowWhenPasswordChangeRequired]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AcceptInvitation(Guid id, CancellationToken ct) => FromResult(await Dispatcher.Send(new AcceptInvitationCommand(id), ct));
+
+    [HttpPost("invitations/{id:guid}/decline")]
+    [AllowWhenPasswordChangeRequired]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeclineInvitation(Guid id, CancellationToken ct) => FromResult(await Dispatcher.Send(new DeclineInvitationCommand(id), ct));
 }
 
 /// <summary>Birleşik izin kataloğu (tüm modüller): [{ key, group }].</summary>
