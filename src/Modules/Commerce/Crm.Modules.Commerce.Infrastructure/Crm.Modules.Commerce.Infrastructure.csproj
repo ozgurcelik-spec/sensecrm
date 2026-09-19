@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Crm.Modules.Commerce.Contracts/Crm.Modules.Commerce.Contracts.csproj" />
+    <ProjectReference Include="../Crm.Modules.Commerce.Domain/Crm.Modules.Commerce.Domain.csproj" />
+    <ProjectReference Include="../Crm.Modules.Commerce.Application/Crm.Modules.Commerce.Application.csproj" />
+    <ProjectReference Include="../../Identity/Crm.Modules.Identity.Contracts/Crm.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="../../Sales/Crm.Modules.Sales.Contracts/Crm.Modules.Sales.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Crm.Shared.Kernel/Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Crm.Shared.Infrastructure/Crm.Shared.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+
+</Project>

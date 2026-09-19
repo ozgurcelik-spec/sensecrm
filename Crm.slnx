@@ -12,6 +12,13 @@
     <Project Path="src/Modules/Activities/Crm.Modules.Activities.Domain/Crm.Modules.Activities.Domain.csproj" />
     <Project Path="src/Modules/Activities/Crm.Modules.Activities.Infrastructure/Crm.Modules.Activities.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Commerce/">
+    <Project Path="src/Modules/Commerce/Crm.Modules.Commerce.Api/Crm.Modules.Commerce.Api.csproj" />
+    <Project Path="src/Modules/Commerce/Crm.Modules.Commerce.Application/Crm.Modules.Commerce.Application.csproj" />
+    <Project Path="src/Modules/Commerce/Crm.Modules.Commerce.Contracts/Crm.Modules.Commerce.Contracts.csproj" />
+    <Project Path="src/Modules/Commerce/Crm.Modules.Commerce.Domain/Crm.Modules.Commerce.Domain.csproj" />
+    <Project Path="src/Modules/Commerce/Crm.Modules.Commerce.Infrastructure/Crm.Modules.Commerce.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Identity/">
     <Project Path="src/Modules/Identity/Crm.Modules.Identity.Api/Crm.Modules.Identity.Api.csproj" />
     <Project Path="src/Modules/Identity/Crm.Modules.Identity.Application/Crm.Modules.Identity.Application.csproj" />
@@ -53,6 +60,7 @@
   </Folder>
   <Folder Name="/tests/Modules/">
     <Project Path="tests/Modules/Crm.Modules.Activities.Tests/Crm.Modules.Activities.Tests.csproj" />
+    <Project Path="tests/Modules/Crm.Modules.Commerce.Tests/Crm.Modules.Commerce.Tests.csproj" />
     <Project Path="tests/Modules/Crm.Modules.Identity.Tests/Crm.Modules.Identity.Tests.csproj" />
     <Project Path="tests/Modules/Crm.Modules.Marketing.Tests/Crm.Modules.Marketing.Tests.csproj" />
     <Project Path="tests/Modules/Crm.Modules.Sales.Tests/Crm.Modules.Sales.Tests.csproj" />

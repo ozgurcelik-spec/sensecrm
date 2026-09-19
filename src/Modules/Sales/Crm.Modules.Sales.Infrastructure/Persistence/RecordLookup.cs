@@ -67,3 +67,29 @@ public sealed class RecordLookup(SalesDbContext db) : IRecordLookup
     private static string FullName(string? firstName, string lastName) =>
         string.Join(' ', new[] { firstName, lastName }.Where(p => !string.IsNullOrWhiteSpace(p)));
 }
+
+/// <summary>
+/// <see cref="IRecordRelationLookup"/> uygulaması: kiracı + yumuşak silme filtresi altında, yalnız gereken sütunları okur.
+/// </summary>
+public sealed class RecordRelationLookup(SalesDbContext db) : IRecordRelationLookup
+{
+    public async Task<ContactLink?> GetContactAsync(Guid contactId, CancellationToken cancellationToken = default)
+    {
+        var contact = await db.Contacts.AsNoTracking()
+            .Where(c => c.Id == contactId)
+            .Select(c => new { c.Id, c.FirstName, c.LastName, c.AccountId })
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        return contact is null
+            ? null
+            : new ContactLink(contact.Id, string.Join(' ', new[] { contact.FirstName, contact.LastName }.Where(p => !string.IsNullOrWhiteSpace(p))), contact.AccountId);
+    }
+
+    public async Task<DealLink?> GetDealAsync(Guid dealId, CancellationToken cancellationToken = default)
+    {
+        var deal = await db.Deals.AsNoTracking()
+            .Where(d => d.Id == dealId)
+            .Select(d => new { d.Id, d.Name, d.AccountId, d.ContactId, d.Currency })
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        return deal is null ? null : new DealLink(deal.Id, deal.Name, deal.AccountId, deal.ContactId, deal.Currency);
+    }
+}

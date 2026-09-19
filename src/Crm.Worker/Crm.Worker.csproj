@@ -9,6 +9,7 @@
     <ProjectReference Include="../Modules/Identity/Crm.Modules.Identity.Infrastructure/Crm.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Sales/Crm.Modules.Sales.Infrastructure/Crm.Modules.Sales.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Activities/Crm.Modules.Activities.Infrastructure/Crm.Modules.Activities.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Commerce/Crm.Modules.Commerce.Infrastructure/Crm.Modules.Commerce.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Workflows/Crm.Modules.Workflows.Infrastructure/Crm.Modules.Workflows.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Marketing/Crm.Modules.Marketing.Infrastructure/Crm.Modules.Marketing.Infrastructure.csproj" />
   </ItemGroup>

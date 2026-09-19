@@ -83,6 +83,14 @@ builder.Services.AddMarketingContractServices();
 builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Sales.Contracts.LeadConverted>, Crm.Modules.Marketing.Application.Members.LeadConvertedMarketingHandler>();
 builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<Crm.Modules.Marketing.Infrastructure.Persistence.MarketingDbContext>>();
 
+// Commerce (Milestone 6A): outbox'ı boşaltır (QuoteAccepted, SalesOrderCreated; M6A'da tüketici yok, sonraki kartlar/workflow dinler).
+builder.Services.AddModuleDbContext<Crm.Modules.Commerce.Infrastructure.Persistence.CommerceDbContext>(builder.Configuration, Crm.Modules.Commerce.Infrastructure.Persistence.CommerceDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    Crm.Modules.Commerce.Infrastructure.Persistence.CommerceDbContext.SchemaName,
+    typeof(Crm.Modules.Commerce.Domain.IProductRepository).Assembly,
+    typeof(Crm.Modules.Commerce.Contracts.CommercePermissions).Assembly);
+builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<Crm.Modules.Commerce.Infrastructure.Persistence.CommerceDbContext>>();
+
 await builder.Build().RunAsync();
 
 namespace Crm.Worker

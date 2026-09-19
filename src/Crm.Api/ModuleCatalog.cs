@@ -1,4 +1,5 @@
 using Crm.Modules.Activities.Api;
+using Crm.Modules.Commerce.Api;
 using Crm.Modules.Identity.Api;
 using Crm.Modules.Marketing.Api;
 using Crm.Modules.Sales.Api;
@@ -20,5 +21,6 @@ public static class ModuleCatalog
         new ActivitiesModule(),
         new WorkflowsModule(),
         new MarketingModule(),
+        new CommerceModule(),
     ];
 }
