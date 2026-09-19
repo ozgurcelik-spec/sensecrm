@@ -1,0 +1,18 @@
+# TLS termination with Caddy (automatic certificates from your internal CA or ACME). Run Caddy on the same host as the stack
+# (or on a separate edge host); it is the ONLY component that faces users. The web container publishes 127.0.0.1:8080 by default.
+#
+# Internal CA: replace the `tls` line with `tls /etc/caddy/crm.crt /etc/caddy/crm.key` (certificate + key issued by your PKI).
+crm.company.local {
+	encode zstd gzip
+
+	# Caddy sets X-Forwarded-For / X-Forwarded-Proto automatically. The web container trusts them only from TRUSTED_PROXY_CIDR
+	# (deploy/.env): for Caddy on the same host that is the default; for another host set it to Caddy's address.
+	reverse_proxy 127.0.0.1:8080 {
+		header_up Host {host}
+	}
+
+	# HSTS is emitted by the web container when it sees X-Forwarded-Proto=https, so it is not repeated here.
+	log {
+		output file /var/log/caddy/crm-access.log
+	}
+}

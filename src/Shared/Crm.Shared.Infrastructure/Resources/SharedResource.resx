@@ -40,6 +40,7 @@
   <data name="auth.email_taken" xml:space="preserve"><value>Bu e-posta adresiyle bir hesap zaten var.</value></data>
   <data name="auth.locked_out" xml:space="preserve"><value>Çok fazla hatalı deneme. Hesap {minutes} dakika kilitlendi.</value></data>
   <data name="auth.user_disabled" xml:space="preserve"><value>Hesap devre dışı.</value></data>
+  <data name="auth.signup_disabled" xml:space="preserve"><value>Herkese açık kayıt kapalı. Organizasyon açtırmak için sistem yöneticinizle iletişime geçin.</value></data>
   <data name="auth.no_active_organization" xml:space="preserve"><value>Hesabınızın aktif üyesi olduğu bir organizasyon yok.</value></data>
   <!-- Roller ve üyeler -->
   <data name="role.system_readonly" xml:space="preserve"><value>Sistem rolleri değiştirilemez veya silinemez.</value></data>

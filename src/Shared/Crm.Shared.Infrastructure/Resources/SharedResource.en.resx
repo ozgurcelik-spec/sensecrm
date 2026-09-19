@@ -40,6 +40,7 @@
   <data name="auth.email_taken" xml:space="preserve"><value>An account with this e-mail address already exists.</value></data>
   <data name="auth.locked_out" xml:space="preserve"><value>Too many failed attempts. The account is locked for {minutes} minutes.</value></data>
   <data name="auth.user_disabled" xml:space="preserve"><value>The account is disabled.</value></data>
+  <data name="auth.signup_disabled" xml:space="preserve"><value>Public sign-up is disabled. Contact your system administrator to have an organization created.</value></data>
   <data name="auth.no_active_organization" xml:space="preserve"><value>Your account is not an active member of any organization.</value></data>
   <!-- Roles and members -->
   <data name="role.system_readonly" xml:space="preserve"><value>System roles cannot be changed or deleted.</value></data>

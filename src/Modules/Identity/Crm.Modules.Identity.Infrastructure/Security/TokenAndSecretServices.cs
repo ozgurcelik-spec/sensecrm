@@ -90,5 +90,17 @@ public sealed class SecretGenerator : ISecretGenerator
 
     public string Hash(string token) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
+    // Karışabilen karakterler (0/O, 1/l/I) yok; tek seferlik parola telefonla/kâğıttan okunabilsin.
+    private const string PasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+
+    public string NewPassword(int length = IdentityDefaults.GeneratedPasswordLength) =>
+        string.Create(length, PasswordAlphabet, static (span, alphabet) =>
+        {
+            for (var i = 0; i < span.Length; i++)
+            {
+                span[i] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];
+            }
+        });
+
     public string NewSuffix() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(SuffixBytes));
 }

@@ -25,6 +25,9 @@ public interface ISecretGenerator
 
     string Hash(string token);
 
+    /// <summary>Tek seferlik parola (okunabilir, karışabilen karakterler hariç); yalnız bir kez gösterilir.</summary>
+    string NewPassword(int length = IdentityDefaults.GeneratedPasswordLength);
+
     /// <summary>Kısa rastgele sonek (slug çakışmalarında).</summary>
     string NewSuffix();
 }

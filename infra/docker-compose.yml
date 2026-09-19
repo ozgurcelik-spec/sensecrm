@@ -2,7 +2,8 @@ name: crm
 
 # Port kalıbı: host'a yayınlanan her port "standart port + 10000" (Postgres 5432 -> 15432, Redis 6379 -> 16379).
 # Geliştirici makinesindeki yerel Postgres/Redis ile çakışmayı önler. Container-içi portlar değişmez; .env ile ezilebilir.
-# Bu dosyadaki parolalar yalnızca yerel geliştirme içindir.
+# Bu dosyadaki parolalar yalnızca yerel geliştirme içindir. Yayınlanan portlar yalnız 127.0.0.1'e bağlıdır (ağdaki başka makineler erişemez);
+# üretim için deploy/docker-compose.prod.yml kullanılır.
 #
 # Başlatma:  docker compose -f infra/docker-compose.yml up -d
 # Şema:      dotnet run --project src/Crm.Migrator
@@ -24,7 +25,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-crm}
       TZ: Europe/Istanbul
     ports:
-      - "${POSTGRES_PORT:-15432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-15432}:5432"
     volumes:
       - crm_pg:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
@@ -40,7 +41,7 @@ services:
     container_name: crm-redis
     command: ["redis-server", "--appendonly", "no", "--save", ""]
     ports:
-      - "${REDIS_PORT:-16379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-16379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -80,7 +81,7 @@ services:
       CONDUCTOR_DB_PASSWORD: ${POSTGRES_PASSWORD:-crm}
       JAVA_OPTS: -Xms256m -Xmx768m
     ports:
-      - "${CONDUCTOR_PORT:-18090}:8080"
+      - "127.0.0.1:${CONDUCTOR_PORT:-18090}:8080"
     volumes:
       - ./conductor/config-postgres.properties:/app/config/config-postgres.properties:ro
     healthcheck:

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { AxiosError, AxiosHeaders } from "axios";
 import { renderWithProviders } from "@/test-utils";
 import { useAuthStore } from "@/store/auth.store";
+import { getAuthConfig } from "@/services/auth.service";
 import LoginPage from "./login";
 
 // Non-React code (getApiErrorMessage) translates through `@/i18n`; use the in-memory test instance.
@@ -11,6 +12,13 @@ vi.mock("@/i18n", async () => ({ default: (await import("@/test-utils")).testI18
 
 // LoginPage only reads `login` / `isAuthenticated` through selectors - a selector-applying mock is enough.
 vi.mock("@/store/auth.store", () => ({ useAuthStore: vi.fn() }));
+
+// The sign-up link depends on GET /auth/config (Registration:Mode); the service is mocked per test.
+vi.mock("@/services/auth.service", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/auth.service")>()),
+  getAuthConfig: vi.fn(),
+}));
+const getAuthConfigMock = getAuthConfig as unknown as ReturnType<typeof vi.fn>;
 
 const navigateMock = vi.fn();
 vi.mock("react-router", async (importOriginal) => {
@@ -35,6 +43,8 @@ function problem(status: number, data: Record<string, unknown>): AxiosError {
 describe("LoginPage", () => {
   beforeEach(() => {
     loginMock.mockReset();
+    getAuthConfigMock.mockReset();
+    getAuthConfigMock.mockResolvedValue({ signupEnabled: true });
     navigateMock.mockReset();
     const state = { login: loginMock, isAuthenticated: () => false, me: null };
     mockUseAuthStore.mockImplementation((selector: (s: typeof state) => unknown) =>
@@ -86,5 +96,43 @@ describe("LoginPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("E-posta veya parola hatalı");
     expect(navigateMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("LoginPage sign-up link", () => {
+  beforeEach(() => {
+    loginMock.mockReset();
+    getAuthConfigMock.mockReset();
+    const state = { login: loginMock, isAuthenticated: () => false, me: null };
+    mockUseAuthStore.mockImplementation((selector: (s: typeof state) => unknown) =>
+      selector(state)
+    );
+  });
+
+  it("shows the sign-up link when the API reports sign-up as enabled", async () => {
+    getAuthConfigMock.mockResolvedValue({ signupEnabled: true });
+    renderWithProviders(<LoginPage />, { route: "/login" });
+
+    const link = await screen.findByRole("link", { name: "Ücretsiz kaydolun" });
+    expect(link).toHaveAttribute("href", "/signup");
+  });
+
+  it("hides the sign-up link when the API reports sign-up as disabled", async () => {
+    getAuthConfigMock.mockResolvedValue({ signupEnabled: false });
+    renderWithProviders(<LoginPage />, { route: "/login" });
+
+    await waitFor(() => expect(getAuthConfigMock).toHaveBeenCalled());
+    // Let the query settle, then make sure neither the link nor its prompt is rendered.
+    await screen.findByRole("button", { name: "Giriş yap" });
+    await waitFor(() => expect(screen.queryByRole("link", { name: "Ücretsiz kaydolun" })).toBeNull());
+    expect(screen.queryByText("Hesabınız yok mu?")).toBeNull();
+  });
+
+  it("keeps the link hidden when the config request fails (closed by default)", async () => {
+    getAuthConfigMock.mockRejectedValue(new Error("network"));
+    renderWithProviders(<LoginPage />, { route: "/login" });
+
+    await waitFor(() => expect(getAuthConfigMock).toHaveBeenCalled());
+    expect(screen.queryByRole("link", { name: "Ücretsiz kaydolun" })).toBeNull();
   });
 });

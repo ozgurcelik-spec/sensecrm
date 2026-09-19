@@ -50,7 +50,7 @@ public sealed class User : AggregateRoot<Guid>
 
     public DateTime? LastLoginAt { get; private set; }
 
-    /// <summary>Ürün (platform) ekibi hesabı; bugün yalnız bilgi amaçlıdır (GET /me), kiracı verisine ek erişim vermez.</summary>
+    /// <summary>Ürün (platform) ekibi hesabı; POST /platform/organizations ile organizasyon açabilir; kiracı verisine ek erişim vermez.</summary>
     public bool IsPlatformAdmin { get; private set; }
 
     public bool IsActive { get; private set; }
@@ -119,6 +119,12 @@ public sealed class User : AggregateRoot<Guid>
     }
 
     public void SetDefaultTenant(Guid tenantId) => DefaultTenantId = tenantId;
+
+    /// <summary>
+    /// Hesabı platform yöneticisi yapar (Production'da kendi kendine kayıt kapalıyken organizasyon açabilen ürün/işletim ekibi hesabı).
+    /// İdempotenttir; yalnız işletim aracı (Migrator <c>create-platform-admin</c>) çağırır, HTTP'den yükseltme yolu yoktur.
+    /// </summary>
+    public void GrantPlatformAdmin() => IsPlatformAdmin = true;
 
     private static string NewStamp() => Guid.NewGuid().ToString("N");
 }

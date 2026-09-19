@@ -12,6 +12,7 @@ public static class HostConstants
     public const string HealthReadyTag = "ready";
     public const string OpenApiRoutePattern = "/openapi/{documentName}.json";
     public const string ScalarPath = "/scalar";
+    public const string DocsEnabledKey = "Docs:Enabled";
     public const string ApiTitle = "CRM API";
     public const string StartupFailedMessage = "Crm.Api failed to start";
 }

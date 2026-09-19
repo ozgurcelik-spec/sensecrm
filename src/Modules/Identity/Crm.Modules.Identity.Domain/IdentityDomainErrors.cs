@@ -12,6 +12,9 @@ public static class IdentityErrors
     public const string LockedOut = "auth.locked_out";
     public const string UserDisabled = "auth.user_disabled";
 
+    /// <summary>Kendi kendine kayıt kapalı (Registration:Mode=disabled; Production varsayılanı).</summary>
+    public const string SignupDisabled = "auth.signup_disabled";
+
     /// <summary>Parola doğru ama kullanıcının aktif üyeliği olan organizasyon yok.</summary>
     public const string NoActiveOrganization = "auth.no_active_organization";
 

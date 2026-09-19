@@ -1,5 +1,7 @@
 using Crm.Migrator;
 using Crm.Modules.Activities.Infrastructure.Persistence;
+using Crm.Modules.Identity.Application;
+using Crm.Modules.Identity.Infrastructure;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Modules.Workflows.Infrastructure.Persistence;
@@ -9,12 +11,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-// Kullanım: dotnet run --project src/Crm.Migrator -- [migrate|reset]
+// Kullanım: dotnet run --project src/Crm.Migrator -- [migrate|reset|create-platform-admin]
 // Yeni modül eklendiğinde DbContext'i buraya da kaydedilir (build/new-module.ps1 çıktısındaki adımlar).
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
 builder.Services.AddCrmCore(builder.Configuration);
 builder.Services.AddAuditStore(builder.Configuration);
 builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, IdentityDbContext.SchemaName);
+// create-platform-admin için: Identity provisioning servisleri + tüm modüllerin izin kataloğu + outbox çözümlemesi (OrganizationCreated).
+builder.Services.AddIdentityProvisioning(builder.Configuration);
+builder.Services.AddSingleton<IPermissionCatalog, PlatformAdminCommand.StaticPermissionCatalog>();
+builder.Services.AddModuleHandlers(
+    IdentityDbContext.SchemaName,
+    typeof(Crm.Modules.Identity.Domain.IUserRepository).Assembly,
+    typeof(Crm.Modules.Identity.Contracts.OrgPermissions).Assembly);
 builder.Services.AddModuleDbContext<SalesDbContext>(builder.Configuration, SalesDbContext.SchemaName);
 builder.Services.AddModuleDbContext<ActivitiesDbContext>(builder.Configuration, ActivitiesDbContext.SchemaName);
 builder.Services.AddModuleDbContext<WorkflowsDbContext>(builder.Configuration, WorkflowsDbContext.SchemaName);
@@ -27,6 +36,15 @@ switch (command)
 {
     case MigratorConstants.MigrateCommand:
         await MigrationRunner.MigrateAllAsync(host.Services, logger);
+        break;
+
+    case PlatformAdminCommand.Name:
+        var exitCode = await PlatformAdminCommand.RunAsync(host.Services, logger, CancellationToken.None);
+        if (exitCode != 0)
+        {
+            return exitCode;
+        }
+
         break;
 
     case MigratorConstants.ResetCommand when host.Services.GetRequiredService<IHostEnvironment>().IsDevelopment():

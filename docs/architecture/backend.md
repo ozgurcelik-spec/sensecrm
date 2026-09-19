@@ -1,6 +1,6 @@
 # Backend (.NET) — mimari özet ve HTTP sözleşmesi
 
-Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli), Milestone 2 (satış çekirdeği), Milestone 3 (aktiviteler + raporlar) ve Milestone 4 (workflow'lar: Conductor OSS) sonunda backend'in gerçek durumunu anlatır.
+Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli), Milestone 2 (satış çekirdeği), Milestone 3 (aktiviteler + raporlar), Milestone 4 (workflow'lar: Conductor OSS) ve Milestone 5 (pilot yayın: paketleme/dağıtım) sonunda backend'in gerçek durumunu anlatır.
 Altyapı, senseik (HR SaaS) deposundan taşınmıştır: aynı teknoloji yığını (.NET 10, EF Core + Npgsql, xUnit v3) ve aynı proje yapısı.
 
 ## 1. Proje yapısı
@@ -26,7 +26,9 @@ tests/
   Crm.Tests.TenantIsolation/   EF modelinde kiracı filtresi/indeks denetimi (veritabanısız)
   Crm.Tests.Shared/            Testcontainers (postgres:17-alpine) + WebApplicationFactory<Program> + Respawn
   Modules/                     Crm.Modules.Identity.Tests + Crm.Modules.Sales.Tests + Crm.Modules.Activities.Tests + Crm.Modules.Workflows.Tests (birim + HTTP entegrasyon; sahte workflow motoruyla), Shared.Kernel/Infrastructure testleri
-infra/docker-compose.yml       postgres + redis + Conductor OSS (host portları standart + 10000; Conductor 18090)
+infra/docker-compose.yml       geliştirme: postgres + redis + Conductor OSS (host portları standart + 10000, yalnız 127.0.0.1; Conductor 18090)
+deploy/                        üretim (M5): docker-compose.prod.yml, .env.example, generate-secrets.*, backup.*, restore.md, smoke.sh, tls/ (bkz. §15)
+docs/operations/runbook.md     kurulum, yedek/geri yükleme, yükseltme, izleme, sorun giderme (Türkçe)
 build/smoke-workflows.ps1      Gerçek Conductor'a karşı canlı duman testi (M4)
 build/new-module.ps1           Yeni modül iskeleti
 ```
@@ -68,6 +70,7 @@ dotnet test Crm.slnx                                      # entegrasyon testleri
 ```
 
 - Geliştirme bağlantısı `appsettings.Development.json` içindedir (yalnız yerel compose parolası). Üretimde `ConnectionStrings__Database` ve `Auth__SigningKeyPem` ortam değişkeniyle verilir; depoda gizli bilgi yoktur.
+- **Üretim başlangıç korumaları (M5):** `Auth:SigningKeyPem` yoksa API başlamaz (Development/Testing hariç); `ConnectionStrings:Database` (appsettings'teki boş şablon değeri dâhil) eksikse Api/Worker/Migrator başlamaz — bu yüzden `dotnet ef` komutları bağlantı dizesi veya `DOTNET_ENVIRONMENT=Development` ister; geçersiz `Registration:Mode` başlatmaz. `/run/secrets/<Ad>` dosyaları yapılandırma anahtarı olur (`__` → `:`, örn. `Auth__SigningKeyPem`). Ters vekil arkasında `ForwardedHeaders:Enabled=true` + `KnownProxies`/`KnownNetworks` (varsayılan kapalı) istemci IP'sini doğru okutur. Dağıtım: [runbook.md](../operations/runbook.md), [m5-pilot-yayin.md](../plan/m5-pilot-yayin.md).
 - JWT (RS256): `Auth:SigningKeyPem` boşsa yalnız Development/Testing'de süreç başına geçici anahtar üretilir; diğer ortamlarda uygulama başlamaz. Issuer `crm`, audience `crm-api`.
 - Web geliştirme sunucusu `/api` isteklerini `http://localhost:5080`'e yönlendirir; CORS `http://localhost:5173` için açıktır (`Cors:AllowedOrigins`).
 - Migration üretimi (yerel araç `dotnet-ef`, `dotnet-tools.json`):
@@ -102,6 +105,7 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 | `forbidden` | 403 | İzin yok / üyesi olunmayan organizasyona geçiş |
 | `not_found` | 404 | Kayıt yok **veya başka organizasyona ait** (varlık sızdırılmaz) |
 | `auth.email_taken` | 409 | Kayıtta e-posta zaten var |
+| `auth.signup_disabled` | 403 | Herkese açık kayıt kapalı (`Registration:Mode=disabled`, Production varsayılanı; M5) |
 | `member.exists` | 409 | Kullanıcı zaten organizasyon üyesi |
 | `role.in_use` | 409 | Rol üyelere atanmış |
 | `role.name_taken` | 409 | Rol adı kullanımda |
@@ -110,7 +114,8 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 | `general.rate_limit_exceeded` | 429 | Auth uçları IP başına dakikada 20 istek (`RateLimiting:Auth`) |
 
 ### Kimlik doğrulama (anonim, hız sınırlı)
-- `POST /auth/signup` `{ organizationName, displayName, email, password, locale }` → `AuthResponse`. Yeni organizasyon (slug adından türetilir, `defaultLocale = locale`, `timeZone = Europe/Istanbul`), sistem rolleri (`Administrator`, `Standard`) ve kullanıcı Administrator olarak oluşur. Parola ≥ 8 karakter; `locale` `tr|en`.
+- `POST /auth/signup` `{ organizationName, displayName, email, password, locale }` → `AuthResponse`. Yeni organizasyon (slug adından türetilir, `defaultLocale = locale`, `timeZone = Europe/Istanbul`), sistem rolleri (`Administrator`, `Standard`) ve kullanıcı Administrator olarak oluşur. Parola ≥ 8 karakter; `locale` `tr|en`. **Yalnız `Registration:Mode=open` iken (Development/Testing varsayılanı); kapalıyken (Production varsayılanı) girdi doğrulamasından önce `403 auth.signup_disabled`** (M5).
+- `GET /auth/config` → `{ signupEnabled }` (anonim; `Cache-Control: public, max-age=60`, gizli bilgi yok; web "kaydol" bağlantısını buna göre gösterir). Diğer tüm `/auth/*` yanıtları `Cache-Control: no-store` taşır.
 - `POST /auth/login` `{ email, password }` → `AuthResponse` (son kullanılan, yoksa ilk aktif organizasyon).
 - `POST /auth/refresh` `{ refreshToken }` → `AuthResponse`. Döner (rotating) token; kullanılmış token tekrar gelirse tüm aile iptal edilir.
 - `POST /auth/logout` `{ refreshToken }` → 204 (bilinmeyen token için de 204).
@@ -132,7 +137,11 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 - `GET /organization/audit?page=1&pageSize=50` → `{ items: [{ id, entityType, entityId, action, userId?, userDisplayName?, changes, occurredAt }], total }` (`org.audit.read`), en yeni önce. `action`: `created|updated|deleted`; `changes`: `{ "<alan>": { "old": ..., "new": ... } }` (alan adları camelCase; oluşturmada `old: null`, silmede `new: null`).
 
 ### Sağlık ve dokümantasyon
-`/health`, `/health/live`, `/health/ready` (Npgsql), `/openapi/v1.json`, `/scalar`.
+`/health`, `/health/live`, `/health/ready` (Npgsql). `/openapi/v1.json` ve `/scalar` yalnız Development/Testing ortamında veya `Docs:Enabled=true` ile açılır (Production varsayılanı: kapalı).
+
+### Platform yöneticisi (M5)
+- `POST /platform/organizations` `{ organizationName, adminDisplayName, adminEmail, adminPassword|null, locale }` → 201 `{ organizationId, name, slug, adminUserId, adminEmail, adminAccountCreated, generatedPassword? }`; `Cache-Control: no-store`. Yalnız `isPlatformAdmin` hesaplar (JWT bayrağı yetmez: handler kullanıcıyı ve bayrağı veritabanından doğrular; aksi `403 forbidden`). Yeni organizasyon + sistem rolleri + `OrganizationCreated` olayı (varsayılan huni) + Administrator üyeliği oluşur; yazma **yeni organizasyonun kiracı kapsamında** yapılır (platform yöneticisinin kendi kiracısı bağlamında başka kiracıya yazmak `AuditTenantInterceptor` tarafından reddedilirdi) ve denetim kaydı yeni organizasyona düşer. `adminPassword: null` → tek seferlik parola üretilir ve yalnız bu yanıtta döner; e-posta zaten bir hesapsa hesap değişmez, yalnız üyelik eklenir (`adminAccountCreated=false`).
+- İlk platform yöneticisi HTTP ile değil Migrator komutuyla oluşur: `dotnet Crm.Migrator.dll create-platform-admin` (`PLATFORM_ADMIN_EMAIL`, `PLATFORM_ADMIN_PASSWORD` veya `PLATFORM_ADMIN_PASSWORD_FILE`, isteğe bağlı `PLATFORM_ADMIN_NAME`, `PLATFORM_ORG_NAME`; idempotent; parola ≥ 12 karakter; yeni hesap için "Platform" işletim organizasyonu açılır).
 
 ## 6. Kiracı izolasyonu ve denetim
 
@@ -144,7 +153,7 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 ## 7. Açık işler
 - Kayıt sahipliği bazlı görünürlük/rol hiyerarşisi (K7), organizasyon grubu ve konsolidasyon (K4), PostgreSQL RLS (K2 ikinci savunma hattı).
 - E-posta ile davet, parola sıfırlama, MFA; SSO (K6).
-- Üretim gözlemlenebilirliği; Dockerfile'lar taşındı ama henüz bir imaj derlemesiyle doğrulanmadı.
+- Üretim gözlemlenebilirliği (metrik/iz/merkezî log). Dockerfile'lar M5'te derlenip paketli yığında doğrulandı (bkz. §15).
 - Workflows açık işleri: bkz. §13 sonu.
 - Activities/rapor açık işleri: bağlı kaydı silinmiş aktivitelerin temizlik işi (ilişki bugün yumuşak: `relatedName` boş döner), tekrarlayan görevler, hatırlatma bildirimleri (bildirim altyapısı M4+); aktivite listesindeki `relatedName` bağlı kaydın okuma iznine bakmaz (`crm.activities.read` yeter); raporlar çok para birimli tutarı ayırmadan toplar (M2 sınırlaması); rapor sorguları büyük kiracılar için henüz önbelleklenmez.
 - Sales açık işleri: yinelenen firma/kişi tespiti, CSV içe aktarma, özel alanlar (kapsam dışı, bkz. [m2-satis-cekirdegi.md](../plan/m2-satis-cekirdegi.md)); pano `totalAmount` alanı para birimlerini ayırmadan toplar (TRY gösterimi; çok para birimli toplam sonraki iş); `GET /organization/members` hâlâ `org.users.read` ister (Administrator ve Standard'da var; bu izni taşımayan özel rollerde sahip seçici çalışmaz).
@@ -333,3 +342,11 @@ HTTP sözleşmesinin bağlayıcı kaynağı [m4-workflow.md](../plan/m4-workflow
 - `Activities`: `IActivityCreator` (+ `ActivityCreator`; aynı kurallar: aktif üye, ilişkili kayıt var). `Identity`: `IRoleMemberLookup` (+ `RoleMemberLookup`); yeni izinler `org.workflows.manage`, `crm.approvals.decide` (Administrator tümünü alır, Standard almaz; mevcut organizasyonlar API açılışında `SystemRolePermissionSynchronizer` ile senkronlanır); `GET /permissions` 18 anahtar.
 - Altyapı: `infra/docker-compose.yml`'a Conductor OSS (+ `conductor-db-init`), `infra/conductor/config-postgres.properties`; `Directory.Packages.props`'a `Microsoft.Extensions.Http.Resilience`; `appsettings`'e `Conductor` bölümü (Api + Worker) ve `Polly`/`HttpClient` log seviyesi.
 - **Açık işler:** çok adımlı/sıralı onay zincirleri, onayın aşama geçişini engellemesi, zamanlanmış tetikleyiciler, e-posta/SMS bildirimi, Conductor kimlik doğrulaması/çok kiracılı Conductor (kapsam dışı, bkz. plan); onay verilince onaylayıcının açık "Fırsat onayı" **görevi** kendiliğinden tamamlanmaz (kullanıcı tamamlar); görev işleyicileri at-least-once (yalnız onay kaydı idempotent; çökme anında takip görevi/not ikilenebilir); çok Worker örneğinde round-robin adaleti küçük sapabilir (advisory lock yok); durum senkronu poll tabanlıdır (webhook/`workflowStatusListener` yok, gecikme en çok ~5 sn); Conductor üretim kurulumu (Redis/Elasticsearch, kimlik doğrulama, Helm) K13 kapsamındadır.
+
+## 15. Milestone 5'te değişenler (pilot yayın)
+
+Ayrıntı: [m5-pilot-yayin.md](../plan/m5-pilot-yayin.md); işletim: [runbook.md](../operations/runbook.md).
+- **Identity:** `Registration:Mode` (`RegistrationOptions`, `IRegistrationPolicy`; boş = Development/Testing açık, diğerleri kapalı), `GET /auth/config`, `auth.signup_disabled`; `OrganizationProvisioner` (slug + kiracı + sistem rolleri + `OrganizationCreated`; signup, platform ucu ve Migrator ortak kullanır), `POST /platform/organizations` (`CreateOrganizationHandler`), `PlatformAdminBootstrapper` (Migrator `create-platform-admin`), `User.GrantPlatformAdmin()`, `ISecretGenerator.NewPassword`, `AddIdentityProvisioning` (API ve Migrator ortak DI).
+- **Host:** `ForwardedHeaders` (`ForwardedHeadersSetup`), `NoStoreAuthMiddleware`, `Docs:Enabled`, `AddKeyPerFile("/run/secrets")`; Worker `HeartbeatService` (konteyner `HEALTHCHECK` sinyali); `RequireConnectionString` boş değeri reddeder; Migrator `create-platform-admin` komutu ve `Dockerfile`.
+- **Paketleme:** `src/Crm.{Api,Worker,Migrator}/Dockerfile`, `web/Dockerfile` + `web/nginx/`, `.dockerignore`, `deploy/` (compose, sır üreticiler, yedek/geri yükleme, TLS örnekleri, duman testi), `.github/workflows/ci.yml`.
+- **Testler:** `Crm.Modules.Identity.Tests` — `PlatformApiTests`, `HostHardeningTests`.

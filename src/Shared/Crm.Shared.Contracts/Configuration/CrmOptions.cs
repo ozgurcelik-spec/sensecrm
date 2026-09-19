@@ -13,6 +13,8 @@ public static class ConfigurationSections
     public const string Cors = "Cors";
     public const string Identity = "Identity";
     public const string RateLimiting = "RateLimiting";
+    public const string Registration = "Registration";
+    public const string ForwardedHeaders = "ForwardedHeaders";
 }
 
 public static class ConnectionStringNames

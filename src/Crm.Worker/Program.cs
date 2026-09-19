@@ -68,6 +68,8 @@ builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<WorkflowsDbCon
 builder.Services.AddWorkflowDefinitionRegistration();
 builder.Services.AddHostedService<Crm.Worker.Workflows.ConductorTaskPollingService>();
 builder.Services.AddHostedService<Crm.Worker.Workflows.ExecutionStatusSyncService>();
+// Konteyner HEALTHCHECK için canlılık sinyali (HTTP ucu yok).
+builder.Services.AddHostedService<Crm.Worker.HeartbeatService>();
 
 await builder.Build().RunAsync();
 

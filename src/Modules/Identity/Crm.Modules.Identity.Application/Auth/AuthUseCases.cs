@@ -1,12 +1,8 @@
-using Crm.Modules.Identity.Application.Roles;
-using Crm.Modules.Identity.Contracts;
+using Crm.Modules.Identity.Application.Provisioning;
 using Crm.Modules.Identity.Domain;
 using Crm.Modules.Identity.Domain.Memberships;
-using Crm.Modules.Identity.Domain.Roles;
-using Crm.Modules.Identity.Domain.Tenants;
 using Crm.Modules.Identity.Domain.Users;
 using Crm.Shared.Contracts.Context;
-using Crm.Shared.Contracts.Events;
 using Crm.Shared.Contracts.Messaging;
 using Crm.Shared.Kernel.Results;
 using FluentValidation;
@@ -41,15 +37,10 @@ public sealed class SignUpValidator : AbstractValidator<SignUpCommand>
 
 public sealed class SignUpHandler(
     IUserRepository users,
-    ITenantRepository tenants,
-    IRoleRepository roles,
     IMembershipRepository memberships,
     IPasswordHasher hasher,
-    IPermissionCatalog catalog,
-    IIntegrationEventOutbox outbox,
-    ISecretGenerator secrets,
+    OrganizationProvisioner provisioner,
     SessionIssuer sessions,
-    IOptions<IdentityOptions> options,
     TimeProvider clock) : ICommandHandler<SignUpCommand, AuthResponse>
 {
     public async Task<Result<AuthResponse>> Handle(SignUpCommand command, CancellationToken cancellationToken)
@@ -60,55 +51,16 @@ public sealed class SignUpHandler(
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
-        var slug = await UniqueSlugAsync(Tenant.SlugFrom(command.OrganizationName), cancellationToken).ConfigureAwait(false);
-        var tenant = Tenant.Create(command.OrganizationName, slug, command.Locale, options.Value.DefaultTimeZone);
-        tenants.Add(tenant);
-
-        // Modüller (ör. Sales: varsayılan satış hunisi) kendi varsayılan verilerini bu olayla tohumlar; aynı transaction'da outbox'a yazılır.
-        outbox.Enqueue(new OrganizationCreated(tenant.Id, tenant.Name, tenant.DefaultLocale));
-
-        // Kiracı verisi açıkça yeni organizasyonun TenantId'siyle yazılır (anonim istek: kiracı bağlamı yok).
-        var seeded = SeedSystemRoles(tenant.Id, catalog, roles);
+        var provisioned = await provisioner.CreateAsync(command.OrganizationName, command.Locale, cancellationToken).ConfigureAwait(false);
 
         var user = User.Create(command.Email, command.DisplayName, command.Locale, hasher.Hash(command.Password));
-        user.SetDefaultTenant(tenant.Id);
+        user.SetDefaultTenant(provisioned.Tenant.Id);
         user.RecordSuccessfulLogin(now);
         users.Add(user);
 
-        var administrator = seeded[SystemRoleCodes.Administrator];
-        memberships.Add(Membership.Create(tenant.Id, user.Id, administrator.Id, now));
+        memberships.Add(Membership.Create(provisioned.Tenant.Id, user.Id, provisioned.Administrator.Id, now));
 
-        return sessions.Issue(user, new SessionContext(tenant, administrator), rotateFrom: null, command.DeviceInfo, command.IpAddress);
-    }
-
-    /// <summary>Tüm sistem rollerini katalogdaki izinlerle oluşturur.</summary>
-    public static IReadOnlyDictionary<string, Role> SeedSystemRoles(Guid tenantId, IPermissionCatalog catalog, IRoleRepository roles)
-    {
-        var result = new Dictionary<string, Role>(StringComparer.Ordinal);
-        foreach (var code in SystemRoleCodes.All)
-        {
-            var role = Role.CreateSystem(tenantId, code, SystemRoleDefinitions.PermissionsFor(code, catalog.All));
-            roles.Add(role);
-            result[code] = role;
-        }
-
-        return result;
-    }
-
-    private async Task<string> UniqueSlugAsync(string baseSlug, CancellationToken ct)
-    {
-        var candidate = baseSlug;
-        for (var attempt = 0; attempt < IdentityDefaults.SlugSuffixAttempts; attempt++)
-        {
-            if (!await tenants.SlugExistsAsync(candidate, ct).ConfigureAwait(false))
-            {
-                return candidate;
-            }
-
-            candidate = string.Concat(baseSlug, IdentityLimits.SlugSeparator.ToString(), secrets.NewSuffix());
-        }
-
-        return string.Concat(baseSlug, IdentityLimits.SlugSeparator.ToString(), Guid.NewGuid().ToString("N")[..8]);
+        return sessions.Issue(user, new SessionContext(provisioned.Tenant, provisioned.Administrator), rotateFrom: null, command.DeviceInfo, command.IpAddress);
     }
 }
 

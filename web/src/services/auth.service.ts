@@ -50,3 +50,15 @@ export async function switchOrganization(organizationId: string): Promise<AuthTo
   });
   return data;
 }
+
+/** Anonymous client configuration (`GET /auth/config`); currently only whether public sign-up is open. */
+export interface AuthConfig {
+  signupEnabled: boolean;
+}
+
+export const authConfigKey = ["auth", "config"] as const;
+
+export async function getAuthConfig(): Promise<AuthConfig> {
+  const { data } = await apiClient.get<AuthConfig>(`${AUTH_BASE}/config`, { skipAuthRetry: true });
+  return data;
+}

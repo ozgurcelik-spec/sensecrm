@@ -155,8 +155,15 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    private static string RequireConnectionString(IConfiguration configuration) =>
-        configuration.GetConnectionString(ConnectionStringNames.Database) ?? throw new InvalidOperationException(DatabaseConnectionMissing);
+    /// <summary>
+    /// appsettings.json'daki boş şablon değeri ("") yanlışlıkla geçerli sayılmasın: Production'da bağlantı dizesi verilmediyse
+    /// süreç açılışta durur (aksi hâlde ilk veritabanı erişiminde belirsiz bir hatayla çöker).
+    /// </summary>
+    private static string RequireConnectionString(IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString(ConnectionStringNames.Database);
+        return string.IsNullOrWhiteSpace(connectionString) ? throw new InvalidOperationException(DatabaseConnectionMissing) : connectionString;
+    }
 }
 
 /// <summary>İstek tipinin assembly'sinden modül adını, oradan da modülün UnitOfWork'ünü bulur.</summary>

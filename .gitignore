@@ -50,3 +50,8 @@ infra/.data/
 
 # Claude local
 .claude/settings.local.json
+
+# Deployment: real secrets, generated env and local backups never enter the repository
+deploy/.env
+deploy/secrets/
+deploy/backups/

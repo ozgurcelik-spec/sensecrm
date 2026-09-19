@@ -65,7 +65,8 @@
     "auth": {
       "invalid_credentials": "Incorrect email or password",
       "invalid_refresh_token": "Your session has expired, please sign in again",
-      "email_taken": "An account with this email already exists"
+      "email_taken": "An account with this email already exists",
+      "signup_disabled": "Public sign-up is disabled. Contact your system administrator to have an organization created."
     },
     "role": {
       "system_readonly": "System roles cannot be changed or deleted",

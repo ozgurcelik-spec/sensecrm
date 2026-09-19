@@ -30,4 +30,9 @@ ENV DOTNET_ENVIRONMENT=Production \
 
 USER app
 
+# The worker has no HTTP endpoint; HeartbeatService refreshes /tmp/crm-worker.heartbeat every 15 s. A file that is older than
+# 60 s (or missing) means the process hung or is not polling, and the container turns unhealthy.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD test -f /tmp/crm-worker.heartbeat && test "$(( $(date +%s) - $(stat -c %Y /tmp/crm-worker.heartbeat) ))" -lt 60 || exit 1
+
 ENTRYPOINT ["dotnet", "Crm.Worker.dll"]

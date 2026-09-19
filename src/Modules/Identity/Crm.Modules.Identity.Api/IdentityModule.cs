@@ -12,6 +12,8 @@ using Crm.Shared.Contracts.Security;
 using Crm.Shared.Infrastructure.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace Crm.Modules.Identity.Api;
 
@@ -34,8 +36,19 @@ public sealed class IdentityModule : IModule
 
     public void AddModule(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<IdentityOptions>().Bind(configuration.GetSection(ConfigurationSections.Identity)).ValidateOnStart();
         services.AddOptions<JwtIssuerOptions>().Bind(configuration.GetSection(ConfigurationSections.Auth));
+        services.AddIdentityProvisioning(configuration);
+
+        // Herkese açık kayıt: ayar boşsa Development/Testing = açık, diğer ortamlar (Production) = kapalı. Geçersiz değer açılışı durdurur.
+        services.AddOptions<RegistrationOptions>()
+            .Bind(configuration.GetSection(ConfigurationSections.Registration))
+            .Validate(o => RegistrationModes.IsValid(o.Mode), "Registration:Mode must be 'open' or 'disabled'.")
+            .ValidateOnStart();
+        services.AddSingleton<IRegistrationPolicy>(sp =>
+        {
+            var env = sp.GetRequiredService<IHostEnvironment>();
+            return RegistrationPolicy.Resolve(sp.GetRequiredService<IOptions<RegistrationOptions>>().Value, env.IsDevelopment() || env.IsEnvironment("Testing"));
+        });
 
         services.AddModuleDbContext<IdentityDbContext>(configuration, IdentityDbContext.SchemaName);
         services.AddModuleHandlers(
@@ -44,12 +57,7 @@ public sealed class IdentityModule : IModule
             typeof(IdentityDbContext).Assembly,
             typeof(IUserRepository).Assembly,
             typeof(OrgPermissions).Assembly);
-        services.AddScoped<IIdentityUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
 
-        services.AddScoped<ITenantRepository, TenantRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IMembershipRepository, MembershipRepository>();
-        services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IIdentityReadStore, IdentityReadStore>();
         services.AddIdentityContractServices();
@@ -65,8 +73,6 @@ public sealed class IdentityModule : IModule
         services.AddScoped<SystemRolePermissionSynchronizer>();
         services.AddHostedService<SystemRolePermissionSyncHostedService>();
 
-        services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();
-        services.AddSingleton<ISecretGenerator, SecretGenerator>();
         services.AddScoped<ITokenService, JwtTokenService>();
     }
 }

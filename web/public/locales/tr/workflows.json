@@ -170,5 +170,14 @@
     "alreadyDecided": "Bu onay için zaten karar verilmiş. Liste yenilendi.",
     "bell": "Bekleyen onaylar",
     "bellCount": "Bekleyen onaylar: {{count}}"
+  },
+  "strip": {
+    "label": "İş akışı durumu",
+    "prefix": "İş akışı",
+    "open": "Yürütme ayrıntısını aç",
+    "running": "çalışıyor",
+    "completed": "tamamlandı",
+    "failed": "hata",
+    "terminated": "sonlandırıldı"
   }
 }

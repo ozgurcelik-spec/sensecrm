@@ -27,4 +27,6 @@ public static class IdentityDefaults
     public const string DefaultTimeZone = "Europe/Istanbul";
     public const int TokenBytes = 32;
     public const int SlugSuffixAttempts = 5;
+    public const int GeneratedPasswordLength = 20;
+    public const int PlatformAdminMinPasswordLength = 12;
 }

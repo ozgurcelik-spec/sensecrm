@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Alert, Anchor, Button, PasswordInput, Stack, TextInput } from "@mantine/core";
+import { useSignupEnabled } from "@/hooks/use-auth-config";
 import { applyValidationErrors, getApiErrorMessage } from "@/lib/api-error";
 import { toLocale } from "@/lib/locale";
 import { useAuthStore } from "@/store/auth.store";
@@ -28,6 +29,7 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const signup = useAuthStore((state) => state.signup);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
+  const { signupEnabled, isKnown } = useSignupEnabled();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -41,6 +43,8 @@ export default function SignupPage() {
   });
 
   if (isAuthenticated) return <Navigate to="/app" replace />;
+  // Registration is closed on this deployment (organizations are created by the platform admin): nothing to show here.
+  if (isKnown && !signupEnabled) return <Navigate to="/login" replace />;
 
   const fieldError = (message?: string) =>
     message && t(message, { min: PASSWORD_MIN_LENGTH, defaultValue: message });

@@ -13,6 +13,9 @@ export interface ExecutionListQuery extends ListQuery {
   /** An ExecutionStatus value (kept a string: it comes straight from the URL). */
   status?: string;
   ruleId?: string;
+  /** With `subjectId`: only the executions of one lead or deal. */
+  subjectType?: string;
+  subjectId?: string;
   /** ISO date-time bounds of `startedAt`. */
   from?: string;
   to?: string;

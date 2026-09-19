@@ -170,5 +170,14 @@
     "alreadyDecided": "A decision has already been made on this approval. The list was refreshed.",
     "bell": "Pending approvals",
     "bellCount": "Pending approvals: {{count}}"
+  },
+  "strip": {
+    "label": "Workflow status",
+    "prefix": "Workflow",
+    "open": "Open execution details",
+    "running": "running",
+    "completed": "completed",
+    "failed": "failed",
+    "terminated": "terminated"
   }
 }

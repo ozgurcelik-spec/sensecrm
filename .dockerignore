@@ -1,0 +1,24 @@
+# Build context = repository root (see the Dockerfiles). Keep the context small and never leak local state or secrets into an image.
+**/bin
+**/obj
+**/node_modules
+web/dist
+.git
+.github
+.claude
+.serena
+.vs
+.idea
+tests
+docs
+infra
+deploy
+build
+**/*.md
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/appsettings.Local.json
+**/TestResults
+**/*.tsbuildinfo

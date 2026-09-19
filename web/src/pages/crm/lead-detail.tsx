@@ -6,6 +6,7 @@ import { Pencil, Repeat, Trash2 } from "lucide-react";
 import { LeadRatingBadge, LeadStatusBadge } from "@/components/crm/badges";
 import { LeadConvertDialog } from "@/components/crm/lead-convert-dialog";
 import { LeadFormDialog } from "@/components/crm/lead-form-dialog";
+import { WorkflowStatusStrip } from "@/components/workflows/workflow-status-strip";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
@@ -91,6 +92,7 @@ export default function LeadDetailPage() {
           label: t("crm:tabs.general"),
           content: (
             <Stack gap="md">
+              <WorkflowStatusStrip subjectType="lead" subjectId={lead.id} />
               {converted && <ConvertedLinks lead={lead} />}
               <Card withBorder padding="md">
                 <Text fw={600} mb="sm">

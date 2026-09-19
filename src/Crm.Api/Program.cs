@@ -17,6 +17,11 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    // Dosya tabanlı gizli değerler (Docker/Kubernetes secret): /run/secrets/<Ad> dosyası yapılandırma anahtarı olur ("__" = ":"),
+    // örn. /run/secrets/Auth__SigningKeyPem -> Auth:SigningKeyPem. Çok satırlı PEM anahtarı ortam değişkeninde taşımak yerine kullanılır.
+    // Dizin yoksa (geliştirme) sessizce yok sayılır.
+    builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
+
     // Gözlemlenebilirlik MVP'de yalnız Serilog konsol + istek logu (OTel/Sentry/Seq/Loki sonraki aşama).
     builder.Host.UseSerilog((context, services, cfg) => cfg
         .ReadFrom.Configuration(context.Configuration)
@@ -34,11 +39,19 @@ try
     builder.Services.AddCrmAuthentication(builder.Configuration, builder.Environment);
     builder.Services.AddCrmHealthChecks(builder.Configuration);
 
+    builder.Services.AddCrmForwardedHeaders(builder.Configuration);
+
     var app = builder.Build();
+
+    if (ForwardedHeadersSetup.IsEnabled(builder.Configuration))
+    {
+        app.UseForwardedHeaders();
+    }
 
     // En erken middleware: sonraki her şey (exception handler dahil) aynı correlation id'yi görsün.
     app.UseCorrelationId();
     app.UseSecurityHeaders();
+    app.UseNoStoreForAuth();
 
     if (!app.Environment.IsDevelopment())
     {
@@ -71,8 +84,12 @@ try
 
     app.MapControllers();
     app.MapCrmHealthChecks();
-    app.MapOpenApi(HostConstants.OpenApiRoutePattern);
-    app.MapScalarApiReference(HostConstants.ScalarPath, o => o.WithTitle(HostConstants.ApiTitle));
+    // API dokümantasyonu (OpenAPI + Scalar) yalnız geliştirme/test ortamında veya açıkça `Docs:Enabled=true` ile açılır (Production varsayılanı: kapalı).
+    if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment(AuthDefaults.TestingEnvironment) || app.Configuration.GetValue<bool>(HostConstants.DocsEnabledKey))
+    {
+        app.MapOpenApi(HostConstants.OpenApiRoutePattern);
+        app.MapScalarApiReference(HostConstants.ScalarPath, o => o.WithTitle(HostConstants.ApiTitle));
+    }
 
     await app.RunAsync();
 }

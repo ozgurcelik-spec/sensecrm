@@ -65,7 +65,8 @@
     "auth": {
       "invalid_credentials": "E-posta veya parola hatalı",
       "invalid_refresh_token": "Oturumunuzun süresi doldu, lütfen tekrar giriş yapın",
-      "email_taken": "Bu e-posta adresiyle zaten bir hesap var"
+      "email_taken": "Bu e-posta adresiyle zaten bir hesap var",
+      "signup_disabled": "Herkese açık kayıt kapalı. Organizasyon açtırmak için sistem yöneticinizle iletişime geçin."
     },
     "role": {
       "system_readonly": "Sistem rolleri değiştirilemez veya silinemez",

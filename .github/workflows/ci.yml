@@ -1,0 +1,124 @@
+name: CI
+
+# Backend (restore / format check / build / test with Testcontainers), web (tsc / eslint / vitest / build), deployment files
+# (compose + secret generator) and Docker images (Api, Worker, Migrator, Web; built on main, pushed only when opted in).
+#
+# PAUSED: automatic triggers are disabled for now (same as the sibling senseik repo); only manual runs (workflow_dispatch) are
+# possible. Restore the commented block below to re-enable.
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  REGISTRY: ghcr.io
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest   # Docker is preinstalled: the HTTP integration tests start postgres:17-alpine via Testcontainers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+      - run: dotnet restore Crm.slnx
+      - run: dotnet format Crm.slnx --verify-no-changes --no-restore
+      - run: dotnet build Crm.slnx -c Release --no-restore
+      - run: dotnet test Crm.slnx -c Release --no-build
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4   # pnpm version comes from "packageManager" in package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web exec tsc --noEmit
+      - run: pnpm --filter web exec eslint .
+      - run: pnpm --filter web exec vitest run
+      - run: pnpm --filter web build
+
+  deploy-files:
+    # The production compose file must stay valid and the secret generator must keep producing everything it needs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash deploy/generate-secrets.sh
+        env:
+          PUBLIC_HOSTNAME: crm.ci.local
+      - run: docker compose -f deploy/docker-compose.prod.yml config --quiet
+      - run: docker compose -f deploy/docker-compose.prod.yml --profile redis config --quiet
+      - name: Compose refuses to start without secrets
+        run: |
+          rm -f deploy/.env
+          if docker compose -f deploy/docker-compose.prod.yml config --quiet 2>/dev/null; then
+            echo "compose accepted a missing POSTGRES_PASSWORD"; exit 1
+          fi
+
+  images:
+    needs: [backend, web, deploy-files]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            dockerfile: src/Crm.Api/Dockerfile
+          - image: worker
+            dockerfile: src/Crm.Worker/Dockerfile
+          - image: migrator
+            dockerfile: src/Crm.Migrator/Dockerfile
+          - image: web
+            dockerfile: web/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Derive image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.image }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+      # Images are ALWAYS built (to catch broken Dockerfiles) but only PUSHED to GHCR once the repository variable
+      # ENABLE_IMAGE_PUSH is set to "true". Building needs no secrets; pushing uses the automatic GITHUB_TOKEN.
+      - name: Log in to GHCR
+        if: vars.ENABLE_IMAGE_PUSH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build (and push if enabled)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: ${{ vars.ENABLE_IMAGE_PUSH == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

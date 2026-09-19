@@ -6,6 +6,7 @@ import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { StageBadge } from "@/components/crm/badges";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { LostReasonDialog } from "@/components/crm/lost-reason-dialog";
+import { WorkflowStatusStrip } from "@/components/workflows/workflow-status-strip";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
@@ -95,6 +96,7 @@ export default function DealDetailPage() {
           label: t("crm:tabs.general"),
           content: (
             <Stack gap="md">
+              <WorkflowStatusStrip subjectType="deal" subjectId={deal.id} />
               <Card withBorder padding="md">
                 <Text fw={600} mb="sm">
                   {t("crm:deals.fields.stage")}

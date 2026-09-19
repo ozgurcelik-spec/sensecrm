@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Alert, Anchor, Button, PasswordInput, Stack, TextInput } from "@mantine/core";
+import { useSignupEnabled } from "@/hooks/use-auth-config";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useAuthStore } from "@/store/auth.store";
 import AuthLayout from "./auth-layout";
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const [serverError, setServerError] = useState<string | null>(null);
+  const { signupEnabled } = useSignupEnabled();
 
   const {
     register,
@@ -54,12 +56,15 @@ export default function LoginPage() {
       title={t("auth:login.title")}
       subtitle={t("auth:login.subtitle")}
       footer={
-        <>
-          {t("auth:login.noAccount")}{" "}
-          <Anchor component={Link} to="/signup" fw={600}>
-            {t("auth:login.signupLink")}
-          </Anchor>
-        </>
+        // Public sign-up is closed by default in Production (in-house deployments): the link only exists when the API says so.
+        signupEnabled ? (
+          <>
+            {t("auth:login.noAccount")}{" "}
+            <Anchor component={Link} to="/signup" fw={600}>
+              {t("auth:login.signupLink")}
+            </Anchor>
+          </>
+        ) : undefined
       }
     >
       <form onSubmit={onSubmit} noValidate>

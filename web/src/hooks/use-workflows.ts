@@ -14,7 +14,7 @@ import {
   workflowKeys,
   type ExecutionListQuery,
 } from "@/services/workflows.service";
-import type { WorkflowRule, WorkflowRuleInput } from "@/types";
+import type { WorkflowRule, WorkflowRuleInput, WorkflowSubjectType } from "@/types";
 
 export function useWorkflowRules(enabled = true) {
   return useQuery({ queryKey: workflowKeys.rules, queryFn: listRules, enabled });
@@ -82,6 +82,23 @@ export function useExecutions(query: ExecutionListQuery, enabled = true) {
     queryFn: () => listExecutions(query),
     placeholderData: keepPreviousData,
     enabled,
+  });
+}
+
+/** The newest execution of one lead or deal (undefined when there is none); `enabled` gates the request. */
+export function useSubjectExecution(
+  subjectType: WorkflowSubjectType,
+  subjectId: string | undefined,
+  enabled = true
+) {
+  const query: ExecutionListQuery = { subjectType, subjectId, page: 1, pageSize: 1 };
+  return useQuery({
+    queryKey: workflowKeys.executionList(query),
+    queryFn: () => listExecutions(query),
+    select: (result) => result.items[0],
+    enabled: enabled && !!subjectId,
+    // The strip is decoration: a failure must stay silent and not be retried noisily.
+    retry: false,
   });
 }
 
