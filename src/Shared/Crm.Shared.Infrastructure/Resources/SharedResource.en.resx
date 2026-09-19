@@ -142,4 +142,26 @@
   <data name="field.params" xml:space="preserve"><value>Params</value></data>
   <data name="permission.org.workflows.manage" xml:space="preserve"><value>Manage workflow rules and executions</value></data>
   <data name="permission.crm.approvals.decide" xml:space="preserve"><value>Decide approvals</value></data>
+  <data name="campaign.invalid_date_range" xml:space="preserve"><value>The end date cannot be before the start date.</value></data>
+  <data name="campaign.invalid_status_transition" xml:space="preserve"><value>A campaign cannot move from "{from}" to "{to}".</value></data>
+  <data name="campaign.closed" xml:space="preserve"><value>Members cannot be added to a completed or cancelled campaign.</value></data>
+  <data name="validation.campaign_create_status" xml:space="preserve"><value>A campaign can only be created as "planned" or "active".</value></data>
+  <data name="validation.campaign_member_status" xml:space="preserve"><value>The "converted" status cannot be set manually; it is set automatically when the lead is converted.</value></data>
+  <data name="validation.campaign_type" xml:space="preserve"><value>The campaign type must be email, event, webinar, advertising or other.</value></data>
+  <data name="validation.campaign_status" xml:space="preserve"><value>The campaign status must be planned, active, completed or cancelled.</value></data>
+  <data name="validation.member_status" xml:space="preserve"><value>The member status must be added, sent, responded, converted or unsubscribed.</value></data>
+  <data name="validation.member_ids" xml:space="preserve"><value>Send between 1 and 500 ids.</value></data>
+  <data name="validation.member_id" xml:space="preserve"><value>Ids cannot be empty.</value></data>
+  <data name="validation.campaign_amount" xml:space="preserve"><value>The amount must be a valid number, zero or greater.</value></data>
+  <data name="field.start_date" xml:space="preserve"><value>Start date</value></data>
+  <data name="field.end_date" xml:space="preserve"><value>End date</value></data>
+  <data name="field.budget" xml:space="preserve"><value>Budget</value></data>
+  <data name="field.expected_revenue" xml:space="preserve"><value>Expected revenue</value></data>
+  <data name="field.actual_cost" xml:space="preserve"><value>Actual cost</value></data>
+  <data name="field.owner_user_id" xml:space="preserve"><value>Owner</value></data>
+  <data name="field.member_ids" xml:space="preserve"><value>Members</value></data>
+  <data name="field.member_id" xml:space="preserve"><value>Member</value></data>
+  <data name="field.member_type" xml:space="preserve"><value>Member type</value></data>
+  <data name="permission.crm.campaigns.read" xml:space="preserve"><value>View campaigns</value></data>
+  <data name="permission.crm.campaigns.write" xml:space="preserve"><value>Manage campaigns and their members</value></data>
 </root>

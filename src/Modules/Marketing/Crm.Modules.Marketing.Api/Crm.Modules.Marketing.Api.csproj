@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Crm.Modules.Marketing.Application/Crm.Modules.Marketing.Application.csproj" />
+    <ProjectReference Include="../Crm.Modules.Marketing.Contracts/Crm.Modules.Marketing.Contracts.csproj" />
+    <ProjectReference Include="../Crm.Modules.Marketing.Infrastructure/Crm.Modules.Marketing.Infrastructure.csproj" />
+    <ProjectReference Include="../../../Shared/Crm.Shared.Web/Crm.Shared.Web.csproj" />
+    <ProjectReference Include="../../../Shared/Crm.Shared.Infrastructure/Crm.Shared.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

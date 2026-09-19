@@ -142,4 +142,26 @@
   <data name="field.params" xml:space="preserve"><value>Parametreler</value></data>
   <data name="permission.org.workflows.manage" xml:space="preserve"><value>İş akışı kurallarını ve yürütmeleri yönet</value></data>
   <data name="permission.crm.approvals.decide" xml:space="preserve"><value>Onay ver</value></data>
+  <data name="campaign.invalid_date_range" xml:space="preserve"><value>Bitiş tarihi başlangıç tarihinden önce olamaz.</value></data>
+  <data name="campaign.invalid_status_transition" xml:space="preserve"><value>Kampanya durumu "{from}" iken "{to}" durumuna geçirilemez.</value></data>
+  <data name="campaign.closed" xml:space="preserve"><value>Tamamlanan veya iptal edilen kampanyaya yeni üye eklenemez.</value></data>
+  <data name="validation.campaign_create_status" xml:space="preserve"><value>Kampanya yalnız "planlandı" veya "aktif" durumunda oluşturulabilir.</value></data>
+  <data name="validation.campaign_member_status" xml:space="preserve"><value>"Dönüştü" durumu elle ayarlanamaz; potansiyel müşteri dönüştürüldüğünde kendiliğinden olur.</value></data>
+  <data name="validation.campaign_type" xml:space="preserve"><value>Kampanya türü email, event, webinar, advertising veya other olmalıdır.</value></data>
+  <data name="validation.campaign_status" xml:space="preserve"><value>Kampanya durumu planned, active, completed veya cancelled olmalıdır.</value></data>
+  <data name="validation.member_status" xml:space="preserve"><value>Üye durumu added, sent, responded, converted veya unsubscribed olmalıdır.</value></data>
+  <data name="validation.member_ids" xml:space="preserve"><value>1 ile 500 arasında kimlik gönderin.</value></data>
+  <data name="validation.member_id" xml:space="preserve"><value>Kimlikler boş olamaz.</value></data>
+  <data name="validation.campaign_amount" xml:space="preserve"><value>Tutar sıfır veya daha büyük geçerli bir sayı olmalıdır.</value></data>
+  <data name="field.start_date" xml:space="preserve"><value>Başlangıç tarihi</value></data>
+  <data name="field.end_date" xml:space="preserve"><value>Bitiş tarihi</value></data>
+  <data name="field.budget" xml:space="preserve"><value>Bütçe</value></data>
+  <data name="field.expected_revenue" xml:space="preserve"><value>Beklenen gelir</value></data>
+  <data name="field.actual_cost" xml:space="preserve"><value>Gerçekleşen maliyet</value></data>
+  <data name="field.owner_user_id" xml:space="preserve"><value>Sahip</value></data>
+  <data name="field.member_ids" xml:space="preserve"><value>Üyeler</value></data>
+  <data name="field.member_id" xml:space="preserve"><value>Üye</value></data>
+  <data name="field.member_type" xml:space="preserve"><value>Üye türü</value></data>
+  <data name="permission.crm.campaigns.read" xml:space="preserve"><value>Kampanyaları görüntüle</value></data>
+  <data name="permission.crm.campaigns.write" xml:space="preserve"><value>Kampanyaları ve üyelerini yönet</value></data>
 </root>
