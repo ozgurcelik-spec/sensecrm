@@ -23,12 +23,11 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 ## Kartlar
 | ID | Başlık | Sahip | Durum | Dal / worktree | Merge kapısı |
 |---|---|---|---|---|---|
-| C-M1..M4 | Platform, Satış, Aktivite/Rapor, Workflow | Backend+Web (bitti) | **Merged** | `main` (`01831ff`..`266c623`) | yeşil |
-| C-M5 | Pilot yayın paketleme (imaj, prod compose, yedek, CI, kayıt kontrolü) | DevOps | **Running** | `main` çalışma ağacı | build/test yeşil, paketli yığın duman testi, yedek-geri yükleme doğrulaması |
-| C-SEC | Güvenlik sertleştirme (Conductor girdi güveni, hesap/davet/parola, giriş zamanlaması, refresh ömrü, yetki yükseltme, mimari test) | Security | **Blocked** (C-M5 backend'e dokunuyor) | `sec/hardening` | Güvenlik raporu H1–H4, M1–M9 kapanış tablosu + yeni testler |
-| C-M6A | Ticaret: Ürünler, Teklifler, Satış Siparişleri (kalemli) | Spec→Backend+Web | **Ready** | `m6/commerce` | kart kapısı + teklif→sipariş dönüşümü tek transaction |
-| C-M6B | Servis/Destek: Talepler (case), yorumlar, SLA süresi | Spec→Backend+Web | **Ready** | `m6/service` | kart kapısı |
-| C-M6C | Pazarlama: Kampanyalar, kampanya üyeleri, lead kaynağı ilişkisi | Spec→Backend+Web | **Ready** | `m6/marketing` | kart kapısı |
+| C-M1..M5 | Platform, Satış, Aktivite/Rapor, Workflow, Pilot paketleme | Backend+Web+DevOps | **Merged** | `main` | yeşil |
+| C-SEC | Güvenlik sertleştirme (Conductor girdi güveni, hesap/davet/parola, giriş zamanlaması, refresh ömrü, yetki yükseltme, mimari test) | Security | **Merged** | `sec/hardening` | Güvenlik raporu H1–H4, M1–M9 kapanış tablosu + yeni testler |
+| C-M6A | Ticaret: Ürünler, Teklifler, Satış Siparişleri (kalemli) | Spec→Backend+Web | **Merged** | `m6/commerce` | kart kapısı + teklif→sipariş dönüşümü tek transaction |
+| C-M6B | Servis/Destek: Talepler (case), yorumlar, SLA süresi | Spec→Backend+Web | **Merged** | `m6/service` | kart kapısı |
+| C-M6C | Pazarlama: Kampanyalar, kampanya üyeleri, lead kaynağı ilişkisi | Spec→Backend+Web | **Merged** | `m6/marketing` | kart kapısı |
 | C-M7 | SaaS hazırlığı (planlar/limitler, kiracı yönetimi, faturalama altyapısı) | Spec→Backend+Web | **Backlog** | — | M6 merge sonrası şekillenir |
 
 ## Yürütme sırası
@@ -39,3 +38,5 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 
 ## Güncelleme günlüğü
 - 2026-09-19: Pano kuruldu. M1–M4 merged; C-M5 running; C-SEC güvenlik raporuna göre blocked.
+- 2026-09-20: C-M5, C-SEC, C-M6A/B/C merged (sıra: M5 → M6C → M6A → M6B → C-SEC); merge sonrası tüm kapılar yeşil (backend + web) ve tarayıcıda uçtan uca doğrulandı. Kök ad alanı `Crm.*` → `Sense.Crm.*` olarak değiştirildi. Sıradaki: C-M7 (SaaS hazırlığı) şekillendirilecek.
+- Çakışma dersleri: (1) `git checkout --merge` + JSON için yapısal birleştirme; (2) `.gitattributes` ile LF zorunlu; (3) izin sayısı testleri sayı sabitlemez; (4) aynı adlı tip/anahtar çakışmaları (MemberStatus, resx `field.*`) merge sonrası taranır.
