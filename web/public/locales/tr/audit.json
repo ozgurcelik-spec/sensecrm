@@ -1,0 +1,18 @@
+{
+  "title": "Denetim Kaydı",
+  "description": "Organizasyonunuzda kim, neyi, ne zaman değiştirdi",
+  "occurredAt": "Tarih",
+  "user": "Kullanıcı",
+  "entity": "Kayıt",
+  "action": "İşlem",
+  "changes": "Değişiklikler",
+  "system": "Sistem",
+  "field": "Alan",
+  "noChanges": "Ayrıntı yok",
+  "showChanges": "{{count}} alan",
+  "actions": {
+    "created": "Oluşturuldu",
+    "updated": "Güncellendi",
+    "deleted": "Silindi"
+  }
+}

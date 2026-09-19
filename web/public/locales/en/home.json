@@ -1,0 +1,13 @@
+{
+  "welcome": "Welcome, {{name}}",
+  "subtitle": "You are working in {{org}} with the {{role}} role.",
+  "organizationCard": "Organization details",
+  "name": "Name",
+  "slug": "Slug",
+  "defaultLocale": "Default language",
+  "timeZone": "Time zone",
+  "role": "Your role",
+  "permissionCount": "{{count}} permissions",
+  "quickLinks": "Quick links",
+  "modulesSoon": "Sales modules (leads, contacts, accounts, deals) are coming here soon."
+}

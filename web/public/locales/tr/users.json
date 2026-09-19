@@ -1,0 +1,89 @@
+{
+  "users": {
+    "title": "Kullanıcılar",
+    "description": "Organizasyonunuzdaki kullanıcıları ve rollerini yönetin",
+    "add": "Kullanıcı ekle",
+    "addTitle": "Yeni kullanıcı",
+    "name": "Ad Soyad",
+    "email": "E-posta",
+    "role": "Rol",
+    "status": "Durum",
+    "active": "Aktif",
+    "inactive": "Pasif",
+    "joinedAt": "Katılma tarihi",
+    "activate": "Etkinleştir",
+    "deactivate": "Devre dışı bırak",
+    "password": "Geçici parola",
+    "passwordHint": "E-posta adresi zaten kayıtlıysa kullanıcı mevcut hesabıyla eklenir ve parola kullanılmaz.",
+    "added": "Kullanıcı eklendi",
+    "updated": "Kullanıcı güncellendi",
+    "you": "Siz",
+    "search": "Ad veya e-posta ile ara"
+  },
+  "roles": {
+    "title": "Roller ve İzinler",
+    "description": "Rolleri tanımlayın ve her rolün hangi işlemleri yapabileceğini belirleyin",
+    "create": "Rol oluştur",
+    "createTitle": "Yeni rol",
+    "editTitle": "Rolü düzenle",
+    "viewTitle": "Rol ayrıntıları",
+    "name": "Rol adı",
+    "system": "Sistem rolü",
+    "systemReadonly": "Sistem rolleri değiştirilemez.",
+    "members": "Kullanıcı",
+    "permissions": "İzinler",
+    "permissionCount": "{{count}} izin",
+    "selectAll": "Tümünü seç",
+    "deleteTitle": "Rolü sil",
+    "deleteConfirm": "\"{{name}}\" rolü kalıcı olarak silinecek. Emin misiniz?",
+    "created": "Rol oluşturuldu",
+    "updated": "Rol güncellendi",
+    "deleted": "Rol silindi",
+    "groups": {
+      "org": "Organizasyon yönetimi",
+      "crm": "CRM modülleri"
+    }
+  },
+  "permissions": {
+    "org": {
+      "settings": {
+        "manage": "Organizasyon ayarlarını yönetme"
+      },
+      "users": {
+        "read": "Kullanıcıları ve rolleri görüntüleme",
+        "manage": "Kullanıcıları yönetme"
+      },
+      "roles": {
+        "manage": "Rolleri ve izinleri yönetme"
+      },
+      "audit": {
+        "read": "Denetim kaydını görüntüleme"
+      }
+    },
+    "crm": {
+      "accounts": {
+        "read": "Müşterileri görüntüleme",
+        "write": "Müşteri oluşturma/düzenleme"
+      },
+      "contacts": {
+        "read": "Kişileri görüntüleme",
+        "write": "Kişi oluşturma/düzenleme"
+      },
+      "leads": {
+        "read": "Potansiyelleri görüntüleme",
+        "write": "Potansiyel oluşturma/düzenleme"
+      },
+      "deals": {
+        "read": "Fırsatları görüntüleme",
+        "write": "Fırsat oluşturma/düzenleme"
+      },
+      "activities": {
+        "read": "Aktiviteleri görüntüleme",
+        "write": "Aktivite oluşturma/düzenleme"
+      },
+      "reports": {
+        "read": "Raporları görüntüleme"
+      }
+    }
+  }
+}

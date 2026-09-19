@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Crm.Modules.Identity.Domain/Crm.Modules.Identity.Domain.csproj" />
+    <ProjectReference Include="../Crm.Modules.Identity.Contracts/Crm.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+</Project>

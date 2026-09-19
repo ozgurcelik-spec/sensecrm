@@ -1,0 +1,52 @@
+# Claude Code agent worktrees (local scratch, never part of the repo)
+.claude/worktrees/
+
+# Tool state
+.serena/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+*.swp
+TestResults/
+coverage/
+*.snupkg
+artifacts/
+
+# Node / web
+node_modules/
+web/dist/
+dist/
+dist-ssr/
+.vite/
+*.tsbuildinfo
+.pnpm-store/
+package-lock.json
+yarn.lock
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+*.pfx
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Docker volumes
+infra/.data/
+
+# Claude local
+.claude/settings.local.json

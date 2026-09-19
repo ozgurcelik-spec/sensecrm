@@ -1,0 +1,31 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Crm.Api/Crm.Api.csproj" />
+    <Project Path="src/Crm.Migrator/Crm.Migrator.csproj" />
+    <Project Path="src/Crm.Worker/Crm.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/Crm.Modules.Identity.Api/Crm.Modules.Identity.Api.csproj" />
+    <Project Path="src/Modules/Identity/Crm.Modules.Identity.Application/Crm.Modules.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/Crm.Modules.Identity.Contracts/Crm.Modules.Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/Crm.Modules.Identity.Domain/Crm.Modules.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/Crm.Modules.Identity.Infrastructure/Crm.Modules.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Crm.Shared.Contracts/Crm.Shared.Contracts.csproj" />
+    <Project Path="src/Shared/Crm.Shared.Infrastructure/Crm.Shared.Infrastructure.csproj" />
+    <Project Path="src/Shared/Crm.Shared.Kernel/Crm.Shared.Kernel.csproj" />
+    <Project Path="src/Shared/Crm.Shared.Web/Crm.Shared.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Crm.Tests.Architecture/Crm.Tests.Architecture.csproj" />
+    <Project Path="tests/Crm.Tests.Shared/Crm.Tests.Shared.csproj" />
+    <Project Path="tests/Crm.Tests.TenantIsolation/Crm.Tests.TenantIsolation.csproj" />
+  </Folder>
+  <Folder Name="/tests/Modules/">
+    <Project Path="tests/Modules/Crm.Modules.Identity.Tests/Crm.Modules.Identity.Tests.csproj" />
+    <Project Path="tests/Modules/Crm.Shared.Infrastructure.Tests/Crm.Shared.Infrastructure.Tests.csproj" />
+    <Project Path="tests/Modules/Crm.Shared.Kernel.Tests/Crm.Shared.Kernel.Tests.csproj" />
+  </Folder>
+</Solution>

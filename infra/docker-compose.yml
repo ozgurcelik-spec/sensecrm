@@ -1,0 +1,46 @@
+name: crm
+
+# Port kalıbı: host'a yayınlanan her port "standart port + 10000" (Postgres 5432 -> 15432, Redis 6379 -> 16379).
+# Geliştirici makinesindeki yerel Postgres/Redis ile çakışmayı önler. Container-içi portlar değişmez; .env ile ezilebilir.
+# Bu dosyadaki parolalar yalnızca yerel geliştirme içindir.
+#
+# Başlatma:  docker compose -f infra/docker-compose.yml up -d
+# Şema:      dotnet run --project src/Crm.Migrator
+# API:       dotnet run --project src/Crm.Api          (http://localhost:5080)
+# Worker:    dotnet run --project src/Crm.Worker
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: crm-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-crm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      POSTGRES_DB: ${POSTGRES_DB:-crm}
+      TZ: Europe/Istanbul
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - crm_pg:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crm} -d ${POSTGRES_DB:-crm}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Redis isteğe bağlıdır: ConnectionStrings:Redis verilirse HybridCache'in L2 katmanı olur, verilmezse yalnız bellek içi önbellek çalışır.
+  redis:
+    image: redis:7-alpine
+    container_name: crm-redis
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    ports:
+      - "${REDIS_PORT:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  crm_pg:

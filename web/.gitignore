@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+pnpm-debug.log*
+
+# Production
+dist
+dist-ssr
+
+# Development
+.DS_Store
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.vitest

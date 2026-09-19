@@ -1,0 +1,18 @@
+{
+  "title": "Audit Log",
+  "description": "Who changed what, and when, in your organization",
+  "occurredAt": "Date",
+  "user": "User",
+  "entity": "Record",
+  "action": "Action",
+  "changes": "Changes",
+  "system": "System",
+  "field": "Field",
+  "noChanges": "No details",
+  "showChanges": "{{count}} fields",
+  "actions": {
+    "created": "Created",
+    "updated": "Updated",
+    "deleted": "Deleted"
+  }
+}

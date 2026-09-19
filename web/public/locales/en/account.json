@@ -1,0 +1,7 @@
+{
+  "title": "My Profile",
+  "description": "Your personal details and interface preferences",
+  "displayName": "Full name",
+  "email": "Email",
+  "language": "Interface language"
+}

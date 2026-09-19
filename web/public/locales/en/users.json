@@ -1,0 +1,89 @@
+{
+  "users": {
+    "title": "Users",
+    "description": "Manage the users in your organization and their roles",
+    "add": "Add user",
+    "addTitle": "New user",
+    "name": "Full name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "joinedAt": "Joined",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "password": "Temporary password",
+    "passwordHint": "If the email already has an account, the user is added with that account and the password is ignored.",
+    "added": "User added",
+    "updated": "User updated",
+    "you": "You",
+    "search": "Search by name or email"
+  },
+  "roles": {
+    "title": "Roles & Permissions",
+    "description": "Define roles and decide what each role is allowed to do",
+    "create": "Create role",
+    "createTitle": "New role",
+    "editTitle": "Edit role",
+    "viewTitle": "Role details",
+    "name": "Role name",
+    "system": "System role",
+    "systemReadonly": "System roles cannot be changed.",
+    "members": "Users",
+    "permissions": "Permissions",
+    "permissionCount": "{{count}} permissions",
+    "selectAll": "Select all",
+    "deleteTitle": "Delete role",
+    "deleteConfirm": "The role \"{{name}}\" will be permanently deleted. Are you sure?",
+    "created": "Role created",
+    "updated": "Role updated",
+    "deleted": "Role deleted",
+    "groups": {
+      "org": "Organization administration",
+      "crm": "CRM modules"
+    }
+  },
+  "permissions": {
+    "org": {
+      "settings": {
+        "manage": "Manage organization settings"
+      },
+      "users": {
+        "read": "View users and roles",
+        "manage": "Manage users"
+      },
+      "roles": {
+        "manage": "Manage roles and permissions"
+      },
+      "audit": {
+        "read": "View audit log"
+      }
+    },
+    "crm": {
+      "accounts": {
+        "read": "View accounts",
+        "write": "Create/edit accounts"
+      },
+      "contacts": {
+        "read": "View contacts",
+        "write": "Create/edit contacts"
+      },
+      "leads": {
+        "read": "View leads",
+        "write": "Create/edit leads"
+      },
+      "deals": {
+        "read": "View deals",
+        "write": "Create/edit deals"
+      },
+      "activities": {
+        "read": "View activities",
+        "write": "Create/edit activities"
+      },
+      "reports": {
+        "read": "View reports"
+      }
+    }
+  }
+}

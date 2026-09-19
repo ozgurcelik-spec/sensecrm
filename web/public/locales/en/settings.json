@@ -1,0 +1,11 @@
+{
+  "organization": {
+    "title": "Organization",
+    "description": "Your company's basic details and regional settings",
+    "name": "Organization name",
+    "slug": "Slug",
+    "defaultLocale": "Default language",
+    "timeZone": "Time zone",
+    "readOnly": "You don't have permission to change these settings."
+  }
+}

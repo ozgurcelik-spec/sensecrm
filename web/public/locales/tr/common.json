@@ -1,0 +1,73 @@
+{
+  "app": {
+    "name": "Sense CRM",
+    "tagline": "Satış ve müşteri ilişkilerinizi tek yerden yönetin"
+  },
+  "save": "Kaydet",
+  "cancel": "Vazgeç",
+  "create": "Oluştur",
+  "edit": "Düzenle",
+  "delete": "Sil",
+  "view": "Görüntüle",
+  "close": "Kapat",
+  "loading": "Yükleniyor...",
+  "actions": "İşlemler",
+  "retry": "Tekrar dene",
+  "saved": "Değişiklikler kaydedildi",
+  "noData": "Kayıt bulunamadı",
+  "loadFailed": "Veriler yüklenemedi",
+  "total": "Toplam {{count}} kayıt",
+  "themeLight": "Açık tema",
+  "themeDark": "Koyu tema",
+  "theme": "Tema",
+  "backHome": "Ana sayfaya dön",
+  "search": "Ara",
+  "confirm": "Onayla",
+  "languages": {
+    "tr": "Türkçe",
+    "en": "English"
+  },
+  "shell": {
+    "organizations": "Organizasyonlar",
+    "switchOrganization": "Organizasyon değiştir",
+    "switched": "{{name}} organizasyonuna geçildi",
+    "language": "Dil",
+    "profile": "Profilim",
+    "logout": "Çıkış yap",
+    "toggleNavigation": "Menüyü aç/kapat"
+  },
+  "comingSoon": {
+    "title": "{{module}} çok yakında",
+    "description": "Bu modül bir sonraki sürümde kullanıma açılacak."
+  },
+  "forbidden": {
+    "title": "Erişim izniniz yok",
+    "description": "Bu sayfayı görüntülemek için gerekli izne sahip değilsiniz. Yöneticinizle iletişime geçin."
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "description": "Aradığınız sayfa taşınmış veya hiç var olmamış olabilir.",
+    "back": "Ana sayfaya dön"
+  },
+  "errors": {
+    "title": "İşlem başarısız",
+    "unknown": "Beklenmeyen bir hata oluştu",
+    "network": "Sunucuya ulaşılamadı. Bağlantınızı kontrol edin.",
+    "validation": "Lütfen işaretli alanları düzeltin",
+    "forbidden": "Bu işlem için yetkiniz yok",
+    "not_found": "Kayıt bulunamadı",
+    "auth": {
+      "invalid_credentials": "E-posta veya parola hatalı",
+      "invalid_refresh_token": "Oturumunuzun süresi doldu, lütfen tekrar giriş yapın",
+      "email_taken": "Bu e-posta adresiyle zaten bir hesap var"
+    },
+    "role": {
+      "system_readonly": "Sistem rolleri değiştirilemez veya silinemez",
+      "in_use": "Bu role atanmış kullanıcılar var; önce kullanıcıları başka role taşıyın"
+    },
+    "member": {
+      "last_admin": "Organizasyonda en az bir aktif yönetici kalmalıdır",
+      "exists": "Bu kullanıcı zaten organizasyonun üyesi"
+    }
+  }
+}

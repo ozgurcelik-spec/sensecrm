@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- ProblemDetails titles -->
+  <data name="problem.title.validation" xml:space="preserve"><value>Validation failed</value></data>
+  <data name="problem.title.unauthorized" xml:space="preserve"><value>Not authenticated</value></data>
+  <data name="problem.title.forbidden" xml:space="preserve"><value>Forbidden</value></data>
+  <data name="problem.title.not_found" xml:space="preserve"><value>Not found</value></data>
+  <data name="problem.title.conflict" xml:space="preserve"><value>Conflict</value></data>
+  <data name="problem.title.rule" xml:space="preserve"><value>Rule violation</value></data>
+  <data name="problem.title.payment" xml:space="preserve"><value>Subscription required</value></data>
+  <data name="problem.title.failure" xml:space="preserve"><value>Unexpected error</value></data>
+  <data name="problem.title.cancelled" xml:space="preserve"><value>Request cancelled</value></data>
+  <data name="problem.title.too_many_requests" xml:space="preserve"><value>Too many requests</value></data>
+  <!-- Common error codes -->
+  <data name="general.null_value" xml:space="preserve"><value>Value cannot be empty.</value></data>
+  <data name="validation" xml:space="preserve"><value>One or more fields are invalid.</value></data>
+  <data name="auth.unauthenticated" xml:space="preserve"><value>You need to sign in.</value></data>
+  <data name="forbidden" xml:space="preserve"><value>You are not allowed to perform this action.</value></data>
+  <data name="not_found" xml:space="preserve"><value>Record not found.</value></data>
+  <data name="tenant.mismatch" xml:space="preserve"><value>The record does not belong to this organization.</value></data>
+  <data name="general.concurrency_conflict" xml:space="preserve"><value>The record was changed by someone else; reload and try again.</value></data>
+  <data name="general.request_cancelled" xml:space="preserve"><value>The request was cancelled.</value></data>
+  <data name="general.internal_error" xml:space="preserve"><value>An unexpected error occurred.</value></data>
+  <data name="general.rate_limit_exceeded" xml:space="preserve"><value>Too many requests; please try again shortly.</value></data>
+  <!-- Authentication -->
+  <data name="auth.invalid_credentials" xml:space="preserve"><value>Invalid e-mail or password.</value></data>
+  <data name="auth.invalid_refresh_token" xml:space="preserve"><value>Your session has expired; please sign in again.</value></data>
+  <data name="auth.email_taken" xml:space="preserve"><value>An account with this e-mail address already exists.</value></data>
+  <data name="auth.locked_out" xml:space="preserve"><value>Too many failed attempts. The account is locked for {minutes} minutes.</value></data>
+  <data name="auth.user_disabled" xml:space="preserve"><value>The account is disabled.</value></data>
+  <data name="auth.no_active_organization" xml:space="preserve"><value>Your account is not an active member of any organization.</value></data>
+  <!-- Roles and members -->
+  <data name="role.system_readonly" xml:space="preserve"><value>System roles cannot be changed or deleted.</value></data>
+  <data name="role.in_use" xml:space="preserve"><value>The role is assigned to {count} member(s); change their role first.</value></data>
+  <data name="role.name_taken" xml:space="preserve"><value>A role with this name already exists.</value></data>
+  <data name="role.unknown_permission" xml:space="preserve"><value>Unknown permission key.</value></data>
+  <data name="member.last_admin" xml:space="preserve"><value>The organization must keep at least one active Administrator.</value></data>
+  <data name="member.exists" xml:space="preserve"><value>This user is already a member of the organization.</value></data>
+  <!-- Validation messages -->
+  <data name="validation.locale" xml:space="preserve"><value>Language must be "tr" or "en".</value></data>
+  <data name="validation.time_zone" xml:space="preserve"><value>Choose a valid time zone (e.g. Europe/Istanbul).</value></data>
+  <data name="validation.password_too_short" xml:space="preserve"><value>Password must be at least {MinLength} characters.</value></data>
+  <data name="validation.required" xml:space="preserve"><value>This field is required.</value></data>
+  <data name="validation.email" xml:space="preserve"><value>Enter a valid e-mail address.</value></data>
+  <!-- Field names in validation messages: field.{snake_case} -->
+  <data name="field.email" xml:space="preserve"><value>E-mail</value></data>
+  <data name="field.password" xml:space="preserve"><value>Password</value></data>
+  <data name="field.display_name" xml:space="preserve"><value>Display name</value></data>
+  <data name="field.organization_name" xml:space="preserve"><value>Organization name</value></data>
+  <data name="field.locale" xml:space="preserve"><value>Language</value></data>
+  <data name="field.default_locale" xml:space="preserve"><value>Default language</value></data>
+  <data name="field.time_zone" xml:space="preserve"><value>Time zone</value></data>
+  <data name="field.name" xml:space="preserve"><value>Name</value></data>
+  <data name="field.role_id" xml:space="preserve"><value>Role</value></data>
+  <data name="field.permissions" xml:space="preserve"><value>Permissions</value></data>
+  <data name="field.refresh_token" xml:space="preserve"><value>Refresh token</value></data>
+  <data name="field.organization_id" xml:space="preserve"><value>Organization</value></data>
+  <data name="field.user_id" xml:space="preserve"><value>User</value></data>
+</root>

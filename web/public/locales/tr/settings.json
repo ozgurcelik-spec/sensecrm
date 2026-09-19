@@ -1,0 +1,11 @@
+{
+  "organization": {
+    "title": "Organizasyon",
+    "description": "Şirketinizin temel bilgileri ve bölgesel ayarları",
+    "name": "Organizasyon adı",
+    "slug": "Kısa ad",
+    "defaultLocale": "Varsayılan dil",
+    "timeZone": "Saat dilimi",
+    "readOnly": "Bu ayarları değiştirme izniniz yok."
+  }
+}

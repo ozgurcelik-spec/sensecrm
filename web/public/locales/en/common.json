@@ -1,0 +1,73 @@
+{
+  "app": {
+    "name": "Sense CRM",
+    "tagline": "Manage your sales and customer relationships in one place"
+  },
+  "save": "Save",
+  "cancel": "Cancel",
+  "create": "Create",
+  "edit": "Edit",
+  "delete": "Delete",
+  "view": "View",
+  "close": "Close",
+  "loading": "Loading...",
+  "actions": "Actions",
+  "retry": "Retry",
+  "saved": "Changes saved",
+  "noData": "No records found",
+  "loadFailed": "Could not load data",
+  "total": "{{count}} records in total",
+  "themeLight": "Light theme",
+  "themeDark": "Dark theme",
+  "theme": "Theme",
+  "backHome": "Back to home",
+  "search": "Search",
+  "confirm": "Confirm",
+  "languages": {
+    "tr": "Türkçe",
+    "en": "English"
+  },
+  "shell": {
+    "organizations": "Organizations",
+    "switchOrganization": "Switch organization",
+    "switched": "Switched to {{name}}",
+    "language": "Language",
+    "profile": "My profile",
+    "logout": "Sign out",
+    "toggleNavigation": "Toggle navigation"
+  },
+  "comingSoon": {
+    "title": "{{module}} is coming soon",
+    "description": "This module will be available in the next release."
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "description": "You don't have the permission required to view this page. Please contact your administrator."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for may have moved or never existed.",
+    "back": "Back to home"
+  },
+  "errors": {
+    "title": "Operation failed",
+    "unknown": "An unexpected error occurred",
+    "network": "Could not reach the server. Check your connection.",
+    "validation": "Please correct the highlighted fields",
+    "forbidden": "You are not allowed to perform this action",
+    "not_found": "Record not found",
+    "auth": {
+      "invalid_credentials": "Incorrect email or password",
+      "invalid_refresh_token": "Your session has expired, please sign in again",
+      "email_taken": "An account with this email already exists"
+    },
+    "role": {
+      "system_readonly": "System roles cannot be changed or deleted",
+      "in_use": "Users are assigned to this role; move them to another role first"
+    },
+    "member": {
+      "last_admin": "The organization must keep at least one active administrator",
+      "exists": "This user is already a member of the organization"
+    }
+  }
+}

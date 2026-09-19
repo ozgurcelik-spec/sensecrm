@@ -1,0 +1,11 @@
+/*
+ * Mantine owns colors, typography and component styling (theme: src/lib/mantine-theme.ts).
+ * Tailwind is kept for layout utilities only. Its preflight (base) sits below Mantine and its
+ * utilities above, so layout classes still win over component defaults.
+ */
+@layer theme, base, mantine, components, utilities;
+
+@import "@mantine/core/styles.layer.css";
+@import "@mantine/notifications/styles.layer.css";
+
+@import "tailwindcss";

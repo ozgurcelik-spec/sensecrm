@@ -1,0 +1,25 @@
+# Mimari Kararlar (ADR özeti)
+
+Kaynak: [PRD](../../.claude/prds/zoho-crm-klonu.prd.md), [mimari diyagram](mimari.webp).
+Ürün Zoho CRM gibi çok kiracılı bir SaaS olarak tasarlanır; grup şirketleri ilk kiracılardır.
+
+**K0 — Referans altyapı:** Teknoloji stack'i ve proje yapısı kardeş proje **senseik** ile aynıdır; altyapı oradan taşınır (`Sense.*` → `Crm.*`), CRM için gereksiz parçalar baştan alınmaz. Ayrıntı: [backend.md](backend.md). Aşağıdaki satırlarda senseik ile çelişen bir ifade olursa senseik deseni geçerlidir. **Mobil uygulama yok; yalnızca web.**
+
+| # | Konu | Karar | Gerekçe |
+|---|---|---|---|
+| K1 | Kiracı modeli | Kiracı = organizasyon (şirket). Bir kullanıcı hesabı birden çok organizasyona üye olabilir ve aralarında geçiş yapar (Zoho'daki "org switch"). | Grup çalışanları birden çok şirkette çalışabilir; SaaS müşterileri de aynı modelle açılır. |
+| K2 | Veri ayrımı | Tek PostgreSQL veritabanı, satır bazlı ayrım: her kiracı verisinde `TenantId` kolonu, EF Core global query filter zorunlu. Kiracı dışı sorgu yalnızca açıkça `IgnoreQueryFilters` ile ve platform yöneticisi yetkisiyle. İleri aşamada PostgreSQL RLS ikinci savunma hattı olarak eklenir. | Kullanıcı talebi (tek DB, satır bazlı). |
+| K3 | Kapasite hedefi | "250+" belirsiz; tasarım hedefi: 1.000 kiracı, 10.000 kullanıcı, büyük kiracıda 10M kayıt. Tüm kiracı indeksleri `(TenantId, ...)` ile başlar. | Her iki yorumu da (250 şirket / 250 kullanıcı) rahat karşılar. |
+| K4 | Grup konsolidasyonu | MVP'de yok. Sonra "organizasyon grubu" kavramı + grup raporları için salt-okur çapraz kiracı görünümü. | Satır bazlı modelde güvenli çapraz erişim ayrı tasarım ister. |
+| K5 | Uygulama mimarisi | .NET 10 modüler monolit, senseik düzeni: modül başına `Crm.Modules.<X>.{Domain,Application,Contracts,Infrastructure,Api}`, ayrı şema + DbContext + migration; modüller yalnızca `*.Contracts` üzerinden konuşur. Kendi CQRS dispatcher'ı + pipeline behaviour'ları, MVC controller'lar, `/api/v1` URL versiyonlama. Host'lar: `Crm.Api`, `Crm.Worker` (outbox), `Crm.Migrator`. | Diyagram: CRM API katmanı + bağımsız ölçeklenen worker'lar. Erken microservice karmaşasından kaçınır. |
+| K6 | Kimlik doğrulama | Senseik Identity modülünden: e-posta + parola (PBKDF2, kilitleme), RS256 JWT access token (~15 dk) + döner refresh token (family ile yeniden kullanım tespiti). Token organizasyon bağlamını (`tid`) taşır. MFA, e-posta daveti, AD/LDAP/OIDC SSO sonraki aşama. | Kanıtlanmış kod; SaaS'ta her müşteri AD'ye sahip değil. |
+| K7 | Yetkilendirme | RBAC: organizasyon başına roller, rollere izin anahtarları (`crm.leads.read` vb.). Sistem rolleri (Yönetici, Standart) her yeni organizasyona tohumlanır. Kayıt sahipliği bazlı görünürlük (Zoho "profile + role hierarchy") sonraki aşama. | Diyagram: RBAC/ABAC. |
+| K8 | Çok dillilik | Web: i18next, `tr` ve `en` başlangıç, JSON kaynak dosyaları. API: hata kodları sabit anahtar döner, metin çevirisi istemcide. Kullanıcı başına dil tercihi. | Kullanıcı talebi (çok dilli). |
+| K9 | Workflow motoru | Conductor OSS (Orkes'in açık kaynak çekirdeği), Docker ile kendi veri merkezinde. CRM API workflow başlatır; worker'lar görevleri çeker. | Diyagram; lisans maliyeti yok, yurt içi barındırılabilir. |
+| K10 | Olaylar | Modül içi domain event'ler; modüller arası integration event'ler transactional outbox ile. | Tutarlılık; worker'lara güvenilir iletim. |
+| K11 | Veri katmanı | PostgreSQL (ana), Redis (önbellek), MinIO (S3 uyumlu nesne depolama, yurt içi), Elasticsearch/OpenSearch arama (2. aşama). | Diyagram; tamamı self-host edilebilir. |
+| K12 | Web | Senseik web stack'i: pnpm workspace (`web`, `packages/*`), React + Vite + TypeScript, Mantine 9 + Tailwind v4 (yalnızca yerleşim), react-router v7, paylaşılan `packages/api-client`. | Ekip bilgisi, tek UI dili. |
+| K13 | Barındırma | Yurt içi, kendi veri merkezi. Geliştirmede Docker Compose; üretimde Kubernetes (Helm) hedefi. KVKK: kişisel veri alanları işaretlenir, denetim kaydı zorunlu. | Kullanıcı talebi. |
+| K14 | Denetim | Senseik `AuditLogInterceptor`: denetlenen varlıklarda değişiklik kaydı (kim, ne, ne zaman, alan farkı) modülün kendi şemasındaki `audit_log_entries` tablosuna, aynı transaction'da, kiracı bazlı. | Diyagram: Audit & Compliance. |
+| K16 | Baştan alınmayanlar | Hangfire, SignalR, e-posta/bildirim, MinIO, dışa aktarma (PDF/Excel), AI/MCP, gözlemlenebilirlik yığını (Seq/Jaeger/Grafana/Sentry), RabbitMQ, veri kapsamı (DataScope), taklit (impersonation), API anahtarları, MFA. İhtiyaç doğduğu milestone'da senseik'ten eklenir. | Kullanıcı talebi: gereksizler baştan dahil edilmesin. |
+| K15 | Test | xUnit + Testcontainers (gerçek PostgreSQL), web için Vitest. Kiracı izolasyonu için zorunlu entegrasyon testleri. | PRD riski: kiracılar arası sızıntı = 0. |

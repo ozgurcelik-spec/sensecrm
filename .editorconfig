@@ -1,0 +1,98 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{cs,csx}]
+dotnet_sort_system_directives_first = true
+dotnet_style_qualification_for_field = false:suggestion
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:suggestion
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CS1591.severity = none
+
+[*.{json,yml,yaml,js,jsx,ts,tsx,css,html,md,sbn}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cmd,bat,ps1}]
+end_of_line = crlf
+
+[*.cs]
+# Proje adlandırma kararları (Sense.Shared.*, Error tipi) VB anahtar kelime kuralıyla çakışır
+dotnet_diagnostic.CA1716.severity = none
+# Değer nesneleri ValueObject tabanında eşitlik tanımlar
+dotnet_diagnostic.CA1036.severity = none
+# Türkçe kullanıcı metinleri için kültür belirtme uyarıları
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1304.severity = none
+dotnet_diagnostic.CA1311.severity = none
+# Kimlik/ad kuralları: Guid Id, OwnerId vb.
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1724.severity = none
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1002.severity = none
+dotnet_diagnostic.CA1819.severity = none
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA1031.severity = none
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1727.severity = none
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1812.severity = none
+dotnet_diagnostic.CA1515.severity = none
+dotnet_diagnostic.CA1034.severity = none
+dotnet_diagnostic.CA1054.severity = none
+dotnet_diagnostic.CA1056.severity = none
+dotnet_diagnostic.CA1055.severity = none
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1308.severity = none
+dotnet_diagnostic.CA2225.severity = none
+dotnet_diagnostic.CA1000.severity = none
+dotnet_diagnostic.CA1863.severity = none
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1860.severity = none
+dotnet_diagnostic.CA1822.severity = none
+dotnet_diagnostic.CA2201.severity = none
+dotnet_diagnostic.CA1310.severity = none
+dotnet_diagnostic.CA1307.severity = none
+dotnet_diagnostic.CA1309.severity = none
+dotnet_diagnostic.CA5394.severity = none
+dotnet_diagnostic.CA1826.severity = none
+dotnet_diagnostic.CA1829.severity = none
+dotnet_diagnostic.CA1851.severity = none
+dotnet_diagnostic.CA1862.severity = none
+dotnet_diagnostic.CA2234.severity = none
+dotnet_diagnostic.CA1806.severity = none
+dotnet_diagnostic.CA1508.severity = none
+dotnet_diagnostic.CA1510.severity = none
+dotnet_diagnostic.CA1513.severity = none
+dotnet_diagnostic.CA2208.severity = none
+dotnet_diagnostic.CA1024.severity = none
+dotnet_diagnostic.CA1040.severity = none
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1303.severity = none
+dotnet_diagnostic.CA1063.severity = none
+dotnet_diagnostic.CA1816.severity = none
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.IDE0290.severity = none
+dotnet_diagnostic.CA1725.severity = none
+dotnet_diagnostic.CA1721.severity = none
+dotnet_diagnostic.CA1716.severity = none
+dotnet_diagnostic.CA1873.severity = none
+dotnet_diagnostic.CA1050.severity = none
+
+# EF Core migration çıktıları üretilmiş koddur; stil/analizör kuralları uygulanmaz
+[**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.IDE0161.severity = none

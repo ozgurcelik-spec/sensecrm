@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- ProblemDetails başlıkları -->
+  <data name="problem.title.validation" xml:space="preserve"><value>Doğrulama hatası</value></data>
+  <data name="problem.title.unauthorized" xml:space="preserve"><value>Kimlik doğrulanmadı</value></data>
+  <data name="problem.title.forbidden" xml:space="preserve"><value>Yetkiniz yok</value></data>
+  <data name="problem.title.not_found" xml:space="preserve"><value>Kayıt bulunamadı</value></data>
+  <data name="problem.title.conflict" xml:space="preserve"><value>Çakışma</value></data>
+  <data name="problem.title.rule" xml:space="preserve"><value>İşlem kurala aykırı</value></data>
+  <data name="problem.title.payment" xml:space="preserve"><value>Abonelik gerekli</value></data>
+  <data name="problem.title.failure" xml:space="preserve"><value>Beklenmeyen hata</value></data>
+  <data name="problem.title.cancelled" xml:space="preserve"><value>İstek iptal edildi</value></data>
+  <data name="problem.title.too_many_requests" xml:space="preserve"><value>Çok fazla istek</value></data>
+  <!-- Ortak hata kodları -->
+  <data name="general.null_value" xml:space="preserve"><value>Değer boş olamaz.</value></data>
+  <data name="validation" xml:space="preserve"><value>Bir veya daha fazla alan geçersiz.</value></data>
+  <data name="auth.unauthenticated" xml:space="preserve"><value>Oturum açmanız gerekiyor.</value></data>
+  <data name="forbidden" xml:space="preserve"><value>Bu işlem için yetkiniz yok.</value></data>
+  <data name="not_found" xml:space="preserve"><value>Kayıt bulunamadı.</value></data>
+  <data name="tenant.mismatch" xml:space="preserve"><value>Kayıt bu organizasyona ait değil.</value></data>
+  <data name="general.concurrency_conflict" xml:space="preserve"><value>Kayıt başka biri tarafından değiştirildi; sayfayı yenileyip tekrar deneyin.</value></data>
+  <data name="general.request_cancelled" xml:space="preserve"><value>İstek iptal edildi.</value></data>
+  <data name="general.internal_error" xml:space="preserve"><value>Beklenmeyen bir hata oluştu.</value></data>
+  <data name="general.rate_limit_exceeded" xml:space="preserve"><value>Çok fazla istek gönderildi; lütfen biraz sonra tekrar deneyin.</value></data>
+  <!-- Kimlik doğrulama -->
+  <data name="auth.invalid_credentials" xml:space="preserve"><value>E-posta veya parola hatalı.</value></data>
+  <data name="auth.invalid_refresh_token" xml:space="preserve"><value>Oturum süresi doldu; lütfen tekrar giriş yapın.</value></data>
+  <data name="auth.email_taken" xml:space="preserve"><value>Bu e-posta adresiyle bir hesap zaten var.</value></data>
+  <data name="auth.locked_out" xml:space="preserve"><value>Çok fazla hatalı deneme. Hesap {minutes} dakika kilitlendi.</value></data>
+  <data name="auth.user_disabled" xml:space="preserve"><value>Hesap devre dışı.</value></data>
+  <data name="auth.no_active_organization" xml:space="preserve"><value>Hesabınızın aktif üyesi olduğu bir organizasyon yok.</value></data>
+  <!-- Roller ve üyeler -->
+  <data name="role.system_readonly" xml:space="preserve"><value>Sistem rolleri değiştirilemez veya silinemez.</value></data>
+  <data name="role.in_use" xml:space="preserve"><value>Rol {count} üyeye atanmış; önce üyelerin rolünü değiştirin.</value></data>
+  <data name="role.name_taken" xml:space="preserve"><value>Bu adla bir rol zaten var.</value></data>
+  <data name="role.unknown_permission" xml:space="preserve"><value>Tanımsız izin anahtarı.</value></data>
+  <data name="member.last_admin" xml:space="preserve"><value>Organizasyonda en az bir aktif Yönetici kalmalıdır.</value></data>
+  <data name="member.exists" xml:space="preserve"><value>Bu kullanıcı zaten organizasyonun üyesi.</value></data>
+  <!-- Doğrulama mesajları -->
+  <data name="validation.locale" xml:space="preserve"><value>Dil "tr" veya "en" olmalıdır.</value></data>
+  <data name="validation.time_zone" xml:space="preserve"><value>Geçerli bir saat dilimi seçin (ör. Europe/Istanbul).</value></data>
+  <data name="validation.password_too_short" xml:space="preserve"><value>Parola en az {MinLength} karakter olmalıdır.</value></data>
+  <data name="validation.required" xml:space="preserve"><value>Bu alan zorunludur.</value></data>
+  <data name="validation.email" xml:space="preserve"><value>Geçerli bir e-posta adresi girin.</value></data>
+  <!-- Doğrulama mesajlarındaki alan adları: field.{snake_case} -->
+  <data name="field.email" xml:space="preserve"><value>E-posta</value></data>
+  <data name="field.password" xml:space="preserve"><value>Parola</value></data>
+  <data name="field.display_name" xml:space="preserve"><value>Ad soyad</value></data>
+  <data name="field.organization_name" xml:space="preserve"><value>Organizasyon adı</value></data>
+  <data name="field.locale" xml:space="preserve"><value>Dil</value></data>
+  <data name="field.default_locale" xml:space="preserve"><value>Varsayılan dil</value></data>
+  <data name="field.time_zone" xml:space="preserve"><value>Saat dilimi</value></data>
+  <data name="field.name" xml:space="preserve"><value>Ad</value></data>
+  <data name="field.role_id" xml:space="preserve"><value>Rol</value></data>
+  <data name="field.permissions" xml:space="preserve"><value>İzinler</value></data>
+  <data name="field.refresh_token" xml:space="preserve"><value>Yenileme anahtarı</value></data>
+  <data name="field.organization_id" xml:space="preserve"><value>Organizasyon</value></data>
+  <data name="field.user_id" xml:space="preserve"><value>Kullanıcı</value></data>
+</root>

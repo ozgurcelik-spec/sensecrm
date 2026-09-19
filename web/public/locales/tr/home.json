@@ -1,0 +1,13 @@
+{
+  "welcome": "Hoş geldiniz, {{name}}",
+  "subtitle": "{{org}} organizasyonunda {{role}} rolüyle çalışıyorsunuz.",
+  "organizationCard": "Organizasyon bilgileri",
+  "name": "Ad",
+  "slug": "Kısa ad",
+  "defaultLocale": "Varsayılan dil",
+  "timeZone": "Saat dilimi",
+  "role": "Rolünüz",
+  "permissionCount": "{{count}} izin",
+  "quickLinks": "Hızlı erişim",
+  "modulesSoon": "Satış modülleri (potansiyel, kişi, müşteri, fırsat) yakında burada olacak."
+}
