@@ -97,6 +97,7 @@ export const PERMISSIONS = {
   crmDealsRead: "crm.deals.read",
   crmDealsWrite: "crm.deals.write",
   crmActivitiesRead: "crm.activities.read",
+  crmActivitiesWrite: "crm.activities.write",
   crmReportsRead: "crm.reports.read",
 } as const;
 
@@ -108,3 +109,4 @@ export interface ListResult<T> {
   totalCount: number;
 }
 export * from "./crm";
+export * from "./activities";

@@ -67,7 +67,17 @@
     "convertedContactId": "Dönüşen kişi",
     "convertedDealId": "Dönüşen fırsat",
     "convertedAt": "Dönüşüm zamanı",
-    "deletedAt": "Silinme zamanı"
+    "deletedAt": "Silinme zamanı",
+    "type": "Tür",
+    "subject": "Konu",
+    "priority": "Öncelik",
+    "dueAt": "Vade",
+    "startAt": "Başlangıç",
+    "endAt": "Bitiş",
+    "relatedType": "İlişkili kayıt türü",
+    "relatedId": "İlişkili kayıt",
+    "assignedUserId": "Atanan",
+    "completedAt": "Tamamlanma zamanı"
   },
   "accounts": {
     "title": "Müşteriler",

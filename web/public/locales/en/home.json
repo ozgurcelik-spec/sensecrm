@@ -14,5 +14,24 @@
     "openDeals": "Open deals",
     "pipelineAmount": "Open pipeline amount",
     "unavailable": "Unavailable"
+  },
+  "myWork": {
+    "title": "My work",
+    "open": "Open",
+    "overdue": "Overdue",
+    "dueToday": "Due today",
+    "completedThisWeek": "Completed this week",
+    "upcoming": "Tasks due today and overdue",
+    "empty": "You have no pending tasks for today",
+    "viewAll": "All activities",
+    "complete": "Complete task {{subject}}"
+  },
+  "charts": {
+    "funnel": "Sales funnel",
+    "wonLost": "Won / lost deals (last 6 months)",
+    "leadSources": "Lead sources",
+    "empty": "No data to show",
+    "viewReports": "Reports",
+    "failed": "Chart data could not be loaded"
   }
 }

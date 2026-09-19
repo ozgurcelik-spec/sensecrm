@@ -67,7 +67,17 @@
     "convertedContactId": "Converted contact",
     "convertedDealId": "Converted deal",
     "convertedAt": "Converted at",
-    "deletedAt": "Deleted at"
+    "deletedAt": "Deleted at",
+    "type": "Type",
+    "subject": "Subject",
+    "priority": "Priority",
+    "dueAt": "Due",
+    "startAt": "Start",
+    "endAt": "End",
+    "relatedType": "Related record type",
+    "relatedId": "Related record",
+    "assignedUserId": "Assignee",
+    "completedAt": "Completed at"
   },
   "accounts": {
     "title": "Accounts",

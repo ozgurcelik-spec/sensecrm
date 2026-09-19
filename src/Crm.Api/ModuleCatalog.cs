@@ -1,3 +1,4 @@
+using Crm.Modules.Activities.Api;
 using Crm.Modules.Identity.Api;
 using Crm.Modules.Sales.Api;
 using Crm.Shared.Contracts.Modules;
@@ -14,5 +15,6 @@ public static class ModuleCatalog
     [
         new IdentityModule(),
         new SalesModule(),
+        new ActivitiesModule(),
     ];
 }

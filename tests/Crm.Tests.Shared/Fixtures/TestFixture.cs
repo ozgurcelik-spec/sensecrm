@@ -25,7 +25,7 @@ namespace Crm.Tests.Shared.Fixtures;
 public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestingEnvironment = "Testing";
-    private static readonly string[] Schemas = ["identity", "sales", AuditDbContext.SchemaName];
+    private static readonly string[] Schemas = ["identity", "sales", "activities", AuditDbContext.SchemaName];
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("crm_test")

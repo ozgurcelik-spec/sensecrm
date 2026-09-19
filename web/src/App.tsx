@@ -1,12 +1,10 @@
 import { lazy, useEffect, type ReactNode } from "react";
 import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router";
 import { useTranslation } from "react-i18next";
-import ComingSoonPage from "@/components/coming-soon-page";
 import NoAccess from "@/components/no-access";
 import { PermissionGuard } from "@/components/permission-guard";
 import ProtectedRoute from "@/components/protected-route";
 import RouteBoundary from "@/components/route-boundary";
-import { COMING_SOON_ITEMS } from "@/config/navigation";
 import AppLayout from "@/layouts/app-layout";
 import LoginPage from "@/pages/auth/login";
 import NotFoundPage from "@/pages/not-found";
@@ -29,6 +27,9 @@ const AccountsPage = lazy(() => import("@/pages/crm/accounts"));
 const AccountDetailPage = lazy(() => import("@/pages/crm/account-detail"));
 const DealsPage = lazy(() => import("@/pages/crm/deals"));
 const DealDetailPage = lazy(() => import("@/pages/crm/deal-detail"));
+const ActivitiesPage = lazy(() => import("@/pages/crm/activities"));
+// Chart-heavy: recharts stays out of every other chunk.
+const ReportsPage = lazy(() => import("@/pages/crm/reports"));
 const PipelinesPage = lazy(() => import("@/pages/settings/pipelines"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
@@ -139,18 +140,22 @@ export default function App() {
                 </RequirePermission>
               }
             />
-            {/* Activities and reports arrive in later milestones. */}
-            {COMING_SOON_ITEMS.map((item) => (
-              <Route
-                key={item.key}
-                path={item.path.replace("/app/", "")}
-                element={
-                  <PermissionGuard anyOf={item.permissions} fallback={<NoAccess />}>
-                    <ComingSoonPage titleKey={item.labelKey} />
-                  </PermissionGuard>
-                }
-              />
-            ))}
+            <Route
+              path="activities"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmActivitiesRead}>
+                  <ActivitiesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="reports"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmReportsRead}>
+                  <ReportsPage />
+                </RequirePermission>
+              }
+            />
             <Route path="account" element={<AccountPage />} />
             <Route path="settings" element={<Navigate to="/app/settings/organization" replace />} />
             <Route path="settings/organization" element={<OrganizationSettingsPage />} />

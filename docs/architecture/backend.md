@@ -1,6 +1,6 @@
 # Backend (.NET) — mimari özet ve HTTP sözleşmesi
 
-Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli) ve Milestone 2 (satış çekirdeği) sonunda backend'in gerçek durumunu anlatır.
+Kararlar için bkz. [kararlar.md](kararlar.md). Bu belge Milestone 1 (platform temeli), Milestone 2 (satış çekirdeği) ve Milestone 3 (aktiviteler + raporlar) sonunda backend'in gerçek durumunu anlatır.
 Altyapı, senseik (HR SaaS) deposundan taşınmıştır: aynı teknoloji yığını (.NET 10, EF Core + Npgsql, xUnit v3) ve aynı proje yapısı.
 
 ## 1. Proje yapısı
@@ -12,18 +12,19 @@ src/
   Crm.Worker/           Modüllerin outbox'ını boşaltan arka plan süreci (OutboxPollingService<T>)
   Crm.Migrator/         EF migration'larını uygular (migrate | reset)
   Shared/
-    Crm.Shared.Kernel/          Entity/AggregateRoot/TenantAggregateRoot, Result/Error, EmailAddress, Money, DateRange
+    Crm.Shared.Kernel/          Entity/AggregateRoot/TenantAggregateRoot, Result/Error, EmailAddress, Money, DateRange, TenantCalendar (kiracı saat dilimi takvimi)
     Crm.Shared.Contracts/       CQRS arayüzleri, ITenantContext/ICurrentUser, IModule, izinler, sayfalama, integration event
     Crm.Shared.Infrastructure/  Dispatcher + davranışlar, ModuleDbContext, interceptor'lar, outbox/inbox, denetim, yerelleştirme (resx)
     Crm.Shared.Web/             ApiControllerBase, izin yetkilendirmesi, hata yönetimi, sürümleme/OpenAPI/CORS/hız sınırı
   Modules/
     Identity/           Domain · Application · Contracts · Infrastructure · Api   (şema: identity)
-    Sales/              Domain · Application · Contracts · Infrastructure · Api   (şema: sales; Milestone 2)
+    Sales/              Domain · Application · Contracts · Infrastructure · Api   (şema: sales; Milestone 2; satış raporları Milestone 3)
+    Activities/         Domain · Application · Contracts · Infrastructure · Api   (şema: activities; Milestone 3)
 tests/
   Crm.Tests.Architecture/      Onion/modül sınırı kuralları (NetArchTest)
   Crm.Tests.TenantIsolation/   EF modelinde kiracı filtresi/indeks denetimi (veritabanısız)
   Crm.Tests.Shared/            Testcontainers (postgres:17-alpine) + WebApplicationFactory<Program> + Respawn
-  Modules/                     Crm.Modules.Identity.Tests + Crm.Modules.Sales.Tests (birim + HTTP entegrasyon), Shared.Kernel/Infrastructure testleri
+  Modules/                     Crm.Modules.Identity.Tests + Crm.Modules.Sales.Tests + Crm.Modules.Activities.Tests (birim + HTTP entegrasyon), Shared.Kernel/Infrastructure testleri
 infra/docker-compose.yml       postgres + redis (host portları standart + 10000)
 build/new-module.ps1           Yeni modül iskeleti
 ```
@@ -58,7 +59,7 @@ Denetim kaydı ortak `audit.audit_log_entries` tablosuna, her modülde otomatik 
 
 ```powershell
 docker compose -f infra/docker-compose.yml up -d          # postgres (localhost:15432), redis (localhost:16379, isteğe bağlı)
-dotnet run --project src/Crm.Migrator                     # migration'ları uygular (audit + identity + sales); "-- reset" yalnız Development
+dotnet run --project src/Crm.Migrator                     # migration'ları uygular (audit + identity + sales + activities); "-- reset" yalnız Development
 dotnet run --project src/Crm.Api                          # http://localhost:5080  (Scalar: /scalar, OpenAPI: /openapi/v1.json)
 dotnet run --project src/Crm.Worker                       # outbox işleyici
 dotnet test Crm.slnx                                      # entegrasyon testleri için Docker gerekir
@@ -69,14 +70,14 @@ dotnet test Crm.slnx                                      # entegrasyon testleri
 - Web geliştirme sunucusu `/api` isteklerini `http://localhost:5080`'e yönlendirir; CORS `http://localhost:5173` için açıktır (`Cors:AllowedOrigins`).
 - Migration üretimi (yerel araç `dotnet-ef`, `dotnet-tools.json`):
   `dotnet dotnet-ef migrations add <Ad> --project src/Modules/Identity/Crm.Modules.Identity.Infrastructure --startup-project src/Crm.Migrator --context IdentityDbContext -o Persistence/Migrations`
-  Ortak denetim şeması için `--project src/Shared/Crm.Shared.Infrastructure --context AuditDbContext`. Mevcut migration'lar: `InitialIdentity`, `InitialAudit`, `InitialSales` (`--project src/Modules/Sales/Crm.Modules.Sales.Infrastructure --context SalesDbContext`).
+  Ortak denetim şeması için `--project src/Shared/Crm.Shared.Infrastructure --context AuditDbContext`. Mevcut migration'lar: `InitialIdentity`, `InitialAudit`, `InitialSales` (`--project src/Modules/Sales/Crm.Modules.Sales.Infrastructure --context SalesDbContext`), `InitialActivities` (`--project src/Modules/Activities/Crm.Modules.Activities.Infrastructure --context ActivitiesDbContext`).
 
 ## 4. Yeni modül ekleme
 
 1. `./build/new-module.ps1 -Name Sales` — 5 projeyi (Domain/Application/Contracts/Infrastructure/Api) açar, `Crm.slnx`'e ekler, derler.
 2. `src/Crm.Api/ModuleCatalog.cs`'e `new SalesModule()` ekleyin.
 3. `Crm.Migrator` ve `Crm.Worker`'a modülün Infrastructure projesini referans verip `AddModuleDbContext` (Worker'da ayrıca `AddModuleHandlers` + `AddHostedService<OutboxPollingService<SalesDbContext>>`) ekleyin.
-4. İzinleri `Contracts/SalesPermissions.cs`'te tanımlayın (`crm.<kaynak>.<eylem>`, grup `crm`); modül `IModule.Permissions` ile katalogla paylaşır. Yeni anahtarlar mevcut organizasyonların sistem rollerine API açılışında `SystemRolePermissionSynchronizer` ile yayılır (`SystemRoleDefinitions`: Administrator = tümü, Standard = tüm `crm.*` + `org.users.read`). Milestone 2'de `crm.accounts/contacts/leads/deals.*` anahtarları Identity.Contracts'taki `CrmPermissions`'tan `SalesPermissions`'a taşındı (anahtar dizgeleri aynı); `crm.activities.*` ve `crm.reports.read` Milestone 3'te kendi modüllerine taşınana kadar `CrmPermissions`'ta kalır.
+4. İzinleri `Contracts/SalesPermissions.cs`'te tanımlayın (`crm.<kaynak>.<eylem>`, grup `crm`); modül `IModule.Permissions` ile katalogla paylaşır. Yeni anahtarlar mevcut organizasyonların sistem rollerine API açılışında `SystemRolePermissionSynchronizer` ile yayılır (`SystemRoleDefinitions`: Administrator = tümü, Standard = tüm `crm.*` + `org.users.read`). Milestone 2'de `crm.accounts/contacts/leads/deals.*` anahtarları Identity.Contracts'taki `CrmPermissions`'tan `SalesPermissions`'a taşındı (anahtar dizgeleri aynı); Milestone 3'te `crm.activities.*` anahtarları `Activities.Contracts.ActivitiesPermissions`'a taşındı (aynı dizgeler); `crm.reports.read` iki modülün (Sales + Activities raporları) ortak izni olduğu için `Identity.Contracts.CrmPermissions.ReportsRead`'de kaldı.
 5. Kiracıya ait varlıklar `TenantAggregateRoot`, denetlenecekler `IAuditLogged` olur; global kiracı filtresi, `TenantId` indeksi ve denetim kaydı otomatik gelir. Kiracısız (küresel) bir tablo eklemek bilinçli karardır: `TenantQueryFilterConventionTests.GlobalEntities` listesine eklenir.
 6. Handler'ları **Application** assembly'sinden kaydedin (`AddModuleHandlers`; Domain/Contracts assembly'leri de verilir — outbox olay tipleri buradan çözülür). Integration event'i handler içinde `IIntegrationEventOutbox.Enqueue(...)` ile yayınlayın.
 
@@ -117,7 +118,7 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 ### Profil ve katalog
 - `GET /me` → `{ user: { id, email, displayName, locale, isPlatformAdmin }, organization: { id, name, slug, defaultLocale, timeZone }, role: { id, name }, permissions: string[], organizations: [{ id, name, slug }] }`
 - `PATCH /me` `{ displayName?, locale? }` → 204
-- `GET /permissions` → `[{ key, group }]` (`group`: `org` | `crm`); 16 anahtar: `org.settings.manage, org.users.read, org.users.manage, org.roles.manage, org.audit.read`, `crm.{accounts,contacts,leads,deals}.{read,write}` (Sales modülü), `crm.activities.{read,write}` ve `crm.reports.read` (geçici olarak Identity.Contracts).
+- `GET /permissions` → `[{ key, group }]` (`group`: `org` | `crm`); 16 anahtar: `org.settings.manage, org.users.read, org.users.manage, org.roles.manage, org.audit.read`, `crm.{accounts,contacts,leads,deals}.{read,write}` (Sales modülü), `crm.activities.{read,write}` (Activities modülü) ve `crm.reports.read` (Identity.Contracts, ortak).
 
 ### Organizasyon
 - `GET /organization` → `{ id, name, slug, defaultLocale, timeZone }` (aktif üye); `PUT /organization` `{ name, defaultLocale, timeZone }` → 204 (`org.settings.manage`; `timeZone` geçerli IANA kimliği olmalı)
@@ -142,6 +143,7 @@ Access token ~15 dk; refresh token döner (her yenilemede yenisi verilir). Organ
 - Kayıt sahipliği bazlı görünürlük/rol hiyerarşisi (K7), organizasyon grubu ve konsolidasyon (K4), PostgreSQL RLS (K2 ikinci savunma hattı).
 - E-posta ile davet, parola sıfırlama, MFA; SSO (K6).
 - Üretim gözlemlenebilirliği; Dockerfile'lar taşındı ama henüz bir imaj derlemesiyle doğrulanmadı.
+- Activities/rapor açık işleri: bağlı kaydı silinmiş aktivitelerin temizlik işi (ilişki bugün yumuşak: `relatedName` boş döner), tekrarlayan görevler, hatırlatma bildirimleri (bildirim altyapısı M4+); aktivite listesindeki `relatedName` bağlı kaydın okuma iznine bakmaz (`crm.activities.read` yeter); raporlar çok para birimli tutarı ayırmadan toplar (M2 sınırlaması); rapor sorguları büyük kiracılar için henüz önbelleklenmez.
 - Sales açık işleri: yinelenen firma/kişi tespiti, CSV içe aktarma, özel alanlar (kapsam dışı, bkz. [m2-satis-cekirdegi.md](../plan/m2-satis-cekirdegi.md)); pano `totalAmount` alanı para birimlerini ayırmadan toplar (TRY gösterimi; çok para birimli toplam sonraki iş); `GET /organization/members` hâlâ `org.users.read` ister (Administrator ve Standard'da var; bu izni taşımayan özel rollerde sahip seçici çalışmaz).
 
 ## 8. Sales modülü (Milestone 2 — satış çekirdeği)
@@ -207,3 +209,72 @@ Başka organizasyonun kaydı her zaman `not_found` (404) döner (çapraz referan
 - Identity: kayıtta `OrganizationCreated` outbox olayı; `GET /audit?entityType&entityId` (kayıt bazlı denetim).
 - Ortak: `Paging` varsayılanı 25 / üst sınır 100; `AuditLogInterceptor` enum alanlarını camelCase string yazar; `SharedResource` tr/en'e Sales hata/alan anahtarları eklendi.
 - Test altyapısı: `CrmApiFactory` Respawn şemalarına `sales` eklendi.
+
+## 10. Activities modülü (Milestone 3)
+
+HTTP sözleşmesinin bağlayıcı kaynağı [m3-aktivite-rapor.md](../plan/m3-aktivite-rapor.md); bu bölüm uygulanan hâli ve kararları özetler.
+
+**Modül:** `Crm.Modules.Activities.{Domain,Application,Contracts,Infrastructure,Api}`, şema `activities`, tek `ActivitiesDbContext` (migration `InitialActivities`). `Crm.Api` (`ModuleCatalog`), `Crm.Migrator` ve `Crm.Worker` (outbox; bugün olay üretmez) Sales ile aynı kalıpla bağlandı. Modül Sales'e yalnız `Sales.Contracts` üzerinden, Identity'ye `Identity.Contracts` üzerinden bağlıdır (mimari testler yeşil).
+
+**Agregat `Activity`** (`TenantAggregateRoot`, `IAuditLogged`, yumuşak silinen; kimlik `Guid.CreateVersion7`, kişisel veri alanı yok → maskelenen alan yok):
+
+| Kural | Uygulama |
+|---|---|
+| Tür | `task`, `call`, `meeting`, `note`; `PUT` türü değiştirebilir (nota çevirmek durumu `completed` yapar) |
+| Durum | `open`, `completed`, `cancelled`; oluştururken verilmezse `open` (not: `completed`). Geçişler: tamamla (`completedAt` yazılır, tekrar tamamlama ilk anı korur), yeniden aç (`completedAt` temizlenir; tamamlanmış ve iptal edilmişten), `PUT` ile `status` |
+| Not | Her zaman `completed`; `complete`/`reopen`, farklı `status` (POST/PUT) → `activity.note_status_fixed` (409) |
+| Aralık | `endAt >= startAt` (ikisi de verilmişse), aksi `activity.invalid_range` (400); zamanlar UTC'ye normalleştirilir (`Kind` belirtilmemiş = UTC) |
+| Öncelik | `low`, `normal`, `high`; varsayılan `normal` (PUT'ta verilmezse `normal`) |
+| İlişki | `relatedType` (`account`, `contact`, `lead`, `deal`) + `relatedId` birlikte (yoksa `validation`); yumuşak bağ: bağlı kayıt silinirse aktivite kalır, `relatedName` boş döner ve aktivite başka alanlar için düzenlenebilir kalır (ilişki yalnız değiştiyse yeniden doğrulanır) |
+| Atanan | Verilmezse çağıran; verilen aktif üye değilse `owner.not_member` (400) — `IMemberLookup`; mevcut atanan korunurken üyelik yeniden sorgulanmaz |
+| `isOverdue` | Yanıtta hesaplanır: `open` ve `dueAt` geçmiş |
+
+**Sales'e bağ (`Sales.Contracts.IRecordLookup`):** `ExistsAsync`, `GetDisplayNameAsync`, toplu `GetDisplayNamesAsync(RecordRef[])` (tür başına tek sorgu). `Sales.Infrastructure.RecordLookup` kiracı + yumuşak silme filtresi altında uygular; ad: firma adı, kişi/potansiyel tam adı, fırsat adı. Yok / silinmiş / başka organizasyon → `activity.related_not_found` (404; M2'deki çapraz referans davranışıyla aynı, varlık sızdırılmaz).
+
+**Uç noktalar** (`/api/v1`, izin `crm.activities.read` / `crm.activities.write`):
+
+| Yol | Notlar |
+|---|---|
+| `GET /activities` | Filtre: `q` (konu + açıklama, `ILIKE`, joker kaçışlı), `type`, `status`, `assignedUserId`, `relatedType`, `relatedId`, `dueFrom`, `dueTo`, `overdue`; `sort`: `dueAt` (varsayılan artan; **boş `dueAt` her iki yönde de sonda**), `createdAt`, `subject`, `priority` (low < normal < high); bilinmeyen alan yok sayılır; her zaman `createdAt` + `Id` ile kararlı; sayfalama varsayılan 25 / üst sınır 100 |
+| `GET /activities/summary?assignedUserId` | Yoksa çağıran → `{ openCount, overdueCount, dueTodayCount, completedThisWeek }` |
+| `GET /activities/{id}`, `POST` (201), `PUT /{id}` (204, tam değiştirme), `DELETE /{id}` (204, yumuşak) | POST/PUT gövdesi: `type*, subject*, description?, status?, priority?, dueAt?, startAt?, endAt?, relatedType?, relatedId?, assignedUserId?` |
+| `POST /activities/{id}/complete`, `POST /activities/{id}/reopen` | 204; idempotent; not için 409 |
+| `GET /reports/activities/by-user?from&to` | `crm.reports.read` (aşağıda) |
+
+`dueFrom`/`dueTo` UTC anlarıdır ve **uçları dahildir** (`dueAt >= dueFrom`, `dueAt <= dueTo`); biri verildiğinde `dueAt`'ı olmayan aktiviteler dışarıda kalır. Bu sayede pano listesi (`type=task&status=open&assignedUserId=<ben>&dueTo=<bugünün son anı>&sort=dueAt`) geciken + bugün vadeli görevleri en eski önce getirir. `overdue=true` yalnız `open` ve `dueAt` geçmiş olanları, `overdue=false` bunların dışındakileri döner. Sorgu parametresindeki tarih-saatlerin `Kind`'ı yoksa UTC kabul edilir.
+
+**Özet ve kiracı saat dilimi:** "bugün" ve "bu hafta" **organizasyonun saat diliminde** (`organization.timeZone`) hesaplanır: bugün = yerel gün `[00:00, ertesi 00:00)`, hafta = pazartesi başlangıçlı `[pzt 00:00, sonraki pzt 00:00)`; sınırlar UTC'ye çevrilip sorguya gider (yaz saati geçişi ve UTC'den çok farklı dilimler testlidir). `openCount` açık, `overdueCount` açık ve `dueAt < şimdi`, `dueTodayCount` açık ve `dueAt` bugünün içinde (geçmiş olsun olmasın), `completedThisWeek` bu hafta tamamlanan. **Notlar (her zaman tamamlanmış) özet ve aktivite raporunda sayılmaz; iptal edilenler `openCount`'a girmez.** Saat dilimi `Identity.Contracts.TenantInfo.TimeZone` (`ITenantDirectory`) ile okunur; `TenantCalendarService` (Identity.Contracts, Identity kaydeder) Sales ve Activities için ortak kısayoldur (`Kernel.Time.TenantCalendar`: bugün, hafta başı, gün başlangıcı, UTC sınırları, ISO hafta/ay etiketleri; bilinmeyen kimlik → UTC).
+
+**Denetim:** `Activity` değişiklikleri `audit.audit_log_entries`'e yazılır (`EntityType` = `Activity`); enum alanları camelCase string. `GET /audit?entityType=Activity&entityId=` **`crm.activities.read`** ile çalışır: Activities modülü `IAuditEntityPermissions` (`ActivitiesAuditEntityPermissions`, `ActivitiesAuditEntities`) ile türü bildirir; Identity'deki `GetEntityAuditHandler` değişmedi.
+
+**Yeni hata kodları** (metinler `SharedResource.resx` tr/en):
+
+| code | HTTP | Ne zaman |
+|---|---|---|
+| `activity.related_not_found` | 404 | İlişkili kayıt aktif organizasyonda yok |
+| `activity.invalid_range` | 400 | `endAt < startAt` |
+| `activity.note_status_fixed` | 409 | Not için tamamla/yeniden aç veya farklı durum |
+| `owner.not_member` | 400 | Atanan aktif üye değil (Sales ile aynı kod) |
+
+## 11. Raporlar (Milestone 3)
+
+Hepsi `crm.reports.read` ister. Tarih parametreleri `from`, `to` (`YYYY-MM-DD`, **uçlar dahil**) **organizasyon saat diliminde takvim günü** olarak yorumlanır (UTC değil; ör. Europe/Istanbul'da 31 Mart 21:30Z, 1 Nisan sayılır); ikisi de isteğe bağlıdır, varsayılan **son 12 ay**: `to` = bugün (kiracı saatiyle), `from` = 11 ay önceki ayın ilk günü (ay bazlı gruplamada tam 12 dönem). Ters aralık veya 10 yılı aşan aralık → `validation` (`errors.to`); yalnız `from` verilip bugünden sonraya düşerse `validation`. Tutarlar fırsat para birimlerine bakmadan toplanır (`currency` yok).
+
+| Yol | Modül | Yanıt ve tanım |
+|---|---|---|
+| `GET /reports/sales/funnel?pipelineId` | Sales | `{ pipelineId, stages: [{ id, name, kind, order, probability, count, totalAmount }] }` — huni verilmezse varsayılan (yoksa tohumlanır); **güncel durum** (tarih aralığı yok), tüm aşamalar sırasıyla (boş aşama 0), silinmiş fırsatlar yok; bilinmeyen/başka organizasyon huni `not_found` |
+| `GET /reports/sales/won-lost?from&to&groupBy` | Sales | `groupBy` = `month` (varsayılan) veya `week`. `[{ period, wonCount, wonAmount, lostCount, lostAmount }]` — `closedAt`'a göre; dönem `2026-09` veya ISO hafta `2026-W38`; **aralıktaki boş dönemler 0 ile doldurulur**; ilk/son dönem aralık kenarında kısmi olabilir; artan sıra |
+| `GET /reports/sales/leads-by-source?from&to` | Sales | `[{ source, count, convertedCount }]` — `createdAt`'a göre; yalnız potansiyeli olan kaynaklar; sayı azalan, sonra kaynak sırası |
+| `GET /reports/sales/by-owner?from&to` | Sales | `[{ ownerUserId, ownerName, openDealCount, openDealAmount, wonCount, wonAmount, leadCount }]` — **açık fırsatlar güncel durumdur (aralıktan bağımsız)**, `won*` aralıktaki `closedAt`, `leadCount` aralıktaki `createdAt`; kazanılan tutar azalan sıra; adlar `IMemberLookup` (pasif üyeler dahil) |
+| `GET /reports/activities/by-user?from&to` | Activities | `[{ userId, userName, completedCount, openCount, overdueCount }]` — `completedCount`: aralıkta `completedAt`; `openCount`: `open` ve `dueAt` aralıkta; `overdueCount`: bunlardan `dueAt < şimdi`; notlar hariç; tamamlanan azalan sıra |
+
+Uygulama: Sales'te `ISalesReportStore` (`SalesReportStore`, veritabanında toplama; kapanış günleri `timezone(zone, closed_at)` ile — `SalesDbFunctions.ToLocalTimestamp` DbFunction eşlemesi — yerel güne indirilir) + `WonLostPeriods` (ay/ISO hafta bölme ve sıfır doldurma, saf hesap, birim testli); Activities'te `IActivityReadStore.GetUserTotalsAsync`. Rapor handler'ları `TenantCalendarService.ResolveReportRangeAsync` ile aralığı UTC yarı açık `[from, to+1 gün)` sınırlarına çevirir.
+
+**Testler:** `Crm.Shared.Kernel.Tests` (`TenantCalendar`: saat dilimi, yaz saati, pazartesi haftası, ISO etiketleri, varsayılan aralık); `Crm.Modules.Activities.Tests` — domain (durum geçişleri, aralık kuralı, not kuralı, UTC normalleştirme, `isOverdue`, özet penceresi) + Testcontainers HTTP (CRUD ve tam değiştirme, doğrulama, tür kuralları, tamamla/yeniden aç, ilişkili kayıt doğrulama/adı/yumuşak bağ, atama kuralı, filtre/sıralama/sayfalama, **özet saat dilimi sınırları (UTC+14 kiracı)**, izinler, **kiracı izolasyonu**, denetim + `crm.activities.read` ile kayıt bazlı okuma, aktivite raporu bilinen veriyle); `Crm.Modules.Sales.Tests` — `SalesReportsApiTests` (funnel/won-lost/kaynak/temsilci bilinen veriyle, aralık uçları kiracı saat diliminde, boş dönem doldurma, ISO hafta, varsayılan aralık, izin, doğrulama, kiracı izolasyonu) + `WonLostPeriodsTests`.
+
+## 12. Milestone 3'te değişenler (backend)
+- Yeni modül `Activities` (şema `activities`, migration `InitialActivities`); `Crm.Api`, `Crm.Migrator`, `Crm.Worker`'a bağlandı; test altyapısı Respawn şemalarına `activities` eklendi; yeni test projesi `Crm.Modules.Activities.Tests`.
+- `Sales.Contracts`: `IRecordLookup` (+ `RecordType`, `RecordRef`). `Sales`: 4 satış raporu ucu, `ISalesReportStore`, `SalesDbFunctions`.
+- `Identity.Contracts`: `crm.activities.*` anahtarları `ActivitiesPermissions`'a taşındı (dizgeler aynı; Administrator = tüm 16 anahtar, Standard = tüm `crm.*` + `org.users.read` kuralı korunur — `SystemRolePermissionSynchronizer` API açılışında mevcut organizasyonlara da uygular); `CrmPermissions` yalnız `crm.reports.read` taşır; `TenantInfo.TimeZone` ve `TenantCalendarService` eklendi.
+- `Kernel`: `Time.TenantCalendar`.
+- `SharedResource` tr/en: `activity.*` hata anahtarları, `validation.activity_related`, `validation.date_range`, yeni `field.*` adları.

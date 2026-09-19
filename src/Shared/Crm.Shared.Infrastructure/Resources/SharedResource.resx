@@ -104,4 +104,21 @@
   <data name="field.stages" xml:space="preserve"><value>Aşamalar</value></data>
   <data name="field.probability" xml:space="preserve"><value>Olasılık</value></data>
   <data name="field.id" xml:space="preserve"><value>Kimlik</value></data>
+  <!-- Activities + raporlar (Milestone 3) -->
+  <data name="activity.related_not_found" xml:space="preserve"><value>Bağlanmak istenen kayıt (firma, kişi, potansiyel müşteri veya fırsat) bulunamadı.</value></data>
+  <data name="activity.invalid_range" xml:space="preserve"><value>Bitiş zamanı başlangıç zamanından önce olamaz.</value></data>
+  <data name="activity.note_status_fixed" xml:space="preserve"><value>Notlar her zaman tamamlanmış durumdadır; durumları değiştirilemez.</value></data>
+  <data name="validation.activity_related" xml:space="preserve"><value>İlişkili kayıt türü ve kimliği birlikte verilmelidir.</value></data>
+  <data name="validation.date_range" xml:space="preserve"><value>Bitiş tarihi başlangıç tarihinden önce olamaz ve aralık en fazla 10 yıl olabilir.</value></data>
+  <data name="field.subject" xml:space="preserve"><value>Konu</value></data>
+  <data name="field.type" xml:space="preserve"><value>Tür</value></data>
+  <data name="field.priority" xml:space="preserve"><value>Öncelik</value></data>
+  <data name="field.due_at" xml:space="preserve"><value>Son tarih</value></data>
+  <data name="field.start_at" xml:space="preserve"><value>Başlangıç</value></data>
+  <data name="field.end_at" xml:space="preserve"><value>Bitiş</value></data>
+  <data name="field.related_type" xml:space="preserve"><value>İlişkili kayıt türü</value></data>
+  <data name="field.related_id" xml:space="preserve"><value>İlişkili kayıt</value></data>
+  <data name="field.assigned_user_id" xml:space="preserve"><value>Atanan kullanıcı</value></data>
+  <data name="field.from" xml:space="preserve"><value>Başlangıç tarihi</value></data>
+  <data name="field.to" xml:space="preserve"><value>Bitiş tarihi</value></data>
 </root>

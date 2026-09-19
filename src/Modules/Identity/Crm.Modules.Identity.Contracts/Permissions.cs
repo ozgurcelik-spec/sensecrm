@@ -31,22 +31,18 @@ public static class OrgPermissions
 }
 
 /// <summary>
-/// Henüz kendi modülü olmayan CRM izinleri (aktiviteler, raporlar). <c>crm.accounts/contacts/leads/deals.*</c> anahtarları
-/// Milestone 2'de <c>Crm.Modules.Sales.Contracts.SalesPermissions</c>'a taşındı (anahtar dizgeleri aynı, sözleşmedir).
-/// Aktiviteler/raporlar modülleri (Milestone 3) geldiğinde bu geçici kayıt da kaldırılır.
+/// Kendi modülü olmayan (birden çok modülü kapsayan) CRM izni: <c>crm.reports.read</c> satış (Sales) ve aktivite (Activities)
+/// raporlarının ortak iznidir. <c>crm.accounts/contacts/leads/deals.*</c> <c>Crm.Modules.Sales.Contracts.SalesPermissions</c>'ta,
+/// <c>crm.activities.*</c> <c>Crm.Modules.Activities.Contracts.ActivitiesPermissions</c>'ta tanımlıdır (anahtar dizgeleri sözleşmedir).
 /// </summary>
 public static class CrmPermissions
 {
     public const string Module = "crm";
 
-    public const string ActivitiesRead = "crm.activities.read";
-    public const string ActivitiesWrite = "crm.activities.write";
     public const string ReportsRead = "crm.reports.read";
 
     public static IReadOnlyList<Permission> All { get; } =
     [
-        new(ActivitiesRead, Module, PermissionGroups.Crm),
-        new(ActivitiesWrite, Module, PermissionGroups.Crm),
         new(ReportsRead, Module, PermissionGroups.Crm),
     ];
 }

@@ -91,6 +91,11 @@
     },
     "owner": {
       "not_member": "Seçilen sahip bu organizasyonun aktif üyesi değil"
+    },
+    "activity": {
+      "related_not_found": "İlişkili kayıt bulunamadı",
+      "invalid_range": "Bitiş, başlangıçtan önce olamaz",
+      "note_status_fixed": "Notların durumu değiştirilemez"
     }
   }
 }

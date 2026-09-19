@@ -104,4 +104,21 @@
   <data name="field.stages" xml:space="preserve"><value>Stages</value></data>
   <data name="field.probability" xml:space="preserve"><value>Probability</value></data>
   <data name="field.id" xml:space="preserve"><value>Id</value></data>
+  <!-- Activities + raporlar (Milestone 3) -->
+  <data name="activity.related_not_found" xml:space="preserve"><value>The record to link (account, contact, lead or deal) was not found.</value></data>
+  <data name="activity.invalid_range" xml:space="preserve"><value>The end time cannot be before the start time.</value></data>
+  <data name="activity.note_status_fixed" xml:space="preserve"><value>Notes are always completed; their status cannot be changed.</value></data>
+  <data name="validation.activity_related" xml:space="preserve"><value>The related record type and id must be provided together.</value></data>
+  <data name="validation.date_range" xml:space="preserve"><value>The end date cannot be before the start date and the range can span at most 10 years.</value></data>
+  <data name="field.subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="field.type" xml:space="preserve"><value>Type</value></data>
+  <data name="field.priority" xml:space="preserve"><value>Priority</value></data>
+  <data name="field.due_at" xml:space="preserve"><value>Due date</value></data>
+  <data name="field.start_at" xml:space="preserve"><value>Start</value></data>
+  <data name="field.end_at" xml:space="preserve"><value>End</value></data>
+  <data name="field.related_type" xml:space="preserve"><value>Related record type</value></data>
+  <data name="field.related_id" xml:space="preserve"><value>Related record</value></data>
+  <data name="field.assigned_user_id" xml:space="preserve"><value>Assigned user</value></data>
+  <data name="field.from" xml:space="preserve"><value>From date</value></data>
+  <data name="field.to" xml:space="preserve"><value>To date</value></data>
 </root>

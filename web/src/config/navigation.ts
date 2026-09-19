@@ -113,8 +113,3 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
 
 /** CRM modules shown in quick links (everything except the home entry). */
 export const CRM_MODULE_ITEMS = NAV_ITEMS.filter((item) => item.key !== "home");
-
-/** Modules that still render the "coming soon" placeholder (activities: M3, reports: later). */
-export const COMING_SOON_ITEMS = NAV_ITEMS.filter((item) =>
-  ["activities", "reports"].includes(item.key)
-);

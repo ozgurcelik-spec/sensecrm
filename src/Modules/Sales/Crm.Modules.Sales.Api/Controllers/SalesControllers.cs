@@ -22,6 +22,7 @@ public static class SalesRoutes
     public const string Leads = ApiRoutes.VersionedBase + "/leads";
     public const string Pipelines = ApiRoutes.VersionedBase + "/pipelines";
     public const string Deals = ApiRoutes.VersionedBase + "/deals";
+    public const string SalesReports = ApiRoutes.VersionedBase + "/reports/sales";
 }
 
 public sealed record AccountRequest(

@@ -1,3 +1,4 @@
+using Crm.Modules.Activities.Contracts;
 using Crm.Modules.Identity.Application.Roles;
 using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Identity.Domain;
@@ -59,7 +60,7 @@ public sealed class RoleTests
 
 public sealed class SystemRoleDefinitionsTests
 {
-    private static readonly IReadOnlyList<Shared.Contracts.Security.Permission> Catalog = [.. OrgPermissions.All, .. CrmPermissions.All, .. SalesPermissions.All];
+    private static readonly IReadOnlyList<Shared.Contracts.Security.Permission> Catalog = [.. OrgPermissions.All, .. CrmPermissions.All, .. SalesPermissions.All, .. ActivitiesPermissions.All];
 
     [Fact]
     public void Administrator_GetsEveryPermission() =>
@@ -71,7 +72,7 @@ public sealed class SystemRoleDefinitionsTests
         var permissions = SystemRoleDefinitions.PermissionsFor(SystemRoleCodes.Standard, Catalog);
 
         permissions.ShouldContain(OrgPermissions.UsersRead);
-        foreach (var crm in CrmPermissions.All.Concat(SalesPermissions.All))
+        foreach (var crm in CrmPermissions.All.Concat(SalesPermissions.All).Concat(ActivitiesPermissions.All))
         {
             permissions.ShouldContain(crm.Key);
         }

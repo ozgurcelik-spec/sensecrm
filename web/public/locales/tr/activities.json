@@ -1,0 +1,84 @@
+{
+  "title": "Aktiviteler",
+  "description": "Görev, arama, toplantı ve notlarınızı takip edin.",
+  "new": "Yeni aktivite",
+  "search": "Konuda ara",
+  "createTitle": "Yeni aktivite",
+  "editTitle": "Aktiviteyi düzenle",
+  "created": "Aktivite oluşturuldu",
+  "updated": "Aktivite güncellendi",
+  "deleted": "Aktivite silindi",
+  "completed": "Aktivite tamamlandı",
+  "reopened": "Aktivite yeniden açıldı",
+  "deleteTitle": "Aktivite silinsin mi?",
+  "deleteMessage": "\"{{name}}\" aktivitesi silinecek.",
+  "types": {
+    "task": "Görev",
+    "call": "Arama",
+    "meeting": "Toplantı",
+    "note": "Not"
+  },
+  "typeTabs": "Aktivite türü",
+  "quick": {
+    "label": "Hızlı filtre",
+    "all": "Tümü",
+    "today": "Bugün",
+    "overdue": "Geciken",
+    "mine": "Bana atanan"
+  },
+  "statuses": {
+    "open": "Açık",
+    "completed": "Tamamlandı",
+    "cancelled": "İptal edildi"
+  },
+  "priorities": {
+    "low": "Düşük",
+    "normal": "Normal",
+    "high": "Yüksek"
+  },
+  "relatedTypes": {
+    "account": "Müşteri",
+    "contact": "Kişi",
+    "lead": "Potansiyel",
+    "deal": "Fırsat"
+  },
+  "fields": {
+    "type": "Tür",
+    "subject": "Konu",
+    "description": "Açıklama",
+    "status": "Durum",
+    "priority": "Öncelik",
+    "dueAt": "Vade",
+    "startAt": "Başlangıç",
+    "endAt": "Bitiş",
+    "when": "Tarih",
+    "related": "İlişkili kayıt",
+    "relatedType": "İlişkili kayıt türü",
+    "relatedRecord": "Kayıt",
+    "assignee": "Atanan"
+  },
+  "actions": {
+    "complete": "Tamamla",
+    "reopen": "Yeniden aç"
+  },
+  "relatedDeleted": "Silinmiş kayıt",
+  "relatedPicker": {
+    "typePlaceholder": "Tür seçin (isteğe bağlı)",
+    "recordPlaceholder": "Kayıt ara ve seçin",
+    "searching": "Aranıyor...",
+    "locked": "{{type}}: {{name}}"
+  },
+  "validation": {
+    "relatedRequired": "Bir kayıt seçin",
+    "invalidRange": "Bitiş, başlangıçtan önce olamaz"
+  },
+  "tab": {
+    "title": "Aktiviteler",
+    "empty": "Bu kayıt için aktivite yok",
+    "detailed": "Ayrıntılı ekle",
+    "quickAdd": {
+      "subject": "Yeni aktivite konusu",
+      "add": "Ekle"
+    }
+  }
+}

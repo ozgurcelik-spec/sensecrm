@@ -14,5 +14,24 @@
     "openDeals": "Açık fırsatlar",
     "pipelineAmount": "Açık huni tutarı",
     "unavailable": "Kullanılamıyor"
+  },
+  "myWork": {
+    "title": "Benim işlerim",
+    "open": "Açık",
+    "overdue": "Geciken",
+    "dueToday": "Bugün",
+    "completedThisWeek": "Bu hafta tamamlanan",
+    "upcoming": "Bugün ve geciken görevler",
+    "empty": "Bugün için bekleyen göreviniz yok",
+    "viewAll": "Tüm aktiviteler",
+    "complete": "{{subject}} görevini tamamla"
+  },
+  "charts": {
+    "funnel": "Satış hunisi",
+    "wonLost": "Kazanılan / kaybedilen fırsatlar (son 6 ay)",
+    "leadSources": "Potansiyel kaynakları",
+    "empty": "Gösterilecek veri yok",
+    "viewReports": "Raporlar",
+    "failed": "Grafik verileri yüklenemedi"
   }
 }

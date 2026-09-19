@@ -5,6 +5,7 @@ import { Anchor, Button, Card, Skeleton, Table, Text } from "@mantine/core";
 import { Pencil, Trash2 } from "lucide-react";
 import { StageBadge } from "@/components/crm/badges";
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
+import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -80,7 +81,7 @@ function ContactDeals({ contact }: { contact: Contact }) {
 
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common"]);
+  const { t } = useTranslation(["crm", "common", "activities"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteContacts } = useCrmPermissions();
@@ -103,6 +104,7 @@ export default function ContactDetailPage() {
     }
   }
 
+  const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const tabs = contact
     ? [
         {
@@ -129,6 +131,19 @@ export default function ContactDetailPage() {
                     </Text>
                     <ContactDeals contact={contact} />
                   </Card>
+                ),
+              },
+            ]
+          : []),
+        ...(canReadActivities
+          ? [
+              {
+                value: "activities",
+                label: t("activities:tab.title"),
+                content: (
+                  <RecordActivitiesTab
+                    related={{ type: "contact", id: contact.id, name: contact.fullName }}
+                  />
                 ),
               },
             ]

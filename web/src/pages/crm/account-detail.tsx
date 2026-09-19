@@ -7,6 +7,7 @@ import { StageBadge } from "@/components/crm/badges";
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
 import { AccountFormDialog } from "@/components/crm/account-form-dialog";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
+import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -171,7 +172,7 @@ function RelatedDeals({ account, canWrite }: { account: Account; canWrite: boole
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common"]);
+  const { t } = useTranslation(["crm", "common", "activities"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteAccounts, canWriteContacts, canWriteDeals } = useCrmPermissions();
@@ -195,6 +196,7 @@ export default function AccountDetailPage() {
     }
   }
 
+  const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const tabs = account
     ? [
         {
@@ -229,6 +231,19 @@ export default function AccountDetailPage() {
             </Stack>
           ),
         },
+        ...(canReadActivities
+          ? [
+              {
+                value: "activities",
+                label: t("activities:tab.title"),
+                content: (
+                  <RecordActivitiesTab
+                    related={{ type: "account", id: account.id, name: account.name }}
+                  />
+                ),
+              },
+            ]
+          : []),
         {
           value: "audit",
           label: t("crm:tabs.audit"),

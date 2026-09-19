@@ -1,0 +1,76 @@
+{
+  "title": "Raporlar",
+  "description": "Satış ve aktivite performansınızı seçtiğiniz dönem için inceleyin.",
+  "range": {
+    "label": "Tarih aralığı",
+    "thisMonth": "Bu ay",
+    "last3Months": "Son 3 ay",
+    "last12Months": "Son 12 ay",
+    "custom": "Özel",
+    "from": "Başlangıç",
+    "to": "Bitiş",
+    "invalid": "Geçerli bir başlangıç ve bitiş tarihi seçin (başlangıç bitişten sonra olamaz)."
+  },
+  "tabs": {
+    "funnel": "Satış hunisi",
+    "wonLost": "Kazanılan / Kaybedilen",
+    "leadSources": "Potansiyel kaynakları",
+    "byOwner": "Satış temsilcisi",
+    "activities": "Aktivite"
+  },
+  "pipeline": "Satış hunisi",
+  "groupBy": {
+    "label": "Gruplama",
+    "month": "Aylık",
+    "week": "Haftalık"
+  },
+  "downloadCsv": "CSV indir",
+  "funnelNote": "Huni güncel durumu gösterir; tarih aralığından etkilenmez.",
+  "empty": "Bu dönem için veri yok",
+  "columns": {
+    "stage": "Aşama",
+    "kind": "Tür",
+    "probability": "Olasılık",
+    "count": "Adet",
+    "amount": "Tutar",
+    "period": "Dönem",
+    "wonCount": "Kazanılan adet",
+    "wonAmount": "Kazanılan tutar",
+    "lostCount": "Kaybedilen adet",
+    "lostAmount": "Kaybedilen tutar",
+    "source": "Kaynak",
+    "convertedCount": "Dönüşen",
+    "conversionRate": "Dönüşüm oranı",
+    "owner": "Temsilci",
+    "openDealCount": "Açık fırsat",
+    "openDealAmount": "Açık fırsat tutarı",
+    "leadCount": "Potansiyel",
+    "user": "Kullanıcı",
+    "completedCount": "Tamamlanan",
+    "openCount": "Açık",
+    "overdueCount": "Geciken"
+  },
+  "kinds": {
+    "open": "Açık",
+    "won": "Kazanıldı",
+    "lost": "Kaybedildi"
+  },
+  "series": {
+    "won": "Kazanılan",
+    "lost": "Kaybedilen",
+    "count": "Potansiyel",
+    "converted": "Dönüşen",
+    "openAmount": "Açık fırsat tutarı",
+    "wonAmount": "Kazanılan tutar",
+    "completed": "Tamamlanan",
+    "open": "Açık",
+    "overdue": "Geciken"
+  },
+  "files": {
+    "funnel": "satis-hunisi",
+    "wonLost": "kazanilan-kaybedilen",
+    "leadSources": "potansiyel-kaynaklari",
+    "byOwner": "satis-temsilcisi",
+    "activities": "aktivite-raporu"
+  }
+}

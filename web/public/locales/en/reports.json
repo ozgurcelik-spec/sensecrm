@@ -1,0 +1,76 @@
+{
+  "title": "Reports",
+  "description": "Review your sales and activity performance for the period you choose.",
+  "range": {
+    "label": "Date range",
+    "thisMonth": "This month",
+    "last3Months": "Last 3 months",
+    "last12Months": "Last 12 months",
+    "custom": "Custom",
+    "from": "From",
+    "to": "To",
+    "invalid": "Pick a valid start and end date (the start cannot be after the end)."
+  },
+  "tabs": {
+    "funnel": "Sales funnel",
+    "wonLost": "Won / Lost",
+    "leadSources": "Lead sources",
+    "byOwner": "Sales rep",
+    "activities": "Activities"
+  },
+  "pipeline": "Pipeline",
+  "groupBy": {
+    "label": "Group by",
+    "month": "Monthly",
+    "week": "Weekly"
+  },
+  "downloadCsv": "Download CSV",
+  "funnelNote": "The funnel shows the current state; it is not affected by the date range.",
+  "empty": "No data for this period",
+  "columns": {
+    "stage": "Stage",
+    "kind": "Kind",
+    "probability": "Probability",
+    "count": "Count",
+    "amount": "Amount",
+    "period": "Period",
+    "wonCount": "Won count",
+    "wonAmount": "Won amount",
+    "lostCount": "Lost count",
+    "lostAmount": "Lost amount",
+    "source": "Source",
+    "convertedCount": "Converted",
+    "conversionRate": "Conversion rate",
+    "owner": "Sales rep",
+    "openDealCount": "Open deals",
+    "openDealAmount": "Open deal amount",
+    "leadCount": "Leads",
+    "user": "User",
+    "completedCount": "Completed",
+    "openCount": "Open",
+    "overdueCount": "Overdue"
+  },
+  "kinds": {
+    "open": "Open",
+    "won": "Won",
+    "lost": "Lost"
+  },
+  "series": {
+    "won": "Won",
+    "lost": "Lost",
+    "count": "Leads",
+    "converted": "Converted",
+    "openAmount": "Open deal amount",
+    "wonAmount": "Won amount",
+    "completed": "Completed",
+    "open": "Open",
+    "overdue": "Overdue"
+  },
+  "files": {
+    "funnel": "sales-funnel",
+    "wonLost": "won-lost",
+    "leadSources": "lead-sources",
+    "byOwner": "sales-by-rep",
+    "activities": "activity-report"
+  }
+}

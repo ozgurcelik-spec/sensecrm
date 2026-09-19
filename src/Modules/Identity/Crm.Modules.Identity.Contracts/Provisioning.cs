@@ -8,8 +8,8 @@ namespace Crm.Modules.Identity.Contracts;
 /// </summary>
 public sealed record OrganizationCreated(Guid TenantId, string Name, string DefaultLocale) : IntegrationEvent(TenantId);
 
-/// <summary>Bir organizasyonun modüller arası paylaşılan özeti.</summary>
-public sealed record TenantInfo(Guid Id, string Name, string DefaultLocale);
+/// <summary>Bir organizasyonun modüller arası paylaşılan özeti. <see cref="TimeZone"/> IANA kimliğidir (ör. Europe/Istanbul).</summary>
+public sealed record TenantInfo(Guid Id, string Name, string DefaultLocale, string TimeZone);
 
 /// <summary>
 /// Modüller arası organizasyon dizini (kiracı filtresi dışı; yalnız başlangıçta mevcut organizasyonlara varsayılan veri

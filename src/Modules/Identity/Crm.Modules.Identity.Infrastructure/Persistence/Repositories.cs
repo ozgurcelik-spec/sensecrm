@@ -105,11 +105,11 @@ public sealed class TenantDirectory(IdentityDbContext db) : ITenantDirectory
     public async Task<IReadOnlyList<TenantInfo>> ListAllAsync(CancellationToken cancellationToken = default) =>
         await db.Tenants.AsNoTracking().Where(t => t.IsActive)
             .OrderBy(t => t.Name)
-            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale))
+            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale, t.TimeZone))
             .ToListAsync(cancellationToken);
 
     public Task<TenantInfo?> FindAsync(Guid tenantId, CancellationToken cancellationToken = default) =>
         db.Tenants.AsNoTracking().Where(t => t.Id == tenantId)
-            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale))
+            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale, t.TimeZone))
             .FirstOrDefaultAsync(cancellationToken);
 }

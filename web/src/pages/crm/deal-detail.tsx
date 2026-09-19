@@ -6,6 +6,7 @@ import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { StageBadge } from "@/components/crm/badges";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { LostReasonDialog } from "@/components/crm/lost-reason-dialog";
+import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -21,7 +22,7 @@ import { PERMISSIONS } from "@/types";
 
 export default function DealDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["crm", "common"]);
+  const { t } = useTranslation(["crm", "common", "activities"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteDeals } = useCrmPermissions();
@@ -86,6 +87,7 @@ export default function DealDetailPage() {
     }
   }
 
+  const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const tabs = deal
     ? [
         {
@@ -115,6 +117,17 @@ export default function DealDetailPage() {
             </Stack>
           ),
         },
+        ...(canReadActivities
+          ? [
+              {
+                value: "activities",
+                label: t("activities:tab.title"),
+                content: (
+                  <RecordActivitiesTab related={{ type: "deal", id: deal.id, name: deal.name }} />
+                ),
+              },
+            ]
+          : []),
         {
           value: "audit",
           label: t("crm:tabs.audit"),

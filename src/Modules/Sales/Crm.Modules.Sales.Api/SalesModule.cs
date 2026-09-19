@@ -14,7 +14,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Crm.Modules.Sales.Api;
 
 /// <summary>
-/// Sales modülü kompozisyon kökü: firma, kişi, potansiyel müşteri (lead) + dönüştürme, satış hunisi (pipeline) ve fırsat (deal).
+/// Sales modülü kompozisyon kökü: firma, kişi, potansiyel müşteri (lead) + dönüştürme, satış hunisi (pipeline), fırsat (deal) ve satış raporları.
+/// Modüller arası kayıt arama sözleşmesini (<see cref="IRecordLookup"/>) uygular.
 /// <c>crm.accounts/contacts/leads/deals.*</c> izinlerini kataloğa katar (Milestone 1'de Identity.Contracts'taydı).
 /// </summary>
 public sealed class SalesModule : IModule
@@ -49,6 +50,8 @@ public sealed class SalesModule : IModule
         services.AddScoped<IPipelineRepository, PipelineRepository>();
         services.AddScoped<IDealRepository, DealRepository>();
         services.AddScoped<ISalesReadStore, SalesReadStore>();
+        services.AddScoped<ISalesReportStore, SalesReportStore>();
+        services.AddScoped<IRecordLookup, RecordLookup>();
 
         services.AddScoped<OwnerResolver>();
         services.AddScoped<DefaultPipelineResolver>();

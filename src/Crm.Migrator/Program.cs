@@ -1,4 +1,5 @@
 using Crm.Migrator;
+using Crm.Modules.Activities.Infrastructure.Persistence;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Shared.Infrastructure.DependencyInjection;
@@ -14,6 +15,7 @@ builder.Services.AddCrmCore(builder.Configuration);
 builder.Services.AddAuditStore(builder.Configuration);
 builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, IdentityDbContext.SchemaName);
 builder.Services.AddModuleDbContext<SalesDbContext>(builder.Configuration, SalesDbContext.SchemaName);
+builder.Services.AddModuleDbContext<ActivitiesDbContext>(builder.Configuration, ActivitiesDbContext.SchemaName);
 
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);

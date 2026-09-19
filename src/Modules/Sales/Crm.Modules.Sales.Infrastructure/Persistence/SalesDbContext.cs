@@ -30,6 +30,25 @@ public sealed class SalesDbContext(DbContextOptions<SalesDbContext> options, ITe
     public DbSet<PipelineStage> PipelineStages => Set<PipelineStage>();
 
     public DbSet<Deal> Deals => Set<Deal>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Raporlarda UTC anı kiracı saat diliminde yerel güne indirmek için: PostgreSQL timezone(zone, timestamptz) → timestamp.
+        modelBuilder.HasDbFunction(typeof(SalesDbFunctions).GetMethod(nameof(SalesDbFunctions.ToLocalTimestamp), [typeof(string), typeof(DateTime)])!)
+            .HasName("timezone")
+            .HasStoreType("timestamp without time zone")
+            .IsBuiltIn();
+    }
+}
+
+/// <summary>Yalnız sorgu çevirisi için: veritabanı işlevleri (istemcide çalıştırılamaz).</summary>
+public static class SalesDbFunctions
+{
+    /// <summary>UTC anı (<c>timestamptz</c>) verilen IANA saat dilimindeki duvar saatine çevirir (<c>timezone(zone, ts)</c>).</summary>
+    public static DateTime ToLocalTimestamp(string timeZone, DateTime utc) =>
+        throw new NotSupportedException("Yalnızca EF Core sorgularında kullanılabilir.");
 }
 
 internal static class SalesTables

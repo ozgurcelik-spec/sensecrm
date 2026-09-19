@@ -40,6 +40,8 @@ export interface ListParams<F extends string> {
   /** Click on a sortable column: ascending, then descending, then back to the default order. */
   toggleSort: (field: string) => void;
   setFilter: (key: F, value: string | null) => void;
+  /** Changes several filters in one URL update (separate `setFilter` calls would overwrite each other). */
+  setFilters: (changes: Partial<Record<F, string | null>>) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
 }
@@ -120,6 +122,17 @@ export function useListParams<F extends string>(
     [update]
   );
 
+  const setFilters = useCallback(
+    (changes: Partial<Record<F, string | null>>) =>
+      update((p) => {
+        for (const [key, value] of Object.entries(changes) as [F, string | null][]) {
+          if (value) p.set(key, value);
+          else p.delete(key);
+        }
+      }),
+    [update]
+  );
+
   const clearFilters = useCallback(
     () =>
       update((p) => {
@@ -150,6 +163,7 @@ export function useListParams<F extends string>(
     setQ,
     toggleSort,
     setFilter,
+    setFilters,
     clearFilters,
     hasActiveFilters,
   };

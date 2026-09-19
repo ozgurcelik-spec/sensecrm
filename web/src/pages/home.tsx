@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import {
@@ -14,6 +14,7 @@ import {
   Title,
 } from "@mantine/core";
 import { Building2, Handshake, Target, Wallet } from "lucide-react";
+import { MyWorkWidget } from "@/components/dashboard/my-work-widget";
 import { CRM_MODULE_ITEMS, SETTINGS_ITEMS } from "@/config/navigation";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
 import { useOpenDealsSummary, useOpenLeadsCount } from "@/hooks/use-home-stats";
@@ -99,6 +100,26 @@ function SalesSummary() {
   );
 }
 
+// Charts (recharts) load as their own chunk, and only for users who may read reports.
+const SalesCharts = lazy(() => import("@/components/dashboard/sales-charts"));
+
+/** "My work" (activities.read) and the report charts (reports.read); each one is hidden without its permission. */
+function DashboardWidgets() {
+  const canActivities = usePermission(PERMISSIONS.crmActivitiesRead);
+  const canReports = usePermission(PERMISSIONS.crmReportsRead);
+  if (!canActivities && !canReports) return null;
+  return (
+    <Stack gap="lg">
+      {canActivities && <MyWorkWidget />}
+      {canReports && (
+        <Suspense fallback={<Skeleton h={260} data-testid="charts-loading" />}>
+          <SalesCharts />
+        </Suspense>
+      )}
+    </Stack>
+  );
+}
+
 export default function HomePage() {
   const { t } = useTranslation(["home", "common", "navigation"]);
   const me = useAuthStore((state) => state.me);
@@ -117,6 +138,8 @@ export default function HomePage() {
       </Stack>
 
       <SalesSummary />
+
+      <DashboardWidgets />
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
         <Card withBorder padding="lg">

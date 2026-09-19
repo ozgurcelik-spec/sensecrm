@@ -1,0 +1,84 @@
+{
+  "title": "Activities",
+  "description": "Track your tasks, calls, meetings and notes.",
+  "new": "New activity",
+  "search": "Search subject",
+  "createTitle": "New activity",
+  "editTitle": "Edit activity",
+  "created": "Activity created",
+  "updated": "Activity updated",
+  "deleted": "Activity deleted",
+  "completed": "Activity completed",
+  "reopened": "Activity reopened",
+  "deleteTitle": "Delete this activity?",
+  "deleteMessage": "The activity \"{{name}}\" will be deleted.",
+  "types": {
+    "task": "Task",
+    "call": "Call",
+    "meeting": "Meeting",
+    "note": "Note"
+  },
+  "typeTabs": "Activity type",
+  "quick": {
+    "label": "Quick filter",
+    "all": "All",
+    "today": "Today",
+    "overdue": "Overdue",
+    "mine": "Assigned to me"
+  },
+  "statuses": {
+    "open": "Open",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "priorities": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High"
+  },
+  "relatedTypes": {
+    "account": "Account",
+    "contact": "Contact",
+    "lead": "Lead",
+    "deal": "Deal"
+  },
+  "fields": {
+    "type": "Type",
+    "subject": "Subject",
+    "description": "Description",
+    "status": "Status",
+    "priority": "Priority",
+    "dueAt": "Due",
+    "startAt": "Start",
+    "endAt": "End",
+    "when": "Date",
+    "related": "Related record",
+    "relatedType": "Related record type",
+    "relatedRecord": "Record",
+    "assignee": "Assignee"
+  },
+  "actions": {
+    "complete": "Complete",
+    "reopen": "Reopen"
+  },
+  "relatedDeleted": "Deleted record",
+  "relatedPicker": {
+    "typePlaceholder": "Select a type (optional)",
+    "recordPlaceholder": "Search and select a record",
+    "searching": "Searching...",
+    "locked": "{{type}}: {{name}}"
+  },
+  "validation": {
+    "relatedRequired": "Select a record",
+    "invalidRange": "End cannot be before start"
+  },
+  "tab": {
+    "title": "Activities",
+    "empty": "No activities for this record",
+    "detailed": "Add with details",
+    "quickAdd": {
+      "subject": "Subject of the new activity",
+      "add": "Add"
+    }
+  }
+}

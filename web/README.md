@@ -5,7 +5,7 @@ React frontend for Sense CRM, a multi-tenant SaaS CRM. Stack and folder layout f
 ## Stack
 
 - React 19, Vite 8, TypeScript (`tsc` is TypeScript 7 via `@typescript/native`; `typescript` is aliased to TS 6 for ESLint tooling)
-- Mantine 9 for components, Tailwind CSS v4 for layout utilities only
+- Mantine 9 for components, Tailwind CSS v4 for layout utilities only; `@mantine/charts` (recharts) for charts
 - react-router, TanStack Query (server state), zustand (auth/UI state), axios (API client)
 - react-hook-form + zod for forms
 - i18next + react-i18next, with JSON namespaces in `public/locales/{tr,en}/*.json`. Turkish is the default language.
@@ -37,13 +37,13 @@ src/
   App.tsx                routes (/login, /signup, /app/...) with lazy pages
   main.tsx               providers (React Query, Mantine) and session handlers
   i18n.ts                i18next (http backend, TR default)
-  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/
+  components/            guards (protected-route, permission-guard, no-access), shell/, users/, roles/, audit/, crm/, activities/, dashboard/, reports/
   config/navigation.ts   left navigation and settings items with their required permissions
   hooks/                 usePermission, React Query hooks per resource, toast, language switch, useListParams
   layouts/app-layout.tsx top bar (org switcher, language, user menu) and module navigation
-  lib/                   api-client (axios, refresh-on-401), api-error, dates, locale, theme, format, board
+  lib/                   api-client (axios, refresh-on-401), api-error, dates, locale, theme, format, board, zoned-time, report-range, csv
   pages/                 auth/, home, account, audit-log, crm/ (sales module pages), settings/{organization,users,roles,pipelines}
-  services/              typed API calls (auth, me, organization, roles, accounts, contacts, leads, deals, pipelines, audit)
+  services/              typed API calls (auth, me, organization, roles, accounts, contacts, leads, deals, pipelines, audit, activities, reports)
   store/                 zustand auth store (tokens + /me) and UI store
   test/crm.tsx           test helpers for the mocked API (route table, ProblemDetails errors, permission fixtures)
 ```
@@ -60,6 +60,19 @@ HTTP contract: `docs/plan/m2-api-kontrat.md`. Screens: Leads, Contacts, Accounts
 - **Deals** switch between a kanban board and a list (`?view=list`) with a pipeline selector. The board uses `@dnd-kit/core`: drag with mouse/touch, or keyboard (Space on the handle, Left/Right to change column, Space to drop), or the per-card "move to" menu. The move is optimistic and rolled back on error; a lost stage asks for the lost reason first.
 - **Write actions are permission-gated** with `useCrmPermissions()` (`crm.<resource>.write`; converting needs leads + accounts + contacts write; pipeline editing needs `org.settings.manage`). The server enforces them as well.
 - **Tests** mock the axios client (`vi.mock("@/lib/api-client")`) and use `installApi` from `src/test/crm.tsx`.
+
+## Activities and reports (Milestone 3)
+
+HTTP contract: `docs/plan/m3-aktivite-rapor.md`. Screens: Activities (`/app/activities`), the "Aktiviteler" tab on account / contact / lead / deal details, dashboard widgets on the home page and Reports (`/app/reports`).
+
+- **Activities list** (`pages/crm/activities.tsx`): type tabs (`?type=`) and quick filters (Bugün `?due=today`, Geciken `?overdue=true`, Bana atanan `?assignedUserId=<me>`, Tümü clears them) sit in the URL with the other list params. Use `params.setFilters({...})` (not consecutive `setFilter` calls) when a click changes several filters; react-router does not queue functional `setSearchParams` updates.
+- **Time zone**: "today" bounds, `datetime-local` inputs and report ranges use the organization's time zone (`lib/zoned-time.ts`), not the browser's. `dueFrom` / `dueTo` are sent as UTC ISO instants (`dueTo` = last millisecond of the day).
+- **Form** (`components/activities/activity-form-dialog.tsx`): fields follow the type (task: due; call/meeting: start/end, end not before start; note: no date, priority or status). The type of an existing activity is fixed. Server field errors and `activity.invalid_range` / `activity.related_not_found` / `owner.not_member` are put on their fields. The related record is a type select plus a server-side search of that module's list endpoint (only modules the user may read).
+- **Complete / reopen** (`useSetActivityStatus`): optimistic update of every cached list, rolled back with an error toast on failure; lists, summary, audit and the activities report are refetched afterwards. Notes have no such action.
+- **Detail tab** (`components/activities/record-activities-tab.tsx`): the record's activities plus a quick-add form (type, subject, due) whose related record is fixed. Shown with `crm.activities.read`; writing needs `crm.activities.write`.
+- **Dashboard**: "Benim işlerim" needs `crm.activities.read`; funnel, won/lost (last 6 months) and lead source widgets need `crm.reports.read`. The chart widgets are a lazy chunk (recharts), only requested for users who may read reports.
+- **Reports**: range preset (`?range=thisMonth|last3Months|last12Months|custom`, custom `?from=&to=`), tab (`?tab=`), pipeline (`?pipelineId=`) and grouping (`?groupBy=week`) live in the URL. Only the active tab is requested; the funnel ignores the range. CSV is built in the browser (`lib/csv.ts`): UTF-8 BOM, `;` separator and decimal comma for Turkish (`,` and `.` for English), quoted/escaped cells, formula-looking text prefixed with `'`.
+- **Tests** that render charts mock `@mantine/charts` with `src/test/charts.tsx` (recharts measures 0x0 in jsdom).
 
 ## Auth flow
 

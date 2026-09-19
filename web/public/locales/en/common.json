@@ -91,6 +91,11 @@
     },
     "owner": {
       "not_member": "The selected owner is not an active member of this organization"
+    },
+    "activity": {
+      "related_not_found": "The related record was not found",
+      "invalid_range": "End cannot be before start",
+      "note_status_fixed": "The status of a note cannot be changed"
     }
   }
 }

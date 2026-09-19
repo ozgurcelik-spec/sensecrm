@@ -1,3 +1,4 @@
+using Crm.Modules.Activities.Infrastructure.Persistence;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Sales.Infrastructure.Persistence;
 using Crm.Shared.Contracts.Configuration;
@@ -32,6 +33,14 @@ builder.Services.AddModuleHandlers(
 builder.Services.AddScoped<Crm.Modules.Sales.Application.IDefaultPipelineSeeder, Crm.Modules.Sales.Infrastructure.Provisioning.DefaultPipelineSeeder>();
 builder.Services.AddScoped<Crm.Shared.Contracts.Events.IIntegrationEventHandler<Crm.Modules.Identity.Contracts.OrganizationCreated>, Crm.Modules.Sales.Application.Pipelines.OrganizationCreatedHandler>();
 builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<SalesDbContext>>();
+
+// Activities: outbox'ı boşaltır (bugün olay üretmez; ileride bildirim/hatırlatma için hazır).
+builder.Services.AddModuleDbContext<ActivitiesDbContext>(builder.Configuration, ActivitiesDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    ActivitiesDbContext.SchemaName,
+    typeof(Crm.Modules.Activities.Domain.IActivityRepository).Assembly,
+    typeof(Crm.Modules.Activities.Contracts.ActivitiesPermissions).Assembly);
+builder.Services.AddHostedService<Crm.Worker.OutboxPollingService<ActivitiesDbContext>>();
 
 await builder.Build().RunAsync();
 
