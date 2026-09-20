@@ -15,7 +15,7 @@ import type { Product } from "@/types";
 const FILTERS = ["isActive"] as const;
 
 export default function ProductsPage() {
-  const { t } = useTranslation(["commerce", "common"]);
+  const { t } = useTranslation(["commerce", "common", "inventory"]);
   const { canWriteProducts } = useCrmPermissions();
   const params = useListParams(FILTERS);
   const { data, isLoading, isFetching, error, refetch } = useProducts(params.query);
@@ -38,6 +38,9 @@ export default function ProductsPage() {
         taxRate: product.taxRate,
         unit: product.unit,
         isActive: !product.isActive,
+        // PUT replaces the product: the vendor link and the purchase price must travel along.
+        vendorId: product.vendorId,
+        purchasePrice: product.purchasePrice,
       },
       {
         onSuccess: () =>
@@ -78,6 +81,11 @@ export default function ProductsPage() {
       render: (p) => `${formatNumber(p.taxRate)}%`,
     },
     { key: "unit", header: t("commerce:products.fields.unit"), render: (p) => orDash(p.unit) },
+    {
+      key: "vendor",
+      header: t("inventory:products.vendor"),
+      render: (p) => orDash(p.vendorName),
+    },
     {
       key: "status",
       header: t("commerce:products.fields.isActive"),

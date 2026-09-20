@@ -28,5 +28,9 @@
   "platformPlans": "Plans",
   "platformAudit": "Platform audit",
   "notificationsSettings": "Notifications",
-  "integrations": "Integrations"
+  "integrations": "Integrations",
+  "pricebooks": "Price Books",
+  "purchaseOrders": "Purchase Orders",
+  "invoices": "Invoices",
+  "vendors": "Vendors"
 }

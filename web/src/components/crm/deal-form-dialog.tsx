@@ -52,6 +52,8 @@ interface DealFormDialogProps {
   defaultAccount?: { id: string; name: string };
   /** Pre-selected pipeline (the board's current pipeline). */
   defaultPipelineId?: string;
+  /** A starting name (what was typed in a lookup window's search box). */
+  initialName?: string;
   onClose: () => void;
   onSaved?: (id: string) => void;
 }
@@ -60,6 +62,7 @@ export function DealFormDialog({
   deal,
   defaultAccount,
   defaultPipelineId,
+  initialName,
   onClose,
   onSaved,
 }: DealFormDialogProps) {
@@ -78,7 +81,7 @@ export function DealFormDialog({
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: deal?.name ?? "",
+      name: deal?.name ?? initialName ?? "",
       accountId: deal?.accountId ?? defaultAccount?.id ?? "",
       contactId: deal?.contactId ?? "",
       pipelineId: deal?.pipelineId ?? defaultPipelineId ?? "",

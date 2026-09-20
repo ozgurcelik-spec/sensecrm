@@ -31,7 +31,9 @@ export interface DocumentTotals {
   subtotal: number;
   discountTotal: number;
   taxTotal: number;
-  /** Always `subtotal - discountTotal + taxTotal`, which equals the sum of the line totals. */
+  /** The signed rounding line (M9C), added after tax; 0 when unused or invalid. */
+  adjustment: number;
+  /** Always `sum of the line totals + adjustment` (`subtotal - discountTotal + taxTotal + adjustment`). */
   grandTotal: number;
 }
 
@@ -50,6 +52,42 @@ export function roundHalfUpDiv(a: bigint, d: bigint): bigint {
 }
 
 const pow10 = (n: number): bigint => 10n ** BigInt(n);
+
+/** Upper bound of `|adjustment|` (contract: 1.000.000.000). */
+export const MAX_ADJUSTMENT_MINOR = 100_000_000_000n;
+
+/**
+ * Signed decimal (`-0.56`, `"+0.44"`) as minor units (1e-2). `toScaledInt` turns a negative into 0, so the
+ * adjustment has its own converter. Returns `null` for anything that is not a
+ * plain decimal with at most two decimals (the server rejects 3 decimals with `validation.decimals`
+ * instead of rounding, so the client never rounds either). Empty / blank input is 0.
+ */
+export function toSignedMinor(value: number | string | null | undefined): bigint | null {
+  if (value === null || value === undefined) return 0n;
+  let text = typeof value === "number" ? (Number.isFinite(value) ? String(value) : "") : value.trim();
+  if (text === "") return typeof value === "number" ? null : 0n;
+  // Exponent notation (1e-7, 1e21) never fits two decimals within the allowed range.
+  if (/e/i.test(text)) {
+    const number = Number(text);
+    if (!Number.isFinite(number)) return null;
+    if (Math.abs(number) >= 1e21 || number === 0) return number === 0 ? 0n : null;
+    text = number.toFixed(20).replace(/0+$/, "").replace(/\.$/, "");
+  }
+  const match = /^([+-])?(\d*)(?:\.(\d*))?$/.exec(text);
+  if (!match || (match[2] === "" && (match[3] ?? "") === "")) return null;
+  const fraction = match[3] ?? "";
+  if (fraction.length > 2 && /[1-9]/.test(fraction.slice(2))) return null;
+  const digits = `${match[2] || "0"}${fraction.padEnd(2, "0").slice(0, 2)}`;
+  const minor = BigInt(digits);
+  return match[1] === "-" ? -minor : minor;
+}
+
+/** Whole-currency rounding line: `round(total) - total`, half up ("Yuvarla" button): 94.56 -> +0.44, 94.49 -> -0.49. */
+export function roundingAdjustment(linesTotal: number): number {
+  const minor = BigInt(Math.round(linesTotal * 100));
+  const rounded = ((minor + 50n) / 100n) * 100n;
+  return fromMinor(rounded - minor);
+}
 
 /** Minor units (bigint) as a plain number with two decimals (`6476n` -> 64.76). */
 function fromMinor(minor: bigint): number {
@@ -88,7 +126,33 @@ export function computeLineTotals(line: TotalsLineInput): LineTotals {
   };
 }
 
-export function computeTotals(lines: readonly TotalsLineInput[]): DocumentTotals {
+export type AdjustmentIssue =
+  | "decimals"
+  | "max"
+  | "requiresLines"
+  | "negativeTotal";
+
+/**
+ * Client-side mirror of the adjustment rules (plan D3, vectors A4, A5, A7, A8): at most two decimals
+ * (`validation.decimals`), `|x| <= 1.000.000.000`, not on a document without lines
+ * (`validation.adjustment_requires_lines`) and never a negative grand total
+ * (`validation.adjustment_negative_total`). Returns the first broken rule, or `undefined` when valid.
+ */
+export function checkAdjustment(
+  adjustment: number | string | null | undefined,
+  lines: readonly TotalsLineInput[]
+): AdjustmentIssue | undefined {
+  const minor = toSignedMinor(adjustment);
+  if (minor === null) return "decimals";
+  if (minor === 0n) return undefined;
+  if (minor > MAX_ADJUSTMENT_MINOR || minor < -MAX_ADJUSTMENT_MINOR) return "max";
+  if (lines.length === 0) return "requiresLines";
+  const base = computeTotals(lines, 0);
+  if (BigInt(Math.round(base.grandTotal * 100)) + minor < 0n) return "negativeTotal";
+  return undefined;
+}
+
+export function computeTotals(lines: readonly TotalsLineInput[], adjustment: number | string = 0): DocumentTotals {
   let subtotal = 0n;
   let discountTotal = 0n;
   let taxTotal = 0n;
@@ -104,11 +168,14 @@ export function computeTotals(lines: readonly TotalsLineInput[]): DocumentTotals
       lineTotal: fromMinor(minor.subtotal - minor.discount + minor.tax),
     };
   });
+  // An invalid adjustment (3 decimals, garbage) previews as 0: the form shows the error next to the field.
+  const adjustmentMinor = lines.length === 0 ? 0n : (toSignedMinor(adjustment) ?? 0n);
   return {
     lines: perLine,
     subtotal: fromMinor(subtotal),
     discountTotal: fromMinor(discountTotal),
     taxTotal: fromMinor(taxTotal),
-    grandTotal: fromMinor(subtotal - discountTotal + taxTotal),
+    adjustment: fromMinor(adjustmentMinor),
+    grandTotal: fromMinor(subtotal - discountTotal + taxTotal + adjustmentMinor),
   };
 }

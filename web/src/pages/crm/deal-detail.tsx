@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Anchor, Button, Card, Menu, Stack, Text } from "@mantine/core";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { CreateQuoteButton } from "@/components/commerce/create-quote-button";
-import { RelatedQuotesTab } from "@/components/commerce/related-tabs";
+import { RelatedInvoicesTab, RelatedQuotesTab } from "@/components/commerce/related-tabs";
 import { StageBadge } from "@/components/crm/badges";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { LostReasonDialog } from "@/components/crm/lost-reason-dialog";
@@ -93,6 +93,7 @@ export default function DealDetailPage() {
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReadQuotes = usePermission(PERMISSIONS.crmQuotesRead);
+  const canReadInvoices = usePermission(PERMISSIONS.crmInvoicesRead);
   const attachmentsTab = useAttachmentsTab("deal", id);
   const tabs = deal
     ? [
@@ -141,6 +142,15 @@ export default function DealDetailPage() {
                 value: "quotes",
                 label: t("commerce:tabs.quotes"),
                 content: <RelatedQuotesTab dealId={deal.id} />,
+              },
+            ]
+          : []),
+        ...(canReadInvoices
+          ? [
+              {
+                value: "invoices",
+                label: t("invoices:tabs.invoices"),
+                content: <RelatedInvoicesTab dealId={deal.id} />,
               },
             ]
           : []),

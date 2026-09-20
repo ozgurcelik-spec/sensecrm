@@ -58,6 +58,8 @@ interface ContactFormDialogProps {
   contact?: Contact;
   /** Pre-selected account when creating from an account page. */
   defaultAccount?: { id: string; name: string };
+  /** A starting last name (what was typed in a lookup window's search box). */
+  initialName?: string;
   onClose: () => void;
   onSaved?: (id: string) => void;
 }
@@ -65,6 +67,7 @@ interface ContactFormDialogProps {
 export function ContactFormDialog({
   contact,
   defaultAccount,
+  initialName,
   onClose,
   onSaved,
 }: ContactFormDialogProps) {
@@ -81,7 +84,7 @@ export function ContactFormDialog({
     resolver: zodResolver(schema),
     defaultValues: {
       firstName: contact?.firstName ?? "",
-      lastName: contact?.lastName ?? "",
+      lastName: contact?.lastName ?? initialName ?? "",
       email: contact?.email ?? "",
       phone: contact?.phone ?? "",
       mobile: contact?.mobile ?? "",

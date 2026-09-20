@@ -50,7 +50,8 @@
       "revert": "Teklif taslağa alındı",
       "reject": "Teklif reddedildi",
       "extend": "Geçerlilik süresi uzatıldı",
-      "convert": "{{number}} numaralı sipariş oluşturuldu"
+      "convert": "{{number}} numaralı sipariş oluşturuldu",
+      "negotiate": "Teklif müzakereye alındı"
     }
   },
   "orders": {
@@ -76,7 +77,8 @@
     "sent": "Gönderildi",
     "accepted": "Kabul edildi",
     "rejected": "Reddedildi",
-    "expired": "Süresi doldu"
+    "expired": "Süresi doldu",
+    "negotiation": "Müzakere"
   },
   "orderStatuses": {
     "draft": "Taslak",
@@ -104,7 +106,14 @@
     "rejectionReason": "Ret nedeni",
     "fulfilledAt": "Teslim",
     "cancelledAt": "İptal",
-    "cancelReason": "İptal nedeni"
+    "cancelReason": "İptal nedeni",
+    "dueDate": "Son tarih",
+    "customerPoNumber": "Müşteri satın alma emri no",
+    "exciseTax": "Gider vergisi",
+    "salesCommission": "Satış komisyonu",
+    "pending": "Bekliyor",
+    "priceBook": "Fiyat listesi",
+    "carrier": "Nakliye"
   },
   "lines": {
     "title": "Kalemler",
@@ -122,18 +131,32 @@
     "discountPercent": "İskonto %",
     "taxRate": "KDV %",
     "lineTotal": "Satır toplamı",
-    "empty": "Henüz kalem yok"
+    "empty": "Henüz kalem yok",
+    "reprice": "Fiyatları listeye göre yeniden getir",
+    "repriceTitle": "Fiyatları yeniden getir",
+    "repriceMessage": "Ürünlü satırların birim fiyatı seçili fiyat listesine göre yeniden alınacak; elle girdiğiniz fiyatlar değişir. Devam edilsin mi?",
+    "source": {
+      "entry": "Liste",
+      "flat": "Liste",
+      "catalog": "Katalog",
+      "purchase": "Satın alma"
+    }
   },
   "totals": {
     "subtotal": "Ara toplam",
     "discount": "İskonto",
     "tax": "KDV",
     "grandTotal": "Genel toplam",
-    "previewNote": "Önizleme: kayıttan sonra sunucunun hesapladığı tutarlar geçerlidir."
+    "previewNote": "Önizleme: kayıttan sonra sunucunun hesapladığı tutarlar geçerlidir.",
+    "adjustment": "Yuvarlama",
+    "round": "Yuvarla",
+    "roundHint": "Genel toplamı en yakın tam sayıya yuvarlayan tutarı yazar"
   },
   "editor": {
     "needsAccount": "Önce müşteri seçin",
-    "orderDateHint": "Boş bırakılırsa bugün kullanılır"
+    "orderDateHint": "Boş bırakılırsa bugün kullanılır",
+    "priceBookSuggested": "Müşterinin varsayılan fiyat listesi önerildi; değiştirebilir veya temizleyebilirsiniz.",
+    "carrierPlaceholder": "Kargo firması (isteğe bağlı)"
   },
   "actions": {
     "send": "Gönder",
@@ -144,7 +167,8 @@
     "convert": "Siparişe dönüştür",
     "confirm": "Onayla",
     "fulfill": "Teslim edildi",
-    "cancel": "İptal et"
+    "cancel": "İptal et",
+    "negotiate": "Müzakereye al"
   },
   "dialogs": {
     "reasonOptional": "İsteğe bağlı",
@@ -195,7 +219,18 @@
     "nameMax": "Ad en fazla 200 karakter olabilir",
     "codeMax": "Kod en fazla 64 karakter olabilir",
     "descriptionMax2000": "Açıklama en fazla 2000 karakter olabilir",
-    "unitMax": "Birim en fazla 32 karakter olabilir"
+    "unitMax": "Birim en fazla 32 karakter olabilir",
+    "customerPoMax": "Müşteri satın alma emri no en fazla 64 karakter olabilir",
+    "pendingMax": "Bekliyor alanı en fazla 100 karakter olabilir",
+    "carrierMax": "Nakliye en fazla 64 karakter olabilir",
+    "amountRange": "Tutar 0 ile 1.000.000.000 arasında olmalıdır",
+    "dueBefore": "Son tarih, belge tarihinden önce olamaz",
+    "adjustment": {
+      "decimals": "Yuvarlama en fazla 2 ondalık basamak içerebilir",
+      "max": "Yuvarlama en fazla 1.000.000.000 olabilir",
+      "requiresLines": "Kalemsiz belgede yuvarlama olamaz",
+      "negativeTotal": "Yuvarlama genel toplamı negatif yapamaz"
+    }
   },
   "auditFields": {
     "name": "Ad",
@@ -228,6 +263,61 @@
     "rejectionReason": "Ret nedeni",
     "fulfilledAt": "Teslim",
     "cancelledAt": "İptal",
-    "cancelReason": "İptal nedeni"
+    "cancelReason": "İptal nedeni",
+    "adjustment": "Yuvarlama",
+    "carrier": "Nakliye",
+    "priceBookId": "Fiyat listesi",
+    "billingStreet": "Faturalama: açık adres",
+    "billingBuilding": "Faturalama: bina",
+    "billingCity": "Faturalama: şehir",
+    "billingState": "Faturalama: il",
+    "billingPostalCode": "Faturalama: posta kodu",
+    "billingCountry": "Faturalama: ülke",
+    "shippingStreet": "Teslimat: açık adres",
+    "shippingBuilding": "Teslimat: bina",
+    "shippingCity": "Teslimat: şehir",
+    "shippingState": "Teslimat: il",
+    "shippingPostalCode": "Teslimat: posta kodu",
+    "shippingCountry": "Teslimat: ülke",
+    "customerPoNumber": "Müşteri satın alma emri no",
+    "dueDate": "Son tarih",
+    "exciseTax": "Gider vergisi",
+    "salesCommission": "Satış komisyonu",
+    "pending": "Bekliyor",
+    "invoiceDate": "Fatura tarihi",
+    "poDate": "SAE tarihi",
+    "orderId": "Sipariş",
+    "vendorId": "Tedarikçi",
+    "purchasePrice": "Satın alma fiyatı",
+    "paidAmount": "Ödenen tutar",
+    "confirmedAt": "Onay",
+    "receivedAt": "Teslim alma",
+    "phone": "Telefon",
+    "email": "E-posta",
+    "website": "Web sitesi",
+    "category": "Kategori",
+    "glAccount": "DK hesabı",
+    "emailOptOut": "E-posta gönderilmesin",
+    "pricingModel": "Fiyatlandırma modeli",
+    "adjustmentPercent": "Fiyat farkı %",
+    "validFrom": "Geçerlilik başlangıcı",
+    "validTo": "Geçerlilik sonu",
+    "productId": "Ürün"
+  },
+  "address": {
+    "title": "Adres Bilgileri",
+    "billing": "Faturalama Adresi",
+    "shipping": "İletişim (Teslimat) Adresi",
+    "country": "Ülke",
+    "building": "Daire / Ev No / Bina / Apartman adı",
+    "street": "Açık adres",
+    "city": "Şehir",
+    "state": "Eyalet / İl",
+    "postalCode": "Posta kodu",
+    "clearAll": "Tümünü temizle",
+    "copy": "Adres Kopyala",
+    "billingToShipping": "Faturalama adresini teslimata kopyala",
+    "shippingToBilling": "Teslimat adresini faturalamaya kopyala",
+    "fromAccount": "Müşteriden getir"
   }
 }

@@ -41,6 +41,16 @@ const QuoteEditorPage = lazy(() => import("@/pages/commerce/quote-editor"));
 const OrdersPage = lazy(() => import("@/pages/commerce/orders"));
 const OrderDetailPage = lazy(() => import("@/pages/commerce/order-detail"));
 const OrderEditorPage = lazy(() => import("@/pages/commerce/order-editor"));
+const InvoicesPage = lazy(() => import("@/pages/commerce/invoices"));
+const InvoiceDetailPage = lazy(() => import("@/pages/commerce/invoice-detail"));
+const InvoiceEditorPage = lazy(() => import("@/pages/commerce/invoice-editor"));
+const PriceBooksPage = lazy(() => import("@/pages/commerce/pricebooks"));
+const PriceBookDetailPage = lazy(() => import("@/pages/commerce/pricebook-detail"));
+const VendorsPage = lazy(() => import("@/pages/commerce/vendors"));
+const VendorDetailPage = lazy(() => import("@/pages/commerce/vendor-detail"));
+const PurchaseOrdersPage = lazy(() => import("@/pages/commerce/purchase-orders"));
+const PurchaseOrderDetailPage = lazy(() => import("@/pages/commerce/purchase-order-detail"));
+const PurchaseOrderEditorPage = lazy(() => import("@/pages/commerce/purchase-order-editor"));
 // Chart-heavy: recharts stays out of every other chunk.
 const ReportsPage = lazy(() => import("@/pages/crm/reports"));
 const PipelinesPage = lazy(() => import("@/pages/settings/pipelines"));
@@ -265,6 +275,103 @@ export default function App() {
               element={
                 <RequirePermission permission={PERMISSIONS.crmOrdersWrite}>
                   <OrderEditorPage />
+                </RequirePermission>
+              }
+            />
+            {/* M9C: invoices, price books, vendors, purchase orders (editors need the write permission). */}
+            <Route
+              path="invoices"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmInvoicesRead}>
+                  <InvoicesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="invoices/new"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmInvoicesWrite}>
+                  <InvoiceEditorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="invoices/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmInvoicesRead}>
+                  <InvoiceDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="invoices/:id/edit"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmInvoicesWrite}>
+                  <InvoiceEditorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="pricebooks"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmPriceBooksRead}>
+                  <PriceBooksPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="pricebooks/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmPriceBooksRead}>
+                  <PriceBookDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="vendors"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmVendorsRead}>
+                  <VendorsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="vendors/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmVendorsRead}>
+                  <VendorDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="purchase-orders"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmPurchaseOrdersRead}>
+                  <PurchaseOrdersPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="purchase-orders/new"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmPurchaseOrdersWrite}>
+                  <PurchaseOrderEditorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="purchase-orders/:id"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmPurchaseOrdersRead}>
+                  <PurchaseOrderDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="purchase-orders/:id/edit"
+              element={
+                <RequirePermission permission={PERMISSIONS.crmPurchaseOrdersWrite}>
+                  <PurchaseOrderEditorPage />
                 </RequirePermission>
               }
             />

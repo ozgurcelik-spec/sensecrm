@@ -6,6 +6,7 @@ import {
   ArrowRightLeft,
   Check,
   Clock,
+  Handshake,
   Pencil,
   RotateCcw,
   Send,
@@ -13,7 +14,12 @@ import {
   X,
 } from "lucide-react";
 import { ExtendDialog, ReasonDialog } from "@/components/commerce/action-dialogs";
-import { LinesTable, TermsAndNotes, TotalsCard } from "@/components/commerce/document-parts";
+import {
+  DocumentAddresses,
+  LinesTable,
+  TermsAndNotes,
+  TotalsCard,
+} from "@/components/commerce/document-parts";
 import { QuoteStatusBadge } from "@/components/commerce/status-badges";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
 import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
@@ -61,7 +67,7 @@ export default function QuoteDetailPage() {
 
   /** Runs a state action; the hook refetches on success and on failure (a 409 means the quote changed). */
   function run(
-    key: "send" | "accept" | "revert" | "reject" | "extend",
+    key: "send" | "negotiate" | "accept" | "revert" | "reject" | "extend",
     extra: { reason?: string; validUntil?: string } = {}
   ) {
     if (!quote) return;
@@ -129,6 +135,11 @@ export default function QuoteDetailPage() {
                 <LinesTable lines={quote.lines} currency={quote.currency} />
               </Card>
               <TotalsCard totals={quote} currency={quote.currency} />
+              <DocumentAddresses
+                billingAddress={quote.billingAddress}
+                shippingAddress={quote.shippingAddress}
+                carrier={quote.carrier}
+              />
               <TermsAndNotes terms={quote.terms} notes={quote.notes} />
             </Stack>
           ),
@@ -171,6 +182,17 @@ export default function QuoteDetailPage() {
                   onClick={() => run("send")}
                 >
                   {t("commerce:actions.send")}
+                </Button>
+              )}
+              {actions.includes("negotiate") && (
+                <Button
+                  variant="default"
+                  leftSection={<Handshake size={16} />}
+                  loading={action.isPending && action.variables?.action === "negotiate"}
+                  disabled={busy}
+                  onClick={() => run("negotiate")}
+                >
+                  {t("commerce:actions.negotiate")}
                 </Button>
               )}
               {actions.includes("convert") && (
@@ -286,6 +308,7 @@ export default function QuoteDetailPage() {
                     ? formatCalendarDate(quote.validUntil)
                     : t("commerce:quotes.noExpiry"),
                 },
+                { label: t("commerce:fields.priceBook"), value: orDash(quote.priceBookName) },
                 { label: t("commerce:fields.currency"), value: quote.currency },
                 {
                   label: t("commerce:totals.grandTotal"),

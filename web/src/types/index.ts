@@ -149,6 +149,14 @@ export const PERMISSIONS = {
   crmCasesWrite: "crm.cases.write",
   orgNotificationsManage: "org.notifications.manage",
   orgIntegrationsManage: "org.integrations.manage",
+  crmInvoicesRead: "crm.invoices.read",
+  crmInvoicesWrite: "crm.invoices.write",
+  crmPriceBooksRead: "crm.pricebooks.read",
+  crmPriceBooksWrite: "crm.pricebooks.write",
+  crmVendorsRead: "crm.vendors.read",
+  crmVendorsWrite: "crm.vendors.write",
+  crmPurchaseOrdersRead: "crm.purchaseorders.read",
+  crmPurchaseOrdersWrite: "crm.purchaseorders.write",
 } as const;
 
 /** Milestone 2 list envelope (`GET /accounts`, `/contacts`, `/leads`, `/deals`). */
@@ -168,3 +176,4 @@ export * from "./platform";
 export * from "./files";
 export * from "./notifications";
 export * from "./integrations";
+export * from "./inventory";

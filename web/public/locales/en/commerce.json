@@ -50,7 +50,8 @@
       "revert": "Quote moved back to draft",
       "reject": "Quote rejected",
       "extend": "Validity extended",
-      "convert": "Order {{number}} created"
+      "convert": "Order {{number}} created",
+      "negotiate": "Quote moved to negotiation"
     }
   },
   "orders": {
@@ -76,7 +77,8 @@
     "sent": "Sent",
     "accepted": "Accepted",
     "rejected": "Rejected",
-    "expired": "Expired"
+    "expired": "Expired",
+    "negotiation": "Negotiation"
   },
   "orderStatuses": {
     "draft": "Draft",
@@ -104,7 +106,14 @@
     "rejectionReason": "Rejection reason",
     "fulfilledAt": "Fulfilled",
     "cancelledAt": "Cancelled",
-    "cancelReason": "Cancellation reason"
+    "cancelReason": "Cancellation reason",
+    "dueDate": "Due date",
+    "customerPoNumber": "Customer PO number",
+    "exciseTax": "Excise tax",
+    "salesCommission": "Sales commission",
+    "pending": "Pending",
+    "priceBook": "Price book",
+    "carrier": "Carrier"
   },
   "lines": {
     "title": "Line items",
@@ -122,18 +131,32 @@
     "discountPercent": "Discount %",
     "taxRate": "Tax %",
     "lineTotal": "Line total",
-    "empty": "No lines yet"
+    "empty": "No lines yet",
+    "reprice": "Re-fetch prices from the price book",
+    "repriceTitle": "Re-fetch prices",
+    "repriceMessage": "The unit price of every line with a product will be taken from the selected price book again; prices you typed by hand will change. Continue?",
+    "source": {
+      "entry": "Price book",
+      "flat": "Price book",
+      "catalog": "Catalog",
+      "purchase": "Purchase"
+    }
   },
   "totals": {
     "subtotal": "Subtotal",
     "discount": "Discount",
     "tax": "Tax",
     "grandTotal": "Grand total",
-    "previewNote": "Preview: after saving, the amounts calculated by the server apply."
+    "previewNote": "Preview: after saving, the amounts calculated by the server apply.",
+    "adjustment": "Rounding",
+    "round": "Round",
+    "roundHint": "Enters the amount that rounds the grand total to a whole number"
   },
   "editor": {
     "needsAccount": "Select an account first",
-    "orderDateHint": "Today is used when left empty"
+    "orderDateHint": "Today is used when left empty",
+    "priceBookSuggested": "The account's default price book was suggested; you can change or clear it.",
+    "carrierPlaceholder": "Carrier (optional)"
   },
   "actions": {
     "send": "Send",
@@ -144,7 +167,8 @@
     "convert": "Convert to order",
     "confirm": "Confirm",
     "fulfill": "Mark fulfilled",
-    "cancel": "Cancel order"
+    "cancel": "Cancel order",
+    "negotiate": "Start negotiation"
   },
   "dialogs": {
     "reasonOptional": "Optional",
@@ -195,7 +219,18 @@
     "nameMax": "Name can be at most 200 characters",
     "codeMax": "Code can be at most 64 characters",
     "descriptionMax2000": "Description can be at most 2000 characters",
-    "unitMax": "Unit can be at most 32 characters"
+    "unitMax": "Unit can be at most 32 characters",
+    "customerPoMax": "Customer PO number can be at most 64 characters",
+    "pendingMax": "Pending can be at most 100 characters",
+    "carrierMax": "Carrier can be at most 64 characters",
+    "amountRange": "The amount must be between 0 and 1,000,000,000",
+    "dueBefore": "The due date cannot be before the document date",
+    "adjustment": {
+      "decimals": "Rounding can have at most 2 decimal places",
+      "max": "Rounding can be at most 1,000,000,000",
+      "requiresLines": "A document without lines cannot have rounding",
+      "negativeTotal": "Rounding cannot make the grand total negative"
+    }
   },
   "auditFields": {
     "name": "Name",
@@ -228,6 +263,61 @@
     "rejectionReason": "Rejection reason",
     "fulfilledAt": "Fulfilled",
     "cancelledAt": "Cancelled",
-    "cancelReason": "Cancellation reason"
+    "cancelReason": "Cancellation reason",
+    "adjustment": "Rounding",
+    "carrier": "Carrier",
+    "priceBookId": "Price book",
+    "billingStreet": "Billing: street",
+    "billingBuilding": "Billing: building",
+    "billingCity": "Billing: city",
+    "billingState": "Billing: state",
+    "billingPostalCode": "Billing: postal code",
+    "billingCountry": "Billing: country",
+    "shippingStreet": "Shipping: street",
+    "shippingBuilding": "Shipping: building",
+    "shippingCity": "Shipping: city",
+    "shippingState": "Shipping: state",
+    "shippingPostalCode": "Shipping: postal code",
+    "shippingCountry": "Shipping: country",
+    "customerPoNumber": "Customer PO number",
+    "dueDate": "Due date",
+    "exciseTax": "Excise tax",
+    "salesCommission": "Sales commission",
+    "pending": "Pending",
+    "invoiceDate": "Invoice date",
+    "poDate": "PO date",
+    "orderId": "Order",
+    "vendorId": "Vendor",
+    "purchasePrice": "Purchase price",
+    "paidAmount": "Paid amount",
+    "confirmedAt": "Confirmed",
+    "receivedAt": "Received",
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "category": "Category",
+    "glAccount": "GL account",
+    "emailOptOut": "Email opt-out",
+    "pricingModel": "Pricing model",
+    "adjustmentPercent": "Adjustment %",
+    "validFrom": "Valid from",
+    "validTo": "Valid to",
+    "productId": "Product"
+  },
+  "address": {
+    "title": "Address information",
+    "billing": "Billing address",
+    "shipping": "Contact (shipping) address",
+    "country": "Country",
+    "building": "Flat / house no. / building / apartment name",
+    "street": "Street address",
+    "city": "City",
+    "state": "State / province",
+    "postalCode": "Postal code",
+    "clearAll": "Clear all",
+    "copy": "Copy address",
+    "billingToShipping": "Copy billing address to shipping",
+    "shippingToBilling": "Copy shipping address to billing",
+    "fromAccount": "Fetch from account"
   }
 }

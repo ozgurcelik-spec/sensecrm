@@ -1,0 +1,239 @@
+{
+  "lookup": {
+    "search": "Ara",
+    "results": "Arama sonuçları",
+    "loading": "Yükleniyor...",
+    "empty": "Kayıt bulunamadı",
+    "error": "Liste yüklenemedi; pencereyi kapatıp tekrar deneyin",
+    "total": "{{count}} kayıt",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "page": "Sayfa {{page}} / {{pages}}",
+    "sortBy": "{{column}} sütununa göre sırala",
+    "placeholder": "Seçmek için tıklayın",
+    "clear": "{{label}} alanını temizle",
+    "open": "{{label}} seç",
+    "selectAccount": "Müşteri seç",
+    "selectContact": "Kişi seç",
+    "selectDeal": "Fırsat seç",
+    "newAccount": "+ Yeni müşteri",
+    "newContact": "+ Yeni kişi",
+    "newDeal": "+ Yeni fırsat",
+    "newVendor": "+ Yeni tedarikçi",
+    "newPriceBook": "+ Yeni fiyat listesi",
+    "newProduct": "+ Yeni ürün",
+    "columns": {
+      "name": "Ad",
+      "industry": "Sektör",
+      "phone": "Telefon",
+      "owner": "Sahip",
+      "email": "E-posta",
+      "account": "Müşteri",
+      "contact": "Kişi",
+      "amount": "Tutar",
+      "stage": "Aşama",
+      "closingDate": "Kapanış tarihi",
+      "code": "Kod",
+      "unitPrice": "Birim fiyat",
+      "taxRate": "KDV",
+      "unit": "Birim",
+      "category": "Kategori",
+      "model": "Model",
+      "currency": "Para birimi",
+      "validity": "Geçerlilik",
+      "number": "Numara",
+      "subject": "Konu",
+      "status": "Durum",
+      "total": "Tutar"
+    }
+  },
+  "products": {
+    "vendor": "Tedarikçi",
+    "purchasePrice": "Satın alma fiyatı",
+    "purchasePriceHint": "Ürün para biriminde; satın alma emirlerinde birim fiyat olarak önerilir"
+  },
+  "vendors": {
+    "title": "Tedarikçiler",
+    "description": "Satın aldığınız ürün ve hizmetlerin tedarikçileri.",
+    "new": "Yeni tedarikçi",
+    "search": "Ad, e-posta, telefon veya kategori ara",
+    "createTitle": "Yeni tedarikçi",
+    "editTitle": "Tedarikçiyi düzenle",
+    "created": "Tedarikçi oluşturuldu",
+    "updated": "Tedarikçi güncellendi",
+    "deleted": "Tedarikçi silindi",
+    "deleteTitle": "Tedarikçiyi sil",
+    "deleteMessage": "\"{{name}}\" tedarikçisi silinecek; ürünlerdeki tedarikçi bağlantısı kalkar. Emin misiniz?",
+    "select": "Tedarikçi seç",
+    "noProducts": "Bu tedarikçiye bağlı ürün yok",
+    "noPurchaseOrders": "Bu tedarikçiye ait satın alma emri yok",
+    "emailOptOutBadge": "E-posta gönderilmesin",
+    "glAccountHint": "Serbest metin; muhasebe eşlemesi yapılmaz",
+    "tabs": {
+      "products": "Ürünler ({{count}})",
+      "purchaseOrders": "Satın alma emirleri ({{count}})"
+    },
+    "fields": {
+      "name": "Tedarikçi adı",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "website": "Web sitesi",
+      "category": "Kategori",
+      "glAccount": "DK hesabı",
+      "emailOptOut": "E-posta gönderilmesin",
+      "address": "Adres",
+      "description": "Açıklama"
+    },
+    "validation": {
+      "phoneMax": "Telefon en fazla 32 karakter olabilir",
+      "emailMax": "E-posta en fazla 254 karakter olabilir",
+      "websiteMax": "Web sitesi en fazla 200 karakter olabilir",
+      "categoryMax": "Kategori en fazla 100 karakter olabilir",
+      "glAccountMax": "DK hesabı en fazla 100 karakter olabilir"
+    }
+  },
+  "priceBooks": {
+    "title": "Fiyat listeleri",
+    "description": "Ürün fiyatlarını listeye göre belirleyin: ürün başına fiyat veya katalog fiyatına yüzde.",
+    "new": "Yeni fiyat listesi",
+    "search": "Ad veya açıklama ara",
+    "createTitle": "Yeni fiyat listesi",
+    "editTitle": "Fiyat listesini düzenle",
+    "created": "Fiyat listesi oluşturuldu",
+    "updated": "Fiyat listesi güncellendi",
+    "deleted": "Fiyat listesi silindi",
+    "deleteTitle": "Fiyat listesini sil",
+    "deleteMessage": "\"{{name}}\" fiyat listesi silinecek; belgelerdeki fiyatlar değişmez. Emin misiniz?",
+    "select": "Fiyat listesi seç",
+    "models": {
+      "perProduct": "Ürün başına",
+      "flat": "Yüzde (flat)"
+    },
+    "noValidity": "Süresiz",
+    "lockedHint": "Oluşturulduktan sonra değiştirilemez",
+    "percentHint": "Negatif değer iskonto, pozitif değer zamdır (-99,99 ile 1000)",
+    "makeDefault": "Bu firma için varsayılan yap",
+    "makeDefaultTitle": "\"{{name}}\" listesini varsayılan yapacağınız müşteriyi seçin",
+    "defaultSet": "\"{{account}}\" için varsayılan fiyat listesi ayarlandı",
+    "flatNote": "Bu liste katalog fiyatına %{{percent}} uygular; ürün girdisi tutulmaz.",
+    "state": {
+      "effective": "Geçerli",
+      "outOfRange": "Tarih dışında",
+      "inactive": "Pasif",
+      "activeOption": "Aktif"
+    },
+    "tabs": {
+      "prices": "Fiyatlar"
+    },
+    "fields": {
+      "name": "Fiyat listesi adı",
+      "pricingModel": "Fiyatlandırma modeli",
+      "adjustmentPercent": "Fiyat farkı %",
+      "currency": "Para birimi",
+      "validFrom": "Geçerlilik başlangıcı",
+      "validTo": "Geçerlilik sonu",
+      "isActive": "Aktif",
+      "description": "Açıklama",
+      "validity": "Geçerlilik",
+      "entryCount": "Ürün sayısı"
+    },
+    "validation": {
+      "percentRequired": "Yüzde zorunludur",
+      "percentRange": "Yüzde -99,99 ile 1000 arasında olmalıdır",
+      "validRange": "Bitiş tarihi, başlangıç tarihinden önce olamaz"
+    },
+    "entries": {
+      "search": "Ürün adı veya kodu ara",
+      "add": "Ürün ekle",
+      "addTitle": "Fiyat listesine ürün ekle",
+      "product": "Ürün",
+      "catalogPrice": "Katalog fiyatı",
+      "listPrice": "Liste fiyatı",
+      "empty": "Bu listede henüz ürün fiyatı yok",
+      "saved": "Fiyat kaydedildi",
+      "added": "Ürün listeye eklendi",
+      "removed": "Ürün listeden çıkarıldı",
+      "remove": "Listeden çıkar",
+      "removeFor": "{{name}} ürününü listeden çıkar",
+      "removeTitle": "Ürünü listeden çıkar",
+      "removeMessage": "\"{{name}}\" ürününün liste fiyatı silinecek; ürün katalog fiyatıyla satılır. Emin misiniz?",
+      "priceFor": "{{name}} liste fiyatı",
+      "priceInvalid": "Fiyat 0 ile 1.000.000.000 arasında, en fazla 4 ondalık olmalıdır"
+    },
+    "preview": {
+      "title": "Örnek çözüm",
+      "hint": "Katalog fiyatına %{{percent}} uygulanır (yalnızca önizleme; gerçek fiyatı sunucu belirler).",
+      "catalogPrice": "Katalog fiyatı",
+      "result": "Liste fiyatı"
+    }
+  },
+  "accountDefault": {
+    "label": "Varsayılan fiyat listesi",
+    "none": "Yok",
+    "change": "Değiştir",
+    "clear": "Kaldır",
+    "saved": "Varsayılan fiyat listesi güncellendi",
+    "notEffective": "Şu an geçerli değil"
+  },
+  "purchaseOrders": {
+    "title": "Satın alma emirleri",
+    "description": "Tedarikçilere verdiğiniz kalemli satın alma emirleri.",
+    "new": "Yeni satın alma emri",
+    "search": "Numara veya konu ara",
+    "newTitle": "Yeni satın alma emri",
+    "editTitle": "Satın alma emrini düzenle: {{number}}",
+    "created": "Satın alma emri oluşturuldu",
+    "updated": "Satın alma emri güncellendi",
+    "deleted": "Satın alma emri silindi",
+    "deleteTitle": "Satın alma emrini sil",
+    "deleteMessage": "{{number}} numaralı taslak satın alma emri silinecek. Emin misiniz?",
+    "statuses": {
+      "draft": "Taslak",
+      "confirmed": "Onaylandı",
+      "received": "Teslim alındı",
+      "cancelled": "İptal"
+    },
+    "fields": {
+      "vendor": "Tedarikçi",
+      "poDate": "SAE tarihi",
+      "confirmedAt": "Onay",
+      "receivedAt": "Teslim alma"
+    },
+    "actions": {
+      "confirm": "Onayla",
+      "receive": "Teslim alındı",
+      "cancel": "İptal et"
+    },
+    "done": {
+      "confirm": "Satın alma emri onaylandı",
+      "receive": "Satın alma emri teslim alındı olarak işaretlendi",
+      "cancel": "Satın alma emri iptal edildi"
+    },
+    "dialogs": {
+      "cancelTitle": "Satın alma emrini iptal et",
+      "cancelReason": "İptal nedeni"
+    },
+    "report": {
+      "section": "Satın alma emirleri",
+      "total": "Satın alma emirlerinin toplam tutarı",
+      "byStatus": "Satın alma emirlerinin duruma göre dağılımı"
+    }
+  },
+  "errors": {
+    "vendor": {
+      "in_use": "Tedarikçiye bağlı satın alma emri var; önce emri silin veya iptal edin"
+    },
+    "pricebook": {
+      "name_taken": "Bu ada sahip bir fiyat listesi zaten var",
+      "model_immutable": "Fiyatlandırma modeli ve para birimi oluşturulduktan sonra değiştirilemez",
+      "model_mismatch": "Yüzde (flat) listelerde ürün girdisi tutulmaz",
+      "not_effective": "Fiyat listesi şu an geçerli değil",
+      "entry_limit": "Bir fiyat listesinde en fazla 2000 ürün girdisi olabilir"
+    },
+    "purchase_order": {
+      "not_editable": "Yalnızca taslak satın alma emirleri düzenlenebilir veya silinebilir",
+      "invalid_transition": "Satın alma emrinin mevcut durumunda bu işlem yapılamaz",
+      "no_lines": "Satın alma emrini onaylamak için en az bir kalem ekleyin"
+    }
+  }
+}

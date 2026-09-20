@@ -28,5 +28,9 @@
   "platformPlans": "Planlar",
   "platformAudit": "Platform denetimi",
   "notificationsSettings": "Bildirimler",
-  "integrations": "Entegrasyonlar"
+  "integrations": "Entegrasyonlar",
+  "pricebooks": "Fiyat Listeleri",
+  "purchaseOrders": "Satın Alma Emirleri",
+  "invoices": "Faturalar",
+  "vendors": "Tedarikçiler"
 }
