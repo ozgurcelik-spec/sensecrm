@@ -11,7 +11,7 @@ using Sense.Crm.Shared.Kernel.Results;
 
 namespace Sense.Crm.Modules.Commerce.Application.Products;
 
-/// <summary>Liste: filtreler <c>isActive, currency</c> + <c>q</c> (ad + kod + açıklama). Kalem seçici de bu ucu kullanır.</summary>
+/// <summary>Liste: filtreler <c>isActive, currency, vendorId</c> + <c>q</c> (ad + kod + açıklama). Kalem seçici ve arama penceresi de bu ucu kullanır.</summary>
 [RequiresPermission(CommercePermissions.ProductsRead)]
 public sealed record ListProductsQuery(PagedQuery Paging, ProductFilter Filter) : IQuery<PagedResult<ProductDto>>;
 
@@ -48,6 +48,10 @@ public interface IProductFields
     decimal TaxRate { get; }
 
     string? Unit { get; }
+
+    Guid? VendorId { get; }
+
+    decimal? PurchasePrice { get; }
 }
 
 public abstract class ProductFieldsValidator<T> : AbstractValidator<T>
@@ -62,10 +66,15 @@ public abstract class ProductFieldsValidator<T> : AbstractValidator<T>
         RuleFor(x => x.Currency).OptionalCurrency();
         RuleFor(x => x.TaxRate).Percent();
         RuleFor(x => x.Unit).MaximumLength(CommerceLimits.UnitMaxLength);
+        RuleFor(x => x.VendorId).NotEqual(Guid.Empty).When(x => x.VendorId is not null);
+        RuleFor(x => x.PurchasePrice).OptionalAmount(CommerceLimits.MaxUnitPrice, CommerceLimits.UnitPriceScale);
     }
 }
 
-/// <summary>Yeni ürün. Para birimi verilmezse <c>TRY</c>, KDV varsayılanı 0 (web formu 20 önerir), <c>isActive</c> varsayılanı true.</summary>
+/// <summary>
+/// Yeni ürün. Para birimi verilmezse <c>TRY</c>, KDV varsayılanı 0 (web formu 20 önerir), <c>isActive</c> varsayılanı true.
+/// <c>vendorId</c> (birincil tedarikçi; kiracıda var olmalı, aksi 404 <c>commerce.related_not_found</c>) ve <c>purchasePrice</c> (ürün para biriminde) isteğe bağlıdır.
+/// </summary>
 [RequiresPermission(CommercePermissions.ProductsWrite)]
 [ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateProductCommand(
@@ -76,12 +85,14 @@ public sealed record CreateProductCommand(
     string? Currency,
     decimal TaxRate,
     string? Unit,
-    bool? IsActive) : ICommand<ProductDto>, IProductFields;
+    bool? IsActive,
+    Guid? VendorId = null,
+    decimal? PurchasePrice = null) : ICommand<ProductDto>, IProductFields;
 
 public sealed class CreateProductValidator : ProductFieldsValidator<CreateProductCommand>;
 
 /// <summary>Yanıt ürün detayıdır (yazma izni yeterli; <c>crm.products.read</c> gerekmez).</summary>
-public sealed class CreateProductHandler(IProductRepository products, IProductReadStore store, ICommerceTransaction transaction, ITenantContext tenant)
+public sealed class CreateProductHandler(IProductRepository products, IVendorRepository vendors, IProductReadStore store, ICommerceTransaction transaction, ITenantContext tenant)
     : ICommandHandler<CreateProductCommand, ProductDto>
 {
     public async Task<Result<ProductDto>> Handle(CreateProductCommand command, CancellationToken cancellationToken)
@@ -94,6 +105,11 @@ public sealed class CreateProductHandler(IProductRepository products, IProductRe
                     return Error.Conflict(CommerceErrors.ProductCodeTaken);
                 }
 
+                if (command.VendorId is { } vendorId && await vendors.GetByIdAsync(vendorId, ct).ConfigureAwait(false) is null)
+                {
+                    return Error.NotFound(CommerceErrors.RelatedNotFound);
+                }
+
                 var product = Product.Create(
                     tenant.TenantId,
                     command.Name,
@@ -103,7 +119,9 @@ public sealed class CreateProductHandler(IProductRepository products, IProductRe
                     command.Currency,
                     command.TaxRate,
                     command.Unit,
-                    command.IsActive ?? true);
+                    command.IsActive ?? true,
+                    command.VendorId,
+                    command.PurchasePrice);
                 products.Add(product);
                 return product.Id;
             },
@@ -117,7 +135,7 @@ public sealed class CreateProductHandler(IProductRepository products, IProductRe
     }
 }
 
-/// <summary>Tam değiştirme (PUT): gönderilmeyen isteğe bağlı alan temizlenir; <c>isActive</c> verilmezse mevcut korunur.</summary>
+/// <summary>Tam değiştirme (PUT): gönderilmeyen isteğe bağlı alan (<c>vendorId</c>, <c>purchasePrice</c> dahil) temizlenir; <c>isActive</c> verilmezse mevcut korunur.</summary>
 [RequiresPermission(CommercePermissions.ProductsWrite)]
 public sealed record UpdateProductCommand(
     Guid Id,
@@ -128,14 +146,16 @@ public sealed record UpdateProductCommand(
     string? Currency,
     decimal TaxRate,
     string? Unit,
-    bool? IsActive) : ICommand, IProductFields;
+    bool? IsActive,
+    Guid? VendorId = null,
+    decimal? PurchasePrice = null) : ICommand, IProductFields;
 
 public sealed class UpdateProductValidator : ProductFieldsValidator<UpdateProductCommand>
 {
     public UpdateProductValidator() => RuleFor(x => x.Id).NotEmpty();
 }
 
-public sealed class UpdateProductHandler(IProductRepository products, ICommerceTransaction transaction) : ICommandHandler<UpdateProductCommand>
+public sealed class UpdateProductHandler(IProductRepository products, IVendorRepository vendors, ICommerceTransaction transaction) : ICommandHandler<UpdateProductCommand>
 {
     public Task<Result> Handle(UpdateProductCommand command, CancellationToken cancellationToken) =>
         transaction.ExecuteAsync(
@@ -152,6 +172,12 @@ public sealed class UpdateProductHandler(IProductRepository products, ICommerceT
                     return Error.Conflict(CommerceErrors.ProductCodeTaken);
                 }
 
+                // Tedarikçi yalnız değiştiyse yeniden doğrulanır (silinmiş tedarikçiye bağlı eski ürün düzenlenebilir kalır).
+                if (command.VendorId is { } vendorId && vendorId != product.VendorId && await vendors.GetByIdAsync(vendorId, ct).ConfigureAwait(false) is null)
+                {
+                    return Error.NotFound(CommerceErrors.RelatedNotFound);
+                }
+
                 product.Update(
                     command.Name,
                     command.Code,
@@ -160,17 +186,22 @@ public sealed class UpdateProductHandler(IProductRepository products, ICommerceT
                     command.Currency,
                     command.TaxRate,
                     command.Unit,
-                    command.IsActive ?? product.IsActive);
+                    command.IsActive ?? product.IsActive,
+                    command.VendorId,
+                    command.PurchasePrice);
                 return Result.Success();
             },
             cancellationToken);
 }
 
-/// <summary>Yumuşak silme: belgelerdeki kalemler anlık görüntü olduğundan silme her zaman serbesttir; kod yeniden kullanılabilir.</summary>
+/// <summary>
+/// Yumuşak silme: belgelerdeki kalemler anlık görüntü olduğundan silme her zaman serbesttir; kod yeniden kullanılabilir.
+/// Ürünün fiyat listesi girdileri aynı transaction'da silinir.
+/// </summary>
 [RequiresPermission(CommercePermissions.ProductsWrite)]
 public sealed record DeleteProductCommand(Guid Id) : ICommand;
 
-public sealed class DeleteProductHandler(IProductRepository products) : ICommandHandler<DeleteProductCommand>
+public sealed class DeleteProductHandler(IProductRepository products, IPriceBookRepository priceBooks) : ICommandHandler<DeleteProductCommand>
 {
     public async Task<Result> Handle(DeleteProductCommand command, CancellationToken cancellationToken)
     {
@@ -181,6 +212,7 @@ public sealed class DeleteProductHandler(IProductRepository products) : ICommand
         }
 
         products.Remove(product);
+        await priceBooks.RemoveEntriesForProductAsync(product.Id, cancellationToken).ConfigureAwait(false);
         return Result.Success();
     }
 }

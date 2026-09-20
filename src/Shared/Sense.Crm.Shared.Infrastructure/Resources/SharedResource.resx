@@ -207,6 +207,74 @@
   <data name="permission.crm.quotes.write" xml:space="preserve"><value>Teklifleri oluştur, düzenle, sil ve durumunu değiştir</value></data>
   <data name="permission.crm.orders.read" xml:space="preserve"><value>Satış siparişlerini görüntüle</value></data>
   <data name="permission.crm.orders.write" xml:space="preserve"><value>Satış siparişlerini oluştur, düzenle, sil ve durumunu değiştir</value></data>
+  <!-- Satış belgeleri ve envanter (Milestone 9C) -->
+  <data name="order.not_invoiceable" xml:space="preserve"><value>Yalnızca onaylanmış veya teslim edilmiş siparişler faturaya dönüştürülebilir.</value></data>
+  <data name="order.already_invoiced" xml:space="preserve"><value>Bu sipariş için iptal edilmemiş bir fatura zaten var.</value></data>
+  <data name="order.has_active_invoice" xml:space="preserve"><value>Aktif faturası olan sipariş iptal edilemez; önce faturayı iptal edin.</value></data>
+  <data name="invoice.not_editable" xml:space="preserve"><value>Yalnızca taslak durumundaki faturalar düzenlenebilir veya silinebilir.</value></data>
+  <data name="invoice.invalid_transition" xml:space="preserve"><value>Fatura "{from}" durumundan "{to}" durumuna geçirilemez.</value></data>
+  <data name="invoice.no_lines" xml:space="preserve"><value>Faturada en az bir kalem olmalıdır.</value></data>
+  <data name="invoice.has_payments" xml:space="preserve"><value>Faturada tahsilat kayıtları var; önce tahsilatları silin.</value></data>
+  <data name="invoice.not_payable" xml:space="preserve"><value>Bu faturaya tahsilat kaydedilemez (yalnızca gönderilmiş ve bakiyesi olan faturalara tahsilat girilir).</value></data>
+  <data name="invoice.payment_exceeds_balance" xml:space="preserve"><value>Tahsilat tutarı fatura bakiyesini ({balance}) aşıyor.</value></data>
+  <data name="purchase_order.not_editable" xml:space="preserve"><value>Yalnızca taslak durumundaki satın alma emirleri düzenlenebilir veya silinebilir.</value></data>
+  <data name="purchase_order.invalid_transition" xml:space="preserve"><value>Satın alma emri "{from}" durumundan "{to}" durumuna geçirilemez.</value></data>
+  <data name="purchase_order.no_lines" xml:space="preserve"><value>Satın alma emrinde en az bir kalem olmalıdır.</value></data>
+  <data name="vendor.in_use" xml:space="preserve"><value>Bu tedarikçiye bağlı satın alma emirleri var; tedarikçi silinemez.</value></data>
+  <data name="pricebook.name_taken" xml:space="preserve"><value>Bu adla bir fiyat listesi zaten var.</value></data>
+  <data name="pricebook.model_immutable" xml:space="preserve"><value>Fiyat listesinin fiyatlandırma modeli ve para birimi oluşturulduktan sonra değiştirilemez ({property}).</value></data>
+  <data name="pricebook.model_mismatch" xml:space="preserve"><value>Ürün girdileri yalnızca "ürün bazlı" fiyat listelerinde kullanılabilir.</value></data>
+  <data name="pricebook.not_effective" xml:space="preserve"><value>Fiyat listesi şu anda etkin değil (pasif veya geçerlilik tarihi dışında).</value></data>
+  <data name="pricebook.entry_limit" xml:space="preserve"><value>Bir fiyat listesinde en fazla {max} ürün girdisi olabilir.</value></data>
+  <data name="validation.adjustment_negative_total" xml:space="preserve"><value>Yuvarlama belge toplamını negatif yapamaz.</value></data>
+  <data name="validation.adjustment_requires_lines" xml:space="preserve"><value>Kalemi olmayan belgede yuvarlama girilemez.</value></data>
+  <data name="validation.due_before_order" xml:space="preserve"><value>Son tarih sipariş tarihinden önce olamaz.</value></data>
+  <data name="validation.due_before_invoice" xml:space="preserve"><value>Vade tarihi fatura tarihinden önce olamaz.</value></data>
+  <data name="validation.due_before_po" xml:space="preserve"><value>Son tarih satın alma emri tarihinden önce olamaz.</value></data>
+  <data name="validation.price_book_inactive" xml:space="preserve"><value>Seçilen fiyat listesi şu anda etkin değil.</value></data>
+  <data name="validation.price_book_currency" xml:space="preserve"><value>Fiyat listesinin para birimi belgenin para birimiyle aynı olmalı.</value></data>
+  <data name="validation.line_unit_price_required" xml:space="preserve"><value>Ürünü olmayan kalemde birim fiyat girilmelidir.</value></data>
+  <data name="validation.line_price_unresolvable" xml:space="preserve"><value>Kalem fiyatı belirlenemedi; birim fiyat girin.</value></data>
+  <data name="validation.entry_currency_mismatch" xml:space="preserve"><value>Ürünün para birimi fiyat listesinin para birimiyle aynı olmalı.</value></data>
+  <data name="validation.paid_in_future" xml:space="preserve"><value>Tahsilat tarihi bugünden sonra olamaz.</value></data>
+  <data name="validation.paid_before_invoice" xml:space="preserve"><value>Tahsilat tarihi fatura tarihinden önce olamaz.</value></data>
+  <data name="validation.flat_percent_required" xml:space="preserve"><value>Yüzde yalnızca "sabit yüzde" modelinde kullanılır ve o modelde zorunludur (−99,99 ile 1000 arası).</value></data>
+  <data name="validation.valid_range" xml:space="preserve"><value>Bitiş tarihi başlangıç tarihinden önce olamaz.</value></data>
+  <data name="validation.product_ids" xml:space="preserve"><value>1 ile 100 arasında, tekrarsız ürün kimliği gönderin.</value></data>
+  <data name="field.adjustment" xml:space="preserve"><value>Yuvarlama</value></data>
+  <data name="field.carrier" xml:space="preserve"><value>Nakliye</value></data>
+  <data name="field.billing_address" xml:space="preserve"><value>Faturalama adresi</value></data>
+  <data name="field.shipping_address" xml:space="preserve"><value>Teslimat adresi</value></data>
+  <data name="field.building" xml:space="preserve"><value>Daire / bina</value></data>
+  <data name="field.customer_po_number" xml:space="preserve"><value>Müşteri satın alma emri no</value></data>
+  <data name="field.excise_tax" xml:space="preserve"><value>Gider vergisi</value></data>
+  <data name="field.sales_commission" xml:space="preserve"><value>Satış komisyonu</value></data>
+  <data name="field.pending" xml:space="preserve"><value>Bekliyor</value></data>
+  <data name="field.due_date" xml:space="preserve"><value>Son tarih</value></data>
+  <data name="field.invoice_date" xml:space="preserve"><value>Fatura tarihi</value></data>
+  <data name="field.po_date" xml:space="preserve"><value>Satın alma emri tarihi</value></data>
+  <data name="field.paid_on" xml:space="preserve"><value>Tahsilat tarihi</value></data>
+  <data name="field.method" xml:space="preserve"><value>Yöntem</value></data>
+  <data name="field.reference" xml:space="preserve"><value>Referans</value></data>
+  <data name="field.category" xml:space="preserve"><value>Kategori</value></data>
+  <data name="field.gl_account" xml:space="preserve"><value>DK hesabı</value></data>
+  <data name="field.email_opt_out" xml:space="preserve"><value>E-posta gönderilmesin</value></data>
+  <data name="field.price_book_id" xml:space="preserve"><value>Fiyat listesi</value></data>
+  <data name="field.vendor_id" xml:space="preserve"><value>Tedarikçi</value></data>
+  <data name="field.pricing_model" xml:space="preserve"><value>Fiyatlandırma modeli</value></data>
+  <data name="field.adjustment_percent" xml:space="preserve"><value>Yüzde</value></data>
+  <data name="field.valid_from" xml:space="preserve"><value>Geçerlilik başlangıcı</value></data>
+  <data name="field.valid_to" xml:space="preserve"><value>Geçerlilik bitişi</value></data>
+  <data name="field.purchase_price" xml:space="preserve"><value>Satın alma fiyatı</value></data>
+  <data name="field.product_ids" xml:space="preserve"><value>Ürünler</value></data>
+  <data name="permission.crm.invoices.read" xml:space="preserve"><value>Faturaları görüntüle</value></data>
+  <data name="permission.crm.invoices.write" xml:space="preserve"><value>Faturaları oluştur, düzenle, sil, durumunu değiştir ve tahsilat kaydet</value></data>
+  <data name="permission.crm.pricebooks.read" xml:space="preserve"><value>Fiyat listelerini görüntüle</value></data>
+  <data name="permission.crm.pricebooks.write" xml:space="preserve"><value>Fiyat listelerini ve girdilerini oluştur, düzenle ve sil</value></data>
+  <data name="permission.crm.vendors.read" xml:space="preserve"><value>Tedarikçileri görüntüle</value></data>
+  <data name="permission.crm.vendors.write" xml:space="preserve"><value>Tedarikçileri oluştur, düzenle ve sil</value></data>
+  <data name="permission.crm.purchaseorders.read" xml:space="preserve"><value>Satın alma emirlerini görüntüle</value></data>
+  <data name="permission.crm.purchaseorders.write" xml:space="preserve"><value>Satın alma emirlerini oluştur, düzenle, sil ve durumunu değiştir</value></data>
   <!-- Servis/Destek: talepler, yorumlar, SLA (Milestone 6B) -->
   <data name="case.account_not_found" xml:space="preserve"><value>Talebe bağlanmak istenen firma bulunamadı.</value></data>
   <data name="case.contact_not_found" xml:space="preserve"><value>Talebe bağlanmak istenen kişi bulunamadı.</value></data>

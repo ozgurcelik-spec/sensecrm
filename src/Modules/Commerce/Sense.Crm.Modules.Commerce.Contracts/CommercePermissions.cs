@@ -17,6 +17,14 @@ public static class CommercePermissions
     public const string QuotesWrite = "crm.quotes.write";
     public const string OrdersRead = "crm.orders.read";
     public const string OrdersWrite = "crm.orders.write";
+    public const string InvoicesRead = "crm.invoices.read";
+    public const string InvoicesWrite = "crm.invoices.write";
+    public const string PriceBooksRead = "crm.pricebooks.read";
+    public const string PriceBooksWrite = "crm.pricebooks.write";
+    public const string VendorsRead = "crm.vendors.read";
+    public const string VendorsWrite = "crm.vendors.write";
+    public const string PurchaseOrdersRead = "crm.purchaseorders.read";
+    public const string PurchaseOrdersWrite = "crm.purchaseorders.write";
 
     /// <summary>All Commerce module permissions.</summary>
     public static IReadOnlyList<Permission> All { get; } =
@@ -27,5 +35,13 @@ public static class CommercePermissions
         new(QuotesWrite, Module, Group),
         new(OrdersRead, Module, Group),
         new(OrdersWrite, Module, Group),
+        new(InvoicesRead, Module, Group),
+        new(InvoicesWrite, Module, Group),
+        new(PriceBooksRead, Module, Group),
+        new(PriceBooksWrite, Module, Group),
+        new(VendorsRead, Module, Group),
+        new(VendorsWrite, Module, Group),
+        new(PurchaseOrdersRead, Module, Group),
+        new(PurchaseOrdersWrite, Module, Group),
     ];
 }

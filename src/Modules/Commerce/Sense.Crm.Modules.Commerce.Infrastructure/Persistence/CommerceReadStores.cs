@@ -2,8 +2,10 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Sense.Crm.Modules.Commerce.Application;
 using Sense.Crm.Modules.Commerce.Domain.Documents;
+using Sense.Crm.Modules.Commerce.Domain.Invoices;
 using Sense.Crm.Modules.Commerce.Domain.Orders;
 using Sense.Crm.Modules.Commerce.Domain.Products;
+using Sense.Crm.Modules.Commerce.Domain.PurchaseOrders;
 using Sense.Crm.Modules.Commerce.Domain.Quotes;
 using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Modules.Sales.Contracts;
@@ -69,6 +71,15 @@ internal sealed class DocumentNames(IReadOnlyDictionary<Guid, string> users, IRe
     public string? Deal(Guid? id) => id is { } key ? records.GetValueOrDefault(new RecordRef(RecordType.Deal, key)) : null;
 }
 
+/// <summary>Belgedeki (yumuşak bağ) fiyat listesinin adı; liste silinmişse veya bağ yoksa <c>null</c> (soft-delete filtresi altında).</summary>
+internal static class PriceBookNames
+{
+    public static async Task<string?> ForAsync(CommerceDbContext db, Guid? priceBookId, CancellationToken ct) =>
+        priceBookId is { } id
+            ? await db.PriceBooks.AsNoTracking().Where(b => b.Id == id).Select(b => b.Name).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+            : null;
+}
+
 internal static class LineMappingExtensions
 {
     public static DocumentLineDto ToDto(this DocumentLine l) =>
@@ -92,6 +103,11 @@ public sealed class ProductReadStore(CommerceDbContext db) : IProductReadStore
             query = query.Where(p => p.Currency == currency);
         }
 
+        if (filter.VendorId is { } vendorId)
+        {
+            query = query.Where(p => p.VendorId == vendorId);
+        }
+
         if (SearchPattern.Contains(paging.Q) is { } q)
         {
             query = query.Where(p => EF.Functions.ILike(p.Name, q, SearchPattern.Escape)
@@ -101,17 +117,41 @@ public sealed class ProductReadStore(CommerceDbContext db) : IProductReadStore
 
         var total = await query.LongCountAsync(ct).ConfigureAwait(false);
         var rows = await Order(query, paging.SortClauses).ThenBy(p => p.Id).Skip(paging.Skip).Take(paging.PageSize).ToListAsync(ct).ConfigureAwait(false);
-        return new PagedResult<ProductDto>(rows.Select(ToDto).ToList(), paging.Page, paging.PageSize, total);
+        var vendorNames = await VendorNames(rows, ct).ConfigureAwait(false);
+        return new PagedResult<ProductDto>(rows.Select(p => ToDto(p, vendorNames)).ToList(), paging.Page, paging.PageSize, total);
     }
 
     public async Task<ProductDto?> GetAsync(Guid id, CancellationToken ct)
     {
         var product = await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct).ConfigureAwait(false);
-        return product is null ? null : ToDto(product);
+        return product is null ? null : ToDto(product, await VendorNames([product], ct).ConfigureAwait(false));
     }
 
-    private static ProductDto ToDto(Product p) =>
-        new(p.Id, p.Name, p.Code, p.Description, p.UnitPrice, p.Currency, p.TaxRate, p.Unit, p.IsActive, p.CreatedAt, p.ModifiedDate);
+    /// <summary>Tedarikçi adları sayfa başına tek sorguyla (silinmiş tedarikçi → ad yok).</summary>
+    private async Task<IReadOnlyDictionary<Guid, string>> VendorNames(IEnumerable<Product> products, CancellationToken ct)
+    {
+        var ids = products.Where(p => p.VendorId is not null).Select(p => p.VendorId!.Value).Distinct().ToArray();
+        return ids.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await db.Vendors.AsNoTracking().Where(v => ids.Contains(v.Id)).ToDictionaryAsync(v => v.Id, v => v.Name, ct).ConfigureAwait(false);
+    }
+
+    private static ProductDto ToDto(Product p, IReadOnlyDictionary<Guid, string> vendorNames) =>
+        new(
+            p.Id,
+            p.Name,
+            p.Code,
+            p.Description,
+            p.UnitPrice,
+            p.Currency,
+            p.TaxRate,
+            p.Unit,
+            p.IsActive,
+            p.VendorId,
+            p.VendorId is { } vendorId ? vendorNames.GetValueOrDefault(vendorId) : null,
+            p.PurchasePrice,
+            p.CreatedAt,
+            p.ModifiedDate);
 
     /// <summary>Sıralama beyaz listesi; hiçbiri geçerli değilse <c>name</c> artan.</summary>
     private static IOrderedQueryable<Product> Order(IQueryable<Product> query, IReadOnlyList<SortClause> clauses)
@@ -255,6 +295,7 @@ public sealed class QuoteReadStore(CommerceDbContext db, IMemberLookup members, 
 
         var order = await db.SalesOrders.AsNoTracking().Where(o => o.QuoteId == id).Select(o => new { o.Id, o.Number }).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         var names = await DocumentNames.ResolveAsync(members, records, [(q.AccountId, q.ContactId, q.DealId, q.OwnerUserId)], ct).ConfigureAwait(false);
+        var priceBookName = await PriceBookNames.ForAsync(db, q.PriceBookId, ct).ConfigureAwait(false);
         return new QuoteDto(
             q.Id,
             q.Number,
@@ -272,8 +313,14 @@ public sealed class QuoteReadStore(CommerceDbContext db, IMemberLookup members, 
             q.Subtotal,
             q.DiscountTotal,
             q.TaxTotal,
+            q.Adjustment,
             q.GrandTotal,
             q.ValidUntil,
+            q.Carrier,
+            q.BillingAddress.ToDto(),
+            q.ShippingAddress.ToDto(),
+            q.PriceBookId,
+            priceBookName,
             q.Terms,
             q.Notes,
             q.SentAt,
@@ -384,6 +431,7 @@ public sealed class OrderReadStore(CommerceDbContext db, IMemberLookup members, 
             {
                 Order = o,
                 QuoteNumber = db.Quotes.Where(x => x.Id == o.QuoteId).Select(x => x.Number).FirstOrDefault(),
+                InvoiceId = db.Invoices.Where(i => i.OrderId == o.Id && i.Status != InvoiceStatus.Cancelled).Select(i => (Guid?)i.Id).FirstOrDefault(),
             })
             .ToListAsync(ct).ConfigureAwait(false);
 
@@ -401,6 +449,7 @@ public sealed class OrderReadStore(CommerceDbContext db, IMemberLookup members, 
             names.Deal(r.Order.DealId),
             r.Order.QuoteId,
             r.QuoteNumber,
+            r.InvoiceId,
             r.Order.OwnerUserId,
             names.Owner(r.Order.OwnerUserId),
             r.Order.Currency,
@@ -422,6 +471,11 @@ public sealed class OrderReadStore(CommerceDbContext db, IMemberLookup members, 
             ? await db.Quotes.AsNoTracking().Where(x => x.Id == quoteId).Select(x => x.Number).FirstOrDefaultAsync(ct).ConfigureAwait(false)
             : null;
         var names = await DocumentNames.ResolveAsync(members, records, [(o.AccountId, o.ContactId, o.DealId, o.OwnerUserId)], ct).ConfigureAwait(false);
+        var invoice = await db.Invoices.AsNoTracking()
+            .Where(i => i.OrderId == o.Id && i.Status != InvoiceStatus.Cancelled)
+            .Select(i => new { i.Id, i.Number })
+            .FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        var priceBookName = await PriceBookNames.ForAsync(db, o.PriceBookId, ct).ConfigureAwait(false);
         return new OrderDto(
             o.Id,
             o.Number,
@@ -435,14 +489,27 @@ public sealed class OrderReadStore(CommerceDbContext db, IMemberLookup members, 
             names.Deal(o.DealId),
             o.QuoteId,
             quoteNumber,
+            invoice?.Id,
+            invoice?.Number,
             o.OwnerUserId,
             names.Owner(o.OwnerUserId),
             o.Currency,
             o.Subtotal,
             o.DiscountTotal,
             o.TaxTotal,
+            o.Adjustment,
             o.GrandTotal,
             o.OrderDate,
+            o.DueDate,
+            o.CustomerPoNumber,
+            o.ExciseTax,
+            o.SalesCommission,
+            o.Pending,
+            o.Carrier,
+            o.BillingAddress.ToDto(),
+            o.ShippingAddress.ToDto(),
+            o.PriceBookId,
+            priceBookName,
             o.Terms,
             o.Notes,
             o.FulfilledAt,
@@ -534,6 +601,55 @@ public sealed class CommerceReportStore(CommerceDbContext db) : ICommerceReportS
         var orderCurrencies = await db.SalesOrders.AsNoTracking()
             .Where(o => o.OrderDate >= from && o.OrderDate <= to)
             .Select(o => o.Currency).Distinct().ToListAsync(ct).ConfigureAwait(false);
-        return quoteCurrencies.Concat(orderCurrencies).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+        var invoiceCurrencies = await db.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceDate >= from && i.InvoiceDate <= to)
+            .Select(i => i.Currency).Distinct().ToListAsync(ct).ConfigureAwait(false);
+        var purchaseCurrencies = await db.PurchaseOrders.AsNoTracking()
+            .Where(o => o.PoDate >= from && o.PoDate <= to)
+            .Select(o => o.Currency).Distinct().ToListAsync(ct).ConfigureAwait(false);
+        return quoteCurrencies.Concat(orderCurrencies).Concat(invoiceCurrencies).Concat(purchaseCurrencies).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+    }
+
+    public async Task<IReadOnlyList<StatusTotal<InvoiceStatus>>> GetInvoiceTotalsAsync(DateOnly from, DateOnly to, DateOnly today, CancellationToken ct)
+    {
+        var range = db.Invoices.AsNoTracking().Where(i => i.InvoiceDate >= from && i.InvoiceDate <= to);
+        var result = new List<StatusTotal<InvoiceStatus>>();
+
+        // Etkin durum tek tanımdan (InvoiceStatusExpression): her durum ayrık bir süzgeçtir; kümeler birbirini kesmez ve saklanan tüm faturaları kapsar.
+        foreach (var status in Enum.GetValues<InvoiceStatus>())
+        {
+            var row = await range.Where(InvoiceStatusExpression.HasEffectiveStatus(status, today))
+                .GroupBy(_ => 1)
+                .Select(g => new { Count = g.Count(), Amount = g.Sum(i => i.GrandTotal) })
+                .SingleOrDefaultAsync(ct).ConfigureAwait(false);
+            if (row is not null)
+            {
+                result.Add(new StatusTotal<InvoiceStatus>(status, row.Count, row.Amount));
+            }
+        }
+
+        return result;
+    }
+
+    public async Task<InvoiceSums> GetInvoiceSumsAsync(DateOnly from, DateOnly to, DateOnly today, CancellationToken ct)
+    {
+        var range = db.Invoices.AsNoTracking().Where(i => i.InvoiceDate >= from && i.InvoiceDate <= to);
+        var paid = await range.Where(i => i.Status != InvoiceStatus.Cancelled).SumAsync(i => (decimal?)i.PaidAmount, ct).ConfigureAwait(false) ?? 0m;
+        var outstanding = await range.Where(InvoiceStatusExpression.IsOpen).SumAsync(i => (decimal?)(i.GrandTotal - i.PaidAmount), ct).ConfigureAwait(false) ?? 0m;
+        var overdue = await range.Where(InvoiceStatusExpression.HasEffectiveStatus(InvoiceStatus.Overdue, today))
+            .GroupBy(_ => 1)
+            .Select(g => new { Count = g.Count(), Amount = g.Sum(i => i.GrandTotal - i.PaidAmount) })
+            .SingleOrDefaultAsync(ct).ConfigureAwait(false);
+        return new InvoiceSums(paid, outstanding, overdue?.Count ?? 0, overdue?.Amount ?? 0m);
+    }
+
+    public async Task<IReadOnlyList<StatusTotal<PurchaseOrderStatus>>> GetPurchaseOrderTotalsAsync(DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var rows = await db.PurchaseOrders.AsNoTracking()
+            .Where(o => o.PoDate >= from && o.PoDate <= to)
+            .GroupBy(o => o.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count(), Amount = g.Sum(o => o.GrandTotal) })
+            .ToListAsync(ct).ConfigureAwait(false);
+        return rows.Select(r => new StatusTotal<PurchaseOrderStatus>(r.Status, r.Count, r.Amount)).ToList();
     }
 }

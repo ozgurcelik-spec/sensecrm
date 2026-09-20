@@ -39,6 +39,12 @@ public sealed class Product : TenantAggregateRoot<Guid>, IAuditLogged, ISoftDele
 
     public bool IsActive { get; private set; } = true;
 
+    /// <summary>Birincil tedarikçi (yumuşak bağ; tedarikçi silinince aynı transaction'da temizlenir).</summary>
+    public Guid? VendorId { get; private set; }
+
+    /// <summary>Tedarikçi tarafı birim fiyat (ürün para biriminde; satın alma emri kalem fiyatını önerir).</summary>
+    public decimal? PurchasePrice { get; private set; }
+
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedAt { get; set; }
@@ -61,14 +67,16 @@ public sealed class Product : TenantAggregateRoot<Guid>, IAuditLogged, ISoftDele
         string? currency,
         decimal taxRate,
         string? unit,
-        bool isActive)
+        bool isActive,
+        Guid? vendorId = null,
+        decimal? purchasePrice = null)
     {
         var product = new Product(Guid.CreateVersion7(), Guard.NotDefault(tenantId));
-        product.Apply(name, code, description, unitPrice, currency, taxRate, unit, isActive);
+        product.Apply(name, code, description, unitPrice, currency, taxRate, unit, isActive, vendorId, purchasePrice);
         return product;
     }
 
-    /// <summary>Tam değiştirme (PUT): gönderilmeyen isteğe bağlı alan temizlenir.</summary>
+    /// <summary>Tam değiştirme (PUT): gönderilmeyen isteğe bağlı alan (<paramref name="vendorId"/>, <paramref name="purchasePrice"/> dahil) temizlenir.</summary>
     public void Update(
         string name,
         string? code,
@@ -77,10 +85,17 @@ public sealed class Product : TenantAggregateRoot<Guid>, IAuditLogged, ISoftDele
         string? currency,
         decimal taxRate,
         string? unit,
-        bool isActive) => Apply(name, code, description, unitPrice, currency, taxRate, unit, isActive);
+        bool isActive,
+        Guid? vendorId = null,
+        decimal? purchasePrice = null) => Apply(name, code, description, unitPrice, currency, taxRate, unit, isActive, vendorId, purchasePrice);
 
-    private void Apply(string name, string? code, string? description, decimal unitPrice, string? currency, decimal taxRate, string? unit, bool isActive)
+    /// <summary>Tedarikçi silindiğinde birincil tedarikçi bağı temizlenir.</summary>
+    public void ClearVendor() => VendorId = null;
+
+    private void Apply(string name, string? code, string? description, decimal unitPrice, string? currency, decimal taxRate, string? unit, bool isActive, Guid? vendorId, decimal? purchasePrice)
     {
+        VendorId = vendorId is { } vendor ? Guard.NotDefault(vendor) : null;
+        PurchasePrice = purchasePrice is { } price ? Guard.InRange(price, 0m, CommerceLimits.MaxUnitPrice) : null;
         Name = Guard.MaxLength(Guard.NotEmpty(name), CommerceLimits.NameMaxLength);
         var trimmedCode = code?.Trim();
         Code = string.IsNullOrEmpty(trimmedCode) ? null : Guard.MaxLength(trimmedCode, CommerceLimits.CodeMaxLength);
