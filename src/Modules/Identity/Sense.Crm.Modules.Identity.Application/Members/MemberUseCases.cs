@@ -6,6 +6,7 @@ using Sense.Crm.Modules.Identity.Domain.Memberships;
 using Sense.Crm.Modules.Identity.Domain.Roles;
 using Sense.Crm.Modules.Identity.Domain.Users;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -62,6 +63,7 @@ public sealed class DelegationGuard(ICurrentUser user, IMembershipRepository mem
 /// Verilen rolün izinleri çağıranın izinlerinin alt kümesi olmalıdır (M7). Hesap zaten üyeyse (aktif veya bekleyen) <c>member.exists</c>.
 /// </summary>
 [RequiresPermission(OrgPermissions.UsersManage)]
+[ConsumesLimit(LimitKeys.Users)]
 public sealed record AddMemberCommand(string Email, string? DisplayName, Guid RoleId) : ICommand<AddMemberResultDto>;
 
 public sealed class AddMemberValidator : AbstractValidator<AddMemberCommand>
@@ -160,6 +162,7 @@ public sealed class UpdateMemberHandler(
     IRoleRepository roles,
     IMembershipRepository memberships,
     DelegationGuard delegation,
+    ILimitGuard limitGuard,
     IPermissionCacheInvalidator permissionCache) : ICommandHandler<UpdateMemberCommand>
 {
     public async Task<Result> Handle(UpdateMemberCommand command, CancellationToken cancellationToken)
@@ -190,6 +193,16 @@ public sealed class UpdateMemberHandler(
         if (grantsAccess && !await delegation.CanGrantAsync(targetRole.Permissions, cancellationToken).ConfigureAwait(false))
         {
             return Error.Forbidden(IdentityErrors.RolePermissionEscalation);
+        }
+
+        // M7: pasif üyeyi yeniden etkinleştirmek kullanıcı kotasında yer tüketir (koşullu tüketim öznitelikle ifade edilemediğinden ikinci çağrı noktası; aynı kilit ve kural).
+        if (targetActive && !membership.IsActive)
+        {
+            var capacity = await limitGuard.EnsureAsync(new LimitDemand(LimitKeys.Users, "identity"), cancellationToken).ConfigureAwait(false);
+            if (capacity.IsFailure)
+            {
+                return capacity;
+            }
         }
 
         var administrator = await roles.GetByCodeAsync(SystemRoleCodes.Administrator, cancellationToken).ConfigureAwait(false);

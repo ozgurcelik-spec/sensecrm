@@ -75,6 +75,18 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
             ? new WorkflowState(workflow.Status, workflow.Error, workflow.Steps.ToList())
             : (WorkflowState?)null);
 
+    /// <summary>KVKK imhasında <c>RemoveAsync</c> ile silinen motor kimlikleri (test doğrulaması).</summary>
+    public IReadOnlyCollection<string> RemovedWorkflowIds => _removed.ToArray();
+
+    private readonly ConcurrentQueue<string> _removed = new();
+
+    public Task RemoveAsync(string workflowId, CancellationToken cancellationToken)
+    {
+        _removed.Enqueue(workflowId);
+        _workflows.TryRemove(workflowId, out _);
+        return Task.CompletedTask;
+    }
+
     public Task TerminateAsync(string workflowId, string? reason, CancellationToken cancellationToken)
     {
         if (_workflows.TryGetValue(workflowId, out var workflow) && workflow.Status == ExecutionStatus.Running)

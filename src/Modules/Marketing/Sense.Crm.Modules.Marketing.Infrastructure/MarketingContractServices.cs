@@ -17,6 +17,7 @@ public static class MarketingContractServices
         services.AddScoped<IMarketingUnitOfWork>(sp => sp.GetRequiredService<MarketingDbContext>());
         services.AddScoped<ICampaignRepository, CampaignRepository>();
         services.AddScoped<ICampaignMemberRepository, CampaignMemberRepository>();
+        services.AddScoped<Sense.Crm.Shared.Contracts.Usage.IUsageReporter, MarketingUsageReporter>();
         return services;
     }
 }

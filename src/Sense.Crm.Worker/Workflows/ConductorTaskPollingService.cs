@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sense.Crm.Modules.Workflows.Application;
+using Sense.Crm.Modules.Workflows.Application.Tasks;
 using Sense.Crm.Modules.Workflows.Infrastructure;
 using Sense.Crm.Modules.Workflows.Infrastructure.Conductor;
 
@@ -21,6 +22,7 @@ public sealed partial class ConductorTaskPollingService(
     IServiceScopeFactory scopes,
     WorkflowTaskRunner runner,
     IOptions<ConductorOptions> options,
+    TimeProvider clock,
     ILogger<ConductorTaskPollingService> logger) : BackgroundService
 {
     private static readonly TimeSpan IdleDelay = TimeSpan.FromMilliseconds(500);
@@ -68,8 +70,12 @@ public sealed partial class ConductorTaskPollingService(
 
     private async Task ProcessAsync(ConductorClient client, ConductorTask task, string workerId, CancellationToken ct)
     {
+        // M7: plan/askı zorlaması (olay veri yoluyla aynı ITenantEntitlements): askıda/deneme bitmiş kiracıda ya da workflows modülü kapalıyken görev terminal başarısız olur.
+        // Yürütme ailed olur; yeniden açılınca yönetici retry ile yeniden dener. Kiracı kimliği yalnız kapı içindir (görev girdisi güvenilmezdir; runner asıl doğrulamayı yapar).
+        var blocked = await CheckEntitlementAsync(task, ct).ConfigureAwait(false);
+
         // Görev girdisi güvenilmezdir: runner, (tenantId, executionId, motor workflow kimliği) üçlüsünü workflow_executions ile doğrular (H1).
-        var result = await runner.ExecuteAsync(task.TaskType, task.WorkflowInstanceId, task.InputData, ct).ConfigureAwait(false);
+        var result = blocked ?? await runner.ExecuteAsync(task.TaskType, task.WorkflowInstanceId, task.InputData, ct).ConfigureAwait(false);
         var status = result.Succeeded
             ? ConductorStatuses.Completed
             : result.Terminal ? ConductorStatuses.FailedWithTerminalError : ConductorStatuses.Failed;
@@ -84,6 +90,27 @@ public sealed partial class ConductorTaskPollingService(
             // Sonuç bildirilemedi: görev yanıt zaman aşımından sonra motorca yeniden kuyruğa alınır.
             LogUpdateFailed(logger, ex, task.TaskType, task.TaskId);
         }
+    }
+
+    /// <summary>Kiracı erişimi <c>full</c> değilse (<c>tenant_suspended</c>) ya da workflows kapalıysa (<c>module_disabled</c>) terminal sonuç; aksi null.</summary>
+    private async Task<WorkflowTaskResult?> CheckEntitlementAsync(ConductorTask task, CancellationToken ct)
+    {
+        if (task.InputData.ValueKind != System.Text.Json.JsonValueKind.Object
+            || !task.InputData.TryGetProperty("tenantId", out var raw)
+            || !Guid.TryParse(raw.GetString(), out var tenantId))
+        {
+            return null;
+        }
+
+        await using var scope = scopes.CreateAsyncScope();
+        var snapshot = await scope.ServiceProvider.GetRequiredService<Sense.Crm.Shared.Contracts.Entitlements.ITenantEntitlements>().GetAsync(tenantId, ct).ConfigureAwait(false);
+        var (_, access) = snapshot.Evaluate(clock.GetUtcNow());
+        if (access != Sense.Crm.Shared.Contracts.Entitlements.AccessLevel.Full)
+        {
+            return WorkflowTaskResult.Failed("tenant_suspended");
+        }
+
+        return snapshot.IsModuleEnabled(Sense.Crm.Shared.Contracts.Entitlements.GatedModules.Workflows) ? null : WorkflowTaskResult.Failed("module_disabled");
     }
 
     private static async Task DelayAsync(TimeSpan delay, CancellationToken ct)

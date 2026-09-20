@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Service.Contracts;
 using Sense.Crm.Modules.Service.Domain;
 using Sense.Crm.Modules.Service.Domain.Cases;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -40,6 +41,7 @@ public abstract class CaseFieldsValidator<T> : AbstractValidator<T>
 /// sayacı (en son adım; aynı transaction) → INSERT + <c>created</c> olayı. <c>assignedUserId</c> verilmezse atanmamış.
 /// </summary>
 [RequiresPermission(ServicePermissions.CasesWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateCaseCommand(
     string Subject,
     string? Description,

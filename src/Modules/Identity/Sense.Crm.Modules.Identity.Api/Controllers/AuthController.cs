@@ -10,6 +10,7 @@ using Sense.Crm.Modules.Identity.Application.Platform;
 using Sense.Crm.Modules.Identity.Domain;
 using Sense.Crm.Shared.Contracts.Configuration;
 using Sense.Crm.Shared.Kernel.Results;
+using Sense.Crm.Shared.Web.Authorization;
 using Sense.Crm.Shared.Web.Controllers;
 using Sense.Crm.Shared.Web.Middleware;
 
@@ -29,7 +30,14 @@ public static class IdentityRoutes
 /// <summary>GET /auth/config yanıtı.</summary>
 public sealed record AuthConfigDto(bool SignupEnabled);
 
-public sealed record CreateOrganizationRequest(string OrganizationName, string AdminDisplayName, string AdminEmail, string? AdminPassword, string Locale);
+public sealed record CreateOrganizationRequest(
+    string OrganizationName,
+    string AdminDisplayName,
+    string AdminEmail,
+    string? AdminPassword,
+    string Locale,
+    string? PlanCode = null,
+    DateOnly? TrialEndsOn = null);
 
 public sealed record SignUpRequest(string OrganizationName, string DisplayName, string Email, string Password, string Locale);
 
@@ -173,7 +181,7 @@ public sealed class PermissionsController : ApiControllerBase
 /// </summary>
 [ApiVersion(ApiRoutes.DefaultVersion)]
 [Route(IdentityRoutes.Platform)]
-[Authorize]
+[Authorize(Policy = PlatformPolicies.PlatformAdmin)]
 public sealed class PlatformController : ApiControllerBase
 {
     /// <summary>Yeni organizasyon + ilk Administrator. <c>adminPassword</c> null ise üretilen tek seferlik parola yanıtta bir kez döner.</summary>
@@ -184,6 +192,6 @@ public sealed class PlatformController : ApiControllerBase
         // Yanıt üretilen parolayı taşıyabilir: hiçbir aracı katman önbelleğe almasın.
         Response.Headers.CacheControl = "no-store";
         return CreatedWithBody(await Dispatcher.Send(
-            new CreateOrganizationCommand(request.OrganizationName, request.AdminDisplayName, request.AdminEmail, request.AdminPassword, request.Locale), ct));
+            new CreateOrganizationCommand(request.OrganizationName, request.AdminDisplayName, request.AdminEmail, request.AdminPassword, request.Locale, request.PlanCode, request.TrialEndsOn), ct));
     }
 }

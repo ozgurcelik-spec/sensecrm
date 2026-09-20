@@ -96,6 +96,9 @@ public static class AuthenticationExtensions
                         ctx.HandleResponse();
                         await ProblemResponses.WriteAsync(ctx.HttpContext, Error.Unauthorized(ErrorCodes.Unauthenticated), ctx.HttpContext.RequestAborted);
                     },
+
+                    // M7: politika reddi (ör. /platform/** için PlatformAdmin politikası, kiracı yöneticisine 403) de aynı ProblemDetails sözleşmesiyle döner (code = forbidden).
+                    OnForbidden = async ctx => await ProblemResponses.WriteAsync(ctx.HttpContext, Error.Forbidden(ErrorCodes.Forbidden), ctx.HttpContext.RequestAborted),
                 };
             });
 

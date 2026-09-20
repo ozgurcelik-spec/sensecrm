@@ -242,4 +242,24 @@
   <data name="invitation.not_found" xml:space="preserve"><value>Davet bulunamadı ya da size ait değil.</value></data>
   <data name="field.current_password" xml:space="preserve"><value>Mevcut parola</value></data>
   <data name="field.new_password" xml:space="preserve"><value>Yeni parola</value></data>
+  <!-- M7: SaaS hazırlığı (plan, limit, kiracı yaşam döngüsü, platform konsolu) -->
+  <data name="tenant.suspended" xml:space="preserve"><value>Organizasyonunuz şu anda salt okunur veya erişime kapalı ({reason}); bu işlem yapılamıyor.</value></data>
+  <data name="plan.module_disabled" xml:space="preserve"><value>"{module}" modülü planınıza dahil değil.</value></data>
+  <data name="plan.limit_exceeded" xml:space="preserve"><value>Plan limitine ulaşıldı ({used}/{max}). Planı yükseltmek için platform yöneticisiyle iletişime geçin.</value></data>
+  <data name="platform.plan_not_found" xml:space="preserve"><value>Plan bulunamadı ya da pasif.</value></data>
+  <data name="platform.invalid_transition" xml:space="preserve"><value>Bu işlem organizasyonun mevcut durumunda ({from} → {to}) yapılamaz.</value></data>
+  <data name="platform.deletion_not_cancellable" xml:space="preserve"><value>Silme talebi iptal edilemez: talep bekleme aşamasında değil ya da bekleme süresi doldu.</value></data>
+  <data name="platform.system_tenant_protected" xml:space="preserve"><value>Platform işletim organizasyonu askıya alınamaz, silinemez ve planı değiştirilemez.</value></data>
+  <data name="validation.platform_trial_date" xml:space="preserve"><value>Deneme bitiş günü bugünden (organizasyonun saat diliminde) önce olamaz.</value></data>
+  <data name="validation.platform_reason" xml:space="preserve"><value>Gerekçe zorunludur (en çok 500 karakter).</value></data>
+  <data name="validation.platform_mode" xml:space="preserve"><value>Askı kipi readOnly veya blocked olmalıdır.</value></data>
+  <data name="validation.platform_overrides" xml:space="preserve"><value>İstisna değeri geçersiz: sayılar sıfır veya büyük olmalı, modül anahtarları workflows, commerce, service, marketing (limitlerde ayrıca sales, activities) olmalıdır.</value></data>
+  <data name="validation.platform_retention" xml:space="preserve"><value>Saklama süresi 7 ile 90 gün arasında olmalıdır.</value></data>
+  <data name="validation.platform_range" xml:space="preserve"><value>Tarih aralığı geçersiz: bitiş başlangıçtan önce olamaz ve en çok 400 gün olabilir.</value></data>
+  <data name="validation.platform_plan" xml:space="preserve"><value>Plan kataloğunda böyle bir aktif plan yok.</value></data>
+  <data name="field.plan_code" xml:space="preserve"><value>Plan</value></data>
+  <data name="field.trial_ends_on" xml:space="preserve"><value>Deneme bitiş günü</value></data>
+  <data name="field.overrides" xml:space="preserve"><value>İstisnalar</value></data>
+  <data name="field.retention_days" xml:space="preserve"><value>Saklama süresi (gün)</value></data>
+  <data name="field.mode" xml:space="preserve"><value>Kip</value></data>
 </root>

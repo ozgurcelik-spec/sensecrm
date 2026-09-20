@@ -2,6 +2,7 @@ using FluentValidation;
 using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Modules.Identity.Domain;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -48,7 +49,7 @@ public sealed class UpdateOrganizationValidator : AbstractValidator<UpdateOrgani
     }
 }
 
-public sealed class UpdateOrganizationHandler(ITenantContext tenant, ITenantRepository tenants) : ICommandHandler<UpdateOrganizationCommand>
+public sealed class UpdateOrganizationHandler(ITenantContext tenant, ITenantRepository tenants, IIntegrationEventOutbox outbox, TimeProvider clock) : ICommandHandler<UpdateOrganizationCommand>
 {
     public async Task<Result> Handle(UpdateOrganizationCommand command, CancellationToken cancellationToken)
     {
@@ -59,6 +60,10 @@ public sealed class UpdateOrganizationHandler(ITenantContext tenant, ITenantRepo
         }
 
         organization.Update(command.Name, command.DefaultLocale, command.TimeZone);
+
+        // M7: ilk başarılı kayıtta profile_completed_at dolar (onboarding); ad değişimi Platform konsolundaki okuma kopyasına olayla taşınır.
+        organization.MarkProfileCompleted(clock.GetUtcNow().UtcDateTime);
+        outbox.Enqueue(new OrganizationUpdated(organization.Id, organization.Name));
         return Result.Success();
     }
 }

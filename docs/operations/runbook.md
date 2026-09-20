@@ -117,6 +117,8 @@ PowerShell: `Invoke-RestMethod -Method Post -Uri "$base/api/v1/platform/organiza
 Kurallar: e-posta zaten bir hesaba aitse hesap değişmez ve hesap sahibinin onayı olmadan yönetici YAPILMAZ: yeni organizasyona **bekleyen** Administrator daveti eklenir (`adminAccountCreated=false`, `adminInvitationPending=true`, parola dönmez; hesap sahibi giriş yapıp Ayarlar/Davetler ekranından kabul eder, `GET /me/invitations` + `POST /me/invitations/{id}/accept`); yeni hesapta parola (üretilmiş ya da verilmiş) **geçicidir**: ilk girişte değiştirilmek zorundadır (`mustChangePassword`; değişene kadar yalnız parola değiştirme uçları çalışır);
 `adminPassword` verilirse (≥ 10 karakter, yaygın parola/e-posta adı yasak) yanıtta tekrarlanmaz. Yetki her istekte veritabanından doğrulanır — token'daki bayrak yetmez. Yeni organizasyon
 varsayılan satış hunisiyle (Worker) tohumlanır. Üretilen parolayı yöneticiye güvenli kanaldan iletin; ilk girişte değiştirmesini isteyin.
+
+**Plan ve deneme (M7):** gövdeye isteğe bağlı `planCode` (ör. `business`) ve `trialEndsOn` (`YYYY-MM-DD`, dahil) eklenir; verilmezse `Platform:Provisioning:DefaultPlanCode` (varsayılan `internal`: limitsiz, tüm modüller açık) ve denemesiz açılır. Bilinmeyen/pasif plan `400` (`errors.planCode`). Plan, deneme ve limit istisnası sonradan `PUT /api/v1/platform/organizations/{id}/subscription` ile değişir (Platform konsolu); askı/silme talebi aynı yerdedir (§12). Plan hesabı `OrganizationCreated` olayıyla Worker'da açılır; olay işlenene kadar ilk erişimde `Platform:Signup:PlanCode` planıyla geçici (`lazy`) satır açılır ve olay gelince düzeltilir (saniyeler).
 Sonraki kullanıcılar organizasyonun kendi yöneticisi tarafından Ayarlar > Kullanıcılar ekranından eklenir: yeni e-posta → sunucu üretimi **tek seferlik geçici parola** ekranda bir kez gösterilir (güvenli kanaldan iletin); mevcut hesap → davet (kullanıcı kabul edene kadar bekleyen).
 
 ### 3.6 Doğrulama (duman testi)
@@ -154,6 +156,8 @@ geçici geliştirme anahtarı yalnız Development/Testing ortamlarındadır.
 `GET /api/v1/auth/config` → `{ "signupEnabled": false }` (anonim, 60 sn önbellek) ve web "kaydol" bağlantısını gizler / `/signup` sayfasını girişe yönlendirir.
 `open` yalnız Development/Testing varsayılanıdır; kurum içi üretimde açmayın. Geçersiz değer API'yi başlatmaz. Organizasyonlar §3.5 ile açılır.
 
+**SaaS (M7):** `open` kip, dış müşterilerin kendi kendine kaydı için **bilinçli** açılır; yeni organizasyon `Platform:Signup:PlanCode` planıyla (varsayılan `starter`, 14 gün deneme, örnek limitler) açılır ve deneme bitince **salt okunur** olur (§12, plan belgesi). Kurum içi kurulumda `disabled` kalır ve organizasyonlar §3.5 ile `internal` planda açılır. Açık kayıt **CAPTCHA/e-posta doğrulaması içermez** (yalnız IP başına auth hız sınırı vardır); dış SaaS açılışından önce ayrıca ele alınmalıdır.
+
 ## 6. Yedekleme
 
 ```bash
@@ -178,6 +182,7 @@ Ayrı yedeklenecekler: `deploy/.env`, `deploy/secrets/` (şifreli). Aylık **ger
 2. Yeni imajları hazırlayın (`CRM_VERSION=<yeni>`; `build` veya `pull`) ve `docker compose ... config -q` ile dosyayı doğrulayın.
 3. **Şema önce:** `docker compose -f deploy/docker-compose.prod.yml run --rm migrator migrate` — eski api/worker çalışırken migration'lar uygulanır;
    bu yüzden migration'lar geriye uyumlu yazılır (önce ekle, sonra kullan, en son kaldır). Başarısızsa **devam etmeyin** (adım 6).
+   **M7:** `migrate` şemalardan sonra **plan senkronunu** (`Platform:Plans` → `platform.plans`, geçersiz yapılandırma → çıkış 3, yayın durur) ve **backfill**'i (satırı olmayan mevcut her kiracıya `internal` plan; kısıt yok, onboarding kapalı) çalıştırır; ikisi de idempotenttir. Yalnız plan kataloğu yapılandırması değiştiyse şema gerekmez: `docker compose -f deploy/docker-compose.prod.yml run --rm migrator sync-plans` yeter (yapılandırmadan kalkan plan pasifleşir; mevcut atamalar çalışır). `smoke.sh`'a "satırı olmayan kiracı yok" denetimi eklenmelidir (`select count(*) from identity.tenants t left join platform.tenant_accounts a on a.tenant_id = t.id where a.tenant_id is null` = 0).
 4. `docker compose -f deploy/docker-compose.prod.yml up -d` — api/worker/web yeni imajla yeniden yaratılır (`db-init` ve `migrator` yeniden çalışır, bekleyen bir şey yoksa işlem yapmaz).
 5. `./deploy/smoke.sh` ve arayüzden kontrol; `docker compose ... ps` (hepsi healthy), `docker compose ... logs --since 10m api worker`.
 6. **Geri alma:**
@@ -212,6 +217,7 @@ Pilot topolojisi **tek `api` örneğidir**. Bu varsayımdan üç davranış doğ
 | **İzin önbelleği** (HybridCache) | Kullanıcının etkin izinleri (üyelik → rol) `Caching:PermissionExpirationMinutes` süresince önbellekte kalır. Rol güncelleme, üye rol/aktiflik değişimi, davet ekleme/kabul **aynı süreçte önbelleği hemen geçersiz kılar** (yeni izin/geri alınan izin anında etkili). | Redis **yoksa** (varsayılan) önbellek yalnız süreç belleğindedir; varsayılan süre **2 dk** (`Caching:PermissionExpirationMinutes` açıkça verilmedikçe). Birden çok `api` kopyası + Redis ile diğer kopyalarda bayatlık en çok yerel süre (`LocalExpirationSeconds`, 30 sn) + Redis süresi kadardır (10 dk); bu durumda Redis profilini açın ve süreyi işletme riskinize göre kısaltın. Access token 15 dk yaşar; JWT'de izin claim'i **yoktur**, izinler her istekte önbellekten çözülür (yani token süresi izin bayatlığını uzatmaz). Bir kullanıcının **oturumu** silinemez/kapatılamaz: pasifleştirilen üye tokeni ile izinsiz kalır (izinler boş döner) ve refresh yenilenemez; hesap kapatma için yönetici üyeliği pasifleştirir. |
 | **Giriş azaltma sayaçları** (`LoginThrottle`: IP+hesap 5 hatalı deneme/15 dk, e-posta başına 20 deneme/dk) | Bellek içidir; `api` yeniden başlayınca sıfırlanır ve kopyalar arasında paylaşılmaz. | Çok kopyada saldırgan sınırı kopya sayısıyla çarpar; o zaman paylaşımlı depo (Redis) gerekir. Kalıcı kalan koruma: hesap kilidi (10 hatalı deneme → 15 dk, veritabanında) ve auth uçlarının IP başına hız sınırı. |
 | **Kimliği doğrulanmış hız sınırı** (`RateLimiting:User` 600/dk, `Tenant` 3000/dk) | Kopya başına sayılır. | Cömert varsayılanlar normal kullanımı asla etkilemez; kurumsal NAT/tek vekil arkasında kullanıcı başına sınır yine kullanıcı kimliğine (`sub`) bağlıdır, IP'ye değil. `RateLimiting__User__PermitLimit` vb. ortam değişkeniyle ayarlanır. |
+| **Varlık (plan/askı) önbelleği** (M7, HybridCache `ent:{tenantId}`) | Plan, deneme, askı ve modül bayrakları `Platform:Entitlements:CacheSeconds` (30 sn) önbelleklenir; **etkin durum her istekte saatten hesaplanır** (deneme bitişi önbelleğe takılmaz). Platform komutları (plan/askı/silme) aynı süreçte önbelleği **hemen** geçersiz kılar. | Çok kopyada diğer kopyalar ≤ 30 sn (+ L2/Redis süresi) bayat kalır: askı en geç bu sürede tüm kopyalarda etkili olur. Kayıt sayaçları (limit) `Platform:Usage:CacheSeconds` (300 sn) önbellekli ve **yumuşak**tır (sınır bu sürede bir miktar aşılabilir); kullanıcı sınırı sert ve önbelleksizdir (istişari kilit). |
 
 İstek gövdesi üst sınırı `RequestLimits__MaxRequestBodyBytes` (varsayılan 1 MB; aşan istek 413). Oturum: refresh token ailesinin **mutlak** ömrü 30 gündür (`Identity__RefreshFamilyDays`); süre dolunca kullanıcı yeniden giriş yapar. Parola değişince kullanıcının tüm cihazlardaki oturumları kapanır.
 
@@ -272,9 +278,18 @@ Lead/fırsat olayları işlenmiyorsa outbox birikir: `SELECT count(*) FROM sales
   (ileride SMTP vb. eklenirse `backend` ağı ve bu belge güncellenmelidir). Scalar/OpenAPI dokümantasyonu üretimde kapalıdır (Scalar, açıkken tarayıcıda CDN'den betik çeker).
 - **Kişisel veriler:** kişi/lead/firma iletişim alanları veritabanındadır; denetim kaydında (`audit.audit_log_entries`) e-posta/telefon alanları `***` ile maskelenir; oturum kayıtları IP ve kullanıcı-aracısı tutar
   (`identity.refresh_tokens`, kişisel veri sayılır; süresi dolmuş kayıtların temizliği sonraki iş).
-- **Silme ≠ imha:** kayıt silme yumuşaktır (`is_deleted`); KVKK "silme/yok etme/anonimleştirme" talebi için kalıcı imha ve anonimleştirme aracı **henüz yok** (açık iş, M7/KVKK). Yedeklerde silinmiş veri
-  saklama süresi (`RETENTION_DAYS`) boyunca kalır — saklama ve imha politikasını buna göre yazın.
-- **Erişim:** kiracı ayrımı satır bazlıdır (`TenantId` + global filtre; testli); platform yöneticisi yalnız organizasyon açabilir, kiracı verisini okuyamaz. Yönetici hesapları ve yedek erişimini kısıtlayın; `.env`/`secrets/` dosya izinleri sıkı tutulmalıdır.
+- **Veri yerleşimi (M7):** tek bölge / tek veri merkezi. Kiracı başına bölge seçimi **yoktur ve kapsam dışıdır**; SaaS'ta tüm kiracılar aynı yurt içi veri merkezinde durur, dış çağrı/alt işleyici yoktur
+  (bu bölümdeki "veri merkezinden çıkış yok" güvenceleri aynen geçerlidir).
+- **Silme ≠ imha (kayıt düzeyi):** tek kayıt silme yumuşaktır (`is_deleted`); kayıt/kullanıcı bazlı kalıcı imha ve anonimleştirme aracı **yoktur** (kısmi imha kapsam dışı). **Kiracı bütününün** KVKK imhası M7 ile vardır:
+  1. **Talep:** platform yöneticisi `POST /api/v1/platform/organizations/{id}/deletion-request` `{ reason, retentionDays? }` (varsayılan **30 gün**, 7–90). Kiracı **anında** `pending_deletion` olur (tüm kullanıcılar dışarıda, giriş yok).
+  2. **Bekleme:** talep bekleme süresi içinde `.../deletion-request/cancel` ile iptal edilir (kiracı önceki duruma döner).
+  3. **İmha:** süre dolunca Worker (`TenantErasureService`, `Platform:Deletion:PollMinutes` = 10 dk, tek örnek) **kalıcı** imha yapar: kiracının tüm iş verisi (yumuşak silinenler dahil; yedi modül), outbox, denetim kaydı (`audit.audit_log_entries`), Conductor'daki yürütme kayıtları,
+     yalnız bu kiracıya ait hesaplar ve oturumları; başka kiracıda üyeliği olan (ortak) hesaplar ve platform yöneticisi hesapları **kalır** (yalnız bu kiracıdaki üyelik/rol gider). Adımlar idempotenttir ve `erased_steps` ile yeniden başlatılır; hata → `failed`, üstel bekleme, `Platform:Deletion:MaxAttempts` (10) sonrası `deletion.failed` denetimi + günlük uyarısı (konsolda kırmızı).
+  4. **Mezar taşı:** `platform.tenant_accounts` satırı `deleted` (ad `[deleted]`, slug `deleted-xxxxxxxx`), `platform.deletion_requests` satırı imha raporuyla (kişisel veri yok) ve `platform.platform_audit_entries` (hedef adı redakte) **bilerek kalır** (hesap verebilirlik; `Platform:Audit:RetentionDays` = 1825 gün).
+  Sistem (işletim) organizasyonu asla imha edilmez. Önbellek girdileri (kiracı önekli, TTL ≤ 10 dk) imha sonunda geçersiz kılınır.
+  **Yedekler:** imha yedekleri temizlemez; silinmiş veri yedeklerde saklama süresi (`RETENTION_DAYS`) boyunca kalır — saklama ve imha politikasını buna göre yazın. **Geri yükleme sonrası** imha edilmiş kiracının yeniden görünmemesi için
+  `migrator erase-deleted-tenants` çalıştırılır (tüm mezar taşları için imhayı yeniden koşar; idempotent).
+- **Erişim:** kiracı ayrımı satır bazlıdır (`TenantId` + global filtre; testli); platform yöneticisi organizasyon açar, plan/deneme/askı/silme yönetir ve sayaç (kullanım) görür ama kiracı iş verisini **okuyamaz** (taklit yok; M7). Yönetici hesapları ve yedek erişimini kısıtlayın; `.env`/`secrets/` dosya izinleri sıkı tutulmalıdır.
 - **İletim:** dış trafik TLS ile (§3.7); iç ağ (backend) yalnız konteynerler arasıdır.
 - **VERBİS / aydınlatma metni / veri işleyen sözleşmeleri** teknik değil, kurumsal iştir (kontrol listesi: [m5-pilot-yayin.md](../plan/m5-pilot-yayin.md)).
 
@@ -285,7 +300,7 @@ Lead/fırsat olayları işlenmiyorsa outbox birikir: `SELECT count(*) FROM sales
 | **RPO** (kabul edilen veri kaybı) | **≤ 4 saat** (iş saatlerinde); gece ≤ 24 saat | 4 saatte bir + gece mantıksal yedek. RPO'yu dakikalara indirmek için sonraki adım: WAL arşivleme/PITR (pgBackRest/WAL-G) |
 | **RTO** (geri dönüş süresi) | **≤ 4 saat** | Doğrulanmış yeniden kurulum: sırlar + imajlar + yedek → §7. Küçük veritabanında geri yükleme saniyeler sürer; **süreyi gerçek veri boyutuyla provada ölçüp bu değeri güncelleyin** |
 | Yedek saklama | 14 gün günlük + 3 aylık (ayrı arşiv) | `RETENTION_DAYS`, aylık kopya |
-| Geri yükleme provası | Aylık, ayrı örneğe | [restore.md](../../deploy/restore.md) Senaryo A + `smoke.sh` |
+| Geri yükleme provası | Aylık, ayrı örneğe | [restore.md](../../deploy/restore.md) Senaryo A + `smoke.sh` + **"imha edilmiş kiracı geri gelmedi" denetimi (M7):** `migrator erase-deleted-tenants` sonrası `select count(*) from identity.tenants t join platform.tenant_accounts a on a.tenant_id = t.id where a.status = 'deleted'` = 0 |
 
 Tek sunuculu kurulumda sunucu arızası = RTO süresi kadar kesinti; yüksek erişilebilirlik (ikinci düğüm, Postgres replikasyonu) sonraki aşamadadır (K13: Kubernetes).
 
@@ -294,3 +309,6 @@ Tek sunuculu kurulumda sunucu arızası = RTO süresi kadar kesinti; yüksek eri
 Ayrıntı ve varsayılanlar: [`deploy/.env.example`](../../deploy/.env.example). Uygulama ayarları (compose `environment` bölümünden): `Registration__Mode`, `AllowedHosts`,
 `ForwardedHeaders__Enabled|KnownProxies__n|KnownNetworks__n` (varsayılan kapalı; compose yalnız `backend` alt ağını güvenilir sayar), `Docs__Enabled`, `Conductor__BaseUrl`,
 `ConnectionStrings__Database|Redis`, `Auth__SigningKeyPem` (dosyadan; `/run/secrets/<Ad>` dosyaları `Ad`'daki `__` → `:` ile yapılandırma anahtarı olur), `Worker__HeartbeatFile`.
+**Platform (M7):** `Platform__Signup__PlanCode` (`starter`), `Platform__Provisioning__DefaultPlanCode` (`internal`), `Platform__Plans__<n>__…` (plan kataloğu; yalnız **Migrator** için anlamlıdır — `migrate`/`sync-plans`; örnek: `appsettings.json`), `Platform__Entitlements__CacheSeconds` (30),
+`Platform__Usage__{CacheSeconds 300, SnapshotPollMinutes 30, RetentionDays 400}`, `Platform__Audit__RetentionDays` (1825), `Platform__Deletion__{RetentionDays 30, MinRetentionDays 7, MaxRetentionDays 90, PollMinutes 10, MaxAttempts 10, ChunkSize 10000}`.
+Bilinmeyen plan kodu ve tutarsız aralıklar açılışta reddedilir (Migrator ≠ 0 çıkış; API/Worker başlamaz). Compose `environment` ve `.env.example` satırlarını DevOps ekler.

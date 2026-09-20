@@ -14,6 +14,7 @@
     <ProjectReference Include="../Modules/Workflows/Sense.Crm.Modules.Workflows.Api/Sense.Crm.Modules.Workflows.Api.csproj" />
     <ProjectReference Include="../Modules/Marketing/Sense.Crm.Modules.Marketing.Api/Sense.Crm.Modules.Marketing.Api.csproj" />
     <ProjectReference Include="../Modules/Service/Sense.Crm.Modules.Service.Api/Sense.Crm.Modules.Service.Api.csproj" />
+    <ProjectReference Include="../Modules/Platform/Sense.Crm.Modules.Platform.Api/Sense.Crm.Modules.Platform.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

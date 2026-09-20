@@ -7,13 +7,14 @@ using Sense.Crm.Modules.Commerce.Infrastructure.Persistence;
 using Sense.Crm.Modules.Identity.Application;
 using Sense.Crm.Modules.Identity.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
+using Sense.Crm.Modules.Platform.Infrastructure;
 using Sense.Crm.Modules.Sales.Infrastructure.Persistence;
 using Sense.Crm.Modules.Service.Infrastructure.Persistence;
 using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 
-// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin]
+// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|sync-plans|backfill|erase-deleted-tenants]
 // Yeni modül eklendiğinde DbContext'i buraya da kaydedilir (build/new-module.ps1 çıktısındaki adımlar).
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
 builder.Services.AddCrmCore(builder.Configuration);
@@ -33,6 +34,16 @@ builder.Services.AddModuleDbContext<Sense.Crm.Modules.Marketing.Infrastructure.P
 builder.Services.AddModuleDbContext<CommerceDbContext>(builder.Configuration, CommerceDbContext.SchemaName);
 builder.Services.AddModuleDbContext<ServiceDbContext>(builder.Configuration, ServiceDbContext.SchemaName);
 
+// Platform (M7): plan kataloğu senkronu (sync-plans), mevcut kiracı backfill'i (backfill) ve KVKK imha yeniden koşusu (erase-deleted-tenants).
+// Domain + Contracts assembly'leri outbox olay tipi kaydı ve UnitOfWork çözümlemesi içindir.
+builder.Services.AddModuleDbContext<Sense.Crm.Modules.Platform.Infrastructure.Persistence.PlatformDbContext>(builder.Configuration, Sense.Crm.Modules.Platform.Infrastructure.Persistence.PlatformDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    Sense.Crm.Modules.Platform.Infrastructure.Persistence.PlatformDbContext.SchemaName,
+    typeof(Sense.Crm.Modules.Platform.Domain.Accounts.TenantAccount).Assembly,
+    typeof(Sense.Crm.Modules.Platform.Contracts.TenantSuspended).Assembly);
+builder.Services.AddIdentityContractServices();
+builder.Services.AddPlatformContractServices(builder.Configuration);
+
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);
 var command = args.Length > 0 ? args[0].ToLowerInvariant() : MigratorConstants.MigrateCommand;
@@ -41,6 +52,32 @@ switch (command)
 {
     case MigratorConstants.MigrateCommand:
         await MigrationRunner.MigrateAllAsync(host.Services, logger);
+
+        // M7: plan senkronu (geçersiz yapılandırma → çıkış ≠ 0, yayın durur) + mevcut kiracılar için internal plan backfill'i.
+        var syncExit = await PlatformCommands.SyncPlansAsync(host.Services, logger, CancellationToken.None);
+        if (syncExit != 0)
+        {
+            return syncExit;
+        }
+
+        await PlatformCommands.BackfillAsync(host.Services, logger, CancellationToken.None);
+        break;
+
+    case PlatformCommands.SyncPlansName:
+        var syncOnlyExit = await PlatformCommands.SyncPlansAsync(host.Services, logger, CancellationToken.None);
+        if (syncOnlyExit != 0)
+        {
+            return syncOnlyExit;
+        }
+
+        break;
+
+    case PlatformCommands.BackfillName:
+        await PlatformCommands.BackfillAsync(host.Services, logger, CancellationToken.None);
+        break;
+
+    case PlatformCommands.EraseDeletedTenantsName:
+        await PlatformCommands.EraseDeletedTenantsAsync(host.Services, logger, CancellationToken.None);
         break;
 
     case PlatformAdminCommand.Name:

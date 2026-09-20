@@ -55,6 +55,13 @@ public sealed partial class ConductorWorkflowEngine(ConductorClient client, IWor
         }
     }
 
+    public async Task RemoveAsync(string workflowId, CancellationToken cancellationToken)
+    {
+        // Çalışan yürütme önce sonlandırılır (idempotent), sonra kayıt kalıcı silinir.
+        await TerminateAsync(workflowId, "tenant erasure", cancellationToken).ConfigureAwait(false);
+        await client.RemoveWorkflowAsync(workflowId, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task CompleteWaitTaskAsync(string workflowId, string taskReferenceName, IReadOnlyDictionary<string, object?> output, CancellationToken cancellationToken)
     {
         var body = new JsonObject();

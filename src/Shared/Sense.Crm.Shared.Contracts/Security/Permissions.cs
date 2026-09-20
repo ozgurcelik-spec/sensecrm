@@ -35,6 +35,29 @@ public sealed class AnyAuthenticatedUserAttribute(string reason) : Attribute
     public string Reason { get; } = reason;
 }
 
+/// <summary>
+/// Platform yöneticisi (ürünü işleten taraf) isteği: <c>isPlatformAdmin</c> kiracı izni DEĞİLDİR. <c>AuthorizationBehaviour</c> her
+/// istekte <see cref="IPlatformAdminVerifier"/> ile bayrağı ve hesap aktifliğini veritabanından doğrular; kiracı durumundan bağımsızdır
+/// (<c>EntitlementBehaviour</c> atlar). Her istek tam olarak birini taşır: <c>[RequiresPermission]</c> | <c>[AnyAuthenticatedUser]</c> | bu.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class PlatformAdminOnlyAttribute : Attribute;
+
+/// <summary>Kullanıcı aktif <b>ve</b> platform yöneticisi bayrağı veritabanında var mı (JWT bayrağına güvenilmez). Identity uygular.</summary>
+public interface IPlatformAdminVerifier
+{
+    Task<bool> IsPlatformAdminAsync(Guid userId, CancellationToken ct);
+}
+
+/// <summary>
+/// Platform denetimi yazma noktası (Platform uygular): başka bir modülün (ör. Identity <c>POST /platform/organizations</c>) kendi transaction'ında yapamadığı platform eylemlerini
+/// <c>platform_audit_entries</c>'a yazar (aktör: çağıran platform yöneticisi). Platform yüklü değilse hiçbir şey yazılmaz. <c>details</c> kişisel veri içermez.
+/// </summary>
+public interface IPlatformAuditSink
+{
+    Task RecordAsync(string action, Guid? targetTenantId, string? targetTenantName, IReadOnlyDictionary<string, object?> details, CancellationToken ct = default);
+}
+
 /// <summary>Handler üzerinde gerekli izni bildirir; AuthorizationBehaviour denetler.</summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public sealed class RequiresPermissionAttribute(string permission) : Attribute

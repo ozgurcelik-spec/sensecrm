@@ -4,11 +4,15 @@ using Sense.Crm.Modules.Identity.Domain.Tenants;
 using Sense.Crm.Modules.Identity.Domain.Tokens;
 using Sense.Crm.Modules.Identity.Domain.Users;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 
 namespace Sense.Crm.Modules.Identity.Application.Auth;
 
 /// <summary>Bir kullanıcının belirli organizasyondaki oturum bağlamı: organizasyon + aktif üyeliğindeki rol.</summary>
 public sealed record SessionContext(Tenant Tenant, Role Role);
+
+/// <summary>Oturum çözümü: <paramref name="Session"/> yoksa ve <paramref name="BlockedReason"/> doluysa kiracı erişimi <c>none</c> (M7: <c>tenant.suspended</c> nedeni).</summary>
+public sealed record SessionResolution(SessionContext? Session, string? BlockedReason);
 
 /// <summary>
 /// Oturum üretimi (giriş, kayıt, yenileme, organizasyon değiştirme, parola değiştirme ortak yolu): access token (15 dk, aktif
@@ -22,29 +26,49 @@ public sealed class SessionIssuer(
     ITokenService tokens,
     ISecretGenerator secrets,
     ITenantContextSetter tenantSetter,
+    ITenantEntitlements entitlements,
     TimeProvider clock)
 {
     /// <summary>
-    /// Kullanıcının verilen organizasyonda aktif üyeliği ve rolü; üyelik yoksa/pasifse/bekleyen davetse veya organizasyon pasifse null.
-    /// Sorgular hedef organizasyonun kiracı kapsamında (query filter altında) çalışır.
+    /// Kullanıcının verilen organizasyonda aktif üyeliği ve rolü; üyelik yoksa/pasifse/bekleyen davetse, organizasyon pasifse veya kiracının erişimi
+    /// <c>none</c> ise (askı <c>blocked</c>, silme bekleyen/silinmiş; M7) null. Sorgular hedef organizasyonun kiracı kapsamında (query filter altında) çalışır.
     /// </summary>
-    public async Task<SessionContext?> ResolveAsync(Guid userId, Guid tenantId, CancellationToken ct)
+    public async Task<SessionContext?> ResolveAsync(Guid userId, Guid tenantId, CancellationToken ct) =>
+        (await ResolveDetailedAsync(userId, tenantId, ct).ConfigureAwait(false)).Session;
+
+    /// <summary>
+    /// <see cref="ResolveAsync"/> + engel nedeni: kullanıcı organizasyonun aktif üyesi ama kiracı erişimi <c>none</c> ise <see cref="SessionResolution.BlockedReason"/>
+    /// etkin durumu (<c>suspended | pending_deletion | deleted</c>) taşır (üye olmayan kullanıcıya kiracı durumu sızdırılmaz).
+    /// </summary>
+    public async Task<SessionResolution> ResolveDetailedAsync(Guid userId, Guid tenantId, CancellationToken ct)
     {
         var tenant = await tenants.GetByIdAsync(tenantId, ct).ConfigureAwait(false);
         if (tenant is null || !tenant.IsActive)
         {
-            return null;
+            return new SessionResolution(null, null);
         }
 
-        using var scope = tenantSetter.BeginScope(tenant.Id, tenant.Slug);
-        var membership = await memberships.GetByUserAsync(userId, ct).ConfigureAwait(false);
-        if (membership is null || !membership.IsActive)
+        SessionContext? session;
+        using (tenantSetter.BeginScope(tenant.Id, tenant.Slug))
         {
-            return null;
+            var membership = await memberships.GetByUserAsync(userId, ct).ConfigureAwait(false);
+            if (membership is null || !membership.IsActive)
+            {
+                return new SessionResolution(null, null);
+            }
+
+            var role = await roles.GetByIdAsync(membership.RoleId, ct).ConfigureAwait(false);
+            session = role is null ? null : new SessionContext(tenant, role);
         }
 
-        var role = await roles.GetByIdAsync(membership.RoleId, ct).ConfigureAwait(false);
-        return role is null ? null : new SessionContext(tenant, role);
+        if (session is null)
+        {
+            return new SessionResolution(null, null);
+        }
+
+        var snapshot = await entitlements.GetAsync(tenant.Id, ct).ConfigureAwait(false);
+        var (status, access) = snapshot.Evaluate(clock.GetUtcNow());
+        return access == AccessLevel.None ? new SessionResolution(null, status) : new SessionResolution(session, null);
     }
 
     /// <summary>Yeni bir oturum (yeni token ailesi) üretir: giriş, kayıt, organizasyon değiştirme, parola değiştirme.</summary>

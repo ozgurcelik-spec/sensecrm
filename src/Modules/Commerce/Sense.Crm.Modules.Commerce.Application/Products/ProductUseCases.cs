@@ -3,6 +3,7 @@ using Sense.Crm.Modules.Commerce.Contracts;
 using Sense.Crm.Modules.Commerce.Domain;
 using Sense.Crm.Modules.Commerce.Domain.Products;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -66,6 +67,7 @@ public abstract class ProductFieldsValidator<T> : AbstractValidator<T>
 
 /// <summary>Yeni ürün. Para birimi verilmezse <c>TRY</c>, KDV varsayılanı 0 (web formu 20 önerir), <c>isActive</c> varsayılanı true.</summary>
 [RequiresPermission(CommercePermissions.ProductsWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateProductCommand(
     string Name,
     string? Code,

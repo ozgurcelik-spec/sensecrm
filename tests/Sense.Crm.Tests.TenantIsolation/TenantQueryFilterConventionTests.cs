@@ -24,6 +24,13 @@ public sealed class TenantQueryFilterConventionTests
         "RefreshToken",     // yalnız hash ile bulunur; organizasyon bağlamı kolon olarak tutulur
         "OutboxMessage",    // altyapı: TenantId kolon olarak taşınır, işleyici kiracı kapsamını kendisi kurar
         "InboxMessage",
+
+        // M7 Platform şeması: ürünü işleten tarafın küresel tabloları (kiracı filtresi/ITenantEntity YOK: aksi hâlde filtre platform yöneticisinin kiracısına daraltırdı).
+        "Plan",
+        "TenantAccount",
+        "DeletionRequest",
+        "UsageSnapshot",
+        "PlatformAuditEntry",
     };
 
     public static IEnumerable<object[]> ModuleContexts() => ProductAssemblies()
@@ -55,6 +62,24 @@ public sealed class TenantQueryFilterConventionTests
 
     [Fact]
     public void ModuleContexts_AreDiscovered() => ModuleContexts().ShouldNotBeEmpty();
+
+    /// <summary>
+    /// M7 (D5): Platform tabloları küresel olmalıdır — <see cref="ITenantEntity"/> uygulasalardı global filtre platform yöneticisinin kendi kiracısına daraltırdı ve çapraz kiracı
+    /// okuma/yazma yanlış kapsamda yapılırdı.
+    /// </summary>
+    [Fact]
+    public void PlatformEntities_AreGlobal_AndDoNotImplementITenantEntity()
+    {
+        var platformTypes = ProductAssemblies()
+            .Where(a => a.GetName().Name == "Sense.Crm.Modules.Platform.Domain")
+            .SelectMany(a => a.GetTypes())
+            .Where(t => t.Name is "Plan" or "TenantAccount" or "DeletionRequest" or "UsageSnapshot" or "PlatformAuditEntry")
+            .ToList();
+
+        platformTypes.Count.ShouldBe(5);
+        platformTypes.ShouldAllBe(t => !typeof(ITenantEntity).IsAssignableFrom(t));
+        platformTypes.ShouldAllBe(t => GlobalEntities.Contains(t.Name));
+    }
 
     private static ModuleDbContext CreateContext(string contextTypeName)
     {

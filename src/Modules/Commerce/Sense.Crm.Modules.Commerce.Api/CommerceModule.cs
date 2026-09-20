@@ -6,6 +6,7 @@ using Sense.Crm.Modules.Commerce.Application.Orders;
 using Sense.Crm.Modules.Commerce.Application.Quotes;
 using Sense.Crm.Modules.Commerce.Contracts;
 using Sense.Crm.Modules.Commerce.Domain;
+using Sense.Crm.Modules.Commerce.Infrastructure;
 using Sense.Crm.Modules.Commerce.Infrastructure.Persistence;
 using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Shared.Contracts.Modules;
@@ -46,6 +47,7 @@ public sealed class CommerceModule : IModule
             typeof(IProductRepository).Assembly,
             typeof(CommercePermissions).Assembly);
 
+        services.AddCommerceContractServices();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();

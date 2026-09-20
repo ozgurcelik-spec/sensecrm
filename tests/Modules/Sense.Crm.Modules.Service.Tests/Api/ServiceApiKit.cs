@@ -27,18 +27,6 @@ public sealed class ApiCollection : ICollectionFixture<CrmApiFactory>
 /// <summary>Yeni bir organizasyon (kayıt) ve yöneticisi.</summary>
 internal sealed record Org(HttpClient Admin, Guid TenantId, Guid AdminUserId, string AdminName);
 
-/// <summary>Elle yönetilen saat: <see cref="SetUtcNow"/> ileri VE geri alınabilir (FakeTimeProvider geri almayı reddeder).</summary>
-internal sealed class TestClock(DateTimeOffset start) : TimeProvider
-{
-    private DateTimeOffset _now = start;
-
-    public override DateTimeOffset GetUtcNow() => _now;
-
-    public void SetUtcNow(DateTimeOffset value) => _now = value;
-
-    public void Advance(TimeSpan delta) => _now += delta;
-}
-
 /// <summary>Sahte saatli API host'u: aynı veritabanı, <see cref="TimeProvider"/> testin elinde.</summary>
 internal sealed class ClockedHost : IDisposable
 {

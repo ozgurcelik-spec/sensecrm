@@ -20,7 +20,8 @@ public enum PlatformAdminOutcome
     Invalid = 3,
 }
 
-public sealed record PlatformAdminResult(PlatformAdminOutcome Outcome, string? Problem = null);
+/// <param name="TenantId">Yalnız <see cref="PlatformAdminOutcome.Created"/>: yeni işletim organizasyonu (Migrator Platform hesabını <c>is_system</c> yazar).</param>
+public sealed record PlatformAdminResult(PlatformAdminOutcome Outcome, string? Problem = null, Guid? TenantId = null);
 
 /// <summary>
 /// İlk platform yöneticisini oluşturur (Migrator <c>create-platform-admin</c>; ortam değişkenlerinden). İdempotenttir: hesap varsa
@@ -88,7 +89,7 @@ public sealed class PlatformAdminBootstrapper(
             return new PlatformAdminResult(PlatformAdminOutcome.Invalid, "PLATFORM_ORG_NAME is too long.");
         }
 
-        var provisioned = await provisioner.CreateAsync(organization, Cultures.TurkishLanguage, cancellationToken).ConfigureAwait(false);
+        var provisioned = await provisioner.CreateAsync(organization, Cultures.TurkishLanguage, cancellationToken, Contracts.OrganizationOrigin.Bootstrap).ConfigureAwait(false);
 
         var user = User.Create(email.Trim(), name, Cultures.TurkishLanguage, hasher.Hash(password));
         user.GrantPlatformAdmin();
@@ -97,6 +98,6 @@ public sealed class PlatformAdminBootstrapper(
         memberships.Add(Membership.Create(provisioned.Tenant.Id, user.Id, provisioned.Administrator.Id, clock.GetUtcNow().UtcDateTime));
 
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return new PlatformAdminResult(PlatformAdminOutcome.Created);
+        return new PlatformAdminResult(PlatformAdminOutcome.Created, TenantId: provisioned.Tenant.Id);
     }
 }

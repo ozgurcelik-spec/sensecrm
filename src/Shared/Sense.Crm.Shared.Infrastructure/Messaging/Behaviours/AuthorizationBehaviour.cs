@@ -11,7 +11,7 @@ namespace Sense.Crm.Shared.Infrastructure.Messaging.Behaviours;
 /// API dışından (outbox/event) çağrılan use case'ler için de aynı kural geçerlidir; yalnız in-process sistem bağlamı
 /// (<see cref="WellKnownRoles.System"/>, kullanıcı kimliği yok) denetimden muaftır.
 /// </summary>
-public sealed class AuthorizationBehaviour<TRequest, TResponse>(ICurrentUser user, IPermissionService permissions)
+public sealed class AuthorizationBehaviour<TRequest, TResponse>(ICurrentUser user, IPermissionService permissions, IPlatformAdminVerifier platformAdmins)
     : IPipelineBehaviour<TRequest, TResponse>
     where TRequest : notnull
     where TResponse : Result
@@ -21,8 +21,24 @@ public sealed class AuthorizationBehaviour<TRequest, TResponse>(ICurrentUser use
     private static readonly RequiresPermissionAttribute[] Required =
         typeof(TRequest).GetCustomAttributes<RequiresPermissionAttribute>(inherit: true).ToArray();
 
+    /// <summary>M7 (D5): platform yöneticisi isteği — bayrak JWT'den değil her istekte veritabanından doğrulanır (iki katmanlı savunma).</summary>
+    private static readonly bool PlatformOnly = typeof(TRequest).IsDefined(typeof(PlatformAdminOnlyAttribute), inherit: true);
+
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
+        if (PlatformOnly && !IsSystemContext(user))
+        {
+            if (!user.IsAuthenticated || user.UserId is null)
+            {
+                return ResultFactory.Fail<TResponse>(Error.Unauthorized(ErrorCodes.Unauthenticated));
+            }
+
+            if (!await platformAdmins.IsPlatformAdminAsync(user.UserId.Value, cancellationToken).ConfigureAwait(false))
+            {
+                return ResultFactory.Fail<TResponse>(Error.Forbidden(ErrorCodes.Forbidden));
+            }
+        }
+
         if (Required.Length == 0 || IsSystemContext(user))
         {
             return await next().ConfigureAwait(false);

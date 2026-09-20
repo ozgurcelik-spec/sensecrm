@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Identity.Application.Auth;
 using Sense.Crm.Modules.Identity.Domain;
 using Sense.Crm.Modules.Identity.Domain.Users;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -17,6 +18,7 @@ namespace Sense.Crm.Modules.Identity.Application.Me;
 // ---------------------------------------------------------------------------------------------------------------------
 
 [AnyAuthenticatedUser("Kullanıcı yalnız kendi parolasını değiştirir (mevcut parolayı bilmesi gerekir)")]
+[TenantStatusExempt("Kullanıcı-düzeyi hesap güvenliği (geçici parola zorlaması salt okunur kiracıda da tamamlanmalı)")]
 public sealed record ChangePasswordCommand(string CurrentPassword, string NewPassword, string? DeviceInfo, string? IpAddress) : ICommand<AuthResponse>;
 
 public sealed class ChangePasswordValidator : AbstractValidator<ChangePasswordCommand>
@@ -93,6 +95,7 @@ public sealed class ChangePasswordHandler(
 // ---------------------------------------------------------------------------------------------------------------------
 
 [AnyAuthenticatedUser("Kullanıcı yalnız kendi bekleyen davetlerini görür")]
+[TenantStatusExempt("Kullanıcı-düzeyi: başka organizasyonun davetleri bu kiracının durumundan bağımsızdır")]
 public sealed record ListMyInvitationsQuery : IQuery<IReadOnlyList<InvitationDto>>;
 
 public sealed class ListMyInvitationsHandler(ICurrentUser currentUser, IIdentityReadStore readStore) : IQueryHandler<ListMyInvitationsQuery, IReadOnlyList<InvitationDto>>
@@ -104,6 +107,7 @@ public sealed class ListMyInvitationsHandler(ICurrentUser currentUser, IIdentity
 }
 
 [AnyAuthenticatedUser("Kullanıcı yalnız kendisine gelen daveti kabul eder")]
+[TenantStatusExempt("Kullanıcı-düzeyi: davet başka organizasyona aittir, bu kiracının durumundan bağımsızdır")]
 public sealed record AcceptInvitationCommand(Guid InvitationId) : ICommand;
 
 public sealed class AcceptInvitationValidator : AbstractValidator<AcceptInvitationCommand>
@@ -147,6 +151,7 @@ public sealed class AcceptInvitationHandler(
 }
 
 [AnyAuthenticatedUser("Kullanıcı yalnız kendisine gelen daveti reddeder")]
+[TenantStatusExempt("Kullanıcı-düzeyi: davet başka organizasyona aittir, bu kiracının durumundan bağımsızdır")]
 public sealed record DeclineInvitationCommand(Guid InvitationId) : ICommand;
 
 public sealed class DeclineInvitationValidator : AbstractValidator<DeclineInvitationCommand>

@@ -11,7 +11,18 @@ public sealed record MeDto(
     OrganizationDto Organization,
     RoleRefDto Role,
     IReadOnlyList<string> Permissions,
-    IReadOnlyList<OrganizationSummaryDto> Organizations);
+    IReadOnlyList<OrganizationSummaryDto> Organizations,
+    MeSubscriptionDto? Subscription = null);
+
+/// <summary><c>GET /me</c> abonelik özeti (M7): plan, etkin durum, erişim düzeyi, deneme ve modül bayrakları. Web yokluğu hepsi açık, tam erişim sayar.</summary>
+public sealed record MeSubscriptionDto(
+    string PlanCode,
+    string PlanName,
+    string Status,
+    Sense.Crm.Shared.Contracts.Entitlements.AccessLevel AccessLevel,
+    DateOnly? TrialEndsOn,
+    int? TrialDaysLeft,
+    IReadOnlyDictionary<string, bool> Modules);
 
 public sealed record MeUserDto(Guid Id, string Email, string DisplayName, string Locale, bool IsPlatformAdmin, bool MustChangePassword = false);
 

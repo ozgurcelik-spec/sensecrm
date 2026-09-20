@@ -5,6 +5,15 @@ using Sense.Crm.Shared.Contracts.Security;
 
 namespace Sense.Crm.Shared.Web.Authorization;
 
+/// <summary>
+/// Platform (ürünü işleten taraf) politikası (M7, D5): JWT'deki <c>platform_admin</c> bayrağı hızlı ret içindir; asıl karar her istekte
+/// <c>[PlatformAdminOnly]</c> + <c>IPlatformAdminVerifier</c> ile veritabanından verilir. <c>/platform/**</c> denetleyicileri sınıf düzeyinde bunu taşır.
+/// </summary>
+public static class PlatformPolicies
+{
+    public const string PlatformAdmin = "PlatformAdmin";
+}
+
 /// <summary>[HasPermission("leave.approve")] → policy "perm:leave.approve".</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public sealed class HasPermissionAttribute : AuthorizeAttribute

@@ -1,6 +1,7 @@
 using FluentValidation;
 using Sense.Crm.Modules.Identity.Domain;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -9,6 +10,7 @@ namespace Sense.Crm.Modules.Identity.Application.Me;
 
 /// <summary>Oturum açmış kullanıcı: profil, aktif organizasyon, rol, izinler ve üyesi olduğu organizasyonlar.</summary>
 [AnyAuthenticatedUser("Kullanıcı yalnız kendi profilini okur")]
+[TenantStatusExempt("Web engel ekranı/banner için askıdaki ve silme bekleyen kiracıda da çalışır")]
 public sealed record GetMeQuery : IQuery<MeDto>;
 
 public sealed class GetMeHandler(
@@ -18,7 +20,9 @@ public sealed class GetMeHandler(
     ITenantRepository tenants,
     IMembershipRepository memberships,
     IRoleRepository roles,
-    IIdentityReadStore readStore) : IQueryHandler<GetMeQuery, MeDto>
+    IIdentityReadStore readStore,
+    ITenantEntitlements entitlements,
+    TimeProvider clock) : IQueryHandler<GetMeQuery, MeDto>
 {
     public async Task<Result<MeDto>> Handle(GetMeQuery query, CancellationToken cancellationToken)
     {
@@ -43,17 +47,32 @@ public sealed class GetMeHandler(
 
         var organizations = await readStore.ListOrganizationsOfUserAsync(userId, cancellationToken).ConfigureAwait(false);
 
+        // M7: abonelik özeti (plan, etkin durum, erişim, deneme, modül bayrakları); etkin durum her çağrıda saatten hesaplanır.
+        var snapshot = await entitlements.GetAsync(tenant.TenantId, cancellationToken).ConfigureAwait(false);
+        var now = clock.GetUtcNow();
+        var (status, access) = snapshot.Evaluate(now);
+        var subscription = new MeSubscriptionDto(
+            snapshot.PlanCode,
+            snapshot.PlanName,
+            status,
+            access,
+            snapshot.TrialEndsOn,
+            snapshot.TrialDaysLeft(status, now),
+            GatedModules.All.ToDictionary(m => m, m => snapshot.IsModuleEnabled(m), StringComparer.Ordinal));
+
         return new MeDto(
             new MeUserDto(user.Id, user.Email, user.DisplayName, user.Locale, user.IsPlatformAdmin, user.MustChangePassword),
             new OrganizationDto(organization.Id, organization.Name, organization.Slug, organization.DefaultLocale, organization.TimeZone),
             new RoleRefDto(role.Id, role.Name),
             role.Permissions,
-            organizations);
+            organizations,
+            subscription);
     }
 }
 
 /// <summary>Profil güncelleme: görünen ad ve dil tercihi (tr | en). Verilmeyen alan değişmez.</summary>
 [AnyAuthenticatedUser("Kullanıcı yalnız kendi profilini günceller")]
+[TenantStatusExempt("Kullanıcı-düzeyi profil (kiracı verisi değil)")]
 public sealed record UpdateMeCommand(string? DisplayName, string? Locale) : ICommand;
 
 public sealed class UpdateMeValidator : AbstractValidator<UpdateMeCommand>

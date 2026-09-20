@@ -47,6 +47,9 @@ public static class IdentityErrors
     public const string PasswordTooShort = "validation.password_too_short";
     public const string Required = "validation.required";
 
+    /// <summary>Platform kataloğunda olmayan/pasif plan kodu (M7; <c>errors.planCode</c>).</summary>
+    public const string InvalidPlan = "validation.platform_plan";
+
     /// <summary>Mesaj parametre adları.</summary>
     public static class Args
     {

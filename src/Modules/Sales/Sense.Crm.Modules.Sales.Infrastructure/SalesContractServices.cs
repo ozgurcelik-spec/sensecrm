@@ -17,6 +17,7 @@ public static class SalesContractServices
         services.AddScoped<ILeadOwnerService, LeadOwnerService>();
         services.AddScoped<ILeadStatusLookup, LeadStatusLookup>();
         services.AddScoped<IContactAccountLookup, ContactAccountLookup>();
+        services.AddScoped<Sense.Crm.Shared.Contracts.Usage.IUsageReporter, SalesUsageReporter>();
         return services;
     }
 }

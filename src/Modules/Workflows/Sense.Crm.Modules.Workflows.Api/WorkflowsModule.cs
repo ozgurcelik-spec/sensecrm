@@ -46,6 +46,7 @@ public sealed class WorkflowsModule : IModule
             typeof(WorkflowsPermissions).Assembly);
 
         services.AddWorkflowsRuntime(configuration);
+        services.AddWorkflowsContractServices();
         services.AddWorkflowDefinitionRegistration();
         services.AddSingleton<IAuditEntityPermissions, WorkflowsAuditEntityPermissions>();
     }

@@ -12,4 +12,10 @@ public interface IUnitOfWork
 public interface IModuleUnitOfWork : IUnitOfWork
 {
     string ModuleName { get; }
+
+    /// <summary>
+    /// Açık transaction içinde işlem sonuna kadar tutulan istişari kilit (<c>pg_advisory_xact_lock(hashtextextended(key, 0))</c>): aynı anahtarı
+    /// isteyen eşzamanlı işlemler sıraya girer (sert limitin kiracı başına serileştirilmesi için). Transaction yoksa kilit hemen bırakılır.
+    /// </summary>
+    Task AcquireAdvisoryLockAsync(string key, CancellationToken cancellationToken = default);
 }

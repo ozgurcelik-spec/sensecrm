@@ -13,6 +13,7 @@ public static class ActivitiesContractServices
     public static IServiceCollection AddActivitiesContractServices(this IServiceCollection services)
     {
         services.AddScoped<IActivityCreator, ActivityCreator>();
+        services.AddScoped<Sense.Crm.Shared.Contracts.Usage.IUsageReporter, ActivitiesUsageReporter>();
         return services;
     }
 }
