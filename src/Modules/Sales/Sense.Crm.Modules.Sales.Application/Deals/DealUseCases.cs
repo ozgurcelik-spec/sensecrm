@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Sales.Domain;
 using Sense.Crm.Modules.Sales.Domain.Deals;
 using Sense.Crm.Modules.Sales.Domain.Pipelines;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -88,6 +89,7 @@ public abstract class DealFieldsValidator<T> : AbstractValidator<T>
 /// Yeni fırsat. Pipeline verilmezse varsayılan, aşama verilmezse pipeline'ın ilk açık aşaması; para birimi varsayılan TRY.
 /// </summary>
 [RequiresPermission(SalesPermissions.DealsWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateDealCommand(
     string Name,
     Guid AccountId,

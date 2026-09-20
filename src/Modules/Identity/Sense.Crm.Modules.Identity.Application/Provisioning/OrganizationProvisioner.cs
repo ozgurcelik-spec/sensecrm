@@ -24,14 +24,24 @@ public sealed class OrganizationProvisioner(
     ISecretGenerator secrets,
     IOptions<IdentityOptions> options)
 {
-    public async Task<ProvisionedOrganization> CreateAsync(string organizationName, string locale, CancellationToken cancellationToken)
+    /// <param name="origin">Açılış yolu (M7): Platform hesabının varsayılan planı/kaynağı buradan seçilir (<c>signup</c> varsayılan).</param>
+    /// <param name="planCode">Yalnız platform yolunda: istekteki plan (Platform hesabı açılırken kullanılır).</param>
+    /// <param name="trialEndsOn">Yalnız platform yolunda: istekteki deneme bitiş günü.</param>
+    public async Task<ProvisionedOrganization> CreateAsync(
+        string organizationName,
+        string locale,
+        CancellationToken cancellationToken,
+        OrganizationOrigin origin = OrganizationOrigin.Signup,
+        string? planCode = null,
+        DateOnly? trialEndsOn = null)
     {
         var slug = await UniqueSlugAsync(Tenant.SlugFrom(organizationName), cancellationToken).ConfigureAwait(false);
         var tenant = Tenant.Create(organizationName, slug, locale, options.Value.DefaultTimeZone);
         tenants.Add(tenant);
 
         // Modüller (ör. Sales: varsayılan satış hunisi) kendi varsayılan verilerini bu olayla tohumlar; aynı transaction'da outbox'a yazılır.
-        outbox.Enqueue(new OrganizationCreated(tenant.Id, tenant.Name, tenant.DefaultLocale));
+        // Platform modülü aynı olayla kiracı hesabını (plan, deneme) açar.
+        outbox.Enqueue(new OrganizationCreated(tenant.Id, tenant.Name, tenant.DefaultLocale, tenant.Slug, origin, planCode, trialEndsOn));
 
         // Kiracı verisi açıkça yeni organizasyonun TenantId'siyle yazılır.
         var seeded = SeedSystemRoles(tenant.Id);

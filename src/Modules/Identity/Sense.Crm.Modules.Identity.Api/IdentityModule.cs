@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Sense.Crm.Modules.Identity.Application;
@@ -76,5 +77,8 @@ public sealed class IdentityModule : IModule
         services.AddHostedService<SystemRolePermissionSyncHostedService>();
 
         services.AddScoped<ITokenService, JwtTokenService>();
+
+        // M7 (D5): platform yöneticisi bayrağı + hesap aktifliği her istekte veritabanından doğrulanır (AddCrmCore'un "kimseyi kabul etme" varsayılanını Replace eder).
+        services.Replace(ServiceDescriptor.Scoped<IPlatformAdminVerifier, PlatformAdminVerifier>());
     }
 }

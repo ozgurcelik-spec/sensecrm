@@ -122,7 +122,9 @@ public static class WebServiceCollectionExtensions
 
         services.TryAddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IAuthorizationHandler, PermissionHandler>());
-        services.AddAuthorization();
+        services.AddAuthorization(o => o.AddPolicy(
+            PlatformPolicies.PlatformAdmin,
+            policy => policy.RequireAuthenticatedUser().RequireClaim(ClaimNames.PlatformAdmin, ClaimNames.TrueValue)));
 
         services.AddCrmRateLimiting(configuration);
 

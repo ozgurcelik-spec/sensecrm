@@ -5,6 +5,7 @@ using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Modules.Service.Application;
 using Sense.Crm.Modules.Service.Contracts;
 using Sense.Crm.Modules.Service.Domain;
+using Sense.Crm.Modules.Service.Infrastructure;
 using Sense.Crm.Modules.Service.Infrastructure.Persistence;
 using Sense.Crm.Modules.Service.Infrastructure.Provisioning;
 using Sense.Crm.Shared.Contracts.Modules;
@@ -52,6 +53,7 @@ public sealed class ServiceModule : IModule
 
         services.AddSingleton(settings);
 
+        services.AddServiceContractServices();
         services.AddScoped<ICaseRepository, CaseRepository>();
         services.AddScoped<ISlaPolicyRepository, SlaPolicyRepository>();
         services.AddScoped<ICaseReadStore, CaseReadStore>();

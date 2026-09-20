@@ -6,6 +6,7 @@ using Sense.Crm.Modules.Commerce.Domain.Numbering;
 using Sense.Crm.Modules.Commerce.Domain.Orders;
 using Sense.Crm.Modules.Commerce.Domain.Quotes;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
@@ -43,6 +44,7 @@ public sealed class GetQuoteHandler(IQuoteReadStore store, CommerceClock clock) 
 /// toplamlar sunucuda hesaplanır (gövdedeki hesaplanan alanlar yok sayılır).
 /// </summary>
 [RequiresPermission(CommercePermissions.QuotesWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateQuoteCommand(
     string Subject,
     Guid AccountId,
@@ -328,6 +330,7 @@ public sealed class ExtendQuoteHandler(QuoteTransitions transitions) : ICommandH
 /// </summary>
 [RequiresPermission(CommercePermissions.QuotesRead)]
 [RequiresPermission(CommercePermissions.OrdersWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record ConvertQuoteCommand(Guid Id) : ICommand<OrderDto>;
 
 public sealed class ConvertQuoteHandler(

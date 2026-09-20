@@ -36,6 +36,12 @@ public interface IWorkflowEngine
     Task TerminateAsync(string workflowId, string? reason, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Yürütme kaydını motordan kalıcı siler (KVKK imhası, M7; Conductor <c>DELETE /api/workflow/{id}/remove</c>): girdilerde konu adı/<c>tenantId</c> kalmasın.
+    /// Idempotent: motor böyle bir workflow bilmiyorsa hata vermez.
+    /// </summary>
+    Task RemoveAsync(string workflowId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Workflow'un beklediği insan/bekleme (HUMAN/WAIT) görevini <paramref name="output"/> ile tamamlar (onay kararı). Görev
     /// zaten tamamlanmışsa hata vermez (idempotent).
     /// </summary>

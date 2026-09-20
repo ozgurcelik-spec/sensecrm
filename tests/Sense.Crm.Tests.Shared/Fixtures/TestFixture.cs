@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Respawn;
 using Sense.Crm.Modules.Identity.Application;
+using Sense.Crm.Modules.Platform.Infrastructure.Jobs;
 using Sense.Crm.Modules.Workflows.Application;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 using Sense.Crm.Shared.Infrastructure.Persistence;
@@ -28,7 +29,7 @@ namespace Sense.Crm.Tests.Shared.Fixtures;
 public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestingEnvironment = "Testing";
-    private static readonly string[] Schemas = ["identity", "sales", "activities", "workflows", "marketing", "commerce", "service", AuditDbContext.SchemaName];
+    private static readonly string[] Schemas = ["identity", "sales", "activities", "workflows", "marketing", "commerce", "service", "platform", AuditDbContext.SchemaName];
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("crm_test")
@@ -47,13 +48,21 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
         // Host'u oluşturur (Program.cs çalışır) ve tüm şemaları migrate eder.
         await MigrationRunner.MigrateAllAsync(Services, NullLogger.Instance);
 
+        // M7: test hostları da plan kataloğuna ihtiyaç duyar (varsayılan kayıt planı internal, aşağıda); Migrator'ın yaptığı senkron burada aynı kodla çalışır.
+        // platform.plans Respawn'dan hariçtir (kayıtlar testler arasında kalır); kiracı hesapları sıfırlanır.
+        using (var scope = Services.CreateScope())
+        {
+            var sync = await scope.ServiceProvider.GetRequiredService<PlanSynchronizer>().SyncAsync(default);
+            sync.Succeeded.ShouldBeTrue(string.Join("; ", sync.Errors));
+        }
+
         await using var connection = new NpgsqlConnection(ConnectionString);
         await connection.OpenAsync();
         _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
         {
             DbAdapter = DbAdapter.Postgres,
             SchemasToInclude = Schemas,
-            TablesToIgnore = [new Respawn.Graph.Table("__ef_migrations_history")],
+            TablesToIgnore = [new Respawn.Graph.Table("__ef_migrations_history"), new Respawn.Graph.Table("platform", "plans")],
         });
     }
 
@@ -78,6 +87,11 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
         builder.UseSetting("RateLimiting:Auth:PermitLimit", "100000");
         builder.UseSetting("RateLimiting:LoginEmail:PermitLimit", "100000");
         builder.UseSetting("ProblemDetails:IncludeExceptionDetails", "true");
+
+        // M7: mevcut testler plan kısıtlarından etkilenmemeli; varsayılan kayıt/açılış planı internal (limitsiz, tüm modüller açık, denemesiz).
+        // Yaşam döngüsü testleri kendi Platform:* ayarını WithWebHostBuilder ile verir.
+        builder.UseSetting("Platform:Signup:PlanCode", "internal");
+        builder.UseSetting("Platform:Provisioning:DefaultPlanCode", "internal");
         builder.ConfigureServices(services =>
         {
             // Workflow motoru: gerçek Conductor yerine gerçek tanım + görev işleyicilerini çalıştıran sahte motor (tüm test projeleri).

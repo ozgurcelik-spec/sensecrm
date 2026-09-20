@@ -13,6 +13,7 @@
     <ProjectReference Include="../Modules/Workflows/Sense.Crm.Modules.Workflows.Infrastructure/Sense.Crm.Modules.Workflows.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Marketing/Sense.Crm.Modules.Marketing.Infrastructure/Sense.Crm.Modules.Marketing.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Service/Sense.Crm.Modules.Service.Infrastructure/Sense.Crm.Modules.Service.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Sense.Crm.Modules.Platform.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

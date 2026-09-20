@@ -1,10 +1,12 @@
 using FluentValidation;
 using Microsoft.Extensions.Options;
 using Sense.Crm.Modules.Identity.Application.Provisioning;
+using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Modules.Identity.Domain;
 using Sense.Crm.Modules.Identity.Domain.Memberships;
 using Sense.Crm.Modules.Identity.Domain.Users;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -21,13 +23,15 @@ namespace Sense.Crm.Modules.Identity.Application.Platform;
 /// yeni organizasyona <b>bekleyen</b> Administrator daveti eklenir (H4-f; hesap sahibi <c>/me/invitations</c> ile kabul eder). Yeni hesap
 /// (parola üretilmiş ya da platform yöneticisince verilmiş) geçici paroladır: <c>MustChangePassword</c> = true.
 /// </summary>
-[AnyAuthenticatedUser("Platform yöneticisi yetkisi handler içinde her istekte veritabanından doğrulanır (isPlatformAdmin)")]
+[PlatformAdminOnly]
 public sealed record CreateOrganizationCommand(
     string OrganizationName,
     string AdminDisplayName,
     string AdminEmail,
     string? AdminPassword,
-    string Locale) : ICommand<CreatedOrganizationDto>;
+    string Locale,
+    string? PlanCode = null,
+    DateOnly? TrialEndsOn = null) : ICommand<CreatedOrganizationDto>;
 
 /// <param name="AdminAccountCreated">false: e-posta zaten bir hesaba aitti; yalnız bekleyen Administrator daveti eklendi.</param>
 /// <param name="AdminInvitationPending">true: yönetici mevcut bir hesap; organizasyonda hesap sahibi kabul edene kadar aktif yönetici yoktur.</param>
@@ -40,7 +44,8 @@ public sealed record CreatedOrganizationDto(
     string AdminEmail,
     bool AdminAccountCreated,
     string? GeneratedPassword,
-    bool AdminInvitationPending = false);
+    bool AdminInvitationPending = false,
+    string? PlanCode = null);
 
 public sealed class CreateOrganizationValidator : AbstractValidator<CreateOrganizationCommand>
 {
@@ -63,6 +68,8 @@ public sealed class CreateOrganizationHandler(
     OrganizationProvisioner provisioner,
     ITenantContextSetter tenantSetter,
     IIdentityUnitOfWork unitOfWork,
+    IPlanCatalog planCatalog,
+    IPlatformAuditSink platformAudit,
     TimeProvider clock) : ICommandHandler<CreateOrganizationCommand, CreatedOrganizationDto>
 {
     public async Task<Result<CreatedOrganizationDto>> Handle(CreateOrganizationCommand command, CancellationToken cancellationToken)
@@ -86,7 +93,14 @@ public sealed class CreateOrganizationHandler(
             return Error.Conflict(IdentityErrors.UserDisabled);
         }
 
-        var provisioned = await provisioner.CreateAsync(command.OrganizationName, command.Locale, cancellationToken).ConfigureAwait(false);
+        // M7: plan (varsa) Platform kataloğuna karşı eşzamanlı doğrulanır (bilinmeyen/pasif plan → 400 errors.planCode); atama Platform hesabı olayıyla yapılır.
+        var planCode = string.IsNullOrWhiteSpace(command.PlanCode) ? null : command.PlanCode.Trim();
+        if (planCode is not null && !await planCatalog.IsAssignableAsync(planCode, cancellationToken).ConfigureAwait(false))
+        {
+            throw new ValidationException([new FluentValidation.Results.ValidationFailure(nameof(command.PlanCode), IdentityErrors.InvalidPlan)]);
+        }
+
+        var provisioned = await provisioner.CreateAsync(command.OrganizationName, command.Locale, cancellationToken, OrganizationOrigin.Platform, planCode, command.TrialEndsOn).ConfigureAwait(false);
 
         string? generatedPassword = null;
         var accountCreated = admin is null;
@@ -111,6 +125,15 @@ public sealed class CreateOrganizationHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        // M7: platform denetimi (organization.created) ve yanıttaki plan (istekteki ya da Platform varsayılanı); Platform hesabı olayla açılır.
+        var effectivePlan = planCode ?? planCatalog.ProvisioningPlanCode;
+        await platformAudit.RecordAsync(
+            "organization.created",
+            provisioned.Tenant.Id,
+            provisioned.Tenant.Name,
+            new Dictionary<string, object?> { ["planCode"] = effectivePlan, ["trialEndsOn"] = command.TrialEndsOn?.ToString("yyyy-MM-dd"), ["adminAccountCreated"] = accountCreated },
+            cancellationToken).ConfigureAwait(false);
+
         return new CreatedOrganizationDto(
             provisioned.Tenant.Id,
             provisioned.Tenant.Name,
@@ -119,6 +142,7 @@ public sealed class CreateOrganizationHandler(
             admin.Email,
             accountCreated,
             generatedPassword,
-            AdminInvitationPending: !accountCreated);
+            AdminInvitationPending: !accountCreated,
+            PlanCode: effectivePlan);
     }
 }

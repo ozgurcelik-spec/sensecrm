@@ -3,6 +3,7 @@ using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Modules.Service.Domain;
 using Sense.Crm.Modules.Service.Domain.Cases;
 using Sense.Crm.Modules.Service.Domain.Sla;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -86,6 +87,7 @@ public sealed class UpdateSlaPoliciesHandler(SlaPolicyProvider provider) : IComm
 /// Yeni organizasyon olayı (Identity kayıt): varsayılan SLA politikalarını tohumlar (idempotent). Outbox üzerinden Worker'da
 /// (veya Worker yokken API başlangıcı/tembel yolla) çalışır; Sales'in aynı olay için mevcut tüketicisiyle birlikte kayıtlıdır.
 /// </summary>
+[EntitlementExempt("Varsayılan SLA politikaları plandan bağımsız tohumlanır (modül sonradan açılınca hazır olsun)")]
 public sealed class OrganizationCreatedSlaHandler(IDefaultSlaPolicySeeder seeder) : IIntegrationEventHandler<OrganizationCreated>
 {
     public async Task Handle(OrganizationCreated integrationEvent, CancellationToken cancellationToken) =>

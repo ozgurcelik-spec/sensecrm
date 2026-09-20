@@ -242,4 +242,24 @@
   <data name="invitation.not_found" xml:space="preserve"><value>The invitation was not found or does not belong to you.</value></data>
   <data name="field.current_password" xml:space="preserve"><value>Current password</value></data>
   <data name="field.new_password" xml:space="preserve"><value>New password</value></data>
+  <!-- M7: SaaS readiness (plans, limits, tenant lifecycle, platform console) -->
+  <data name="tenant.suspended" xml:space="preserve"><value>Your organization is currently read-only or blocked ({reason}); this action cannot be performed.</value></data>
+  <data name="plan.module_disabled" xml:space="preserve"><value>The "{module}" module is not included in your plan.</value></data>
+  <data name="plan.limit_exceeded" xml:space="preserve"><value>Plan limit reached ({used}/{max}). Contact the platform administrator to upgrade your plan.</value></data>
+  <data name="platform.plan_not_found" xml:space="preserve"><value>The plan was not found or is inactive.</value></data>
+  <data name="platform.invalid_transition" xml:space="preserve"><value>This action is not possible in the organization's current state ({from} → {to}).</value></data>
+  <data name="platform.deletion_not_cancellable" xml:space="preserve"><value>The deletion request cannot be cancelled: it is not in the waiting stage or the waiting period has elapsed.</value></data>
+  <data name="platform.system_tenant_protected" xml:space="preserve"><value>The platform operating organization cannot be suspended, deleted or have its plan changed.</value></data>
+  <data name="validation.platform_trial_date" xml:space="preserve"><value>The trial end day cannot be before today (in the organization's time zone).</value></data>
+  <data name="validation.platform_reason" xml:space="preserve"><value>A reason is required (at most 500 characters).</value></data>
+  <data name="validation.platform_mode" xml:space="preserve"><value>The suspension mode must be readOnly or blocked.</value></data>
+  <data name="validation.platform_overrides" xml:space="preserve"><value>Invalid override: numbers must be zero or greater; module keys must be workflows, commerce, service, marketing (limits additionally accept sales, activities).</value></data>
+  <data name="validation.platform_retention" xml:space="preserve"><value>The retention period must be between 7 and 90 days.</value></data>
+  <data name="validation.platform_range" xml:space="preserve"><value>Invalid date range: the end cannot be before the start and the range is limited to 400 days.</value></data>
+  <data name="validation.platform_plan" xml:space="preserve"><value>There is no such active plan in the catalog.</value></data>
+  <data name="field.plan_code" xml:space="preserve"><value>Plan</value></data>
+  <data name="field.trial_ends_on" xml:space="preserve"><value>Trial end day</value></data>
+  <data name="field.overrides" xml:space="preserve"><value>Overrides</value></data>
+  <data name="field.retention_days" xml:space="preserve"><value>Retention period (days)</value></data>
+  <data name="field.mode" xml:space="preserve"><value>Mode</value></data>
 </root>

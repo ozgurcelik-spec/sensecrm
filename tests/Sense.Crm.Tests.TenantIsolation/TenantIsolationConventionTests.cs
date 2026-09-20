@@ -166,57 +166,8 @@ public sealed class TenantIsolationConventionTests
         }
     }
 
-    /// <summary>
-    /// Verifies that no public Application/Query classes bypass tenant filtering
-    /// by calling IgnoreQueryFilters() — structural detection via reflection.
-    /// </summary>
-    [Fact]
-    public void ApplicationLayer_DoesNotBypassTenantFilters()
-    {
-        // Arrange
-        var allAssemblies = GetProductAssemblies()
-            .Where(a => a.GetName().Name?.Contains(".Application") == true)
-            .ToList();
-
-        if (allAssemblies.Count == 0)
-        {
-            return; // No application layer found; test structure is valid
-        }
-
-        // Act: Search for IgnoreQueryFilters calls in source (code review via IL inspection)
-        // This is a heuristic check: look for method calls named IgnoreQueryFilters
-        var bypassCalls = new List<string>();
-
-        foreach (var assembly in allAssemblies)
-        {
-            var types = assembly.GetTypes();
-            foreach (var type in types)
-            {
-                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                foreach (var method in methods)
-                {
-                    // Get method body instructions
-                    try
-                    {
-                        var body = method.GetMethodBody();
-                        if (body?.LocalVariables.Count > 0)
-                        {
-                            // Simple heuristic: if method contains "IgnoreQueryFilters" in IL,
-                            // it would appear in metadata or through reflection inspection
-                            // For now, this is an integrity check that the layer is accessible
-                        }
-                    }
-                    catch
-                    {
-                        // Some dynamic methods don't have bodies; skip
-                    }
-                }
-            }
-        }
-
-        // Assert: As a structural check, verify that Application layer is properly separated
-        allAssemblies.Count.ShouldBeGreaterThan(0);
-    }
+    // M7: eski ApplicationLayer_DoesNotBypassTenantFilters testi fiilen boş bir sezgiseldi (yalnız assembly sayısını denetliyordu); yerini
+    // TenantFilterBypassInventoryTests aldı (IgnoreQueryFilters ve ham SQL envanteri, kaynak taramasıyla birebir eşleşme).
 
     /// <summary>
     /// Helper to get all product assemblies (not test or framework assemblies).

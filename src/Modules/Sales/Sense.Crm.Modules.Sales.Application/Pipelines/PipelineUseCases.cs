@@ -5,6 +5,7 @@ using Sense.Crm.Modules.Sales.Domain;
 using Sense.Crm.Modules.Sales.Domain.Pipelines;
 using Sense.Crm.Shared.Contracts.Configuration;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -38,6 +39,7 @@ public sealed class GetPipelineHandler(ISalesReadStore store) : IQueryHandler<Ge
 
 /// <summary>Yeni huni varsayılan aşamalarla (organizasyon dilinde adlarla) açılır; organizasyonda huni yoksa varsayılan olur.</summary>
 [RequiresPermission(OrgPermissions.SettingsManage)]
+[NoPlanLimit("Satış hunisi yapılandırmadır, kayıt değildir (kayıt limitine sayılmaz)")]
 public sealed record CreatePipelineCommand(string Name) : ICommand<Guid>;
 
 public sealed class CreatePipelineValidator : AbstractValidator<CreatePipelineCommand>
@@ -162,6 +164,7 @@ public sealed class ReplaceStagesHandler(IPipelineRepository pipelines) : IComma
 /// Yeni organizasyon olayı (Identity kayıt): varsayılan satış hunisini organizasyon dilinde tohumlar (idempotent).
 /// Outbox üzerinden Worker'da (veya Worker yokken API başlangıcı/tembel yolla) çalışır.
 /// </summary>
+[EntitlementExempt("Varsayılan satış hunisi plandan bağımsız tohumlanır (modül sonradan açılınca hazır olsun)")]
 public sealed class OrganizationCreatedHandler(IDefaultPipelineSeeder seeder) : IIntegrationEventHandler<OrganizationCreated>
 {
     public async Task Handle(OrganizationCreated integrationEvent, CancellationToken cancellationToken) =>

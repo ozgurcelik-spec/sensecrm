@@ -7,10 +7,14 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Sense.Crm.Shared.Contracts.Configuration;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Persistence;
+using Sense.Crm.Shared.Contracts.Retention;
+using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Infrastructure.Context;
+using Sense.Crm.Shared.Infrastructure.Entitlements;
 using Sense.Crm.Shared.Infrastructure.Events;
 using Sense.Crm.Shared.Infrastructure.Messaging;
 using Sense.Crm.Shared.Infrastructure.Messaging.Behaviours;
@@ -18,6 +22,7 @@ using Sense.Crm.Shared.Infrastructure.Observability;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.Persistence.Audit;
 using Sense.Crm.Shared.Infrastructure.Persistence.Outbox;
+using Sense.Crm.Shared.Infrastructure.Persistence.Retention;
 
 namespace Sense.Crm.Shared.Infrastructure.DependencyInjection;
 
@@ -62,7 +67,16 @@ public static class InfrastructureServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Scoped(typeof(IPipelineBehaviour<,>), typeof(ValidationBehaviour<,>)));
         services.TryAddEnumerable(ServiceDescriptor.Scoped(typeof(IPipelineBehaviour<,>), typeof(AuthorizationBehaviour<,>)));
         services.TryAddEnumerable(ServiceDescriptor.Scoped(typeof(IPipelineBehaviour<,>), typeof(UnitOfWorkBehaviour<,>)));
+        // M7: plan/askı/limit zorlaması tek noktada; yetki ve doğrulamadan SONRA, UnitOfWork'ten SONRA (sert limit açık transaction içinde kilit alır).
+        services.TryAddEnumerable(ServiceDescriptor.Scoped(typeof(IPipelineBehaviour<,>), typeof(EntitlementBehaviour<,>)));
         services.TryAddEnumerable(ServiceDescriptor.Scoped(typeof(IPipelineBehaviour<,>), typeof(CachingBehaviour<,>)));
+
+        // Platform modülü yüklü olmayan host/testlerde davranış değişmez: her şey açık, tam erişim, limitsiz (Platform Replace eder).
+        services.TryAddScoped<ITenantEntitlements, UnlimitedEntitlements>();
+        services.TryAddScoped<ILimitGuard, AllowAllLimitGuard>();
+        services.TryAddScoped<IPlanCatalog, AllowAllPlanCatalog>();
+        services.TryAddScoped<IPlatformAdminVerifier, DenyPlatformAdminVerifier>();
+        services.TryAddScoped<IPlatformAuditSink, NoOpPlatformAuditSink>();
 
         services.TryAddSingleton<IEventBus, InProcessEventBus>();
         services.TryAddScoped<IIntegrationEventOutbox, IntegrationEventOutbox>();
@@ -144,6 +158,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IModuleUnitOfWork>(sp => sp.GetRequiredService<TContext>());
         services.AddScoped<ModuleDbContext>(sp => sp.GetRequiredService<TContext>());
         services.AddScoped<OutboxProcessor<TContext>>();
+
+        // KVKK imhası (M7): modülün tüm ITenantEntity tabloları için genel imha adımı; yeni modül bu çağrıyla otomatik kapsanır (unutulamaz).
+        services.AddScoped<ITenantDataEraser, TenantDataEraser<TContext>>();
         return services;
     }
 
@@ -177,6 +194,30 @@ public sealed class ModuleUnitOfWorkResolver(IServiceProvider provider) : IModul
     private static readonly Dictionary<Assembly, string> ModuleByAssembly = [];
 
     public static void Register(Assembly assembly, string moduleName) => ModuleByAssembly[assembly] = moduleName;
+
+    private const string ModuleAssemblyPrefix = "Sense.Crm.Modules.";
+
+    /// <summary>
+    /// Assembly'nin ait olduğu modül adı: <c>AddModuleHandlers</c> ile kaydedilmişse o, değilse <c>Sense.Crm.Modules.{Ad}.{Katman}</c>
+    /// adından türetilen küçük harfli ad (Worker Application assembly'lerini kaydetmez). Plan kapısı/limit modülü bundan türer.
+    /// </summary>
+    public static string? ModuleOf(Assembly assembly)
+    {
+        if (ModuleByAssembly.TryGetValue(assembly, out var module))
+        {
+            return module;
+        }
+
+        var name = assembly.GetName().Name;
+        if (name is null || !name.StartsWith(ModuleAssemblyPrefix, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var rest = name[ModuleAssemblyPrefix.Length..];
+        var dot = rest.IndexOf('.', StringComparison.Ordinal);
+        return (dot < 0 ? rest : rest[..dot]).ToLowerInvariant();
+    }
 
     public IUnitOfWork? Resolve(Type requestType)
     {

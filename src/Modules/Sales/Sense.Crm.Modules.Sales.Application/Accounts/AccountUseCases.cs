@@ -3,6 +3,7 @@ using Sense.Crm.Modules.Sales.Contracts;
 using Sense.Crm.Modules.Sales.Domain;
 using Sense.Crm.Modules.Sales.Domain.Accounts;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -108,6 +109,7 @@ public abstract class AccountFieldsValidator<T> : AbstractValidator<T>
 }
 
 [RequiresPermission(SalesPermissions.AccountsWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateAccountCommand(
     string Name,
     string? Industry,

@@ -38,6 +38,23 @@ internal static class PlatformAdminCommand
             Environment.GetEnvironmentVariable(OrganizationVariable),
             cancellationToken).ConfigureAwait(false);
 
+        if (result.Outcome == PlatformAdminOutcome.Created && result.TenantId is { } operatingTenantId)
+        {
+            // M7: işletim organizasyonu için Platform hesabı doğrudan is_system + internal plan yazılır (Worker'ı beklemez).
+            var syncExit = await PlatformCommands.SyncPlansAsync(services, logger, cancellationToken).ConfigureAwait(false);
+            if (syncExit != 0)
+            {
+                return syncExit;
+            }
+
+            var info = await scope.ServiceProvider.GetRequiredService<ITenantDirectory>().FindAsync(operatingTenantId, cancellationToken).ConfigureAwait(false);
+            if (info is not null)
+            {
+                await scope.ServiceProvider.GetRequiredService<Sense.Crm.Modules.Platform.Application.Provisioning.AccountProvisioner>().EnsureSystemAsync(info, cancellationToken).ConfigureAwait(false);
+                await scope.ServiceProvider.GetRequiredService<Sense.Crm.Modules.Platform.Application.IPlatformUnitOfWork>().SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+
         switch (result.Outcome)
         {
             case PlatformAdminOutcome.Created:

@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Activities.Domain;
 using Sense.Crm.Modules.Activities.Domain.Activities;
 using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -74,6 +75,7 @@ public abstract class ActivityFieldsValidator<T> : AbstractValidator<T>
 /// organizasyonda bulunmalı (<c>activity.related_not_found</c>); <c>endAt &lt; startAt</c> → <c>activity.invalid_range</c>.
 /// </summary>
 [RequiresPermission(ActivitiesPermissions.Write)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateActivityCommand(
     ActivityType? Type,
     string Subject,

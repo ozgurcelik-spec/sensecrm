@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Marketing.Domain;
 using Sense.Crm.Modules.Marketing.Domain.Campaigns;
 using Sense.Crm.Modules.Marketing.Domain.Metrics;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -94,6 +95,7 @@ public abstract class CampaignFieldsValidator<T> : AbstractValidator<T>
 /// aktif üye olmalı (<c>owner.not_member</c>); <c>endDate &lt; startDate</c> → <c>campaign.invalid_date_range</c>; para birimi varsayılan <c>TRY</c>.
 /// </summary>
 [RequiresPermission(MarketingPermissions.Write)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateCampaignCommand(
     string Name,
     CampaignType? Type,

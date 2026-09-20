@@ -5,6 +5,7 @@ using Sense.Crm.Modules.Commerce.Domain.Documents;
 using Sense.Crm.Modules.Commerce.Domain.Numbering;
 using Sense.Crm.Modules.Commerce.Domain.Orders;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
@@ -42,6 +43,7 @@ public sealed class GetOrderHandler(IOrderReadStore store) : IQueryHandler<GetOr
 /// (<c>validUntil</c> yok). <c>SalesOrderCreated</c> (<c>direct</c>) olayı aynı transaction'da outbox'a yazılır.
 /// </summary>
 [RequiresPermission(CommercePermissions.OrdersWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateOrderCommand(
     string Subject,
     Guid AccountId,

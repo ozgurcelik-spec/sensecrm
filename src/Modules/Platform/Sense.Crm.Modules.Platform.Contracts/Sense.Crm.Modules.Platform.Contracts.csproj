@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Kernel/Sense.Crm.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../../Shared/Sense.Crm.Shared.Contracts/Sense.Crm.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

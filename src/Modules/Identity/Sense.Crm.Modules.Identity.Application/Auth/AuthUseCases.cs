@@ -5,6 +5,7 @@ using Sense.Crm.Modules.Identity.Domain;
 using Sense.Crm.Modules.Identity.Domain.Memberships;
 using Sense.Crm.Modules.Identity.Domain.Users;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -16,6 +17,7 @@ namespace Sense.Crm.Modules.Identity.Application.Auth;
 // ---------------------------------------------------------------------------------------------------------------------
 
 [AnyAuthenticatedUser("Anonim kimlik akışı: kayıt (Registration:Mode ile denetlenir)")]
+[TenantStatusExempt("Anonim kimlik akışı: istek bir Bearer başlığı taşısa bile kiracı durumundan bağımsızdır")]
 public sealed record SignUpCommand(
     string OrganizationName,
     string DisplayName,
@@ -79,6 +81,7 @@ public sealed class SignUpHandler(
 // ---------------------------------------------------------------------------------------------------------------------
 
 [AnyAuthenticatedUser("Anonim kimlik akışı: giriş")]
+[TenantStatusExempt("Anonim kimlik akışı: istek bir Bearer başlığı taşısa bile kiracı durumundan bağımsızdır")]
 public sealed record LoginCommand(string Email, string Password, string? DeviceInfo, string? IpAddress) : ICommand<AuthResponse>;
 
 public sealed class LoginValidator : AbstractValidator<LoginCommand>
@@ -149,18 +152,23 @@ public sealed class LoginHandler(
         var active = await memberships.ListActiveOfUserAcrossTenantsAsync(user.Id, cancellationToken).ConfigureAwait(false);
         var ordered = active.OrderByDescending(m => m.TenantId == user.DefaultTenantId).ThenBy(m => m.JoinedAt).Select(m => m.TenantId);
 
+        // M7: erişimi "none" olan (askı blocked, silme bekleyen) kiracılar atlanır; hepsi engelliyse 403 tenant.suspended.
+        string? blockedReason = null;
         foreach (var tenantId in ordered)
         {
-            if (await sessions.ResolveAsync(user.Id, tenantId, cancellationToken).ConfigureAwait(false) is { } session)
+            var resolution = await sessions.ResolveDetailedAsync(user.Id, tenantId, cancellationToken).ConfigureAwait(false);
+            if (resolution.Session is { } session)
             {
                 throttle.Reset(command.IpAddress, normalizedEmail);
                 user.RecordSuccessfulLogin(now);
                 user.SetDefaultTenant(tenantId);
                 return sessions.Issue(user, session, command.DeviceInfo, command.IpAddress);
             }
+
+            blockedReason ??= resolution.BlockedReason;
         }
 
-        return Error.Forbidden(IdentityErrors.NoActiveOrganization);
+        return blockedReason is not null ? EntitlementErrors.Suspended(blockedReason) : Error.Forbidden(IdentityErrors.NoActiveOrganization);
     }
 }
 
@@ -170,6 +178,7 @@ public sealed class LoginHandler(
 // ---------------------------------------------------------------------------------------------------------------------
 
 [AnyAuthenticatedUser("Anonim kimlik akışı: refresh token ile oturum yenileme")]
+[TenantStatusExempt("Anonim kimlik akışı: istek bir Bearer başlığı taşısa bile kiracı durumundan bağımsızdır")]
 public sealed record RefreshTokenCommand(string RefreshToken, string? DeviceInfo, string? IpAddress) : ICommand<AuthResponse>;
 
 public sealed class RefreshTokenValidator : AbstractValidator<RefreshTokenCommand>
@@ -266,6 +275,7 @@ public sealed class RefreshTokenHandler(
 // ---------------------------------------------------------------------------------------------------------------------
 
 [AnyAuthenticatedUser("Anonim kimlik akışı: çıkış (refresh token sahibi)")]
+[TenantStatusExempt("Askıdaki/engelli kiracıda da çıkış yapılabilmeli (engel ekranı)")]
 public sealed record LogoutCommand(string RefreshToken) : ICommand;
 
 public sealed class LogoutValidator : AbstractValidator<LogoutCommand>
@@ -297,6 +307,7 @@ public sealed class LogoutHandler(IRefreshTokenRepository refreshTokens, ISecret
 // ---------------------------------------------------------------------------------------------------------------------
 
 [AnyAuthenticatedUser("Kimliği doğrulanmış kullanıcı yalnız kendi aktif üyeliği olan organizasyona geçer; handler üyeliği doğrular")]
+[TenantStatusExempt("Askıdaki kiracıdan çalışan bir organizasyona geçiş yapılabilmeli (hedef kiracının durumu handler'da denetlenir)")]
 public sealed record SwitchOrganizationCommand(Guid OrganizationId, string? DeviceInfo, string? IpAddress) : ICommand<AuthResponse>;
 
 public sealed class SwitchOrganizationValidator : AbstractValidator<SwitchOrganizationCommand>
@@ -320,10 +331,10 @@ public sealed class SwitchOrganizationHandler(IUserRepository users, SessionIssu
             return Error.Unauthorized(ErrorCodes.Unauthenticated);
         }
 
-        var session = await sessions.ResolveAsync(user.Id, command.OrganizationId, cancellationToken).ConfigureAwait(false);
-        if (session is null)
+        var resolution = await sessions.ResolveDetailedAsync(user.Id, command.OrganizationId, cancellationToken).ConfigureAwait(false);
+        if (resolution.Session is not { } session)
         {
-            return Error.Forbidden(ErrorCodes.Forbidden);
+            return resolution.BlockedReason is { } reason ? EntitlementErrors.Suspended(reason) : Error.Forbidden(ErrorCodes.Forbidden);
         }
 
         user.SetDefaultTenant(session.Tenant.Id);

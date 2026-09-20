@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
+using Sense.Crm.Shared.Contracts.Retention;
+using Sense.Crm.Shared.Contracts.Usage;
 
 namespace Sense.Crm.Modules.Identity.Infrastructure;
 
@@ -15,6 +17,11 @@ public static class IdentityContractServices
         services.AddScoped<IMemberLookup, MemberLookup>();
         services.AddScoped<IRoleMemberLookup, RoleMemberLookup>();
         services.AddScoped<ITenantDirectory, TenantDirectory>();
+
+        // M7: kullanım ölçümü (Platform anlık görüntü işi/limit denetimi) ve KVKK imha adımları (Worker/Migrator).
+        services.AddScoped<IUsageReporter, IdentityUsageReporter>();
+        services.AddScoped<ITenantDataEraser, IdentityAccountEraser>();
+        services.AddScoped<ITenantDataEraser, IdentityTenantEraser>();
         return services;
     }
 }

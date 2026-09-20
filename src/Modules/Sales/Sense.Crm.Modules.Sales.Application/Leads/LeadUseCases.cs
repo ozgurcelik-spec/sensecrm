@@ -7,6 +7,7 @@ using Sense.Crm.Modules.Sales.Domain.Deals;
 using Sense.Crm.Modules.Sales.Domain.Leads;
 using Sense.Crm.Modules.Sales.Domain.Pipelines;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
@@ -64,6 +65,7 @@ public abstract class LeadFieldsValidator<T> : AbstractValidator<T>
 
 /// <summary>Oluşturma her zaman <c>new</c> durumuyla başlar; kaynak verilmezse <c>other</c>.</summary>
 [RequiresPermission(SalesPermissions.LeadsWrite)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateLeadCommand(
     string? FirstName,
     string LastName,

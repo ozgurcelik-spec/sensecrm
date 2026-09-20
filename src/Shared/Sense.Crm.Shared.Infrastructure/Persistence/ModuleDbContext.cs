@@ -99,6 +99,10 @@ public abstract class ModuleDbContext(DbContextOptions options, ITenantContext t
         }, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async Task AcquireAdvisoryLockAsync(string key, CancellationToken cancellationToken = default) =>
+        await Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", cancellationToken).ConfigureAwait(false);
+
     private LambdaExpression BuildTenantFilter(Type clr)
     {
         // e => e.TenantId == CurrentTenantId  (CurrentTenantId sorgu parametresi olarak çevrilir)

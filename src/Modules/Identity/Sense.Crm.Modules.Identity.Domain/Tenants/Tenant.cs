@@ -37,6 +37,12 @@ public sealed class Tenant : AggregateRoot<Guid>, IAuditLogged
 
     public bool IsActive { get; private set; }
 
+    /// <summary>
+    /// Organizasyon bilgileri ilk kez başarıyla kaydedildiğinde (<c>PUT /organization</c>) dolar; onboarding "profili tamamla" adımı buna bakar (M7).
+    /// Mevcut organizasyonlar <c>null</c> kalır.
+    /// </summary>
+    public DateTime? ProfileCompletedAt { get; private set; }
+
     public static Tenant Create(string name, string slug, string defaultLocale, string timeZone)
     {
         var tenant = new Tenant(
@@ -55,6 +61,9 @@ public sealed class Tenant : AggregateRoot<Guid>, IAuditLogged
         DefaultLocale = Guard.NotEmpty(defaultLocale);
         TimeZone = Guard.NotEmpty(timeZone);
     }
+
+    /// <summary>İlk başarılı organizasyon güncellemesinde işaretlenir (sonrakiler değiştirmez).</summary>
+    public void MarkProfileCompleted(DateTime nowUtc) => ProfileCompletedAt ??= nowUtc;
 
     /// <summary>
     /// Organizasyon adından slug üretir: Türkçe karakterler ASCII'ye çevrilir, harf/rakam dışı karakterler '-' olur.

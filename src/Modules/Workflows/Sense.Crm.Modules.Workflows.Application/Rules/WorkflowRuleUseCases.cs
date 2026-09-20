@@ -5,6 +5,7 @@ using Sense.Crm.Modules.Workflows.Contracts;
 using Sense.Crm.Modules.Workflows.Domain;
 using Sense.Crm.Modules.Workflows.Domain.Rules;
 using Sense.Crm.Shared.Contracts.Context;
+using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -84,6 +85,7 @@ public sealed class RuleRoleVerifier(IRoleMemberLookup roles)
 
 /// <summary>Yeni kural; <c>isEnabled</c> verilmezse etkin başlar. Rol kiracıda bulunmalı (<c>workflow.role_not_found</c>).</summary>
 [RequiresPermission(WorkflowsPermissions.Manage)]
+[ConsumesLimit(LimitKeys.Records)]
 public sealed record CreateRuleCommand(string Name, WorkflowRuleKind? Kind, JsonElement? Params, bool? IsEnabled) : ICommand<Guid>, IRuleFields;
 
 public sealed class CreateRuleValidator : RuleFieldsValidator<CreateRuleCommand>;

@@ -155,14 +155,23 @@ public sealed class RoleMemberLookup(IdentityDbContext db, ITenantContext tenant
 /// <summary><see cref="ITenantDirectory"/>: organizasyonlar küresel tablodur (kiracı filtresi yok); yalnız sistem işleri kullanır.</summary>
 public sealed class TenantDirectory(IdentityDbContext db) : ITenantDirectory
 {
-    public async Task<IReadOnlyList<TenantInfo>> ListAllAsync(CancellationToken cancellationToken = default) =>
-        await db.Tenants.AsNoTracking().Where(t => t.IsActive)
+    public async Task<IReadOnlyList<TenantInfo>> ListAllAsync(CancellationToken cancellationToken = default)
+    {
+        var rows = await db.Tenants.AsNoTracking().Where(t => t.IsActive)
             .OrderBy(t => t.Name)
-            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale, t.TimeZone))
+            .Select(t => new { t.Id, t.Name, t.DefaultLocale, t.TimeZone, t.Slug, t.CreatedAt })
             .ToListAsync(cancellationToken);
+        return rows.Select(r => ToInfo(r.Id, r.Name, r.DefaultLocale, r.TimeZone, r.Slug, r.CreatedAt)).ToList();
+    }
 
-    public Task<TenantInfo?> FindAsync(Guid tenantId, CancellationToken cancellationToken = default) =>
-        db.Tenants.AsNoTracking().Where(t => t.Id == tenantId)
-            .Select(t => new TenantInfo(t.Id, t.Name, t.DefaultLocale, t.TimeZone))
+    public async Task<TenantInfo?> FindAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        var row = await db.Tenants.AsNoTracking().Where(t => t.Id == tenantId)
+            .Select(t => new { t.Id, t.Name, t.DefaultLocale, t.TimeZone, t.Slug, t.CreatedAt })
             .FirstOrDefaultAsync(cancellationToken);
+        return row is null ? null : ToInfo(row.Id, row.Name, row.DefaultLocale, row.TimeZone, row.Slug, row.CreatedAt);
+    }
+
+    private static TenantInfo ToInfo(Guid id, string name, string locale, string timeZone, string slug, DateTime createdAt) =>
+        new(id, name, locale, timeZone, slug, new DateTimeOffset(DateTime.SpecifyKind(createdAt, DateTimeKind.Utc)));
 }

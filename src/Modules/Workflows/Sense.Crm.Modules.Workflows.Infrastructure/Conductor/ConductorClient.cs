@@ -115,6 +115,18 @@ public sealed class ConductorClient(HttpClient http)
         await EnsureSuccessAsync(response, ct).ConfigureAwait(false);
     }
 
+    /// <summary>Yürütme kaydını kalıcı siler (DELETE workflow/{id}/remove); bulunamazsa idempotent.</summary>
+    public async Task RemoveWorkflowAsync(string workflowId, CancellationToken ct)
+    {
+        using var response = await http.DeleteAsync($"workflow/{Uri.EscapeDataString(workflowId)}/remove", ct).ConfigureAwait(false);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return;
+        }
+
+        await EnsureSuccessAsync(response, ct).ConfigureAwait(false);
+    }
+
     /// <summary>Workflow içindeki görevi (referans adıyla) verilen durumla günceller — HUMAN/WAIT görevini tamamlamak için.</summary>
     public async Task UpdateTaskByReferenceAsync(string workflowId, string taskReferenceName, string status, string workerId, JsonObject output, CancellationToken ct)
     {

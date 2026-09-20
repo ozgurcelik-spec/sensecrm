@@ -4,11 +4,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sense.Crm.Modules.Activities.Infrastructure;
 using Sense.Crm.Modules.Activities.Infrastructure.Persistence;
+using Sense.Crm.Modules.Commerce.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
 using Sense.Crm.Modules.Marketing.Infrastructure;
+using Sense.Crm.Modules.Platform.Infrastructure;
+using Sense.Crm.Modules.Platform.Infrastructure.Persistence;
 using Sense.Crm.Modules.Sales.Infrastructure;
 using Sense.Crm.Modules.Sales.Infrastructure.Persistence;
+using Sense.Crm.Modules.Service.Infrastructure;
 using Sense.Crm.Modules.Service.Infrastructure.Persistence;
 using Sense.Crm.Modules.Workflows.Infrastructure;
 using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
@@ -102,6 +106,25 @@ builder.Services.AddModuleHandlers(
 builder.Services.AddScoped<Sense.Crm.Modules.Service.Application.IDefaultSlaPolicySeeder, Sense.Crm.Modules.Service.Infrastructure.Provisioning.DefaultSlaPolicySeeder>();
 builder.Services.AddScoped<Sense.Crm.Shared.Contracts.Events.IIntegrationEventHandler<Sense.Crm.Modules.Identity.Contracts.OrganizationCreated>, Sense.Crm.Modules.Service.Application.Sla.OrganizationCreatedSlaHandler>();
 builder.Services.AddHostedService<Sense.Crm.Worker.OutboxPollingService<ServiceDbContext>>();
+
+// Kullanım ölçümü (M7): Commerce/Service/Workflows'un IUsageReporter'ları (Sales/Activities/Marketing/Identity yukarıda kayıtlı) ve Workflows'un KVKK Conductor imha adımı.
+builder.Services.AddCommerceContractServices();
+builder.Services.AddServiceContractServices();
+builder.Services.AddWorkflowsContractServices();
+
+// Platform (M7): kiracı hesabı olayları (OrganizationCreated/Updated tüketicisi), outbox (TenantSuspended … olayları), günlük kullanım anlık görüntüsü ve KVKK imha işi.
+// Domain + Contracts assembly'leri outbox olay tipi kaydı ve UnitOfWork çözümlemesi içindir; Worker Application assembly'lerini taramadığı için işleyiciler elle kayıtlıdır.
+builder.Services.AddModuleDbContext<PlatformDbContext>(builder.Configuration, PlatformDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    PlatformDbContext.SchemaName,
+    typeof(Sense.Crm.Modules.Platform.Domain.Accounts.TenantAccount).Assembly,
+    typeof(Sense.Crm.Modules.Platform.Contracts.TenantSuspended).Assembly);
+builder.Services.AddPlatformContractServices(builder.Configuration);
+builder.Services.AddScoped<Sense.Crm.Shared.Contracts.Events.IIntegrationEventHandler<Sense.Crm.Modules.Identity.Contracts.OrganizationCreated>, Sense.Crm.Modules.Platform.Application.Provisioning.OrganizationCreatedAccountHandler>();
+builder.Services.AddScoped<Sense.Crm.Shared.Contracts.Events.IIntegrationEventHandler<Sense.Crm.Modules.Identity.Contracts.OrganizationUpdated>, Sense.Crm.Modules.Platform.Application.Provisioning.OrganizationUpdatedAccountHandler>();
+builder.Services.AddHostedService<Sense.Crm.Worker.OutboxPollingService<PlatformDbContext>>();
+builder.Services.AddHostedService<Sense.Crm.Worker.Platform.UsageSnapshotService>();
+builder.Services.AddHostedService<Sense.Crm.Worker.Platform.TenantErasureService>();
 
 await builder.Build().RunAsync();
 
