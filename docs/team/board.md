@@ -43,6 +43,7 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | C-M9H | Erişim modeli: rol hiyerarşisi, kayıt görünürlüğü, alan izni, giriş geçmişi | Spec→Backend+Web | **Backlog** (M8D sonrası) | `m9/access` | kart kapısı + güvenlik incelemesi |
 | C-M9I | Destek ve belgeler: çözümler (bilgi tabanı), belge klasörleri | Spec→Backend+Web | **Backlog** (M8C sonrası) | `m9/support` | kart kapısı |
 | C-M9J | Şirket ayarları: çalışma saatleri/tatil, çoklu para birimi, şablonlar | Spec→Backend+Web | **Backlog** (M9C sonrası) | `m9/company` | kart kapısı |
+| C-M9K | Stok yönetimi (opsiyonel modül): depolar, kategoriler, stok hareketleri, uyarılar, kurulum sihirbazı; PO teslim alma/sipariş çıkışı bağlantısı | Spec→Backend+Web | **Backlog** (M9C sonrası; spec hemen) | `m9/stock` | kart kapısı |
 
 ## Yürütme sırası
 1. C-M5 biter → doğrula, commit.
@@ -59,3 +60,4 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 - 2026-09-20: M8 başladı (A–D). Eşzamanlı en çok 5 ajan; Spec ajanları önce (4 paralel), sonra dalga dalga Backend+Web. Merge sırası: D → C → A → B (ortak varlık ve sıcak dosya çakışmalarını azaltmak için; gerekirse değişir).
 - 2026-09-20: Zoho ekran analizi çıkarıldı (`docs/analysis/zoho-ekran-analizi.md`); M9A–J kartları panoya eklendi. Kural: toplam ajan sayısı hep 8; biten ajanın dalı `main`e merge edilir, worktree'si silinir, hemen yeni görev açılır (sıra: M9A spec, M9C spec, ardından bağımlılığı çözülenler).
 - 2026-09-20: M9A ve M9C plan belgeleri merged (`docs/plan/m9a-kabuk.md`, `m9c-envanter.md`); M9A Backend ve M9C Backend ajanları başladı (Web ajanları backend sonrası). Not: M9A `AddSearchText` migration'ları M8D/M9C snapshot'larıyla çakışır — sonra merge edilen kart migration'ını birleşik dal üzerinde yeniden üretir.
+- 2026-09-20: Kullanıcının stok ekranları (7 görüntü) analize eklendi (`docs/analysis/zoho-ekran-analizi.md` ek bölümü); C-M9K kartı açıldı, boş ajan yuvasında önce Spec yazılacak.
