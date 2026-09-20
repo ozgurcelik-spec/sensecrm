@@ -57,6 +57,7 @@ const PlatformAuditPage = lazy(() => import("@/pages/platform/platform-audit"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const NotificationPreferencesPage = lazy(() => import("@/pages/notifications-preferences"));
 const NotificationSettingsPage = lazy(() => import("@/pages/settings/notifications"));
+const IntegrationsPage = lazy(() => import("@/pages/settings/integrations"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
   const guarded = (
@@ -369,6 +370,15 @@ export default function App() {
               element={
                 <RequirePermission permission={PERMISSIONS.orgNotificationsManage}>
                   <NotificationSettingsPage />
+                </RequirePermission>
+              }
+            />
+            {/* Integrations (M8B): RequirePermission answers a plan without the module with the "module disabled" page. */}
+            <Route
+              path="settings/integrations"
+              element={
+                <RequirePermission permission={PERMISSIONS.orgIntegrationsManage}>
+                  <IntegrationsPage />
                 </RequirePermission>
               }
             />

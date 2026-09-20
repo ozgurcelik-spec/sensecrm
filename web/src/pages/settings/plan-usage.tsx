@@ -4,6 +4,7 @@ import { Info, TriangleAlert } from "lucide-react";
 import { LoadError } from "@/components/load-error";
 import { PageHeader } from "@/components/page-header";
 import { StorageBreakdownCard, StorageUsageBar } from "@/components/files/storage-usage";
+import { IntegrationsUsageBars } from "@/components/integrations/integrations-usage";
 import { TenantStatusBadge } from "@/components/platform/status-badge";
 import { UsageBar } from "@/components/subscription/usage-bars";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -64,7 +65,11 @@ function PlanUsage({ info }: { info: SubscriptionInfo }) {
                   ? t("subscription:limits.users")
                   : entry.limit === "storage"
                     ? t("files:plan.storage")
-                    : t("subscription:limits.recordsOf", { module: moduleName(entry.module ?? "") })}
+                    : entry.limit === "webhooks"
+                      ? t("subscription:limits.webhooks")
+                      : entry.limit === "api_keys"
+                        ? t("subscription:limits.apiKeys")
+                        : t("subscription:limits.recordsOf", { module: moduleName(entry.module ?? "") })}
                 {entry.limit === "storage"
                   ? `: ${formatBytes(entry.used)} / ${formatBytes(entry.max)}`
                   : `: ${entry.used} / ${entry.max}`}
@@ -99,6 +104,7 @@ function PlanUsage({ info }: { info: SubscriptionInfo }) {
             />
           ))}
           <StorageUsageBar info={info} />
+          <IntegrationsUsageBars info={info} />
         </Stack>
         <Text size="xs" c="dimmed" mt="md" data-testid="as-of">
           {t("subscription:usage.asOf", { date: formatDateTime(info.usage.asOf) })}

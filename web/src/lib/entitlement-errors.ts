@@ -22,6 +22,8 @@ const str = (value: unknown): string | undefined =>
 /** "kullanıcı" for the user limit, the module name for a record limit, "kayıt" otherwise. */
 export function limitLabel(limit: string | undefined, module: string | undefined): string {
   if (limit === "users") return i18n.t("subscription:limits.users");
+  if (limit === "webhooks") return i18n.t("subscription:limits.webhooks");
+  if (limit === "api_keys") return i18n.t("subscription:limits.apiKeys");
   if (module) {
     return i18n.t("subscription:limits.recordsOf", {
       module: i18n.t(`subscription:modules.${module}`, { defaultValue: module }),

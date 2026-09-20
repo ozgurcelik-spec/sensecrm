@@ -1,0 +1,421 @@
+{
+  "title": "Entegrasyonlar",
+  "description": "Giden webhook'lar, teslimat günlüğü, API anahtarları ve geliştirici rehberi.",
+  "readOnly": "Organizasyon salt okunur durumda: listeler ve teslimat günlüğü görüntülenebilir, değişiklikler sunucu tarafından reddedilir.",
+  "planLink": "Plan ve kullanım",
+  "tabs": {
+    "label": "Entegrasyon bölümleri",
+    "webhooks": "Webhook'lar",
+    "deliveries": "Teslimat günlüğü",
+    "apiKeys": "API anahtarları",
+    "developer": "Geliştirici"
+  },
+  "egress": {
+    "disabledTitle": "Bu kurulumda webhook gönderimi kapalı",
+    "disabledBody": "Abonelikleri şimdiden hazırlayabilirsiniz; ancak test gönderimi ve yeniden gönderme çalışmaz ve kapalıyken üretilen olaylar sonradan teslim edilmez. Açmak için sistem yöneticinizle iletişime geçin.",
+    "restrictedHosts": "Bu kurulumda yalnızca yöneticinin izin verdiği alan adlarına webhook gönderilebilir."
+  },
+  "health": {
+    "healthy": "Sağlıklı",
+    "degraded": "Sorunlu",
+    "failing": "Başarısız",
+    "disabled": "Pasif"
+  },
+  "events": {
+    "groups": {
+      "sales": "Satış",
+      "commerce": "Ticaret",
+      "service": "Servis"
+    },
+    "unavailable": "Planınızda bu modül yok",
+    "deprecated": "Kullanımdan kalkıyor",
+    "sample": "Örnek zarf",
+    "showSample": "Örnek zarf",
+    "hideSample": "Gizle",
+    "sampleNamed": "{{type}} için örnek zarf",
+    "lead": {
+      "created": "Potansiyel müşteri oluşturuldu",
+      "converted": "Potansiyel müşteri dönüştürüldü"
+    },
+    "account": {
+      "created": "Müşteri oluşturuldu"
+    },
+    "contact": {
+      "created": "Kişi oluşturuldu"
+    },
+    "deal": {
+      "stage_changed": "Fırsat aşaması değişti",
+      "won": "Fırsat kazanıldı",
+      "lost": "Fırsat kaybedildi"
+    },
+    "quote": {
+      "accepted": "Teklif kabul edildi"
+    },
+    "order": {
+      "created": "Sipariş oluşturuldu"
+    },
+    "case": {
+      "created": "Talep oluşturuldu",
+      "resolved": "Talep çözüldü"
+    },
+    "ping": "Test ping'i"
+  },
+  "reveal": {
+    "warning": "Bu değer yalnızca şimdi gösterilir; sonradan hiçbir yerden görüntülenemez. Güvenli bir yere kaydedin.",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "saved": "Kaydettim",
+    "done": "Tamam"
+  },
+  "code": {
+    "copyNamed": "{{name}} kopyala"
+  },
+  "webhooks": {
+    "create": "Yeni webhook",
+    "createTitle": "Yeni webhook",
+    "editTitle": "Webhook'u düzenle",
+    "created": "Webhook oluşturuldu",
+    "updated": "Webhook güncellendi",
+    "deleted": "{{name}} silindi",
+    "empty": "Henüz webhook yok",
+    "searchPlaceholder": "Ad veya alan adı ara",
+    "filters": {
+      "enabled": "Durum",
+      "enabledOn": "Etkin",
+      "enabledOff": "Pasif",
+      "eventType": "Olay türü"
+    },
+    "columns": {
+      "name": "Ad",
+      "events": "Olaylar",
+      "health": "Sağlık",
+      "lastSuccess": "Son başarı",
+      "lastFailure": "Son hata",
+      "enabled": "Etkin"
+    },
+    "enabledNamed": "{{name}} etkin",
+    "actionsNamed": "{{name}} işlemleri",
+    "rotate": "Gizli anahtarı döndür",
+    "showDeliveries": "Teslimatları göster",
+    "autoDisabled": "Art arda hata nedeniyle pasifleştirildi",
+    "reenable": "Yeniden etkinleştir",
+    "limitReached": "Plan limitine ulaşıldı: webhook {{used}}/{{max}}",
+    "limitTooltip": "Planınızdaki webhook limiti doldu",
+    "deleteTitle": "{{name}} silinsin mi?",
+    "deleteWarning": "Abonelik ve tüm teslimat günlüğü silinir. Bu işlem geri alınamaz.",
+    "deleteType": "Onaylamak için webhook adını yazın: {{name}}",
+    "deleteTypeLabel": "Webhook adı",
+    "form": {
+      "name": "Ad",
+      "url": "Hedef adres (HTTPS)",
+      "urlHint": "Yalnızca genel bir HTTPS adresi. IP adresi, localhost ve iç ağ adları kabul edilmez; yönlendirmeler izlenmez.",
+      "eventTypes": "Olay türleri",
+      "eventTypesHint": "Bu türlerden biri olduğunda adrese bir bildirim gönderilir.",
+      "description": "Açıklama",
+      "enabled": "Etkin",
+      "enabledHint": "Pasif abonelik yeni olay almaz.",
+      "errors": {
+        "nameRequired": "Ad zorunludur",
+        "nameMax": "Ad en çok 100 karakter olabilir",
+        "eventTypesRequired": "En az bir olay türü seçin",
+        "descriptionMax": "Açıklama en çok 500 karakter olabilir"
+      },
+      "urlErrors": {
+        "required": "Adres zorunludur",
+        "invalid": "Geçerli bir adres girin",
+        "scheme": "Adres https:// ile başlamalıdır",
+        "too_long": "Adres en çok 2048 karakter olabilir",
+        "userinfo": "Adres kullanıcı adı ve parola içeremez",
+        "ip_literal": "IP adresi kullanılamaz; bir alan adı girin",
+        "host": "Bu ana bilgisayar adı kullanılamaz (localhost, .local, .internal, .lan ve tek etiketli adlar yasak)",
+        "port": "Bu bağlantı noktası kullanılamaz (izinli: 443, 8443)",
+        "not_allow_listed": "Bu alan adı yönetici tarafından izin verilen alan adları arasında değil"
+      }
+    },
+    "reveal": {
+      "createdTitle": "Webhook gizli anahtarı",
+      "rotatedTitle": "Yeni gizli anahtar",
+      "createdIntro": "{{name}} için gizli anahtar oluşturuldu. Alıcı, gelen isteklerin imzasını bu anahtarla doğrulamalıdır.",
+      "rotatedIntro": "{{name}} için yeni gizli anahtar hemen geçerli oldu. Alıcı uygulamayı güncelleyin.",
+      "label": "Gizli anahtar",
+      "graceNote": "Eski anahtar {{date}} tarihine kadar da geçerli kalır; bu sürede iki imza gönderilir."
+    }
+  },
+  "rotate": {
+    "title": "{{name}}: gizli anahtarı döndür",
+    "explain": "Yeni gizli anahtar hemen geçerli olur. Eski anahtar seçtiğiniz süre boyunca da geçerli kalır (iki imza gönderilir); bu sürede alıcıyı yeni anahtarla güncelleyin.",
+    "graceHours": "Eski anahtarın geçerlilik süresi (saat)",
+    "graceHint": "{{min}} - {{max}} saat; 0 eski anahtarı hemen geçersiz kılar.",
+    "graceInvalid": "{{min}} ile {{max}} arasında bir tam sayı girin",
+    "submit": "Döndür"
+  },
+  "test": {
+    "button": "{{name}} için test ping'i gönder",
+    "tooltip": "Test ping'i gönder",
+    "unavailable": "Bu kurulumda webhook gönderimi kapalı",
+    "succeeded": "{{name}}: test ping'i teslim edildi (HTTP {{status}})",
+    "failedTitle": "Test ping'i başarısız",
+    "failed": "{{name}}: {{reason}}",
+    "stillQueued": "{{name}}: test ping'i henüz teslim edilmedi; sonucu teslimat günlüğünde görebilirsiniz."
+  },
+  "deliveries": {
+    "statuses": {
+      "pending": "Bekliyor",
+      "delivering": "Gönderiliyor",
+      "succeeded": "Başarılı",
+      "failed": "Başarısız"
+    },
+    "kinds": {
+      "event": "Olay",
+      "ping": "Test",
+      "redelivery": "Yeniden gönderim"
+    },
+    "failureReasons": {
+      "timeout": "Zaman aşımı",
+      "connection_error": "Bağlantı hatası",
+      "http_error": "Alıcı hata döndürdü",
+      "redirect": "Yönlendirme (izlenmez)",
+      "blocked_destination": "Hedef engellendi",
+      "tls_error": "TLS / sertifika hatası",
+      "dns_error": "Alan adı çözülemedi",
+      "retries_exhausted": "Deneme hakkı bitti",
+      "expired": "Süresi doldu",
+      "payload_too_large": "İçerik çok büyük"
+    },
+    "columns": {
+      "createdAt": "Zaman",
+      "event": "Olay",
+      "subscription": "Abonelik",
+      "status": "Durum",
+      "attempts": "Deneme",
+      "http": "HTTP",
+      "duration": "Süre",
+      "nextAttempt": "Sonraki deneme"
+    },
+    "filters": {
+      "subscription": "Abonelik",
+      "eventType": "Olay türü",
+      "kind": "Tür",
+      "eventId": "Olay kimliği",
+      "eventIdInvalid": "Geçerli bir kimlik girin",
+      "from": "Başlangıç",
+      "to": "Bitiş",
+      "rangeInvalid": "Aralık en çok {{days}} gün olabilir",
+      "status": "Durum"
+    },
+    "empty": "Teslimat kaydı yok",
+    "open": "Ayrıntıyı aç",
+    "openNamed": "{{event}} teslimatının ayrıntısı",
+    "redeliver": "Yeniden gönder",
+    "redeliverNamed": "{{event}} teslimatını yeniden gönder",
+    "redeliverTitle": "Teslimat yeniden gönderilsin mi?",
+    "redeliverMessage": "Aynı olay, güncel gizli anahtarla imzalanarak yeniden gönderilecek. Alıcı olayları kimliğe (id) göre tekilleştirmelidir.",
+    "redelivered": "Yeniden gönderim kuyruğa alındı",
+    "detail": {
+      "title": "Teslimat ayrıntısı",
+      "failure": "Teslimat başarısız",
+      "host": "Ana bilgisayar",
+      "eventId": "Olay kimliği",
+      "lastAttemptAt": "Son deneme",
+      "completedAt": "Tamamlanma",
+      "payload": "Gönderilen zarf",
+      "headers": "Gönderilen başlıklar",
+      "attemptLog": "Deneme geçmişi",
+      "noAttempts": "Henüz deneme yapılmadı",
+      "attemptNo": "{{n}}. deneme",
+      "responseSnippet": "Yanıt özeti",
+      "truncated": "Yanıt kesildi"
+    }
+  },
+  "apiKeys": {
+    "intro": "API anahtarı, anahtarı oluşturan kullanıcının izinleriyle (ve seçilen kapsamla sınırlı) /api/v1 uçlarını çağırır. Yönetim uçları anahtarlara kapalıdır.",
+    "statuses": {
+      "active": "Etkin",
+      "expired": "Süresi dolmuş",
+      "revoked": "İptal edilmiş"
+    },
+    "create": "Yeni API anahtarı",
+    "createTitle": "Yeni API anahtarı",
+    "editTitle": "API anahtarını düzenle",
+    "created": "API anahtarı oluşturuldu",
+    "updated": "API anahtarı güncellendi",
+    "revoked": "{{name}} iptal edildi",
+    "deleted": "{{name}} silindi",
+    "empty": "Henüz API anahtarı yok",
+    "searchPlaceholder": "Ad ara",
+    "filters": {
+      "status": "Durum"
+    },
+    "columns": {
+      "name": "Ad",
+      "scopes": "Kapsam",
+      "expiresAt": "Bitiş",
+      "lastUsed": "Son kullanım",
+      "status": "Durum"
+    },
+    "scopeCount": "Kapsam: {{count}}",
+    "neverUsed": "Hiç kullanılmadı",
+    "actionsNamed": "{{name}} işlemleri",
+    "revoke": "İptal et",
+    "revokeTitle": "{{name}} iptal edilsin mi?",
+    "revokeMessage": "Anahtar hemen geçersiz olur ve bu anahtarı kullanan entegrasyonlar çalışmayı bırakır. Bu işlem geri alınamaz.",
+    "deleteTitle": "{{name}} silinsin mi?",
+    "deleteMessage": "Yalnızca iptal edilmiş veya süresi dolmuş anahtarlar silinebilir.",
+    "limitReached": "Plan limitine ulaşıldı: API anahtarı {{used}}/{{max}}",
+    "limitTooltip": "Planınızdaki API anahtarı limiti doldu",
+    "scopeGroups": {
+      "leads": "Potansiyeller",
+      "contacts": "Kişiler",
+      "accounts": "Müşteriler",
+      "deals": "Fırsatlar",
+      "activities": "Aktiviteler",
+      "reports": "Raporlar",
+      "campaigns": "Kampanyalar",
+      "products": "Ürünler",
+      "quotes": "Teklifler",
+      "orders": "Siparişler",
+      "cases": "Talepler"
+    },
+    "form": {
+      "name": "Ad",
+      "description": "Açıklama",
+      "scopes": "Kapsam",
+      "scopesHint": "Yalnızca CRM izinleri seçilebilir ve yalnızca sizde olan izinler verilebilir.",
+      "presetRead": "Salt okuma",
+      "presetAll": "Tümü",
+      "presetNone": "Temizle",
+      "groupAll": "{{group}}: tümünü seç",
+      "notOwned": "Bu izne sahip olmadığınız için verilemez",
+      "expiry": "Geçerlilik süresi",
+      "expiryHint": "Süresiz anahtar yoktur; en fazla {{days}} gün.",
+      "days": "{{count}} gün",
+      "customDate": "Özel tarih",
+      "cidrs": "IP izin listesi (isteğe bağlı)",
+      "cidrsHint": "Her satıra bir CIDR yazın, örn. 203.0.113.0/24. Boşsa her adresten kullanılabilir.",
+      "cidrsOpen": "IP kısıtı yok: anahtar her adresten kullanılabilir.",
+      "scopeFixed": "Kapsam ve geçerlilik süresi sonradan değiştirilemez; gerekirse yeni bir anahtar oluşturun.",
+      "errors": {
+        "nameRequired": "Ad zorunludur",
+        "nameMax": "Ad en çok {{max}} karakter olabilir",
+        "descriptionMax": "Açıklama en çok {{max}} karakter olabilir",
+        "scopesRequired": "En az bir kapsam seçin",
+        "expiryRequired": "Bir bitiş tarihi seçin",
+        "expiryPast": "Bitiş tarihi gelecekte olmalıdır",
+        "expiryMax": "Bitiş tarihi en çok {{days}} gün sonra olabilir"
+      },
+      "cidrErrors": {
+        "tooMany": "En çok {{max}} adres girilebilir",
+        "invalid": "Geçersiz CIDR: {{value}} (örn. 203.0.113.0/24)",
+        "any": "{{value}} tüm adresleri kapsar; daha dar bir aralık girin"
+      }
+    },
+    "reveal": {
+      "title": "API anahtarınız",
+      "intro": "{{name}} anahtarı oluşturuldu. Anahtarı Authorization: Bearer başlığıyla kullanın.",
+      "label": "API anahtarı",
+      "curl": "Örnek çağrı (curl)"
+    },
+    "usage": {
+      "open": "Kullanım",
+      "title": "{{name}}: kullanım",
+      "range": "Aralık",
+      "lastDays": "Son {{count}} gün",
+      "empty": "Bu aralıkta kullanım yok",
+      "requests": "İstek",
+      "errors": "Hata (4xx-5xx)",
+      "throttled": "Kısıtlanan (429)"
+    }
+  },
+  "guide": {
+    "api": {
+      "title": "API'yi anahtarla çağırma",
+      "intro": "Temel adres: {{base}}. Her istekte anahtarı taşıyıcı (Bearer) olarak gönderin; X-Api-Key başlığı desteklenmez.",
+      "curl": "İlk çağrı",
+      "scopes": "Kapsam = CRM izinleri (crm.*). Yönetim izinleri (org.*) ve onay kararı verilemez; anahtar, oluşturanın izinlerinden fazlasını yapamaz.",
+      "lifetime": "Her anahtarın bir bitiş tarihi vardır (en çok {{max}} gün); iptal edilen anahtar hemen durur.",
+      "rateLimit": "Anahtar başına dakikada {{limit}} istek; aşılırsa 429 ve Retry-After başlığı döner.",
+      "actAsCreator": "Anahtar, oluşturan kullanıcı adına çalışır: kullanıcı pasifleşirse veya izinleri azalırsa anahtar da daralır."
+    },
+    "conventions": {
+      "title": "Sayfalama, süzgeç ve hatalar",
+      "paging": "Listeler page (1'den), pageSize (varsayılan 25, en çok 100), sort (alan veya -alan) ve q (kısmi arama) alır; yanıt { items, page, pageSize, totalCount } biçimindedir. Zaman damgaları UTC ISO 8601, gün alanları YYYY-MM-DD, tutarlar sayı + para birimidir.",
+      "pagingExample": "Sayfalama",
+      "errors": "Hatalar ProblemDetails biçimindedir; istemci title yerine code alanına göre davranmalıdır. Eşzamanlılık çakışması 409 general.concurrency_conflict, hız sınırı 429 döner.",
+      "errorExample": "Hata gövdesi",
+      "versioning": "v1 sözleşmesi yalnızca eklemeyle büyür (yeni uç, yeni isteğe bağlı alan, yeni enum değeri); istemciler bilinmeyen alanı ve değeri yok saymalıdır. Kırıcı değişiklik /api/v2 ile gelir; kullanımdan kalkan uçlar Deprecation ve Sunset başlıklarıyla en az 6 ay (sürümler için 12 ay) önceden duyurulur."
+    },
+    "webhooks": {
+      "title": "Webhook rehberi",
+      "intro": "Bir olay olduğunda CRM, seçtiğiniz HTTPS adresine imzalı bir POST isteği gönderir. 2xx yanıt başarı sayılır; içerik kişisel veri taşımaz (yalnızca kimlikler, numaralar, durum ve tutarlar), ayrıntıyı API'den anahtarla çekin.",
+      "envelope": "Zarf",
+      "versionPolicy": "Zarftaki version tür başınadır. Bir türün alanları silinmez veya yeniden adlandırılmaz; yalnızca isteğe bağlı alan eklenir. Kırıcı değişiklik yeni tür adıyla gelir ve eski tür en az 6 ay paralel gönderilir.",
+      "headers": "İstek başlıkları",
+      "headerDescriptions": {
+        "contentType": "application/json; charset=utf-8",
+        "userAgent": "SenseCRM-Webhooks/1.0",
+        "eventId": "Olay kimliği (tüm denemelerde ve yeniden gönderimlerde aynı); tekilleştirme için kullanın",
+        "eventType": "Olay türü, örn. lead.created",
+        "deliveryId": "Teslimat kimliği",
+        "deliveryAttempt": "Deneme sayısı (1'den başlar)",
+        "signature": "İmza: t=<unix>,v1=<hex>[,v1=<hex>]"
+      },
+      "signatureTitle": "İmza doğrulama",
+      "signatureRule": "v1 = HMAC-SHA256(gizli anahtar, \"<t>.\" + ham gövde), küçük harfli onaltılık. Gizli anahtar dizgisi (whsec_ öneki dahil) UTF-8 olarak kullanılır. |şimdi - t| en çok {{seconds}} sn olmalı; v1 değerlerini sabit zamanlı karşılaştırın. Gizli anahtar döndürme süresince başlıkta iki v1 bulunur: herhangi biri eşleşirse kabul edin.",
+      "signatureExample": "Başlık örneği",
+      "verifyTabs": "Doğrulama örnekleri",
+      "verifyNamed": "{{lang}} doğrulama örneği",
+      "retryTitle": "Yeniden deneme ve tekilleştirme",
+      "retry": "Başarısız teslimat en çok {{attempts}} kez denenir (10 sn, 1 dk, 5 dk, 30 dk, 2 sa, 6 sa, 12 sa aralıklarla; yaklaşık 20 saat). Zaman aşımı {{timeout}} sn'dir. 408, 425, 429 ve 5xx yeniden denenir; diğer 4xx ve yönlendirmeler (3xx) denenmez. Sonuçlar {{days}} gün saklanır ve teslimat günlüğünden yeniden gönderilebilir.",
+      "dedupe": "En az bir kez teslimat vardır: aynı olay birden fazla gelebilir. X-Crm-Event-Id değerini en az 24 saat saklayıp tekrarları yok sayın; sıra garantisi yoktur.",
+      "unknownFields": "Bilinmeyen alanları ve enum değerlerini yok sayın.",
+      "network": "Adres yalnızca HTTPS olmalı ve genel bir alan adına çıkmalıdır: özel ağ adresleri ve IP adresleri engellenir, yönlendirmeler izlenmez.",
+      "fetchDetails": "Kayıt ayrıntısını, zarftaki kimliklerle API'den bir API anahtarı kullanarak çekin."
+    },
+    "events": {
+      "title": "Olay kataloğu",
+      "intro": "Aşağıdaki liste bu organizasyon için canlı olarak sunucudan gelir.",
+      "itemNamed": "{{type}} olayının ayrıntısı",
+      "deprecatedUntil": "Kaldırılma: {{date}}"
+    },
+    "openapi": {
+      "title": "OpenAPI belgesi",
+      "intro": "Planınıza göre süzülmüş OpenAPI belgesi yalnızca kimliği doğrulanmış yöneticiye sunulur; her işlemde gereken kapsam x-required-scope alanında yazılıdır.",
+      "download": "OpenAPI belgesini indir"
+    }
+  },
+  "plan": {
+    "webhooks": "Webhook",
+    "apiKeys": "API anahtarı",
+    "apiKeysDetail": "Yalnızca etkin (iptal edilmemiş ve süresi dolmamış) anahtarlar sayılır"
+  },
+  "audit": {
+    "viaApiKey": "API anahtarıyla"
+  },
+  "errors": {
+    "webhook": {
+      "url_invalid": "Webhook adresi kabul edilmedi. Yalnızca genel bir HTTPS alan adı kullanılabilir.",
+      "name_taken": "Bu adla bir webhook zaten var",
+      "delivery_unavailable": "Bu kurulumda webhook gönderimi kapalı",
+      "disabled": "Webhook pasif; önce etkinleştirin"
+    },
+    "delivery": {
+      "not_redeliverable": "Bu teslimat henüz tamamlanmadı; yeniden gönderilemez"
+    },
+    "api_key": {
+      "scope_not_allowed": "Bu kapsam bir API anahtarına verilemez: {{scope}}",
+      "name_taken": "Bu adla bir API anahtarı zaten var",
+      "revoked": "İptal edilmiş anahtar değiştirilemez",
+      "active": "Etkin anahtar silinemez; önce iptal edin",
+      "expired": "API anahtarının süresi dolmuş",
+      "owner_inactive": "Anahtarı oluşturan kullanıcı artık etkin değil",
+      "ip_not_allowed": "Bu IP adresinden anahtar kullanılamaz",
+      "not_allowed": "Bu uç API anahtarlarına kapalıdır"
+    },
+    "role": {
+      "permission_escalation": "Sahip olmadığınız bir izni anahtara veremezsiniz"
+    },
+    "general": {
+      "rate_limit_exceeded": "Çok fazla istek gönderildi. Biraz bekleyip tekrar deneyin."
+    }
+  }
+}

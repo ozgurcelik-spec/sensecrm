@@ -7,7 +7,8 @@
     "workflows": "Workflows",
     "commerce": "Commerce",
     "service": "Service",
-    "marketing": "Marketing"
+    "marketing": "Marketing",
+    "integrations": "Integrations"
   },
   "included": "Included",
   "notIncluded": "Not in plan",
@@ -22,7 +23,9 @@
     "title": "Limits and usage",
     "users": "Users",
     "records": "Records",
-    "recordsOf": "{{module}} records"
+    "recordsOf": "{{module}} records",
+    "webhooks": "webhooks",
+    "apiKeys": "API keys"
   },
   "usage": {
     "unlimited": "Unlimited",

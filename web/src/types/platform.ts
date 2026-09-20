@@ -5,7 +5,7 @@
  */
 
 /** Modules a plan can switch off (`identity`, `sales` and `activities` are core and always on). */
-export const GATED_MODULES = ["workflows", "commerce", "service", "marketing"] as const;
+export const GATED_MODULES = ["workflows", "commerce", "service", "marketing", "integrations"] as const;
 export type GatedModule = (typeof GATED_MODULES)[number];
 
 /** Modules that count records against `maxRecords.<module>`. */
@@ -130,7 +130,7 @@ export interface PlatformOrganizationDetail extends PlatformOrganization {
 }
 
 export interface PlatformOverLimit {
-  limit: "users" | "records" | "storage";
+  limit: "users" | "records" | "storage" | "webhooks" | "api_keys";
   module?: string;
   max: number;
   used: number;
@@ -233,12 +233,22 @@ export interface SubscriptionInfo {
   trialDaysLeft?: number;
   modules: Partial<Record<GatedModule, boolean>>;
   /** Only finite limits are present. */
-  limits: { maxUsers?: number; maxStorageMb?: number; maxRecords: Record<string, number> };
+  limits: {
+    maxUsers?: number;
+    maxStorageMb?: number;
+    /** M8B: only finite limits are present. */
+    maxWebhooks?: number;
+    maxApiKeys?: number;
+    maxRecords: Record<string, number>;
+  };
   usage: {
     asOf: string;
     users: number;
     pendingUsers: number;
     records: Record<string, number>;
+    /** M8B (live counts); absent on servers without the integrations module. */
+    webhooks?: number;
+    apiKeys?: number;
     /** M8C; absent on servers without the files module. */
     storageBytes?: number;
     fileCount?: number;

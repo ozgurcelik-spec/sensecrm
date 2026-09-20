@@ -19,6 +19,7 @@ export function permissionModule(permission: string): GatedModule | undefined {
   if (permission === "org.workflows.manage" || permission.startsWith("crm.approvals.")) {
     return "workflows";
   }
+  if (permission === "org.integrations.manage") return "integrations";
   return undefined;
 }
 

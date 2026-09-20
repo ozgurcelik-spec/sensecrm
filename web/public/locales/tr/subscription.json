@@ -7,7 +7,8 @@
     "workflows": "İş akışları",
     "commerce": "Ticaret",
     "service": "Servis",
-    "marketing": "Pazarlama"
+    "marketing": "Pazarlama",
+    "integrations": "Entegrasyonlar"
   },
   "included": "Dahil",
   "notIncluded": "Plana dahil değil",
@@ -22,7 +23,9 @@
     "title": "Limitler ve kullanım",
     "users": "Kullanıcı",
     "records": "Kayıt",
-    "recordsOf": "{{module}} kayıtları"
+    "recordsOf": "{{module}} kayıtları",
+    "webhooks": "webhook",
+    "apiKeys": "API anahtarı"
   },
   "usage": {
     "unlimited": "Sınırsız",

@@ -64,6 +64,9 @@
       },
       "notifications": {
         "manage": "Manage notification settings and the delivery log"
+      },
+      "integrations": {
+        "manage": "Manage webhooks and API keys"
       }
     },
     "crm": {

@@ -1,0 +1,421 @@
+{
+  "title": "Integrations",
+  "description": "Outgoing webhooks, the delivery log, API keys and the developer guide.",
+  "readOnly": "The organization is read-only: lists and the delivery log can be viewed, changes are refused by the server.",
+  "planLink": "Plan and usage",
+  "tabs": {
+    "label": "Integration sections",
+    "webhooks": "Webhooks",
+    "deliveries": "Delivery log",
+    "apiKeys": "API keys",
+    "developer": "Developer"
+  },
+  "egress": {
+    "disabledTitle": "Webhook delivery is switched off on this installation",
+    "disabledBody": "You can prepare subscriptions now, but test pings and resending do not work, and events produced while it is off are not delivered later. Contact your system administrator to switch it on.",
+    "restrictedHosts": "On this installation webhooks can only be sent to host names the administrator has allowed."
+  },
+  "health": {
+    "healthy": "Healthy",
+    "degraded": "Degraded",
+    "failing": "Failing",
+    "disabled": "Disabled"
+  },
+  "events": {
+    "groups": {
+      "sales": "Sales",
+      "commerce": "Commerce",
+      "service": "Service"
+    },
+    "unavailable": "Your plan does not include this module",
+    "deprecated": "Being retired",
+    "sample": "Sample envelope",
+    "showSample": "Sample envelope",
+    "hideSample": "Hide",
+    "sampleNamed": "Sample envelope for {{type}}",
+    "lead": {
+      "created": "Lead created",
+      "converted": "Lead converted"
+    },
+    "account": {
+      "created": "Account created"
+    },
+    "contact": {
+      "created": "Contact created"
+    },
+    "deal": {
+      "stage_changed": "Deal stage changed",
+      "won": "Deal won",
+      "lost": "Deal lost"
+    },
+    "quote": {
+      "accepted": "Quote accepted"
+    },
+    "order": {
+      "created": "Order created"
+    },
+    "case": {
+      "created": "Case created",
+      "resolved": "Case resolved"
+    },
+    "ping": "Test ping"
+  },
+  "reveal": {
+    "warning": "This value is shown only now and can never be displayed again. Store it somewhere safe.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "saved": "I have saved it",
+    "done": "Done"
+  },
+  "code": {
+    "copyNamed": "Copy {{name}}"
+  },
+  "webhooks": {
+    "create": "New webhook",
+    "createTitle": "New webhook",
+    "editTitle": "Edit webhook",
+    "created": "Webhook created",
+    "updated": "Webhook updated",
+    "deleted": "{{name}} deleted",
+    "empty": "No webhooks yet",
+    "searchPlaceholder": "Search by name or host",
+    "filters": {
+      "enabled": "Status",
+      "enabledOn": "Enabled",
+      "enabledOff": "Disabled",
+      "eventType": "Event type"
+    },
+    "columns": {
+      "name": "Name",
+      "events": "Events",
+      "health": "Health",
+      "lastSuccess": "Last success",
+      "lastFailure": "Last failure",
+      "enabled": "Enabled"
+    },
+    "enabledNamed": "{{name}} enabled",
+    "actionsNamed": "Actions for {{name}}",
+    "rotate": "Rotate secret",
+    "showDeliveries": "Show deliveries",
+    "autoDisabled": "Disabled automatically after repeated failures",
+    "reenable": "Re-enable",
+    "limitReached": "Plan limit reached: webhooks {{used}}/{{max}}",
+    "limitTooltip": "The webhook limit of your plan is used up",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteWarning": "The subscription and its whole delivery log are deleted. This cannot be undone.",
+    "deleteType": "Type the webhook name to confirm: {{name}}",
+    "deleteTypeLabel": "Webhook name",
+    "form": {
+      "name": "Name",
+      "url": "Destination URL (HTTPS)",
+      "urlHint": "A public HTTPS address only. IP addresses, localhost and internal names are refused; redirects are not followed.",
+      "eventTypes": "Event types",
+      "eventTypesHint": "A notification is sent to the URL when one of these happens.",
+      "description": "Description",
+      "enabled": "Enabled",
+      "enabledHint": "A disabled subscription receives no new events.",
+      "errors": {
+        "nameRequired": "Name is required",
+        "nameMax": "Name can be at most 100 characters",
+        "eventTypesRequired": "Select at least one event type",
+        "descriptionMax": "Description can be at most 500 characters"
+      },
+      "urlErrors": {
+        "required": "URL is required",
+        "invalid": "Enter a valid URL",
+        "scheme": "The URL must start with https://",
+        "too_long": "The URL can be at most 2048 characters",
+        "userinfo": "The URL cannot contain a user name or password",
+        "ip_literal": "IP addresses cannot be used; enter a domain name",
+        "host": "This host name cannot be used (localhost, .local, .internal, .lan and single-label names are refused)",
+        "port": "This port cannot be used (allowed: 443, 8443)",
+        "not_allow_listed": "This domain is not among the domains allowed by the administrator"
+      }
+    },
+    "reveal": {
+      "createdTitle": "Webhook secret",
+      "rotatedTitle": "New secret",
+      "createdIntro": "The secret for {{name}} was created. The receiver must verify the signature of incoming requests with it.",
+      "rotatedIntro": "The new secret for {{name}} is valid immediately. Update the receiver.",
+      "label": "Secret",
+      "graceNote": "The old secret stays valid until {{date}}; two signatures are sent until then."
+    }
+  },
+  "rotate": {
+    "title": "{{name}}: rotate secret",
+    "explain": "The new secret is valid immediately. The old secret stays valid for the period you choose (two signatures are sent); update the receiver with the new secret in that time.",
+    "graceHours": "Validity of the old secret (hours)",
+    "graceHint": "{{min}} - {{max}} hours; 0 invalidates the old secret at once.",
+    "graceInvalid": "Enter a whole number between {{min}} and {{max}}",
+    "submit": "Rotate"
+  },
+  "test": {
+    "button": "Send test ping for {{name}}",
+    "tooltip": "Send test ping",
+    "unavailable": "Webhook delivery is switched off on this installation",
+    "succeeded": "{{name}}: test ping delivered (HTTP {{status}})",
+    "failedTitle": "Test ping failed",
+    "failed": "{{name}}: {{reason}}",
+    "stillQueued": "{{name}}: the test ping has not been delivered yet; see the result in the delivery log."
+  },
+  "deliveries": {
+    "statuses": {
+      "pending": "Pending",
+      "delivering": "Delivering",
+      "succeeded": "Succeeded",
+      "failed": "Failed"
+    },
+    "kinds": {
+      "event": "Event",
+      "ping": "Test",
+      "redelivery": "Redelivery"
+    },
+    "failureReasons": {
+      "timeout": "Timed out",
+      "connection_error": "Connection error",
+      "http_error": "Receiver returned an error",
+      "redirect": "Redirect (not followed)",
+      "blocked_destination": "Destination blocked",
+      "tls_error": "TLS / certificate error",
+      "dns_error": "Host name could not be resolved",
+      "retries_exhausted": "Retries exhausted",
+      "expired": "Expired",
+      "payload_too_large": "Payload too large"
+    },
+    "columns": {
+      "createdAt": "Time",
+      "event": "Event",
+      "subscription": "Subscription",
+      "status": "Status",
+      "attempts": "Attempts",
+      "http": "HTTP",
+      "duration": "Duration",
+      "nextAttempt": "Next attempt"
+    },
+    "filters": {
+      "subscription": "Subscription",
+      "eventType": "Event type",
+      "kind": "Kind",
+      "eventId": "Event id",
+      "eventIdInvalid": "Enter a valid id",
+      "from": "From",
+      "to": "To",
+      "rangeInvalid": "The range can be at most {{days}} days",
+      "status": "Status"
+    },
+    "empty": "No deliveries",
+    "open": "Open details",
+    "openNamed": "Details of the {{event}} delivery",
+    "redeliver": "Resend",
+    "redeliverNamed": "Resend the {{event}} delivery",
+    "redeliverTitle": "Resend this delivery?",
+    "redeliverMessage": "The same event will be sent again, signed with the current secret. The receiver must de-duplicate events by id.",
+    "redelivered": "Redelivery queued",
+    "detail": {
+      "title": "Delivery details",
+      "failure": "Delivery failed",
+      "host": "Host",
+      "eventId": "Event id",
+      "lastAttemptAt": "Last attempt",
+      "completedAt": "Completed",
+      "payload": "Envelope sent",
+      "headers": "Headers sent",
+      "attemptLog": "Attempts",
+      "noAttempts": "No attempt yet",
+      "attemptNo": "Attempt {{n}}",
+      "responseSnippet": "Response excerpt",
+      "truncated": "Response truncated"
+    }
+  },
+  "apiKeys": {
+    "intro": "An API key calls the /api/v1 endpoints with the permissions of the user who created it (limited to the chosen scopes). Administration endpoints are closed to keys.",
+    "statuses": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "create": "New API key",
+    "createTitle": "New API key",
+    "editTitle": "Edit API key",
+    "created": "API key created",
+    "updated": "API key updated",
+    "revoked": "{{name}} revoked",
+    "deleted": "{{name}} deleted",
+    "empty": "No API keys yet",
+    "searchPlaceholder": "Search by name",
+    "filters": {
+      "status": "Status"
+    },
+    "columns": {
+      "name": "Name",
+      "scopes": "Scopes",
+      "expiresAt": "Expires",
+      "lastUsed": "Last used",
+      "status": "Status"
+    },
+    "scopeCount": "Scopes: {{count}}",
+    "neverUsed": "Never used",
+    "actionsNamed": "Actions for {{name}}",
+    "revoke": "Revoke",
+    "revokeTitle": "Revoke {{name}}?",
+    "revokeMessage": "The key stops working at once and integrations that use it break. This cannot be undone.",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteMessage": "Only revoked or expired keys can be deleted.",
+    "limitReached": "Plan limit reached: API keys {{used}}/{{max}}",
+    "limitTooltip": "The API key limit of your plan is used up",
+    "scopeGroups": {
+      "leads": "Leads",
+      "contacts": "Contacts",
+      "accounts": "Accounts",
+      "deals": "Deals",
+      "activities": "Activities",
+      "reports": "Reports",
+      "campaigns": "Campaigns",
+      "products": "Products",
+      "quotes": "Quotes",
+      "orders": "Orders",
+      "cases": "Cases"
+    },
+    "form": {
+      "name": "Name",
+      "description": "Description",
+      "scopes": "Scopes",
+      "scopesHint": "Only CRM permissions can be chosen, and only permissions you hold can be given.",
+      "presetRead": "Read only",
+      "presetAll": "All",
+      "presetNone": "Clear",
+      "groupAll": "{{group}}: select all",
+      "notOwned": "You do not hold this permission, so it cannot be given",
+      "expiry": "Validity",
+      "expiryHint": "There are no keys without an expiry; at most {{days}} days.",
+      "days": "{{count}} days",
+      "customDate": "Custom date",
+      "cidrs": "IP allow-list (optional)",
+      "cidrsHint": "One CIDR per line, for example 203.0.113.0/24. Empty means usable from any address.",
+      "cidrsOpen": "No IP restriction: the key can be used from any address.",
+      "scopeFixed": "Scopes and validity cannot be changed later; create a new key if needed.",
+      "errors": {
+        "nameRequired": "Name is required",
+        "nameMax": "Name can be at most {{max}} characters",
+        "descriptionMax": "Description can be at most {{max}} characters",
+        "scopesRequired": "Select at least one scope",
+        "expiryRequired": "Pick an expiry date",
+        "expiryPast": "The expiry date must be in the future",
+        "expiryMax": "The expiry date can be at most {{days}} days away"
+      },
+      "cidrErrors": {
+        "tooMany": "At most {{max}} entries can be given",
+        "invalid": "Invalid CIDR: {{value}} (for example 203.0.113.0/24)",
+        "any": "{{value}} covers every address; enter a narrower range"
+      }
+    },
+    "reveal": {
+      "title": "Your API key",
+      "intro": "The key {{name}} was created. Use it with the Authorization: Bearer header.",
+      "label": "API key",
+      "curl": "Example call (curl)"
+    },
+    "usage": {
+      "open": "Usage",
+      "title": "{{name}}: usage",
+      "range": "Range",
+      "lastDays": "Last {{count}} days",
+      "empty": "No usage in this range",
+      "requests": "Requests",
+      "errors": "Errors (4xx-5xx)",
+      "throttled": "Throttled (429)"
+    }
+  },
+  "guide": {
+    "api": {
+      "title": "Calling the API with a key",
+      "intro": "Base URL: {{base}}. Send the key as a Bearer token on every request; the X-Api-Key header is not supported.",
+      "curl": "First call",
+      "scopes": "Scopes are CRM permissions (crm.*). Administration permissions (org.*) and approval decisions cannot be given; a key can never do more than its creator.",
+      "lifetime": "Every key has an expiry date (at most {{max}} days); a revoked key stops at once.",
+      "rateLimit": "{{limit}} requests per minute per key; beyond that the API answers 429 with a Retry-After header.",
+      "actAsCreator": "A key acts on behalf of the user who created it: if the user is deactivated or loses permissions, the key narrows with them."
+    },
+    "conventions": {
+      "title": "Paging, filters and errors",
+      "paging": "Lists take page (from 1), pageSize (default 25, at most 100), sort (field or -field) and q (partial search); the answer is { items, page, pageSize, totalCount }. Timestamps are UTC ISO 8601, day fields are YYYY-MM-DD, amounts are numbers plus a currency.",
+      "pagingExample": "Paging",
+      "errors": "Errors are ProblemDetails; clients should act on the code field rather than the title. A concurrency conflict is 409 general.concurrency_conflict, the rate limit is 429.",
+      "errorExample": "Error body",
+      "versioning": "The v1 contract only grows by addition (new endpoint, new optional field, new enum value); clients must ignore unknown fields and values. Breaking changes arrive as /api/v2; deprecated endpoints are announced with Deprecation and Sunset headers at least 6 months ahead (12 months for versions)."
+    },
+    "webhooks": {
+      "title": "Webhook guide",
+      "intro": "When an event happens the CRM sends a signed POST request to the HTTPS address you chose. A 2xx answer counts as success; the content carries no personal data (only ids, numbers, status and amounts), so fetch details from the API with a key.",
+      "envelope": "Envelope",
+      "versionPolicy": "The version in the envelope is per type. Fields of a type are never removed or renamed, only optional fields are added. A breaking change arrives as a new type name and the old type is delivered in parallel for at least 6 months.",
+      "headers": "Request headers",
+      "headerDescriptions": {
+        "contentType": "application/json; charset=utf-8",
+        "userAgent": "SenseCRM-Webhooks/1.0",
+        "eventId": "Event id (the same for every attempt and resend); use it to de-duplicate",
+        "eventType": "Event type, for example lead.created",
+        "deliveryId": "Delivery id",
+        "deliveryAttempt": "Attempt number (starting at 1)",
+        "signature": "Signature: t=<unix>,v1=<hex>[,v1=<hex>]"
+      },
+      "signatureTitle": "Verifying the signature",
+      "signatureRule": "v1 = HMAC-SHA256(secret, \"<t>.\" + raw body), lowercase hex. The secret string (including the whsec_ prefix) is used as UTF-8. |now - t| must be at most {{seconds}} s; compare the v1 values in constant time. While a secret rotation is in its grace period the header holds two v1 values: accept the request if either matches.",
+      "signatureExample": "Header example",
+      "verifyTabs": "Verification examples",
+      "verifyNamed": "{{lang}} verification example",
+      "retryTitle": "Retries and de-duplication",
+      "retry": "A failed delivery is tried at most {{attempts}} times (after 10 s, 1 min, 5 min, 30 min, 2 h, 6 h, 12 h; about 20 hours). The timeout is {{timeout}} s. 408, 425, 429 and 5xx are retried; other 4xx and redirects (3xx) are not. Results are kept for {{days}} days and can be resent from the delivery log.",
+      "dedupe": "Delivery is at least once: the same event can arrive more than once. Store X-Crm-Event-Id for at least 24 hours and ignore repeats; there is no ordering guarantee.",
+      "unknownFields": "Ignore unknown fields and enum values.",
+      "network": "The address must be HTTPS and reach a public domain name: private network addresses and IP addresses are blocked, redirects are not followed.",
+      "fetchDetails": "Fetch the record details from the API with an API key, using the ids in the envelope."
+    },
+    "events": {
+      "title": "Event catalog",
+      "intro": "The list below comes live from the server for this organization.",
+      "itemNamed": "Details of the {{type}} event",
+      "deprecatedUntil": "Retired on {{date}}"
+    },
+    "openapi": {
+      "title": "OpenAPI document",
+      "intro": "The OpenAPI document, filtered by your plan, is only served to an authenticated administrator; the scope each operation needs is written in x-required-scope.",
+      "download": "Download OpenAPI document"
+    }
+  },
+  "plan": {
+    "webhooks": "Webhooks",
+    "apiKeys": "API keys",
+    "apiKeysDetail": "Only active keys (not revoked and not expired) are counted"
+  },
+  "audit": {
+    "viaApiKey": "via API key"
+  },
+  "errors": {
+    "webhook": {
+      "url_invalid": "The webhook URL was refused. Only a public HTTPS domain name can be used.",
+      "name_taken": "A webhook with this name already exists",
+      "delivery_unavailable": "Webhook delivery is switched off on this installation",
+      "disabled": "The webhook is disabled; enable it first"
+    },
+    "delivery": {
+      "not_redeliverable": "This delivery is not finished yet and cannot be resent"
+    },
+    "api_key": {
+      "scope_not_allowed": "This scope cannot be given to an API key: {{scope}}",
+      "name_taken": "An API key with this name already exists",
+      "revoked": "A revoked key cannot be changed",
+      "active": "An active key cannot be deleted; revoke it first",
+      "expired": "The API key has expired",
+      "owner_inactive": "The user who created the key is no longer active",
+      "ip_not_allowed": "The key cannot be used from this IP address",
+      "not_allowed": "This endpoint is closed to API keys"
+    },
+    "role": {
+      "permission_escalation": "You cannot give a key a permission you do not hold"
+    },
+    "general": {
+      "rate_limit_exceeded": "Too many requests. Wait a moment and try again."
+    }
+  }
+}
