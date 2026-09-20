@@ -1,0 +1,86 @@
+{
+  "title": "Plan & usage",
+  "description": "Your organization's plan, trial period and usage limits.",
+  "modules": {
+    "sales": "Sales",
+    "activities": "Activities",
+    "workflows": "Workflows",
+    "commerce": "Commerce",
+    "service": "Service",
+    "marketing": "Marketing"
+  },
+  "included": "Included",
+  "notIncluded": "Not in plan",
+  "modulesTitle": "Modules",
+  "upgradeHint": "To upgrade your plan, contact the platform administrator.",
+  "plan": {
+    "current": "Current plan",
+    "trialEnds": "Trial ends: {{date}}",
+    "daysLeft": "{{count}} day(s) left"
+  },
+  "limits": {
+    "title": "Limits and usage",
+    "users": "Users",
+    "records": "Records",
+    "recordsOf": "{{module}} records"
+  },
+  "usage": {
+    "unlimited": "Unlimited",
+    "usersDetail": "{{active}} active + {{pending}} pending invitations",
+    "asOf": "Counted at: {{date}}"
+  },
+  "overLimit": {
+    "title": "Plan limit exceeded",
+    "hint": "Your current usage is above your plan's limit. Nothing is deleted, but you cannot add new records until you are back under the limit."
+  },
+  "reasons": {
+    "suspended": "the account is suspended",
+    "trial_expired": "the trial period has ended",
+    "pending_deletion": "the account is scheduled for deletion",
+    "deleted": "the account was deleted"
+  },
+  "errors": {
+    "tenant": {
+      "suspended": "Action not possible: {{reasonText}}. Records are read-only."
+    },
+    "plan": {
+      "module_disabled": "This module is not included in your plan: {{moduleLabel}}",
+      "limit_exceeded": "Plan limit reached: {{label}} {{used}}/{{max}}"
+    },
+    "planLink": "Plan & usage"
+  },
+  "banner": {
+    "trialEnding": "Your trial ends in {{count}} day(s).",
+    "trialLastDay": "Your trial ends today.",
+    "trialExpired": "The trial period has ended; records are read-only.",
+    "suspended": "Your account is suspended; records are read-only.",
+    "viewPlan": "Plan & usage"
+  },
+  "blocked": {
+    "title": "Access to {{name}} is closed",
+    "reason": {
+      "suspended": "This organization is suspended. You cannot access its records right now.",
+      "pending_deletion": "A deletion request was received for this organization. Access is closed.",
+      "deleted": "This organization was deleted.",
+      "trial_expired": "The trial period has ended and access is closed."
+    },
+    "contact": "Contact the platform administrator for details. If you belong to another organization, switch to it from the top bar.",
+    "recheck": "Check status again"
+  },
+  "moduleDisabled": {
+    "title": "This module is not included in your plan",
+    "description": "Your plan must include this module to use this page. To upgrade your plan, contact the platform administrator.",
+    "viewPlan": "Plan & usage"
+  },
+  "onboarding": {
+    "title": "Getting started",
+    "progress": "{{done}} / {{total}} steps completed",
+    "dismiss": "Dismiss",
+    "steps": {
+      "profile": "Complete the organization details",
+      "invite_user": "Invite your first user",
+      "create_lead": "Create your first lead",
+      "create_workflow_rule": "Create your first workflow rule"
+    }
+  }
+}

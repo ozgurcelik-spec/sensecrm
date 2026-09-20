@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
 import i18n from "@/i18n";
+import { problemArgs } from "@/lib/entitlement-errors";
 
 /** Backend ProblemDetails: `code` is a stable key translated on the client (`common:errors.<code>`). */
 export interface ApiProblem {
@@ -8,6 +9,8 @@ export interface ApiProblem {
   status?: number;
   code?: string;
   errors?: Record<string, string[]>;
+  /** Named values of the message (`plan.limit_exceeded`: limit, module, max, used; `tenant.suspended`: reason). */
+  args?: Record<string, unknown>;
 }
 
 export function getApiErrorStatus(error: unknown): number | undefined {
@@ -30,6 +33,10 @@ export function getApiErrorMessage(error: unknown): string {
     // C-SEC codes live in the `security` namespace (`security:errors.<code>`) to keep common.json stable.
     for (const key of [`common:errors.${problem.code}`, `security:errors.${problem.code}`]) {
       if (i18n.exists(key)) return i18n.t(key);
+    }
+    // M7 plan / tenant-state / platform codes carry `args` (limit, used, reason, ...) in their texts.
+    for (const key of [`subscription:errors.${problem.code}`, `platform:errors.${problem.code}`]) {
+      if (i18n.exists(key)) return i18n.t(key, problemArgs(problem));
     }
   }
   if (problem?.title) return problem.title;

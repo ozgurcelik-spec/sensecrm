@@ -1,10 +1,13 @@
 import { lazy, useEffect, type ReactNode } from "react";
-import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router";
+import { BrowserRouter as Router, Navigate, Outlet, Route, Routes } from "react-router";
 import { useTranslation } from "react-i18next";
 import NoAccess from "@/components/no-access";
 import { PermissionGuard } from "@/components/permission-guard";
 import ProtectedRoute, { CHANGE_PASSWORD_PATH } from "@/components/protected-route";
+import { PlatformGuard } from "@/components/platform/platform-guard";
 import RouteBoundary from "@/components/route-boundary";
+import { ModuleGuard } from "@/components/subscription/module-guard";
+import { permissionModule } from "@/lib/entitlements";
 import AppLayout from "@/layouts/app-layout";
 import LoginPage from "@/pages/auth/login";
 import NotFoundPage from "@/pages/not-found";
@@ -46,13 +49,21 @@ const ApprovalsPage = lazy(() => import("@/pages/approvals"));
 const CasesPage = lazy(() => import("@/pages/crm/cases"));
 const CaseDetailPage = lazy(() => import("@/pages/crm/case-detail"));
 const SlaSettingsPage = lazy(() => import("@/pages/settings/sla"));
+const PlanUsagePage = lazy(() => import("@/pages/settings/plan-usage"));
+const PlatformOrganizationsPage = lazy(() => import("@/pages/platform/organizations"));
+const PlatformOrganizationDetailPage = lazy(() => import("@/pages/platform/organization-detail"));
+const PlatformPlansPage = lazy(() => import("@/pages/platform/plans"));
+const PlatformAuditPage = lazy(() => import("@/pages/platform/platform-audit"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
-  return (
+  const guarded = (
     <PermissionGuard permission={permission} fallback={<NoAccess />}>
       {children}
     </PermissionGuard>
   );
+  // A module the plan switches off answers with the "module disabled" page before any permission check.
+  const module = permissionModule(permission);
+  return module ? <ModuleGuard module={module}>{guarded}</ModuleGuard> : guarded;
 }
 
 /** Keeps the UI language in line with the signed-in user's saved locale. */
@@ -278,7 +289,14 @@ export default function App() {
               }
             />
             {/* "mine=true" needs no permission: anyone can open the page, deciding needs crm.approvals.decide. */}
-            <Route path="approvals" element={<ApprovalsPage />} />
+            <Route
+              path="approvals"
+              element={
+                <ModuleGuard module="workflows">
+                  <ApprovalsPage />
+                </ModuleGuard>
+              }
+            />
             <Route
               path="reports"
               element={
@@ -325,11 +343,36 @@ export default function App() {
             <Route
               path="settings/sla"
               element={
+                <ModuleGuard module="service">
+                  <RequirePermission permission={PERMISSIONS.orgSettingsManage}>
+                    <SlaSettingsPage />
+                  </RequirePermission>
+                </ModuleGuard>
+              }
+            />
+            <Route
+              path="settings/plan"
+              element={
                 <RequirePermission permission={PERMISSIONS.orgSettingsManage}>
-                  <SlaSettingsPage />
+                  <PlanUsagePage />
                 </RequirePermission>
               }
             />
+            {/* Platform console: platform admins only (isPlatformAdmin), whatever tenant permissions the user holds. */}
+            <Route
+              path="platform"
+              element={
+                <PlatformGuard>
+                  <Outlet />
+                </PlatformGuard>
+              }
+            >
+              <Route index element={<Navigate to="organizations" replace />} />
+              <Route path="organizations" element={<PlatformOrganizationsPage />} />
+              <Route path="organizations/:tenantId" element={<PlatformOrganizationDetailPage />} />
+              <Route path="plans" element={<PlatformPlansPage />} />
+              <Route path="audit" element={<PlatformAuditPage />} />
+            </Route>
             <Route
               path="settings/audit"
               element={

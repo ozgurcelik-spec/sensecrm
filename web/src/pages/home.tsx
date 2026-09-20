@@ -17,6 +17,7 @@ import { Building2, Handshake, Target, Wallet } from "lucide-react";
 import { CampaignSummaryWidget } from "@/components/dashboard/campaign-summary-widget";
 import { MyWorkWidget } from "@/components/dashboard/my-work-widget";
 import { HomeCasesWidget } from "@/components/service/home-cases-widget";
+import { OnboardingCard } from "@/components/subscription/onboarding-card";
 import { CRM_MODULE_ITEMS, SETTINGS_ITEMS } from "@/config/navigation";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
 import { useOpenDealsSummary, useOpenLeadsCount } from "@/hooks/use-home-stats";
@@ -143,6 +144,8 @@ export default function HomePage() {
         <Title order={2}>{t("home:welcome", { name: me.user.displayName })}</Title>
         <Text c="dimmed">{t("home:subtitle", { org: org.name, role: me.role.name })}</Text>
       </Stack>
+
+      <OnboardingCard />
 
       <SalesSummary />
 

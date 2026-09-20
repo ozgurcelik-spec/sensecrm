@@ -21,5 +21,10 @@
   "quotes": "Teklifler",
   "orders": "Siparişler",
   "cases": "Talepler",
-  "sla": "SLA politikaları"
+  "sla": "SLA politikaları",
+  "planUsage": "Plan ve kullanım",
+  "platform": "Platform",
+  "platformOrganizations": "Organizasyonlar",
+  "platformPlans": "Planlar",
+  "platformAudit": "Platform denetimi"
 }

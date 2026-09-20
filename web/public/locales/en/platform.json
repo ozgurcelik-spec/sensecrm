@@ -1,0 +1,281 @@
+{
+  "status": {
+    "trial": "Trial",
+    "active": "Active",
+    "trial_expired": "Trial ended",
+    "suspended": "Suspended",
+    "pending_deletion": "Pending deletion",
+    "deleted": "Deleted"
+  },
+  "accessLevel": {
+    "full": "Full access",
+    "readOnly": "Read-only",
+    "none": "Access closed"
+  },
+  "sources": {
+    "signup": "Sign-up",
+    "platform": "Platform",
+    "bootstrap": "Bootstrap",
+    "backfill": "Backfilled",
+    "lazy": "Automatic"
+  },
+  "system": {
+    "badge": "System",
+    "protected": "This is the platform's operating organization; it cannot be suspended, deleted or re-planned."
+  },
+  "usersWithPending": "{{active}} (+{{pending}} pending)",
+  "columns": {
+    "name": "Organization",
+    "plan": "Plan",
+    "status": "Status",
+    "trialEnds": "Trial ends",
+    "users": "Users",
+    "records": "Records",
+    "source": "Source",
+    "createdAt": "Created"
+  },
+  "filters": {
+    "status": "Status",
+    "plan": "Plan",
+    "source": "Source"
+  },
+  "organizations": {
+    "title": "Organizations",
+    "description": "Every organization on the platform with its plan and usage.",
+    "new": "Create organization",
+    "export": "Export usage",
+    "search": "Search name or slug",
+    "empty": "No organizations found"
+  },
+  "create": {
+    "title": "Create organization",
+    "organizationName": "Organization name",
+    "adminDisplayName": "Administrator name",
+    "adminEmail": "Administrator e-mail",
+    "locale": "Language",
+    "plan": "Plan",
+    "planDefault": "Default plan",
+    "trialEndsOn": "Trial end date",
+    "trialHint": "If left empty, the plan's default applies.",
+    "passwordHint": "A one-time password is generated for a new account and shown only once.",
+    "created": "Organization created",
+    "pendingInvitation": "{{email}} already belongs to an account: the administrator invitation is waiting for the account owner to accept."
+  },
+  "actions": {
+    "editPlan": "Edit plan / trial",
+    "suspend": "Suspend",
+    "reactivate": "Reactivate",
+    "requestDeletion": "Deletion request",
+    "cancelDeletion": "Cancel deletion request"
+  },
+  "tabs": {
+    "summary": "Summary",
+    "usage": "Usage",
+    "audit": "Audit",
+    "deletion": "Deletion"
+  },
+  "info": {
+    "title": "Organization",
+    "plan": "Plan",
+    "status": "Status",
+    "access": "Access",
+    "trialEnds": "Trial ends",
+    "source": "Source",
+    "createdAt": "Created",
+    "tenantId": "ID"
+  },
+  "summary": {
+    "override": "Override",
+    "unlimited": "Unlimited",
+    "suspendedTitle": "Organization is suspended",
+    "planChanged": "plan changed: {{date}}",
+    "trialEnds": "Trial ends",
+    "maxUsers": "User limit",
+    "latestUsage": "Latest usage",
+    "snapshotDay": "Snapshot day: {{day}}",
+    "noUsage": "No usage snapshot yet."
+  },
+  "subscription": {
+    "title": "Plan and trial",
+    "plan": "Plan",
+    "trialEndsOn": "Trial end day",
+    "trialHint": "Valid through this day. Empty = no trial.",
+    "removeTrial": "Remove trial",
+    "overrides": "Tenant specific overrides",
+    "overridesHint": "An override replaces the plan value. Fields set to \"Plan value\" follow the plan.",
+    "maxUsers": "User limit",
+    "maxRecordsOf": "{{module}} record limit",
+    "modules": "Modules",
+    "moduleOf": "{{module}} module",
+    "modePlan": "Plan value",
+    "modeUnlimited": "Unlimited",
+    "modeCustom": "Custom",
+    "limitValue": "Value",
+    "limitValueOf": "{{limit}} value",
+    "limitInvalid": "A whole number, 0 or more",
+    "planValue": "Plan: {{value}}",
+    "unlimited": "Unlimited",
+    "modulePlan": "Plan value",
+    "moduleOn": "On",
+    "moduleOff": "Off",
+    "saved": "Plan saved",
+    "overLimitTitle": "Usage is above the new limit",
+    "overLimitHint": "The plan changed; nothing was deleted. New records cannot be added until the excess is resolved.",
+    "dismiss": "Dismiss"
+  },
+  "suspend": {
+    "title": "Suspend organization",
+    "intro": "{{name}} will be suspended. The reason is written to the platform audit.",
+    "reason": "Reason",
+    "reasonRequired": "A reason is required",
+    "mode": "Suspension mode",
+    "readOnly": "Read-only",
+    "readOnlyHint": "Users can see records but cannot change them.",
+    "blocked": "Full block",
+    "blockedHint": "No user can access the organization.",
+    "modes": {
+      "readOnly": "Read-only suspension",
+      "blocked": "Full block"
+    },
+    "confirm": "Suspend",
+    "done": "{{name}} was suspended"
+  },
+  "reactivate": {
+    "title": "Reactivate organization",
+    "message": "Reactivate {{name}}? If the trial has ended the status stays \"Trial ended\"; fix the plan separately.",
+    "done": "Organization reactivated"
+  },
+  "deletion": {
+    "title": "Deletion request",
+    "warning": "This starts a PERMANENT DESTRUCTION: after the retention period ({{days}} days) all of the organization's data is erased irreversibly. All users lose access immediately. It can be cancelled during the retention period.",
+    "reason": "Reason",
+    "retentionDays": "Retention period (days)",
+    "retentionHint": "Between {{min}} and {{max}} days.",
+    "retentionInvalid": "Enter a whole number between {{min}} and {{max}}",
+    "confirmLabel": "Type the organization name to confirm: {{name}}",
+    "confirmHint": "The name must match exactly.",
+    "confirm": "Start deletion request",
+    "done": "Deletion request received; scheduled destruction: {{date}}",
+    "cancelled": "Deletion request cancelled",
+    "cancelTitle": "Cancel deletion request",
+    "cancelMessage": "Cancel the deletion request for {{name}} and return the organization to its previous state?",
+    "erased": "This organization's data was permanently erased.",
+    "failedTitle": "Destruction could not be completed",
+    "attempts": "Attempts: {{count}}",
+    "retentionSummary": "Retention period {{days}} days; scheduled destruction: {{date}}",
+    "details": "Request details",
+    "requestedAt": "Requested at",
+    "requestedBy": "Requested by",
+    "reasonLabel": "Reason",
+    "scheduledFor": "Scheduled destruction",
+    "cancelledAt": "Cancelled at",
+    "completedAt": "Completed at",
+    "attemptsLabel": "Attempts",
+    "status": {
+      "scheduled": "Scheduled",
+      "cancelled": "Cancelled",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "usage": {
+    "range": "Range",
+    "days": "{{count}} days",
+    "metric": "Metric",
+    "view": "View",
+    "chart": "Chart",
+    "table": "Table",
+    "refresh": "Refresh now",
+    "refreshed": "Today's usage refreshed",
+    "empty": "No usage snapshots in this range.",
+    "activeUsers": "Active users",
+    "pendingUsers": "Pending invitations",
+    "day": "Day",
+    "total": "Total records",
+    "metrics": {
+      "accounts": "Accounts",
+      "contacts": "Contacts",
+      "leads": "Leads",
+      "deals": "Deals",
+      "activities": "Activities",
+      "workflow_rules": "Rules",
+      "products": "Products",
+      "quotes": "Quotes",
+      "orders": "Orders",
+      "cases": "Cases",
+      "campaigns": "Campaigns"
+    }
+  },
+  "plans": {
+    "title": "Plans",
+    "description": "Plan catalog (read-only).",
+    "configHint": "Plans are managed through configuration and cannot be changed from this screen.",
+    "unlimited": "Unlimited",
+    "usersLimit": "Users",
+    "inactive": "Inactive",
+    "empty": "No plans found",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "trialDays": "Trial (days)",
+      "limits": "Limits",
+      "modules": "Modules",
+      "assigned": "Assigned"
+    }
+  },
+  "audit": {
+    "title": "Platform audit",
+    "description": "Actions performed by platform administrators.",
+    "filters": {
+      "action": "Action",
+      "tenant": "Organization",
+      "from": "From day",
+      "to": "To day"
+    },
+    "columns": {
+      "occurredAt": "Time",
+      "action": "Action",
+      "actor": "Who",
+      "tenant": "Organization",
+      "details": "Details"
+    },
+    "system": "System",
+    "showDetails": "Show",
+    "hideDetails": "Hide",
+    "actions": {
+      "organization.created": "Organization created",
+      "subscription.changed": "Subscription changed",
+      "organization.suspended": "Suspended",
+      "organization.reactivated": "Reactivated",
+      "deletion.requested": "Deletion requested",
+      "deletion.cancelled": "Deletion cancelled",
+      "deletion.completed": "Destruction completed",
+      "deletion.failed": "Destruction failed",
+      "usage.refreshed": "Usage refreshed",
+      "usage.exported": "Usage exported"
+    }
+  },
+  "export": {
+    "title": "Export usage",
+    "intro": "The daily usage snapshots are downloaded as CSV (for finance).",
+    "from": "From day",
+    "to": "To day",
+    "hint": "If both dates are empty the previous calendar month is downloaded. The range can be at most 400 days (UTC days, inclusive).",
+    "errors": {
+      "incomplete": "Enter both dates or leave both empty.",
+      "reversed": "The end day cannot be before the start day.",
+      "tooLong": "The range can be at most 400 days."
+    },
+    "download": "Download",
+    "done": "Export downloaded"
+  },
+  "errors": {
+    "platform": {
+      "plan_not_found": "Plan not found or inactive",
+      "invalid_transition": "This action is not possible in the current state ({{from}} → {{to}})",
+      "deletion_not_cancellable": "The deletion request can no longer be cancelled",
+      "system_tenant_protected": "This action is not allowed for the system organization"
+    }
+  }
+}

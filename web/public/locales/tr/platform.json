@@ -1,0 +1,281 @@
+{
+  "status": {
+    "trial": "Deneme",
+    "active": "Aktif",
+    "trial_expired": "Deneme bitti",
+    "suspended": "Askıda",
+    "pending_deletion": "Silinecek",
+    "deleted": "Silindi"
+  },
+  "accessLevel": {
+    "full": "Tam erişim",
+    "readOnly": "Salt okunur",
+    "none": "Erişim kapalı"
+  },
+  "sources": {
+    "signup": "Kayıt",
+    "platform": "Platform",
+    "bootstrap": "Kurulum",
+    "backfill": "Devralınan",
+    "lazy": "Otomatik"
+  },
+  "system": {
+    "badge": "Sistem",
+    "protected": "Bu, platformun işletim organizasyonudur; askıya alınamaz, silinemez ve planı değiştirilemez."
+  },
+  "usersWithPending": "{{active}} (+{{pending}} bekleyen)",
+  "columns": {
+    "name": "Organizasyon",
+    "plan": "Plan",
+    "status": "Durum",
+    "trialEnds": "Deneme bitişi",
+    "users": "Kullanıcı",
+    "records": "Kayıtlar",
+    "source": "Kaynak",
+    "createdAt": "Oluşturulma"
+  },
+  "filters": {
+    "status": "Durum",
+    "plan": "Plan",
+    "source": "Kaynak"
+  },
+  "organizations": {
+    "title": "Organizasyonlar",
+    "description": "Platformdaki tüm organizasyonlar, planları ve kullanımları.",
+    "new": "Organizasyon aç",
+    "export": "Kullanım dışa aktar",
+    "search": "Ad veya slug ara",
+    "empty": "Organizasyon bulunamadı"
+  },
+  "create": {
+    "title": "Organizasyon aç",
+    "organizationName": "Organizasyon adı",
+    "adminDisplayName": "Yönetici adı",
+    "adminEmail": "Yönetici e-postası",
+    "locale": "Dil",
+    "plan": "Plan",
+    "planDefault": "Varsayılan plan",
+    "trialEndsOn": "Deneme bitiş tarihi",
+    "trialHint": "Boş bırakılırsa planın varsayılanı uygulanır.",
+    "passwordHint": "Yeni hesap için tek seferlik bir parola üretilir ve yalnızca bir kez gösterilir.",
+    "created": "Organizasyon açıldı",
+    "pendingInvitation": "{{email}} zaten bir hesaba ait: yönetici daveti hesap sahibinin onayını bekliyor."
+  },
+  "actions": {
+    "editPlan": "Planı / denemeyi düzenle",
+    "suspend": "Askıya al",
+    "reactivate": "Yeniden aç",
+    "requestDeletion": "Silme talebi",
+    "cancelDeletion": "Silme talebini iptal et"
+  },
+  "tabs": {
+    "summary": "Özet",
+    "usage": "Kullanım",
+    "audit": "Denetim",
+    "deletion": "Silme"
+  },
+  "info": {
+    "title": "Organizasyon",
+    "plan": "Plan",
+    "status": "Durum",
+    "access": "Erişim",
+    "trialEnds": "Deneme bitişi",
+    "source": "Kaynak",
+    "createdAt": "Oluşturulma",
+    "tenantId": "Kimlik"
+  },
+  "summary": {
+    "override": "İstisna",
+    "unlimited": "Sınırsız",
+    "suspendedTitle": "Organizasyon askıda",
+    "planChanged": "plan değişikliği: {{date}}",
+    "trialEnds": "Deneme bitişi",
+    "maxUsers": "Kullanıcı limiti",
+    "latestUsage": "Son kullanım",
+    "snapshotDay": "Anlık görüntü günü: {{day}}",
+    "noUsage": "Henüz kullanım anlık görüntüsü yok."
+  },
+  "subscription": {
+    "title": "Plan ve deneme",
+    "plan": "Plan",
+    "trialEndsOn": "Deneme bitiş günü",
+    "trialHint": "Bu gün dahil geçerlidir. Boş = denemesiz.",
+    "removeTrial": "Denemeyi kaldır",
+    "overrides": "Kiracıya özel istisnalar",
+    "overridesHint": "İstisna, plan değerinin yerine geçer. \"Plan değeri\" seçili alanlar plana uyar.",
+    "maxUsers": "Kullanıcı limiti",
+    "maxRecordsOf": "{{module}} kayıt limiti",
+    "modules": "Modüller",
+    "moduleOf": "{{module}} modülü",
+    "modePlan": "Plan değeri",
+    "modeUnlimited": "Sınırsız",
+    "modeCustom": "Özel",
+    "limitValue": "Değer",
+    "limitValueOf": "{{limit}} değeri",
+    "limitInvalid": "0 veya daha büyük tam sayı",
+    "planValue": "Plan: {{value}}",
+    "unlimited": "Sınırsız",
+    "modulePlan": "Plan değeri",
+    "moduleOn": "Açık",
+    "moduleOff": "Kapalı",
+    "saved": "Plan kaydedildi",
+    "overLimitTitle": "Kullanım yeni limitin üstünde",
+    "overLimitHint": "Plan değişti; veriler silinmedi. Aşım giderilene kadar yeni kayıt eklenemez.",
+    "dismiss": "Kapat"
+  },
+  "suspend": {
+    "title": "Organizasyonu askıya al",
+    "intro": "{{name}} askıya alınacak. Gerekçe platform denetimine yazılır.",
+    "reason": "Gerekçe",
+    "reasonRequired": "Gerekçe zorunludur",
+    "mode": "Askı kipi",
+    "readOnly": "Salt okunur",
+    "readOnlyHint": "Kullanıcılar kayıtları görebilir ancak değiştiremez.",
+    "blocked": "Tam engel",
+    "blockedHint": "Hiçbir kullanıcı organizasyona erişemez.",
+    "modes": {
+      "readOnly": "Salt okunur askı",
+      "blocked": "Tam engel"
+    },
+    "confirm": "Askıya al",
+    "done": "{{name}} askıya alındı"
+  },
+  "reactivate": {
+    "title": "Organizasyonu yeniden aç",
+    "message": "{{name}} yeniden açılsın mı? Deneme süresi bitmişse durum \"Deneme bitti\" kalır; planı ayrıca düzeltin.",
+    "done": "Organizasyon yeniden açıldı"
+  },
+  "deletion": {
+    "title": "Silme talebi",
+    "warning": "Bu işlem KALICI İMHA başlatır: bekleme süresi ({{days}} gün) sonunda organizasyonun tüm verisi geri döndürülemez biçimde silinir. Talep anında tüm kullanıcıların erişimi kapanır. Bekleme süresi içinde iptal edilebilir.",
+    "reason": "Gerekçe",
+    "retentionDays": "Bekleme süresi (gün)",
+    "retentionHint": "{{min}} ile {{max}} gün arası.",
+    "retentionInvalid": "{{min}} ile {{max}} arasında bir tam sayı girin",
+    "confirmLabel": "Onaylamak için organizasyon adını yazın: {{name}}",
+    "confirmHint": "Ad tam olarak eşleşmelidir.",
+    "confirm": "Silme talebini başlat",
+    "done": "Silme talebi alındı; planlanan imha: {{date}}",
+    "cancelled": "Silme talebi iptal edildi",
+    "cancelTitle": "Silme talebini iptal et",
+    "cancelMessage": "{{name}} için silme talebi iptal edilsin ve organizasyon önceki durumuna dönsün mü?",
+    "erased": "Bu organizasyonun verisi kalıcı olarak silindi.",
+    "failedTitle": "İmha tamamlanamadı",
+    "attempts": "Deneme sayısı: {{count}}",
+    "retentionSummary": "Saklama süresi {{days}} gün; planlanan imha: {{date}}",
+    "details": "Talep ayrıntıları",
+    "requestedAt": "Talep zamanı",
+    "requestedBy": "Talep eden",
+    "reasonLabel": "Gerekçe",
+    "scheduledFor": "Planlanan imha",
+    "cancelledAt": "İptal zamanı",
+    "completedAt": "Tamamlanma zamanı",
+    "attemptsLabel": "Deneme sayısı",
+    "status": {
+      "scheduled": "Planlandı",
+      "cancelled": "İptal edildi",
+      "running": "Çalışıyor",
+      "completed": "Tamamlandı",
+      "failed": "Başarısız"
+    }
+  },
+  "usage": {
+    "range": "Aralık",
+    "days": "{{count}} gün",
+    "metric": "Metrik",
+    "view": "Görünüm",
+    "chart": "Grafik",
+    "table": "Tablo",
+    "refresh": "Şimdi yenile",
+    "refreshed": "Bugünün kullanımı yenilendi",
+    "empty": "Bu aralıkta kullanım anlık görüntüsü yok.",
+    "activeUsers": "Aktif kullanıcı",
+    "pendingUsers": "Bekleyen davet",
+    "day": "Gün",
+    "total": "Toplam kayıt",
+    "metrics": {
+      "accounts": "Müşteri",
+      "contacts": "Kişi",
+      "leads": "Potansiyel",
+      "deals": "Fırsat",
+      "activities": "Aktivite",
+      "workflow_rules": "Kural",
+      "products": "Ürün",
+      "quotes": "Teklif",
+      "orders": "Sipariş",
+      "cases": "Talep",
+      "campaigns": "Kampanya"
+    }
+  },
+  "plans": {
+    "title": "Planlar",
+    "description": "Plan kataloğu (salt okunur).",
+    "configHint": "Planlar yapılandırmayla yönetilir; bu ekrandan değiştirilemez.",
+    "unlimited": "Sınırsız",
+    "usersLimit": "Kullanıcı",
+    "inactive": "Pasif",
+    "empty": "Plan bulunamadı",
+    "columns": {
+      "code": "Kod",
+      "name": "Ad",
+      "trialDays": "Deneme (gün)",
+      "limits": "Limitler",
+      "modules": "Modüller",
+      "assigned": "Atanan"
+    }
+  },
+  "audit": {
+    "title": "Platform denetimi",
+    "description": "Platform yöneticilerinin yaptığı işlemler.",
+    "filters": {
+      "action": "İşlem",
+      "tenant": "Organizasyon",
+      "from": "Başlangıç günü",
+      "to": "Bitiş günü"
+    },
+    "columns": {
+      "occurredAt": "Zaman",
+      "action": "İşlem",
+      "actor": "Kim",
+      "tenant": "Organizasyon",
+      "details": "Ayrıntı"
+    },
+    "system": "Sistem",
+    "showDetails": "Göster",
+    "hideDetails": "Gizle",
+    "actions": {
+      "organization.created": "Organizasyon açıldı",
+      "subscription.changed": "Abonelik değişti",
+      "organization.suspended": "Askıya alındı",
+      "organization.reactivated": "Yeniden açıldı",
+      "deletion.requested": "Silme talebi",
+      "deletion.cancelled": "Silme talebi iptal",
+      "deletion.completed": "İmha tamamlandı",
+      "deletion.failed": "İmha başarısız",
+      "usage.refreshed": "Kullanım yenilendi",
+      "usage.exported": "Kullanım dışa aktarıldı"
+    }
+  },
+  "export": {
+    "title": "Kullanımı dışa aktar",
+    "intro": "Günlük kullanım anlık görüntüleri CSV olarak indirilir (finans için).",
+    "from": "Başlangıç günü",
+    "to": "Bitiş günü",
+    "hint": "İki tarih de boşsa önceki takvim ayı indirilir. Aralık en çok 400 gün olabilir (UTC günleri, dahil).",
+    "errors": {
+      "incomplete": "İki tarihi de girin ya da ikisini de boş bırakın.",
+      "reversed": "Bitiş günü başlangıçtan önce olamaz.",
+      "tooLong": "Aralık en çok 400 gün olabilir."
+    },
+    "download": "İndir",
+    "done": "Dışa aktarma indirildi"
+  },
+  "errors": {
+    "platform": {
+      "plan_not_found": "Plan bulunamadı veya pasif",
+      "invalid_transition": "Bu işlem şu durumda yapılamaz ({{from}} → {{to}})",
+      "deletion_not_cancellable": "Silme talebi artık iptal edilemez",
+      "system_tenant_protected": "Sistem organizasyonu için bu işlem yapılamaz"
+    }
+  }
+}
