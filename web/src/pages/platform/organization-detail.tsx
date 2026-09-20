@@ -10,6 +10,7 @@ import { DeletionRequestDialog } from "@/components/platform/deletion-request-di
 import { OrganizationSummary } from "@/components/platform/organization-summary";
 import { PlatformAuditTable } from "@/components/platform/platform-audit-table";
 import { TenantStatusBadge } from "@/components/platform/status-badge";
+import { StepUpDialog } from "@/components/platform/step-up-dialog";
 import { SubscriptionEditorDialog } from "@/components/platform/subscription-editor-dialog";
 import { SuspendDialog } from "@/components/platform/suspend-dialog";
 import {
@@ -17,6 +18,7 @@ import {
   usePlatformOrganization,
   usePlatformPlans,
   useReactivatePlatformOrganization,
+  useRetryPlatformDeletion,
 } from "@/hooks/use-platform";
 import { toast, toastApiError } from "@/hooks/use-toast";
 import { formatDateTime } from "@/lib/dates";
@@ -27,7 +29,14 @@ import type { PlatformOverLimit } from "@/types";
 // Charts (recharts) are their own chunk and only load with the Usage tab.
 const UsageChart = lazy(() => import("@/components/platform/usage-chart"));
 
-type Dialog = "plan" | "suspend" | "deletion" | "reactivate" | "cancelDeletion" | null;
+type Dialog =
+  | "plan"
+  | "suspend"
+  | "deletion"
+  | "reactivate"
+  | "cancelDeletion"
+  | "retryDeletion"
+  | null;
 
 function AuditTab({ tenantId }: { tenantId: string }) {
   const [page, setPage] = useState(1);
@@ -58,6 +67,7 @@ export default function OrganizationDetailPage() {
 
   const reactivate = useReactivatePlatformOrganization(tenantId ?? "");
   const cancelDeletion = useCancelPlatformDeletion(tenantId ?? "");
+  const retryDeletion = useRetryPlatformDeletion(tenantId ?? "");
   const actions = org ? organizationActions(org) : null;
 
   async function confirmReactivate() {
@@ -176,6 +186,11 @@ export default function OrganizationDetailPage() {
                   <DeletionPanel
                     deletion={org.deletion}
                     onCancel={actions?.cancelDeletion ? () => setDialog("cancelDeletion") : undefined}
+                    onRetry={
+                      org.deletion.status === "failed" && !org.isSystem
+                        ? () => setDialog("retryDeletion")
+                        : undefined
+                    }
                   />
                 ),
               },
@@ -250,6 +265,20 @@ export default function OrganizationDetailPage() {
         <DeletionRequestDialog
           tenantId={org.tenantId}
           organizationName={org.name}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {org && dialog === "retryDeletion" && (
+        <StepUpDialog
+          title={t("platform:deletion.retryTitle")}
+          message={t("platform:deletion.retryMessage", { name: org.name })}
+          confirmLabel={t("platform:deletion.retry")}
+          isPending={retryDeletion.isPending}
+          onConfirm={async (currentPassword) => {
+            await retryDeletion.mutateAsync({ currentPassword });
+            toast({ variant: "success", description: t("platform:deletion.retried") });
+            setDialog(null);
+          }}
           onClose={() => setDialog(null)}
         />
       )}

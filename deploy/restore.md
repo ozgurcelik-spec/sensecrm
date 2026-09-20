@@ -28,7 +28,9 @@ DC="docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env"
    $DC ps -a        # db-init: Exited (0) olmalı
    ```
 
-3. Yedekleri yükleyin (tek transaction, ilk hatada durur). Yerel yedek dizini `BACKUPS` olsun:
+3. Yedekleri yükleyin (tek transaction, ilk hatada durur). Yerel yedek dizini `BACKUPS` olsun.
+   **Yedekler varsayılan olarak şifrelidir** (`backup.sh`/`backup.ps1` şifreleme anahtarı olmadan çalışmaz; `.sql.gz.gpg` / `.sql.gz.enc`): önce
+   şifreyi çözün (bkz. Notlar), aşağıdaki örneklerdeki `.sql.gz` dosyası çözülmüş dosyadır:
 
    ```bash
    gzip -dc "$BACKUPS"/crm-20260919-233631.sql.gz \
@@ -60,7 +62,7 @@ DC="docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env"
 ## Senaryo B — aynı sunucuda yanlışlıkla silinen/bozulan veri (mevcut veritabanının üzerine)
 
 Yedekten yalnız **belirli** verileri kurtarmak en güvenlisidir: yedeği ayrı bir örneğe yükleyin (Senaryo A, farklı proje adı ve
-`WEB_PORT`/alt ağlar ile: `COMPOSE_PROJECT_NAME=crm-restore`, `BACKEND_SUBNET`, `FRONTEND_SUBNET` değiştirilmiş bir `.env` kopyası),
+`WEB_PORT`/alt ağlar ile: `COMPOSE_PROJECT_NAME=crm-restore`, `BACKEND_SUBNET`, `FRONTEND_SUBNET`, `EDGE_SUBNET` değiştirilmiş bir `.env` kopyası),
 gerekli kayıtları oradan okuyup asıl sisteme arayüz/API ile geri girin, sonra prova örneğini kaldırın:
 
 ```bash
@@ -103,5 +105,10 @@ olmalıdır (yeni anahtar üretilirse eski nesneler açılamaz).
 - **Süre:** küçük veritabanında (pilot başlangıcı) yedek ve geri yükleme her biri saniyeler sürer; süre veri boyutuyla doğrusal büyür — RTO'yu
   gerçek boyutla prova edin (`docs/operations/runbook.md` §13).
 - **Kapsam dışı:** `deploy/.env` ve `deploy/secrets/*` (yedekle birlikte, ama ayrı ve şifreli saklanır); Docker imajları (sürüm etiketinden yeniden kurulur).
-- **Şifreli yedek:** `.gpg` dosyaları önce `gpg --decrypt`, `.enc` dosyaları `openssl enc -d -aes-256-cbc -pbkdf2 -pass file:<parola-dosyası>` ile açılır.
+- **Şifreli yedek (zorunlu):** yedek betikleri anahtar verilmeden **çalışmayı reddeder** (çıkış kodu 2). Anahtar: `BACKUP_GPG_RECIPIENT=<anahtar kimliği/e-posta>`
+  (`backup.ps1`: `-GpgRecipient` ya da aynı ortam değişkeni; genel anahtar gpg anahtarlığında olmalı) veya yalnız `backup.sh` için
+  `BACKUP_OPENSSL_PASSFILE=<parola dosyası>` (AES-256). Bilerek şifresiz almak için `backup.sh --no-encryption` / `backup.ps1 -NoEncryption`
+  (yedek **açık metin** saklanır; betik yüksek sesle uyarır). Çözme: `.gpg` dosyaları `gpg --output crm-....sql.gz --decrypt crm-....sql.gz.gpg` (özel anahtar gerekir),
+  `.enc` dosyaları `openssl enc -d -aes-256-cbc -pbkdf2 -pass file:<parola-dosyası> -in crm-....sql.gz.enc -out crm-....sql.gz` ile açılır.
+  **Şifre çözme anahtarını/parolayı yedeklerden ayrı ve güvenli saklayın; kaybolursa yedek geri yüklenemez.**
 - **Başka bir PostgreSQL ana sürümüne** geçişte düz SQL yedek uygundur (mantıksal yedek sürümler arası taşınabilir).

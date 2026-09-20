@@ -40,6 +40,7 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
         second.Outcome.ShouldBe(PlatformAdminOutcome.Unchanged);
 
         var auth = await factory.CreateClient().LoginAsync(email, AdminPassword);
+        auth.MustChangePassword.ShouldBeTrue("C-SEC2 M6: bootstrap yöneticisi ilk girişte parolayı değiştirmek zorundadır");
         var me = await factory.CreateClient().WithToken(auth.AccessToken).GetFromJsonAsync<JsonElement>($"{Base}/me", Ct);
         me.GetProperty("user").GetProperty("isPlatformAdmin").GetBoolean().ShouldBeTrue();
         me.GetProperty("organization").GetProperty("name").GetString().ShouldBe("Platform");
@@ -189,7 +190,7 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
     {
         var email = UniqueEmail("revoked");
         await EnsureAdminAsync(email, AdminPassword);
-        var platform = factory.CreateClient().WithToken((await factory.CreateClient().LoginAsync(email, AdminPassword)).AccessToken);
+        var platform = await LoginAndChangePasswordAsync(email, AdminPassword); // C-SEC2 M6: bootstrap parolası geçicidir
 
         await using (var connection = new NpgsqlConnection(factory.ConnectionString))
         {
@@ -285,7 +286,14 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
         var email = UniqueEmail("plat-disabled");
         await EnsureAdminAsync(email, AdminPassword);
         await using var disabled = factory.WithWebHostBuilder(b => b.UseSetting("Registration:Mode", "disabled"));
-        var platform = disabled.CreateClient().WithToken((await disabled.CreateClient().LoginAsync(email, AdminPassword)).AccessToken);
+
+        // C-SEC2 M6: bootstrap hesabı geçici parolalıdır; jeton bu host'un (kendi geçici anahtarı) olduğundan parola değişimi de bu host'ta yapılır.
+        var platform = disabled.CreateClient();
+        var first = await platform.LoginAsync(email, AdminPassword);
+        platform.WithToken(first.AccessToken);
+        var changed = await platform.PostAsJsonAsync($"{Base}/me/password", new { currentPassword = AdminPassword, newPassword = AdminPassword }, Ct);
+        changed.StatusCode.ShouldBe(HttpStatusCode.OK, await changed.Content.ReadAsStringAsync(Ct));
+        platform.WithToken((await changed.Content.ReadFromJsonAsync<AuthResponse>(Ct))!.AccessToken);
         var adminEmail = UniqueEmail("dis-admin");
 
         var created = await platform.PostAsJsonAsync($"{Base}/platform/organizations", NewOrgRequest("Closed Registration Org", adminEmail, AdminPassword), Ct);
@@ -419,8 +427,9 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
     {
         var email = UniqueEmail("platform");
         (await EnsureAdminAsync(email, AdminPassword)).Outcome.ShouldBe(PlatformAdminOutcome.Created);
-        var auth = await factory.CreateClient().LoginAsync(email, AdminPassword);
-        return factory.CreateClient().WithToken(auth.AccessToken);
+
+        // C-SEC2 M6: bootstrap hesabı geçici parolalıdır; ilk girişte değiştirilir.
+        return await LoginAndChangePasswordAsync(email, AdminPassword);
     }
 
     private static object NewOrgRequest(string name, string adminEmail, string? password, string locale = "tr") =>

@@ -92,7 +92,8 @@ public sealed partial class MetricsEndpointApiTests(CrmApiFactory factory)
         updated.IsSuccessStatusCode.ShouldBeTrue(await updated.Content.ReadAsStringAsync(Ct));
 
         // Worker'ın yaptığı işi burada çalıştır: outbox mesajını boşalt (mesajı üreten isteğin correlation id'si dispatch sırasında bağlamda olmalı).
-        for (var i = 0; i < 20 && spy.Seen.IsEmpty; i++)
+        // C-SEC2 entegrasyonu: paylaşılan veritabanında başka testlerden kalan OrganizationUpdated satırları önce dağıtılabilir; bu isteğin correlation id'si görülene kadar boşalt.
+        for (var i = 0; i < 20 && !spy.Seen.Contains(correlationId); i++)
         {
             using var scope = host.Services.CreateScope();
             await scope.ServiceProvider.GetRequiredService<Sense.Crm.Shared.Infrastructure.Persistence.Outbox.OutboxProcessor<Sense.Crm.Modules.Identity.Infrastructure.Persistence.IdentityDbContext>>().ProcessAsync(Ct);

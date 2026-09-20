@@ -348,7 +348,7 @@ public sealed class LifecycleApiTests(CrmApiFactory factory)
         host.App.ObjectKeys(a.TenantId).Count.ShouldBeGreaterThan(1_100);
 
         // Talep → bekleme süresi → imha işi.
-        var request = await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{a.TenantId}/deletion-request", new { reason = "KVKK", retentionDays = 7 }, HttpStatusCode.OK);
+        var request = await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{a.TenantId}/deletion-request", new { reason = "KVKK", retentionDays = 7, confirmTenantName = (await platform.GetJsonAsync($"{PlatformBase}/organizations/{a.TenantId}")).Str("name"), currentPassword = PlatformPassword }, HttpStatusCode.OK);
         clock.SetUtcNow(DateTimeOffset.Parse(request.Str("scheduledFor")).AddMinutes(1));
         using (var scope = host.App.Services.CreateScope())
         {
@@ -392,7 +392,7 @@ public sealed class LifecycleApiTests(CrmApiFactory factory)
 
         // Depo listeleme arızası: adım hata verir (failed), satırlar silinmez; arıza kalkınca yeniden deneme tamamlanır.
         host.Faults.FailList = true;
-        var request = await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{a.TenantId}/deletion-request", new { reason = "KVKK", retentionDays = 7 }, HttpStatusCode.OK);
+        var request = await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{a.TenantId}/deletion-request", new { reason = "KVKK", retentionDays = 7, confirmTenantName = (await platform.GetJsonAsync($"{PlatformBase}/organizations/{a.TenantId}")).Str("name"), currentPassword = PlatformPassword }, HttpStatusCode.OK);
         clock.SetUtcNow(DateTimeOffset.Parse(request.Str("scheduledFor")).AddMinutes(1));
         using (var scope = host.App.Services.CreateScope())
         {

@@ -287,7 +287,7 @@ public sealed class PlatformConsoleApiTests(CrmApiFactory factory)
         (await platform.ReactivateRawAsync(org.TenantId)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
         (await platform.DetailAsync(org.TenantId)).TryGetProperty("suspension", out _).ShouldBeFalse("yeniden açınca askı bölümü kalkar");
 
-        var request = await platform.SendJsonAsync(HttpMethod.Post, $"{OrgUrl(org.TenantId)}/deletion-request", new { reason = "musteri talebi", retentionDays = 45 }, HttpStatusCode.OK);
+        var request = await platform.SendJsonAsync(HttpMethod.Post, $"{OrgUrl(org.TenantId)}/deletion-request", await platform.DeletionBodyAsync(org.TenantId, "musteri talebi", 45), HttpStatusCode.OK);
         var deletion = (await platform.DetailAsync(org.TenantId)).GetProperty("deletion");
         deletion.GuidProp("requestId").ShouldBe(request.GuidProp("requestId"));
         deletion.Str("status").ShouldBe("scheduled");
@@ -597,7 +597,7 @@ public sealed class PlatformConsoleApiTests(CrmApiFactory factory)
         var org = await factory.SyncedOrgAsync(Token("del") + " deletion");
 
         var before = DateTimeOffset.UtcNow;
-        var response = await platform.SendJsonAsync(HttpMethod.Post, $"{OrgUrl(org.TenantId)}/deletion-request", new { reason = "  hesap kapatma  " }, HttpStatusCode.OK);
+        var response = await platform.SendJsonAsync(HttpMethod.Post, $"{OrgUrl(org.TenantId)}/deletion-request", await platform.DeletionBodyAsync(org.TenantId, "  hesap kapatma  "), HttpStatusCode.OK);
         var after = DateTimeOffset.UtcNow;
 
         response.GuidProp("requestId").ShouldNotBe(Guid.Empty);

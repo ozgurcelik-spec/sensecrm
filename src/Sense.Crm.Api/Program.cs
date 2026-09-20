@@ -96,6 +96,9 @@ try
 
     app.UseRequestContext();
 
+    // C-SEC2 L4: /platform/** üzerinde platform yöneticisi olmayan kimliklerin reddedilen istekleri (kaba sayaç + kişisel veri içermeyen uyarı günlüğü); kararı veren middleware'lerin üstünde.
+    app.UsePlatformRejectionMonitoring();
+
     // Geçici parolalı hesap: parola değişene kadar yalnız [AllowWhenPasswordChangeRequired] uçlar çalışır (H4).
     app.UsePasswordChangeRequired();
     app.UseAuthorization();

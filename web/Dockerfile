@@ -5,7 +5,7 @@
 #   docker build -f web/Dockerfile -t crm-web .
 # (the pnpm workspace manifest and lockfile live at the root.)
 
-FROM node:24-alpine AS build
+FROM node:24.21.0-alpine AS build
 WORKDIR /repo
 
 # Node 24 still bundles corepack; it activates the pnpm version pinned in package.json ("packageManager").
@@ -27,7 +27,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN pnpm --filter web build
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.29.8-alpine AS runtime
 
 # The official entrypoint renders /etc/nginx/templates/*.template with the container's environment (envsubst) into
 # /etc/nginx/conf.d/. Only variables that exist in the environment are substituted, nginx's own $variables are untouched.
@@ -38,7 +38,8 @@ COPY --from=build /repo/web/dist /usr/share/nginx/html
 # Runtime settings (all optional):
 #   API_UPSTREAM        where /api is proxied to                                (default http://api:8080)
 #   DNS_RESOLVER        resolver used to (re)resolve the upstream at run time   (default 127.0.0.11 = Docker's embedded DNS)
-#   TRUSTED_PROXY_CIDR  network of the external TLS proxy / load balancer whose X-Forwarded-For is trusted (default 127.0.0.1/32)
+#   TRUSTED_PROXY_CIDR  address/network of the external TLS proxy / load balancer whose X-Forwarded-For is trusted
+#                       (default 127.0.0.1/32 = loopback only = nothing is trusted, a client cannot spoof its address)
 ENV API_UPSTREAM=http://api:8080 \
     DNS_RESOLVER=127.0.0.11 \
     TRUSTED_PROXY_CIDR=127.0.0.1/32

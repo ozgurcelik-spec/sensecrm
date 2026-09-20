@@ -162,6 +162,11 @@
     "erased": "Bu organizasyonun verisi kalıcı olarak silindi.",
     "failedTitle": "İmha tamamlanamadı",
     "attempts": "Deneme sayısı: {{count}}",
+    "lastError": "Son hata",
+    "retry": "İmhayı yeniden dene",
+    "retryTitle": "İmhayı yeniden dene",
+    "retryMessage": "{{name}} için başarısız olan imha yeniden denenecek. Devam etmek için kendi parolanızı girin.",
+    "retried": "İmha yeniden başlatıldı",
     "retentionSummary": "Saklama süresi {{days}} gün; planlanan imha: {{date}}",
     "details": "Talep ayrıntıları",
     "requestedAt": "Talep zamanı",
@@ -253,8 +258,36 @@
       "deletion.completed": "İmha tamamlandı",
       "deletion.failed": "İmha başarısız",
       "usage.refreshed": "Kullanım yenilendi",
-      "usage.exported": "Kullanım dışa aktarıldı"
+      "usage.exported": "Kullanım dışa aktarıldı",
+      "deletion.retried": "Silme yeniden denendi",
+      "platform_admin.revoked": "Platform yöneticisi yetkisi geri alındı"
     }
+  },
+  "reasonHint": "Gerekçeye kişisel veri (ad, e-posta, telefon vb.) yazmayın; kayıtlar denetim günlüğünde saklanır.",
+  "stepUp": {
+    "label": "Parolanız",
+    "description": "Bu yıkıcı işlem için oturum açmış platform yöneticisinin kendi parolası gerekir."
+  },
+  "admins": {
+    "title": "Platform yöneticileri",
+    "description": "Platform konsoluna erişimi olan hesaplar.",
+    "columns": {
+      "name": "Ad",
+      "email": "E-posta",
+      "status": "Durum",
+      "lastLogin": "Son giriş"
+    },
+    "active": "Etkin",
+    "inactive": "Pasif",
+    "never": "Hiç giriş yapmadı",
+    "empty": "Platform yöneticisi bulunamadı",
+    "revoke": "Yetkiyi kaldır",
+    "revokeOf": "{{email}} için yetkiyi kaldır",
+    "revokeTitle": "Platform yöneticiliğini kaldır",
+    "revokeMessage": "{{name}} artık platform konsoluna erişemeyecek. Devam etmek için kendi parolanızı girin.",
+    "deactivate": "Hesabı da pasifleştir",
+    "deactivateHint": "İşaretlenirse hesap tamamen pasifleştirilir; yalnızca platform yetkisi kalkmaz.",
+    "revoked": "{{email}} için platform yetkisi kaldırıldı"
   },
   "export": {
     "title": "Kullanımı dışa aktar",
@@ -275,7 +308,13 @@
       "plan_not_found": "Plan bulunamadı veya pasif",
       "invalid_transition": "Bu işlem şu durumda yapılamaz ({{from}} → {{to}})",
       "deletion_not_cancellable": "Silme talebi artık iptal edilemez",
-      "system_tenant_protected": "Sistem organizasyonu için bu işlem yapılamaz"
+      "system_tenant_protected": "Sistem organizasyonu için bu işlem yapılamaz",
+      "step_up_required": "Bu işlem için kendi parolanızı girmelisiniz",
+      "step_up_failed": "Parola hatalı",
+      "step_up_rate_limited": "Çok fazla hatalı parola denemesi; lütfen bir süre sonra tekrar deneyin",
+      "confirmation_mismatch": "Yazılan organizasyon adı eşleşmiyor",
+      "last_platform_admin": "Son etkin platform yöneticisinin yetkisi kaldırılamaz",
+      "deletion_not_retryable": "Silme talebi yalnızca başarısız durumdayken yeniden denenebilir"
     }
   }
 }

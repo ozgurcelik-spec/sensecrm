@@ -70,6 +70,13 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
     {
         await using var connection = new NpgsqlConnection(ConnectionString);
         await connection.OpenAsync();
+
+        // C-SEC2 M3: denetim tabloları salt-eklemeli tetikleyicilerle korunur; test sıfırlaması (Respawn DELETE) yalnız süper kullanıcı oturumunda geçerli "superuser" işaretiyle yapılır.
+        await using (var marker = new NpgsqlCommand("SELECT set_config('crm.audit_maintenance', 'superuser', false)", connection))
+        {
+            await marker.ExecuteNonQueryAsync();
+        }
+
         await _respawner!.ResetAsync(connection);
     }
 

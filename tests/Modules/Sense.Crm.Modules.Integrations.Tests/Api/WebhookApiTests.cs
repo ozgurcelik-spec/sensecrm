@@ -339,7 +339,7 @@ public sealed class IntegrationsPlanTests(CrmApiFactory factory)
         await (await t.Admin.SendAsync(HttpMethod.Post, $"{Wh}/{sub}/rotate-secret", new { graceHours = 1 })).Response.ShouldBeCodeAsync(HttpStatusCode.Forbidden, "tenant.suspended");
 
         await platform.SendOkAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{t.TenantId}/reactivate", null, HttpStatusCode.NoContent);
-        await platform.SendOkAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{t.TenantId}/suspend", new { reason = "test", mode = "blocked" }, HttpStatusCode.NoContent);
+        await platform.SendOkAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{t.TenantId}/suspend", new { reason = "test", mode = "blocked", currentPassword = "Platform.Sifre.12345" }, HttpStatusCode.NoContent);
         (await t.Admin.GetAsync($"{Wh}/{sub}", Ct)).StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 }

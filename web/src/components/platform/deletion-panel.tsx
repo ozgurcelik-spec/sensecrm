@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Alert, Badge, Button, Card, Stack, Text } from "@mantine/core";
-import { TriangleAlert } from "lucide-react";
+import { Alert, Badge, Button, Card, Code, Stack, Text } from "@mantine/core";
+import { RotateCcw, TriangleAlert } from "lucide-react";
 import { InfoPanel } from "@/components/crm/record-detail-shell";
 import { formatDateTime } from "@/lib/dates";
 import { orDash } from "@/lib/format";
@@ -18,10 +18,12 @@ interface DeletionPanelProps {
   deletion: PlatformDeletion;
   /** Present only while the request can still be cancelled. */
   onCancel?: () => void;
+  /** Shown only for a failed request: opens the step-up dialog that retries the erasure. */
+  onRetry?: () => void;
 }
 
 /** "Silme" tab: the latest KVKK deletion request with its retention window and, on failure, the error. */
-export function DeletionPanel({ deletion, onCancel }: DeletionPanelProps) {
+export function DeletionPanel({ deletion, onCancel, onRetry }: DeletionPanelProps) {
   const { t } = useTranslation(["platform"]);
   return (
     <Stack gap="md">
@@ -33,10 +35,30 @@ export function DeletionPanel({ deletion, onCancel }: DeletionPanelProps) {
           title={t("platform:deletion.failedTitle")}
           role="alert"
         >
-          <Text size="sm">
-            {t("platform:deletion.attempts", { count: deletion.attempts })}
-            {deletion.lastError ? ` - ${deletion.lastError}` : ""}
-          </Text>
+          <Stack gap="xs">
+            <Text size="sm">{t("platform:deletion.attempts", { count: deletion.attempts })}</Text>
+            {deletion.lastError && (
+              <>
+                <Text size="xs" c="dimmed">
+                  {t("platform:deletion.lastError")}
+                </Text>
+                <Code block data-testid="deletion-last-error">
+                  {deletion.lastError}
+                </Code>
+              </>
+            )}
+            {onRetry && (
+              <Button
+                color="red"
+                variant="light"
+                w="fit-content"
+                leftSection={<RotateCcw size={14} />}
+                onClick={onRetry}
+              >
+                {t("platform:deletion.retry")}
+              </Button>
+            )}
+          </Stack>
         </Alert>
       )}
       <Card withBorder padding="md" data-testid="deletion-panel">

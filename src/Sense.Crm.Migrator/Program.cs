@@ -22,7 +22,7 @@ using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 
-// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|sync-plans|backfill|erase-deleted-tenants|reencrypt-integration-secrets|files-reconcile]
+// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|revoke-platform-admin|sync-plans|backfill|erase-deleted-tenants|reencrypt-integration-secrets|files-reconcile]
 // Yeni modül eklendiğinde DbContext'i buraya da kaydedilir (build/new-module.ps1 çıktısındaki adımlar).
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
 // Docker secret dosyalari (/run/secrets/<Ad>; "__" = ":"): Integrations__Encryption__Keys__k1 (reencrypt-integration-secrets) (M8B), Files__Storage__AccessKey (M8C).
@@ -131,6 +131,15 @@ switch (command)
         if (exitCode != 0)
         {
             return exitCode;
+        }
+
+        break;
+
+    case PlatformAdminCommand.RevokeName:
+        var revokeExit = await PlatformAdminCommand.RevokeAsync(host.Services, logger, CancellationToken.None);
+        if (revokeExit != 0)
+        {
+            return revokeExit;
         }
 
         break;

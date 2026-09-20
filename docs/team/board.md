@@ -31,6 +31,7 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | C-M6B | Servis/Destek: Talepler (case), yorumlar, SLA süresi | Spec→Backend+Web | **Merged** | `m6/service` | kart kapısı |
 | C-M6C | Pazarlama: Kampanyalar, kampanya üyeleri, lead kaynağı ilişkisi | Spec→Backend+Web | **Merged** | `m6/marketing` | kart kapısı |
 | C-M7 | SaaS hazırlığı (planlar/limitler, kiracı yönetimi, faturalama altyapısı) | Spec→Backend+Web | **Merged** | `main` | M6 merge sonrası şekillenir |
+| C-SEC2 | M7 platform güvenlik sertleştirmesi (H1–H2, M1–M6, L1–L7: korunan kiracı, step-up, imha doğrulaması, denetim tetikleyicileri, ağ ayrımı) | Security | **Review** | `worktree-agent-a78a438c1fa67ab05` | Güvenlik raporu "C-SEC2" bölümü + yeni testler; Lead bağımsız doğrulaması bekliyor |
 | C-M8A | Bildirimler: uygulama içi + e-posta (SMTP) + SMS portu, şablonlar, tercihler, hatırlatma/SLA zamanlayıcıları (Notification Worker) | Spec→Backend+Web | **Ready** | `m8/notifications` | kart kapısı + egress/PII incelemesi |
 | C-M8B | Webhooks ve Open API: giden webhook (imzalı, yeniden deneme, SSRF korumalı), API anahtarları, teslimat günlüğü | Spec→Backend+Web | **Ready** | `m8/integrations` | kart kapısı + güvenlik incelemesi |
 | C-M8C | Dosya ekleri: nesne depolama (MinIO/S3), kayıtlara ek, plan depolama limiti, KVKK silme | Spec→Backend+Web | **Ready** | `m8/files` | kart kapısı + yetki/indirme incelemesi |

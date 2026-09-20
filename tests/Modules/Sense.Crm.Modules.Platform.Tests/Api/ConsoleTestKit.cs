@@ -71,8 +71,9 @@ internal static class ConsoleTestKit
 
     public static Task<JsonElement> DetailAsync(this HttpClient platform, Guid tenantId) => platform.GetJsonAsync(OrgUrl(tenantId));
 
-    public static Task<HttpResponseMessage> SuspendRawAsync(this HttpClient platform, Guid tenantId, string? reason = "test askisi", string? mode = null) =>
-        platform.SendRawAsync(HttpMethod.Post, $"{OrgUrl(tenantId)}/suspend", new { reason, mode });
+    /// <summary>C-SEC2: <c>blocked</c> askı step-up ister; yardımcı çağıran platform yöneticisinin (<see cref="PlatformKit.PlatformPassword"/>) parolasını her zaman gönderir (readOnly'de yok sayılır).</summary>
+    public static Task<HttpResponseMessage> SuspendRawAsync(this HttpClient platform, Guid tenantId, string? reason = "test askisi", string? mode = null, string? currentPassword = PlatformPassword) =>
+        platform.SendRawAsync(HttpMethod.Post, $"{OrgUrl(tenantId)}/suspend", new { reason, mode, currentPassword });
 
     public static async Task SuspendAsync(this HttpClient platform, Guid tenantId, string? reason = "test askisi", string? mode = null) =>
         (await platform.SuspendRawAsync(tenantId, reason, mode)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -80,8 +81,25 @@ internal static class ConsoleTestKit
     public static Task<HttpResponseMessage> ReactivateRawAsync(this HttpClient platform, Guid tenantId) =>
         platform.SendRawAsync(HttpMethod.Post, $"{OrgUrl(tenantId)}/reactivate");
 
-    public static Task<HttpResponseMessage> RequestDeletionRawAsync(this HttpClient platform, Guid tenantId, string? reason = "test silme", int? retentionDays = null) =>
-        platform.SendRawAsync(HttpMethod.Post, $"{OrgUrl(tenantId)}/deletion-request", new { reason, retentionDays });
+    public static async Task<HttpResponseMessage> RequestDeletionRawAsync(this HttpClient platform, Guid tenantId, string? reason = "test silme", int? retentionDays = null) =>
+        await platform.SendRawAsync(HttpMethod.Post, $"{OrgUrl(tenantId)}/deletion-request", await platform.DeletionBodyAsync(tenantId, reason, retentionDays));
+
+    /// <summary>
+    /// C-SEC2 H2: silme talebi gövdesi — sunucudaki gerçek kiracı adı (<c>confirmTenantName</c>) ve çağıranın parolası (<c>currentPassword</c>) eklenir. Negatif testler
+    /// <paramref name="confirmTenantName"/> / <paramref name="currentPassword"/> ile bilerek yanlış değer verir.
+    /// </summary>
+    public static async Task<object> DeletionBodyAsync(this HttpClient platform, Guid tenantId, string? reason = "test silme", int? retentionDays = null, string? confirmTenantName = null, string? currentPassword = PlatformPassword)
+    {
+        var name = confirmTenantName;
+        if (name is null)
+        {
+            // Bilinmeyen kiracı (404 testleri): ad okunamaz, uydurma bir ad gönderilir.
+            using var detail = await platform.GetAsync(OrgUrl(tenantId), Ct);
+            name = detail.IsSuccessStatusCode ? JsonDocument.Parse(await detail.Content.ReadAsStringAsync(Ct)).RootElement.Str("name") : "bilinmeyen";
+        }
+
+        return new { reason, retentionDays, confirmTenantName = name, currentPassword };
+    }
 
     public static Task<HttpResponseMessage> CancelDeletionRawAsync(this HttpClient platform, Guid tenantId) =>
         platform.SendRawAsync(HttpMethod.Post, $"{OrgUrl(tenantId)}/deletion-request/cancel");

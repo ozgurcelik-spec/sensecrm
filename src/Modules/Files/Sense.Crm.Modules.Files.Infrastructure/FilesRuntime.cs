@@ -66,6 +66,26 @@ public sealed class FilesObjectEraser(IFileStorage storage, ITenantContextSetter
 
         return new EraseReport(new Dictionary<string, long> { ["files.objects"] = deleted });
     }
+
+    /// <summary>
+    /// C-SEC2 M2 doğrulama kancası: tombstone yazılmadan önce nesne deposunda kiracı önekinin altında nesne kalmadığını bağımsız olarak yeniden denetler (adım bittikten sonra bir yarış ya da
+    /// geri yüklenen nesne varsa talep <c>erasure.verification_failed</c> ile <c>failed</c> kalır). Kişisel veri döndürmez (yalnız sayı).
+    /// </summary>
+    public async Task<EraseVerification> VerifyErasedAsync(Guid tenantId, CancellationToken ct = default)
+    {
+        using var scope = tenantSetter.BeginScope(tenantId);
+        var remaining = 0;
+        await foreach (var _ in storage.ListAsync(tenantId, ct).ConfigureAwait(false))
+        {
+            remaining++;
+            if (remaining >= 1000)
+            {
+                break;
+            }
+        }
+
+        return remaining == 0 ? EraseVerification.Clean : EraseVerification.Failed($"files.objects>={remaining}");
+    }
 }
 
 /// <summary>

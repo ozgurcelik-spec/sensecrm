@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Sense.Crm.Modules.Workflows.Application;
+using Sense.Crm.Modules.Workflows.Domain.Rules;
 using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Contracts.Context;
 using Sense.Crm.Shared.Contracts.Retention;
@@ -36,6 +37,7 @@ public sealed class WorkflowsConductorEraser(WorkflowsDbContext db, IWorkflowEng
     public async Task<EraseReport> EraseAsync(Guid tenantId, int chunkSize, CancellationToken ct = default)
     {
         List<string> engineIds;
+        List<(Guid Id, WorkflowRuleKind Kind)> orphans;
         using (tenantSetter.BeginScope(tenantId))
         {
             engineIds = await db.Executions.AsNoTracking()
@@ -43,13 +45,35 @@ public sealed class WorkflowsConductorEraser(WorkflowsDbContext db, IWorkflowEng
                 .Select(e => e.EngineWorkflowId!)
                 .ToListAsync(ct)
                 .ConfigureAwait(false);
+
+            // C-SEC2 L2: motor çağrısı başarılı ama engine_workflow_id yazılamamış ("yetim") yürütmeler; motorda CRM yürütme kimliğiyle (correlationId) aranır.
+            orphans = (await db.Executions.AsNoTracking()
+                .Where(e => e.EngineWorkflowId == null)
+                .Select(e => new { e.Id, e.Kind })
+                .ToListAsync(ct)
+                .ConfigureAwait(false)).Select(e => (e.Id, e.Kind)).ToList();
         }
 
+        var removed = 0;
         foreach (var engineId in engineIds)
         {
             await engine.RemoveAsync(engineId, ct).ConfigureAwait(false);
+            removed++;
         }
 
-        return new EraseReport(new Dictionary<string, long> { ["conductor.executions"] = engineIds.Count });
+        var orphanRemoved = 0;
+        foreach (var (id, kind) in orphans)
+        {
+            foreach (var engineId in await engine.FindIdsByCorrelationAsync(WorkflowNames.WorkflowFor(kind), id.ToString(), ct).ConfigureAwait(false))
+            {
+                if (!engineIds.Contains(engineId, StringComparer.Ordinal))
+                {
+                    await engine.RemoveAsync(engineId, ct).ConfigureAwait(false);
+                    orphanRemoved++;
+                }
+            }
+        }
+
+        return new EraseReport(new Dictionary<string, long> { ["conductor.executions"] = removed, ["conductor.orphan_executions"] = orphanRemoved });
     }
 }

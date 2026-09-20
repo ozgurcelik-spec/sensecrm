@@ -173,7 +173,7 @@ public sealed class PlatformAuditApiTests(CrmApiFactory factory)
 
         await platform.SuspendAsync(tid, "musteri talebi", "blocked");
         (await platform.ReactivateRawAsync(tid)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        var requested = await platform.SendJsonAsync(HttpMethod.Post, $"{OrgUrl(tid)}/deletion-request", new { reason = "kapatma", retentionDays = 45 }, HttpStatusCode.OK);
+        var requested = await platform.SendJsonAsync(HttpMethod.Post, $"{OrgUrl(tid)}/deletion-request", await platform.DeletionBodyAsync(tid, "kapatma", 45), HttpStatusCode.OK);
         (await platform.CancelDeletionRawAsync(tid)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
         var refreshed = await platform.SendJsonAsync(HttpMethod.Post, $"{OrgUrl(tid)}/usage/refresh", null, HttpStatusCode.OK);
 

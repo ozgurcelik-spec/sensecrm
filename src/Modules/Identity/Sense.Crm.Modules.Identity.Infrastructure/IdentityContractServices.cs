@@ -22,6 +22,10 @@ public static class IdentityContractServices
         services.AddScoped<IUsageReporter, IdentityUsageReporter>();
         services.AddScoped<ITenantDataEraser, IdentityAccountEraser>();
         services.AddScoped<ITenantDataEraser, IdentityTenantEraser>();
+
+        // C-SEC2 (H1/M6): platform yöneticisi dizini (kiracı koruma kuralı) ve yaşam döngüsü (geri alma); API, Worker ve Migrator kullanır.
+        services.AddScoped<IPlatformAdminDirectory, PlatformAdminDirectory>();
+        services.AddScoped<IPlatformAdminManager, PlatformAdminManager>();
         return services;
     }
 }

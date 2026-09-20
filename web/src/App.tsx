@@ -64,6 +64,7 @@ const PlatformOrganizationsPage = lazy(() => import("@/pages/platform/organizati
 const PlatformOrganizationDetailPage = lazy(() => import("@/pages/platform/organization-detail"));
 const PlatformPlansPage = lazy(() => import("@/pages/platform/plans"));
 const PlatformAuditPage = lazy(() => import("@/pages/platform/platform-audit"));
+const PlatformAdminsPage = lazy(() => import("@/pages/platform/platform-admins"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const NotificationPreferencesPage = lazy(() => import("@/pages/notifications-preferences"));
 const NotificationSettingsPage = lazy(() => import("@/pages/settings/notifications"));
@@ -503,6 +504,7 @@ export default function App() {
               <Route path="organizations/:tenantId" element={<PlatformOrganizationDetailPage />} />
               <Route path="plans" element={<PlatformPlansPage />} />
               <Route path="audit" element={<PlatformAuditPage />} />
+              <Route path="admins" element={<PlatformAdminsPage />} />
             </Route>
             <Route
               path="settings/audit"

@@ -283,8 +283,18 @@ internal static class FilesKit
             result.Outcome.ShouldBe(PlatformAdminOutcome.Created);
         }
 
+        // C-SEC2 M6: bootstrap hesabı geçici parolalıdır; ilk girişte parola (aynı değere) değiştirilir.
         var client = host.CreateClient();
-        return client.WithToken((await client.LoginAsync(email, PlatformPassword)).AccessToken);
+        var auth = await client.LoginAsync(email, PlatformPassword);
+        if (auth.MustChangePassword)
+        {
+            client.WithToken(auth.AccessToken);
+            var changed = await client.PostAsJsonAsync($"{Base}/me/password", new { currentPassword = PlatformPassword, newPassword = PlatformPassword }, Ct);
+            changed.EnsureSuccessStatusCode();
+            auth = (await changed.Content.ReadFromJsonAsync<Sense.Crm.Modules.Identity.Application.AuthResponse>(Ct))!;
+        }
+
+        return client.WithToken(auth.AccessToken);
     }
 
     public static string AllModulesOn => """{"workflows":true,"commerce":true,"service":true,"marketing":true}""";

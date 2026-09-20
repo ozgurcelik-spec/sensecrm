@@ -40,8 +40,9 @@ internal static class PlatformCommands
     public static async Task BackfillAsync(IServiceProvider services, ILogger logger, CancellationToken ct)
     {
         using var scope = services.CreateScope();
-        var created = await scope.ServiceProvider.GetRequiredService<AccountBackfill>().RunAsync(ct).ConfigureAwait(false);
-        logger.LogInformation("Platform account backfill: {Created} tenant(s) assigned to the internal plan.", created);
+        var backfill = scope.ServiceProvider.GetRequiredService<AccountBackfill>();
+        var created = await backfill.RunAsync(ct).ConfigureAwait(false);
+        logger.LogInformation("Platform account backfill: {Created} tenant(s) assigned to the internal plan; {Marked} tenant(s) with an active platform admin member marked is_system.", created, backfill.LastMarkedSystem);
     }
 
     public static async Task EraseDeletedTenantsAsync(IServiceProvider services, ILogger logger, CancellationToken ct)

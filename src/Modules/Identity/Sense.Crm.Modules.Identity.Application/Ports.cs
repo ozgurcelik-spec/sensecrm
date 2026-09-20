@@ -79,6 +79,12 @@ public interface ITokenService
 
     /// <summary>Oturum ailesinin mutlak ömrü (M5).</summary>
     TimeSpan RefreshFamilyLifetime { get; }
+
+    /// <summary>Kullanıcıya özgü tek refresh token ömrü (boşta kalma): platform yöneticisi için kısa (C-SEC2 M4), diğerleri <see cref="RefreshTokenLifetime"/>.</summary>
+    TimeSpan RefreshTokenLifetimeFor(User user);
+
+    /// <summary>Kullanıcıya özgü oturum ailesi mutlak ömrü: platform yöneticisi için kısa (varsayılan 8 saat), diğerleri <see cref="RefreshFamilyLifetime"/>.</summary>
+    TimeSpan RefreshFamilyLifetimeFor(User user);
 }
 
 /// <summary>Tüm modüllerin katkı verdiği birleşik izin kataloğu.</summary>

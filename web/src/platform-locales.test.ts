@@ -68,6 +68,11 @@ describe("M7 texts cover the contract values", () => {
       for (const action of PLATFORM_AUDIT_ACTIONS) {
         expect(lookup(platform, ["audit", "actions", action])).toBeTruthy();
       }
+      // C-SEC2 audit actions are part of the enumerated list (filter dropdown) and translated.
+      for (const action of ["deletion.retried", "platform_admin.revoked"]) {
+        expect(PLATFORM_AUDIT_ACTIONS as readonly string[]).toContain(action);
+        expect(lookup(platform, ["audit", "actions", action])).toBeTruthy();
+      }
       for (const reason of ["suspended", "trial_expired", "pending_deletion", "deleted"]) {
         expect(lookup(subscription, ["reasons", reason])).toBeTruthy();
       }
@@ -79,6 +84,13 @@ describe("M7 texts cover the contract values", () => {
         "invalid_transition",
         "deletion_not_cancellable",
         "system_tenant_protected",
+        // C-SEC2 step-up re-authentication and destructive-command guards.
+        "step_up_required",
+        "step_up_failed",
+        "step_up_rate_limited",
+        "confirmation_mismatch",
+        "last_platform_admin",
+        "deletion_not_retryable",
       ]) {
         expect(lookup(platform, ["errors", "platform", code])).toBeTruthy();
       }
@@ -87,7 +99,7 @@ describe("M7 texts cover the contract values", () => {
 
   it("has the navigation entries in both languages", () => {
     for (const nav of [trNav, enNav] as Record<string, string>[]) {
-      for (const key of ["planUsage", "platform", "platformOrganizations", "platformPlans", "platformAudit"]) {
+      for (const key of ["planUsage", "platform", "platformOrganizations", "platformPlans", "platformAudit", "platformAdmins"]) {
         expect(nav[key], key).toBeTruthy();
       }
     }

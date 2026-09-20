@@ -22,6 +22,18 @@ public sealed class IdentityOptions
     /// <summary>Oturum (refresh token ailesi) mutlak ömrü: ilk girişten itibaren bu süre sonunda yenilemeyle uzatılamaz (M5).</summary>
     public int RefreshFamilyDays { get; set; } = IdentityDefaults.RefreshFamilyDays;
 
+    /// <summary>
+    /// Platform yöneticisi oturumunun (refresh token ailesi) mutlak ömrü, saat (C-SEC2 M4; varsayılan 8). Yalnız <c>IsPlatformAdmin</c> hesaplar için
+    /// <see cref="RefreshFamilyDays"/> yerine geçerlidir; ilk girişten itibaren bu süre sonunda yeniden giriş gerekir.
+    /// </summary>
+    public int PlatformAdminRefreshFamilyHours { get; set; } = IdentityDefaults.PlatformAdminRefreshFamilyHours;
+
+    /// <summary>
+    /// Platform yöneticisi oturumunun <b>boşta kalma</b> süresi, dakika (varsayılan 60): tek bir refresh token'ın ömrüdür; bu süre boyunca yenileme yapılmazsa
+    /// (istemci açık değil) oturum kapanır. Aile ömrü her zaman üst sınırdır.
+    /// </summary>
+    public int PlatformAdminRefreshIdleMinutes { get; set; } = IdentityDefaults.PlatformAdminRefreshIdleMinutes;
+
     /// <summary>Döndürülmüş token'ın bu süre içinde aynı istemciden yeniden gelmesi hırsızlık sayılmaz (eşzamanlı yenileme; sn).</summary>
     public int RefreshReuseGraceSeconds { get; set; } = IdentityDefaults.RefreshReuseGraceSeconds;
 
@@ -44,6 +56,8 @@ public static class IdentityDefaults
     public const int AccessTokenMinutes = 15;
     public const int RefreshTokenDays = 30;
     public const int RefreshFamilyDays = 30;
+    public const int PlatformAdminRefreshFamilyHours = 8;
+    public const int PlatformAdminRefreshIdleMinutes = 60;
     public const int RefreshReuseGraceSeconds = 10;
     public const int LoginThrottleMaxFailures = 5;
     public const int LoginThrottleWindowMinutes = 15;

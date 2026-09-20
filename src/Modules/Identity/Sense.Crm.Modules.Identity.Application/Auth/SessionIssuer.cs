@@ -110,7 +110,7 @@ public sealed class SessionIssuer(
         var hash = secrets.Hash(rawRefresh);
 
         var refresh = RefreshToken.Issue(
-            user.Id, session.Tenant.Id, familyId, familyExpiresAt, hash, now, tokens.RefreshTokenLifetime, tokens.RefreshFamilyLifetime, deviceInfo, ipAddress);
+            user.Id, session.Tenant.Id, familyId, familyExpiresAt, hash, now, tokens.RefreshTokenLifetimeFor(user), tokens.RefreshFamilyLifetimeFor(user), deviceInfo, ipAddress);
         if (addToStore)
         {
             refreshTokens.Add(refresh);

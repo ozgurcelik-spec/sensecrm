@@ -33,7 +33,8 @@ public sealed class OrganizationProvisioner(
         CancellationToken cancellationToken,
         OrganizationOrigin origin = OrganizationOrigin.Signup,
         string? planCode = null,
-        DateOnly? trialEndsOn = null)
+        DateOnly? trialEndsOn = null,
+        Guid? actorUserId = null)
     {
         var slug = await UniqueSlugAsync(Tenant.SlugFrom(organizationName), cancellationToken).ConfigureAwait(false);
         var tenant = Tenant.Create(organizationName, slug, locale, options.Value.DefaultTimeZone);
@@ -41,7 +42,7 @@ public sealed class OrganizationProvisioner(
 
         // Modüller (ör. Sales: varsayılan satış hunisi) kendi varsayılan verilerini bu olayla tohumlar; aynı transaction'da outbox'a yazılır.
         // Platform modülü aynı olayla kiracı hesabını (plan, deneme) açar.
-        outbox.Enqueue(new OrganizationCreated(tenant.Id, tenant.Name, tenant.DefaultLocale, tenant.Slug, origin, planCode, trialEndsOn));
+        outbox.Enqueue(new OrganizationCreated(tenant.Id, tenant.Name, tenant.DefaultLocale, tenant.Slug, origin, planCode, trialEndsOn, actorUserId));
 
         // Kiracı verisi açıkça yeni organizasyonun TenantId'siyle yazılır.
         var seeded = SeedSystemRoles(tenant.Id);

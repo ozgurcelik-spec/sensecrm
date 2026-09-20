@@ -62,6 +62,9 @@ public sealed partial class ConductorWorkflowEngine(ConductorClient client, IWor
         await client.RemoveWorkflowAsync(workflowId, cancellationToken).ConfigureAwait(false);
     }
 
+    public Task<IReadOnlyList<string>> FindIdsByCorrelationAsync(string workflowName, string correlationId, CancellationToken cancellationToken) =>
+        client.FindWorkflowIdsByCorrelationAsync(workflowName, correlationId, cancellationToken);
+
     public async Task CompleteWaitTaskAsync(string workflowId, string taskReferenceName, IReadOnlyDictionary<string, object?> output, CancellationToken cancellationToken)
     {
         var body = new JsonObject();

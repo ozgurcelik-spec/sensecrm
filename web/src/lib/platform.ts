@@ -1,5 +1,5 @@
 /** Pure helpers of the platform console: statuses, allowed actions, overrides, dates, server errors. */
-import { getApiProblem } from "@/lib/api-error";
+import { getApiErrorMessage, getApiProblem } from "@/lib/api-error";
 import {
   GATED_MODULES,
   RECORD_MODULES,
@@ -31,6 +31,8 @@ export const PLATFORM_AUDIT_ACTIONS = [
   "deletion.failed",
   "usage.refreshed",
   "usage.exported",
+  "deletion.retried",
+  "platform_admin.revoked",
 ] as const;
 
 export const SUSPEND_REASON_MAX = 500;
@@ -193,6 +195,31 @@ export function serverFieldErrors(error: unknown): Record<string, string> {
     if (messages[0]) result[path] = messages[0];
   }
   return result;
+}
+
+// ---- Step-up re-authentication errors ----------------------------------------------------------------
+
+/** Form field a step-up error belongs to. */
+export type StepUpField = "password" | "confirmTenantName";
+
+/** Codes shown inline on the password field (never 401, so the session stays). */
+const STEP_UP_PASSWORD_CODES: readonly string[] = ["platform.step_up_required", "platform.step_up_failed"];
+/** Codes shown inline on the typed-organization-name field. */
+const STEP_UP_CONFIRM_CODES: readonly string[] = ["platform.confirmation_mismatch"];
+
+/**
+ * Inline error of a destructive platform command: wrong / missing password on the password field, a
+ * mismatching typed name on the confirmation field. Everything else (rate limit, last platform admin,
+ * not retryable, system tenant ...) returns undefined and goes through `toastApiError`.
+ */
+export function stepUpFieldError(error: unknown): { field: StepUpField; message: string } | undefined {
+  const code = getApiProblem(error)?.code;
+  if (!code) return undefined;
+  if (STEP_UP_PASSWORD_CODES.includes(code)) return { field: "password", message: getApiErrorMessage(error) };
+  if (STEP_UP_CONFIRM_CODES.includes(code)) {
+    return { field: "confirmTenantName", message: getApiErrorMessage(error) };
+  }
+  return undefined;
 }
 
 // ---- Dates ---------------------------------------------------------------------------------------------

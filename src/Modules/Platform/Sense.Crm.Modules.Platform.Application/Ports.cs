@@ -42,6 +42,15 @@ public interface IPlatformAudit
     void Record(string action, TenantAccount? target, Guid? targetTenantId, IReadOnlyDictionary<string, object?> details);
 }
 
+/// <summary>
+/// Platform denetimi <b>tamamlayıcısı</b> (C-SEC2 L4): bir olayın (ör. <c>OrganizationCreated</c>, işlemle birlikte outbox'a yazılır) denetim satırı doğrudan yoldan yazılamadıysa
+/// (iki DbContext arasında dağıtık işlem yok) ilgili kiracı için <b>yoksa</b> ekler; varsa dokunmaz. Kaydetme çağıranındır (Platform UoW).
+/// </summary>
+public interface IPlatformAuditReconciler
+{
+    Task EnsureAsync(string action, Guid targetTenantId, string? targetTenantName, Guid? actorUserId, DateTime occurredAtUtc, IReadOnlyDictionary<string, object?> details, CancellationToken ct);
+}
+
 /// <summary>Varlık önbelleği geçersiz kılma (Platform komutları aynı süreçte anında; diğer kopyalar ≤ süre).</summary>
 public interface IEntitlementCache
 {

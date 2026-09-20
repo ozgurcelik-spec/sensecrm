@@ -198,9 +198,12 @@ public sealed class UpdateSubscriptionHandler(
 // Askı ve yeniden açma.
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// <summary><c>POST …/suspend</c>: <c>reason*</c> (≤500), <c>mode</c> = <c>readOnly</c> (varsayılan) | <c>blocked</c>. Yalnız <c>active</c> kiracı; sistem kiracısı 422.</summary>
+/// <summary>
+/// <c>POST …/suspend</c>: <c>reason*</c> (≤500; kişisel veri yazılmaz), <c>mode</c> = <c>readOnly</c> (varsayılan) | <c>blocked</c>. Yalnız <c>active</c> kiracı; sistem kiracısı ve aktif platform
+/// yöneticisi üyesi olan kiracı 422. <c>blocked</c> kipi <b>step-up</b> ister (<c>currentPassword*</c>; C-SEC2 H2).
+/// </summary>
 [PlatformAdminOnly]
-public sealed record SuspendOrganizationCommand(Guid TenantId, string? Reason, string? Mode) : ICommand;
+public sealed record SuspendOrganizationCommand(Guid TenantId, string? Reason, string? Mode, string? CurrentPassword = null) : ICommand;
 
 public sealed class SuspendOrganizationValidator : AbstractValidator<SuspendOrganizationCommand>
 {
@@ -214,6 +217,8 @@ public sealed class SuspendOrganizationValidator : AbstractValidator<SuspendOrga
 
 public sealed class SuspendOrganizationHandler(
     ITenantAccountRepository accounts,
+    IPlatformAdminDirectory admins,
+    IStepUpGuard stepUp,
     IPlatformAudit audit,
     IIntegrationEventOutbox outbox,
     IEntitlementCache cache,
@@ -228,9 +233,27 @@ public sealed class SuspendOrganizationHandler(
             return Error.NotFound(ErrorCodes.NotFound);
         }
 
+        // H1: sistem kiracısı ya da aktif platform yöneticisi üyesi olan kiracı hiçbir kipte askıya alınamaz (parola denemesi harcanmadan reddedilir).
+        var hasAdmin = await admins.HasActivePlatformAdminAsync(account.TenantId, cancellationToken).ConfigureAwait(false);
+        if (account.IsSystem || hasAdmin)
+        {
+            return Error.Rule(PlatformErrors.SystemTenantProtected);
+        }
+
         var mode = string.IsNullOrEmpty(command.Mode) ? SuspensionModes.ReadOnly : command.Mode;
+
+        // H2: tam engel yıkıcıdır (kiracının tüm kullanıcıları anında dışarıda kalır) → çağıranın parolası yeniden doğrulanır.
+        if (mode == SuspensionModes.Blocked)
+        {
+            var verified = await stepUp.RequireAsync(command.CurrentPassword, cancellationToken).ConfigureAwait(false);
+            if (verified.IsFailure)
+            {
+                return verified;
+            }
+        }
+
         var reason = command.Reason!.Trim();
-        var suspended = account.Suspend(reason, mode, clock.GetUtcNow().UtcDateTime);
+        var suspended = account.Suspend(reason, mode, clock.GetUtcNow().UtcDateTime, hasAdmin);
         if (suspended.IsFailure)
         {
             return suspended;
@@ -287,9 +310,13 @@ public sealed class ReactivateOrganizationHandler(
 // Silme talebi (KVKK): kiracı anında pending_deletion; bekleme süresi sonunda Worker kalıcı imha eder.
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// <summary><c>POST …/deletion-request</c>: <c>reason*</c>, <c>retentionDays?</c> (varsayılan <c>Platform:Deletion:RetentionDays</c>, 7–90). Yalnız <c>active|suspended</c>.</summary>
+/// <summary>
+/// <c>POST …/deletion-request</c>: <c>reason*</c> (kişisel veri yazılmaz), <c>retentionDays?</c> (varsayılan <c>Platform:Deletion:RetentionDays</c>, 7–90), <c>confirmTenantName*</c> (sunucudaki
+/// kiracı adıyla eşleşmeli, 422 <c>platform.confirmation_mismatch</c>) ve <c>currentPassword*</c> (step-up; C-SEC2 H2). Yalnız <c>active|suspended</c>; sistem kiracısı ve aktif platform yöneticisi
+/// üyesi olan kiracı 422. Başarıda <c>deletion.requested</c> denetimi ve <c>TenantDeletionRequested</c> entegrasyon olayı (bildirim modülü tüketir) aynı işlemde yazılır.
+/// </summary>
 [PlatformAdminOnly]
-public sealed record RequestDeletionCommand(Guid TenantId, string? Reason, int? RetentionDays) : ICommand<DeletionRequestResultDto>;
+public sealed record RequestDeletionCommand(Guid TenantId, string? Reason, int? RetentionDays, string? ConfirmTenantName = null, string? CurrentPassword = null) : ICommand<DeletionRequestResultDto>;
 
 public sealed class RequestDeletionValidator : AbstractValidator<RequestDeletionCommand>
 {
@@ -307,6 +334,8 @@ public sealed class RequestDeletionValidator : AbstractValidator<RequestDeletion
 public sealed class RequestDeletionHandler(
     ITenantAccountRepository accounts,
     IDeletionRequestRepository requests,
+    IPlatformAdminDirectory admins,
+    IStepUpGuard stepUp,
     IPlatformAudit audit,
     IIntegrationEventOutbox outbox,
     IEntitlementCache cache,
@@ -327,8 +356,26 @@ public sealed class RequestDeletionHandler(
             return Error.Conflict(PlatformErrors.InvalidTransition, ("from", account.Status), ("to", AccountStatuses.PendingDeletion));
         }
 
+        // H1: koruma kuralı (parola denemesi harcanmadan); H2: yazılan kiracı adı sunucuda doğrulanır, sonra çağıranın parolası (step-up).
+        var hasAdmin = await admins.HasActivePlatformAdminAsync(account.TenantId, cancellationToken).ConfigureAwait(false);
+        if (account.IsSystem || hasAdmin)
+        {
+            return Error.Rule(PlatformErrors.SystemTenantProtected);
+        }
+
+        if (!TenantProtection.NameMatches(command.ConfirmTenantName, account.Name))
+        {
+            return Error.Rule(PlatformErrors.ConfirmationMismatch);
+        }
+
+        var verified = await stepUp.RequireAsync(command.CurrentPassword, cancellationToken).ConfigureAwait(false);
+        if (verified.IsFailure)
+        {
+            return verified.Error;
+        }
+
         var now = clock.GetUtcNow().UtcDateTime;
-        var previous = account.MarkPendingDeletion();
+        var previous = account.MarkPendingDeletion(hasAdmin);
         if (previous.IsFailure)
         {
             return previous.Error;

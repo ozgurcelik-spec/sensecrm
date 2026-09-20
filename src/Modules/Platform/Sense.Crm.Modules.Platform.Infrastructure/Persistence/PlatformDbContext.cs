@@ -130,6 +130,7 @@ public sealed class DeletionRequestConfiguration : IEntityTypeConfiguration<Dele
         b.Property(x => x.LastError).HasMaxLength(PlatformLimits.LastErrorMaxLength);
         b.Property(x => x.ErasedSteps).HasColumnType("text[]").IsRequired();
         b.Property(x => x.Report).HasColumnType(PersistenceDefaults.JsonbColumnType);
+        b.Property(x => x.Version).HasColumnName("xmin").HasColumnType("xid").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
 
         b.HasIndex(x => new { x.TenantId, x.RequestedAt }).IsDescending(false, true);
         b.HasIndex(x => new { x.Status, x.ScheduledFor });

@@ -264,7 +264,7 @@ public sealed class PermissionAndPlanApiTests(CrmApiFactory factory)
 
         // Tam engel: her istek kesilir (okuma dahil).
         await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{org.TenantId}/reactivate", null, HttpStatusCode.NoContent);
-        await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{org.TenantId}/suspend", new { reason = "test", mode = "blocked" }, HttpStatusCode.NoContent);
+        await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{org.TenantId}/suspend", new { reason = "test", mode = "blocked", currentPassword = PlatformPassword }, HttpStatusCode.NoContent);
         using (var blockedList = await org.Admin.GetAsync($"{FilesPath}?recordType=account&recordId={account}", Ct))
         {
             await blockedList.ProblemAsync(HttpStatusCode.Forbidden, "tenant.suspended");

@@ -265,8 +265,18 @@ internal static class Kit
             result.Outcome.ShouldBe(PlatformAdminOutcome.Created);
         }
 
+        // C-SEC2 M6: bootstrap hesabı geçici parolalıdır; ilk girişte parola (aynı değere) değiştirilir.
         var client = host.CreateClient();
-        return client.WithToken((await client.LoginAsync(email, "Platform.Sifre.12345")).AccessToken);
+        var auth = await client.LoginAsync(email, "Platform.Sifre.12345");
+        if (auth.MustChangePassword)
+        {
+            client.WithToken(auth.AccessToken);
+            var changed = await client.PostAsJsonAsync($"{Base}/me/password", new { currentPassword = "Platform.Sifre.12345", newPassword = "Platform.Sifre.12345" }, Ct);
+            changed.EnsureSuccessStatusCode();
+            auth = (await changed.Content.ReadFromJsonAsync<Sense.Crm.Modules.Identity.Application.AuthResponse>(Ct))!;
+        }
+
+        return client.WithToken(auth.AccessToken);
     }
 
     public static async Task<Tenant> NewTenantAsync(this WebApplicationFactory<Program> host, string name)
