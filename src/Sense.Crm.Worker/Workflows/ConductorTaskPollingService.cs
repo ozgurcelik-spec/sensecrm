@@ -6,6 +6,7 @@ using Sense.Crm.Modules.Workflows.Application;
 using Sense.Crm.Modules.Workflows.Application.Tasks;
 using Sense.Crm.Modules.Workflows.Infrastructure;
 using Sense.Crm.Modules.Workflows.Infrastructure.Conductor;
+using Sense.Crm.Shared.Contracts.Observability;
 
 namespace Sense.Crm.Worker.Workflows;
 
@@ -47,6 +48,7 @@ public sealed partial class ConductorTaskPollingService(
                 foreach (var taskType in WorkflowNames.TaskTypes)
                 {
                     var tasks = await client.PollBatchAsync(taskType, settings.WorkerId, settings.PollBatchSize, settings.PollTimeoutMs, stoppingToken).ConfigureAwait(false);
+                    CrmMetrics.ConductorPoll(tasks.Count > 0 ? "tasks" : "empty");
                     foreach (var task in tasks)
                     {
                         await ProcessAsync(client, task, settings.WorkerId, stoppingToken).ConfigureAwait(false);
@@ -56,6 +58,7 @@ public sealed partial class ConductorTaskPollingService(
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                CrmMetrics.ConductorPoll("error");
                 LogPollFailed(logger, ex.Message);
                 await DelayAsync(ErrorDelay, stoppingToken).ConfigureAwait(false);
                 continue;
@@ -72,6 +75,9 @@ public sealed partial class ConductorTaskPollingService(
     {
         // M7: plan/askı zorlaması (olay veri yoluyla aynı ITenantEntitlements): askıda/deneme bitmiş kiracıda ya da workflows modülü kapalıyken görev terminal başarısız olur.
         // Yürütme ailed olur; yeniden açılınca yönetici retry ile yeniden dener. Kiracı kimliği yalnız kapı içindir (görev girdisi güvenilmezdir; runner asıl doğrulamayı yapar).
+        // Günlük bağlamı: Conductor workflow örnek kimliği (kişisel veri değil) correlation id olarak taşınır.
+        using var logScope = logger.BeginScope(new[] { KeyValuePair.Create<string, object>("CorrelationId", task.WorkflowInstanceId) });
+        var started = CrmMetrics.StartTimer();
         var blocked = await CheckEntitlementAsync(task, ct).ConfigureAwait(false);
 
         // Görev girdisi güvenilmezdir: runner, (tenantId, executionId, motor workflow kimliği) üçlüsünü workflow_executions ile doğrular (H1).
@@ -79,6 +85,7 @@ public sealed partial class ConductorTaskPollingService(
         var status = result.Succeeded
             ? ConductorStatuses.Completed
             : result.Terminal ? ConductorStatuses.FailedWithTerminalError : ConductorStatuses.Failed;
+        var outcome = blocked is not null ? "blocked" : result.Succeeded ? "completed" : result.Terminal ? "failed_terminal" : "failed";
 
         try
         {
@@ -88,8 +95,12 @@ public sealed partial class ConductorTaskPollingService(
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Sonuç bildirilemedi: görev yanıt zaman aşımından sonra motorca yeniden kuyruğa alınır.
+            outcome = "report_failed";
             LogUpdateFailed(logger, ex, task.TaskType, task.TaskId);
         }
+
+        // Etiket değeri yalnız bilinen görev türleri (Conductor yanıtından gelen değer sınırsız seri üretemesin).
+        CrmMetrics.ConductorTaskHandled(WorkflowNames.TaskTypes.Contains(task.TaskType) ? task.TaskType : "other", outcome, CrmMetrics.Elapsed(started));
     }
 
     /// <summary>Kiracı erişimi <c>full</c> değilse (<c>tenant_suspended</c>) ya da workflows kapalıysa (<c>module_disabled</c>) terminal sonuç; aksi null.</summary>

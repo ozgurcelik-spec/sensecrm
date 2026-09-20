@@ -55,6 +55,9 @@
     <PackageVersion Include="Serilog.AspNetCore" Version="9.*" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.*" />
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.*" />
+    <!-- C-OPS1 (K20): yalnız metrikler. ASP.NET Core/HttpClient/EF/Npgsql/runtime metrikleri çerçevenin yerleşik Meter'larıdır (ek enstrümantasyon paketi yok). -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.*-*" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">

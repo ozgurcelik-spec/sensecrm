@@ -18,8 +18,10 @@ using Sense.Crm.Modules.Workflows.Infrastructure;
 using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Contracts.Configuration;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
+using Sense.Crm.Shared.Infrastructure.Observability;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.Persistence.Outbox;
+using Sense.Crm.Worker.Observability;
 
 // Worker (K5): modül outbox'larını boşaltır (domain event → aynı modül handler'ları, integration event → IEventBus).
 // Zamanlanmış işler, bildirim/e-posta teslimi ve gerçek zamanlı yayın MVP'de yok; yalnız OutboxPollingService<T> kalır.
@@ -126,6 +128,10 @@ builder.Services.AddHostedService<Sense.Crm.Worker.OutboxPollingService<Platform
 builder.Services.AddHostedService<Sense.Crm.Worker.Platform.UsageSnapshotService>();
 builder.Services.AddHostedService<Sense.Crm.Worker.Platform.TenantErasureService>();
 
+// Gözlemlenebilirlik (C-OPS1, K20): Observability:Metrics:Enabled=true ise ayrı portta Prometheus /metrics + outbox/workflow/silme örnekleyicisi (varsayılan kapalı).
+builder.Services.AddCrmObservability(builder.Configuration, "crm-worker");
+builder.Services.AddWorkerMetricsSampler(builder.Configuration);
+
 await builder.Build().RunAsync();
 
 namespace Sense.Crm.Worker
@@ -152,6 +158,7 @@ namespace Sense.Crm.Worker
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     // Veritabanı henüz hazır/migrate edilmemiş olabilir; süreç çökmeden bir sonraki turda tekrar denenir.
+                    Sense.Crm.Shared.Contracts.Observability.CrmMetrics.OutboxPollFailed(typeof(TContext).Name.Replace("DbContext", string.Empty, StringComparison.Ordinal).ToLowerInvariant());
                     LogPollFailed(logger, ex, typeof(TContext).Name);
                 }
 

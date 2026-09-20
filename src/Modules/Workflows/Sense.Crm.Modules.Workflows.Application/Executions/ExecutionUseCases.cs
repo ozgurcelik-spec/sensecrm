@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Workflows.Domain;
 using Sense.Crm.Modules.Workflows.Domain.Approvals;
 using Sense.Crm.Modules.Workflows.Domain.Executions;
 using Sense.Crm.Shared.Contracts.Messaging;
+using Sense.Crm.Shared.Contracts.Observability;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
@@ -241,6 +242,7 @@ public sealed class ExecutionStatusSynchronizer(
         }
 
         await unitOfWork.SaveChangesAsync(ct).ConfigureAwait(false);
+        CrmMetrics.WorkflowExecutionFinished(execution.Status.ToString().ToLowerInvariant());
         return true;
     }
 }
