@@ -29,6 +29,10 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | C-M6B | Servis/Destek: Talepler (case), yorumlar, SLA süresi | Spec→Backend+Web | **Merged** | `m6/service` | kart kapısı |
 | C-M6C | Pazarlama: Kampanyalar, kampanya üyeleri, lead kaynağı ilişkisi | Spec→Backend+Web | **Merged** | `m6/marketing` | kart kapısı |
 | C-M7 | SaaS hazırlığı (planlar/limitler, kiracı yönetimi, faturalama altyapısı) | Spec→Backend+Web | **Merged** | `main` | M6 merge sonrası şekillenir |
+| C-M8A | Bildirimler: uygulama içi + e-posta (SMTP) + SMS portu, şablonlar, tercihler, hatırlatma/SLA zamanlayıcıları (Notification Worker) | Spec→Backend+Web | **Ready** | `m8/notifications` | kart kapısı + egress/PII incelemesi |
+| C-M8B | Webhooks ve Open API: giden webhook (imzalı, yeniden deneme, SSRF korumalı), API anahtarları, teslimat günlüğü | Spec→Backend+Web | **Ready** | `m8/integrations` | kart kapısı + güvenlik incelemesi |
+| C-M8C | Dosya ekleri: nesne depolama (MinIO/S3), kayıtlara ek, plan depolama limiti, KVKK silme | Spec→Backend+Web | **Ready** | `m8/files` | kart kapısı + yetki/indirme incelemesi |
+| C-M8D | Özel alanlar: kiracı bazlı alan tanımları, doğrulama, dinamik form/detay/liste | Spec→Backend+Web | **Ready** | `m8/custom-fields` | kart kapısı + kiracı izolasyonu |
 
 ## Yürütme sırası
 1. C-M5 biter → doğrula, commit.
@@ -42,3 +46,4 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 - Çakışma dersleri: (1) `git checkout --merge` + JSON için yapısal birleştirme; (2) `.gitattributes` ile LF zorunlu; (3) izin sayısı testleri sayı sabitlemez; (4) aynı adlı tip/anahtar çakışmaları (MemberStatus, resx `field.*`) merge sonrası taranır.
 - 2026-09-20: C-M7 merged (Platform modülü: planlar/limitler/askıya alma/ölçüm/KVKK silme; web: platform konsolu, Plan ve kullanım, bantlar, ilk kurulum kartı). Kapılar: backend 12 proje 1188 test, web 798 test; tarayıcıda uçtan uca doğrulandı (starter planında kapalı modüller menüden gizli, platform konsolu, askıya alma diyaloğu).
 - Açık: yerel `main` henüz `origin`e push edilmedi (otomatik mod denetleyicisi push komutunu reddetti; kullanıcı elle çalıştırmalı).
+- 2026-09-20: M8 başladı (A–D). Eşzamanlı en çok 5 ajan; Spec ajanları önce (4 paralel), sonra dalga dalga Backend+Web. Merge sırası: D → C → A → B (ortak varlık ve sıcak dosya çakışmalarını azaltmak için; gerekirse değişir).
