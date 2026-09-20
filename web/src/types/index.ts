@@ -145,6 +145,7 @@ export const PERMISSIONS = {
   crmOrdersWrite: "crm.orders.write",
   crmCasesRead: "crm.cases.read",
   crmCasesWrite: "crm.cases.write",
+  orgNotificationsManage: "org.notifications.manage",
 } as const;
 
 /** Milestone 2 list envelope (`GET /accounts`, `/contacts`, `/leads`, `/deals`). */
@@ -162,3 +163,4 @@ export * from "./commerce";
 export * from "./service";
 export * from "./platform";
 export * from "./files";
+export * from "./notifications";

@@ -7,8 +7,11 @@ import { usePlatformPlans } from "@/hooks/use-platform";
 import { formatNumber } from "@/lib/format";
 import { GATED_MODULES, type PlatformPlan } from "@/types";
 
+/** Plan flags of the notification channels (M8A); shown as badges next to the modules. */
+const NOTIFICATION_PLAN_FEATURES = ["notifications.email", "notifications.sms"] as const;
+
 function LimitsCell({ plan }: { plan: PlatformPlan }) {
-  const { t } = useTranslation(["platform", "subscription", "files"]);
+  const { t } = useTranslation(["platform", "subscription", "files", "notifications"]);
   const value = (limit: number | null | undefined) =>
     limit === null || limit === undefined ? t("platform:plans.unlimited") : formatNumber(limit);
   const records = Object.entries(plan.limits.maxRecords ?? {});
@@ -23,6 +26,12 @@ function LimitsCell({ plan }: { plan: PlatformPlan }) {
           {plan.limits.maxStorageMb === null ? value(null) : `${value(plan.limits.maxStorageMb)} MB`}
         </Text>
       )}
+      {plan.limits.maxEmailsPerDay !== undefined && (
+        <Text size="xs" c="dimmed">
+          {t("notifications:plan.emailsPerDay")}:{" "}
+          {plan.limits.maxEmailsPerDay === null ? t("notifications:plan.platformDefault") : value(plan.limits.maxEmailsPerDay)}
+        </Text>
+      )}
       {records.map(([module, limit]) => (
         <Text size="xs" c="dimmed" key={module}>
           {t(`subscription:modules.${module}`, { defaultValue: module })}: {value(limit)}
@@ -34,7 +43,7 @@ function LimitsCell({ plan }: { plan: PlatformPlan }) {
 
 /** Read-only plan catalog: plans are managed by configuration, not from the UI. */
 export default function PlatformPlansPage() {
-  const { t } = useTranslation(["platform", "subscription"]);
+  const { t } = useTranslation(["platform", "subscription", "notifications"]);
   const { data, isLoading, error, refetch } = usePlatformPlans();
 
   return (
@@ -104,6 +113,20 @@ export default function PlatformPlansPage() {
                               }`}
                             >
                               {t(`subscription:modules.${module}`)}
+                            </Badge>
+                          ))}
+                          {NOTIFICATION_PLAN_FEATURES.map((feature) => (
+                            <Badge
+                              key={feature}
+                              size="sm"
+                              variant="light"
+                              color={plan.features?.[feature] ? "green" : "gray"}
+                              data-testid={`feature-${feature}`}
+                              aria-label={`${t(`notifications:plan.features.${feature}`)}: ${
+                                plan.features?.[feature] ? t("subscription:included") : t("subscription:notIncluded")
+                              }`}
+                            >
+                              {t(`notifications:plan.features.${feature}`)}
                             </Badge>
                           ))}
                         </Group>

@@ -1,0 +1,336 @@
+{
+  "mandatoryBadge": "Mandatory",
+  "unread": "Unread",
+  "new": "New",
+  "markAllRead": "Mark all as read",
+  "bell": {
+    "label": "Notifications",
+    "labelCount": "Notifications: {{count}} unread",
+    "title": "Notifications",
+    "empty": "You have no notifications yet",
+    "viewAll": "View all",
+    "preferences": "Notification preferences"
+  },
+  "severities": {
+    "info": "Info",
+    "warning": "Warning",
+    "critical": "Critical"
+  },
+  "channels": {
+    "inApp": "In-app",
+    "email": "E-mail",
+    "sms": "SMS"
+  },
+  "groups": {
+    "approvals": "Approvals",
+    "service": "Service",
+    "activities": "Activities",
+    "sales": "Sales",
+    "commerce": "Commerce",
+    "account": "Account and plan"
+  },
+  "kinds": {
+    "approval": {
+      "requested": {
+        "label": "Approval requested",
+        "description": "An approval is waiting for you"
+      },
+      "decided": {
+        "label": "Approval decided",
+        "description": "A record you submitted was approved or rejected"
+      }
+    },
+    "case": {
+      "assigned": {
+        "label": "Case assigned",
+        "description": "A case was assigned to you"
+      },
+      "resolved": {
+        "label": "Case resolved",
+        "description": "A case you opened or handle was resolved"
+      },
+      "sla_at_risk": {
+        "label": "SLA at risk",
+        "description": "A case is close to breaching its SLA"
+      },
+      "sla_breached": {
+        "label": "SLA breached",
+        "description": "A case breached its SLA"
+      }
+    },
+    "activity": {
+      "due_soon": {
+        "label": "Activity due soon",
+        "description": "An activity assigned to you is about to be due"
+      },
+      "overdue": {
+        "label": "Activity overdue",
+        "description": "An activity assigned to you is overdue"
+      },
+      "daily_agenda": {
+        "label": "Daily agenda",
+        "description": "A summary of what is due today and overdue"
+      }
+    },
+    "lead": {
+      "assigned": {
+        "label": "Lead assigned",
+        "description": "A lead was assigned to you"
+      }
+    },
+    "quote": {
+      "accepted": {
+        "label": "Quote accepted",
+        "description": "A quote you own was accepted"
+      }
+    },
+    "tenant": {
+      "plan_changed": {
+        "label": "Plan changed",
+        "description": "Your organization's plan changed"
+      },
+      "suspended": {
+        "label": "Organization suspended",
+        "description": "Your organization was suspended"
+      },
+      "reactivated": {
+        "label": "Organization reactivated",
+        "description": "Your suspended organization was reactivated"
+      },
+      "deletion_requested": {
+        "label": "Deletion requested",
+        "description": "Deletion of your organization was started"
+      },
+      "deletion_cancelled": {
+        "label": "Deletion cancelled",
+        "description": "Deletion of your organization was cancelled"
+      },
+      "trial_ending": {
+        "label": "Trial ending",
+        "description": "Your trial is about to end"
+      },
+      "trial_expired": {
+        "label": "Trial ended",
+        "description": "Your trial has ended"
+      }
+    },
+    "system": {
+      "test_email": {
+        "label": "Test e-mail",
+        "description": ""
+      }
+    }
+  },
+  "toast": {
+    "many": "{{count}} new critical notifications",
+    "view": "View"
+  },
+  "page": {
+    "title": "Notifications",
+    "description": "Notifications sent to you, newest first.",
+    "preferences": "Notification preferences",
+    "markRead": "Mark as read",
+    "markReadNamed": "Mark as read: {{title}}",
+    "dismiss": "Hide",
+    "dismissNamed": "Hide: {{title}}",
+    "markedAll": "{{count}} notifications marked as read",
+    "empty": "No notifications",
+    "emptyUnread": "No unread notifications",
+    "tabs": {
+      "label": "Notification status",
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "columns": {
+      "notification": "Notification",
+      "kind": "Kind",
+      "createdAt": "Date"
+    },
+    "filters": {
+      "kind": "Kind",
+      "severity": "Severity"
+    }
+  },
+  "preferences": {
+    "title": "Notification preferences",
+    "description": "Choose which events you want to be notified about and through which channel.",
+    "back": "Back to notifications",
+    "open": "Open preferences",
+    "profileHint": "Choose which notifications you receive and through which channel.",
+    "intro": "Mandatory notifications (for example suspension, deletion, trial end) cannot be turned off.",
+    "columns": {
+      "kind": "Notification kind"
+    },
+    "unavailable": {
+      "platform": "Not configured on the server",
+      "plan": "Not included in your plan",
+      "tenant": "Turned off by your administrator"
+    },
+    "unsupported": "This kind does not use this channel",
+    "locked": "mandatory",
+    "lockedHint": "Mandatory notification: cannot be turned off",
+    "resetDefaults": "Reset to defaults",
+    "emailsOff": "Turn off all e-mails",
+    "saved": "Your preferences were saved",
+    "readOnly": "The organization is in read-only mode: preferences cannot be changed right now.",
+    "addressIssue": "Your e-mail address cannot be reached. E-mail notifications are paused for now; check your address with your administrator."
+  },
+  "admin": {
+    "title": "Notifications",
+    "description": "Channels, sender details, the delivery log and problem recipients.",
+    "readOnly": "The organization is in read-only mode: settings can be viewed but not changed.",
+    "tabs": {
+      "label": "Notification management",
+      "settings": "Settings",
+      "deliveries": "Delivery log",
+      "issues": "Recipient issues"
+    }
+  },
+  "settings": {
+    "email": {
+      "label": "E-mail notifications",
+      "hint": "Users receive notifications by e-mail. Mandatory notifications are not affected by this switch."
+    },
+    "sms": {
+      "label": "SMS notifications",
+      "hint": "Only for critical notification kinds that support SMS."
+    },
+    "effective": "Active",
+    "notEffective": "Not active",
+    "reason": {
+      "platform": "This channel is not configured on the server. Contact your platform administrator.",
+      "plan": "This channel is not included in your plan."
+    },
+    "planLink": "Plan and usage",
+    "senderName": "Sender name",
+    "senderNameHint": "The organization name is used when empty. The sender address belongs to the platform.",
+    "replyTo": "Reply-to address",
+    "replyToHint": "Replies to notification e-mails go to this address (optional).",
+    "saved": "Notification settings saved",
+    "errors": {
+      "tooLong": "At most {{max}} characters",
+      "invalidChars": "Must not contain control characters or < > \"",
+      "invalidEmail": "Enter a valid e-mail address"
+    },
+    "usage": {
+      "title": "E-mail usage today",
+      "withLimit": "{{count}} e-mails sent today (daily limit: {{limit}})",
+      "noLimit": "{{count}} e-mails sent today"
+    },
+    "test": {
+      "hint": "Sends a test e-mail to your own address and follows the result."
+    }
+  },
+  "test": {
+    "button": "Send test e-mail",
+    "buttonWait": "Try again in {{seconds}} s",
+    "notConfigured": "E-mail is not configured on the server; a test e-mail cannot be sent.",
+    "rateLimited": "Too many attempts. Try again in {{seconds}} seconds.",
+    "sending": "Sending the test e-mail...",
+    "stillQueued": "The test e-mail is still queued. Follow it in the Delivery log tab.",
+    "sent": "The test e-mail was sent. Check your inbox.",
+    "failed": "The test e-mail could not be sent: {{reason}}",
+    "skipped": "The test e-mail was skipped: {{reason}}"
+  },
+  "delivery": {
+    "statuses": {
+      "pending": "Pending",
+      "sending": "Sending",
+      "sent": "Sent",
+      "dead": "Failed",
+      "skipped": "Skipped"
+    },
+    "errorCodes": {
+      "recipientRejected": "Recipient address rejected",
+      "messageRejected": "Message rejected",
+      "temporaryFailure": "Temporary failure (attempts exhausted)",
+      "timeout": "Timed out",
+      "connectionFailed": "Could not connect to the server",
+      "authFailed": "Server authentication failed",
+      "tlsFailed": "TLS error",
+      "expired": "Expired (too late to send)"
+    },
+    "skipReasons": {
+      "noAddress": "No address",
+      "addressInvalid": "Address marked invalid",
+      "channelDisabled": "Channel turned off",
+      "tenantNotActive": "Organization not active",
+      "dailyLimit": "Daily limit reached",
+      "userInactive": "User inactive",
+      "preferenceOff": "Turned off by the user"
+    },
+    "columns": {
+      "status": "Status",
+      "channel": "Channel",
+      "kind": "Kind",
+      "recipient": "Recipient",
+      "attempts": "Attempts",
+      "reason": "Reason",
+      "createdAt": "Created",
+      "lastAttemptAt": "Last attempt"
+    },
+    "filters": {
+      "channel": "Channel",
+      "status": "Status",
+      "kind": "Kind",
+      "recipient": "Recipient",
+      "from": "From",
+      "to": "To"
+    },
+    "summary": {
+      "sentToday": "Sent today",
+      "oldestPending": "Oldest pending: {{date}}"
+    },
+    "retry": "Retry ({{count}})",
+    "retried": "{{count}} deliveries queued again",
+    "empty": "No deliveries",
+    "open": "Details",
+    "openNamed": "Delivery details: {{kind}}",
+    "selectNamed": "Select: {{kind}}",
+    "detail": {
+      "title": "Delivery details",
+      "skipReason": "Skip reason",
+      "errorCode": "Error",
+      "nextAttemptAt": "Next attempt",
+      "sentAt": "Sent",
+      "noPersonalData": "Subject, message body, full address and recipient name are neither shown nor stored here.",
+      "payload": "Record (JSON)"
+    }
+  },
+  "issues": {
+    "hint": "E-mail delivery stops for recipients whose address was rejected repeatedly. Reset after the address is fixed.",
+    "columns": {
+      "user": "User",
+      "channel": "Channel",
+      "failures": "Consecutive rejections",
+      "invalidSince": "Marked invalid",
+      "lastFailure": "Last failure"
+    },
+    "reset": "Reset",
+    "resetNamed": "Reset: {{name}}",
+    "resetDone": "Recipient state reset",
+    "empty": "No problem recipients"
+  },
+  "plan": {
+    "emailsPerDay": "E-mails per day",
+    "platformDefault": "platform default",
+    "features": {
+      "notifications": {
+        "email": "E-mail notifications",
+        "sms": "SMS notifications"
+      }
+    }
+  },
+  "errors": {
+    "mandatoryNamed": "\"{{kind}}\" is mandatory; the {{channel}} channel cannot be turned off.",
+    "notification": {
+      "mandatory_preference": "This mandatory notification cannot be turned off.",
+      "email_not_configured": "E-mail is not configured on the server.",
+      "delivery_not_retryable": "There is no failed delivery that can be retried."
+    },
+    "general": {
+      "rate_limit_exceeded": "Too many requests. Wait a moment and try again."
+    }
+  }
+}

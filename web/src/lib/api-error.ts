@@ -39,6 +39,7 @@ export function getApiErrorMessage(error: unknown): string {
       `subscription:errors.${problem.code}`,
       `platform:errors.${problem.code}`,
       `files:errors.${problem.code}`,
+      `notifications:errors.${problem.code}`,
     ]) {
       if (i18n.exists(key)) return i18n.t(key, problemArgs(problem));
     }
