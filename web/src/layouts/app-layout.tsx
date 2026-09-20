@@ -13,6 +13,7 @@ import { BlockedScreen } from "@/components/subscription/blocked-screen";
 import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
 import RouteBoundary from "@/components/route-boundary";
 import { ApprovalsBell } from "@/components/shell/approvals-bell";
+import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { InvitationsBell } from "@/components/shell/invitations-bell";
 import { LanguageMenu } from "@/components/shell/language-menu";
 import { OrganizationSwitcher } from "@/components/shell/organization-switcher";
@@ -103,6 +104,7 @@ export default function AppLayout() {
             </Group>
           </Group>
           <Group gap="xs" wrap="nowrap">
+            <NotificationsBell />
             <ApprovalsBell />
             <InvitationsBell />
             <OrganizationSwitcher />
@@ -148,7 +150,7 @@ export default function AppLayout() {
         </ScrollArea>
       </AppShell.Navbar>
 
-      <AppShell.Main>
+      <AppShell.Main className={classes.main}>
         <SubscriptionBanner />
         <RouteBoundary>
           <Outlet />

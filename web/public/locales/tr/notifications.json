@@ -1,0 +1,336 @@
+{
+  "mandatoryBadge": "Zorunlu",
+  "unread": "Okunmamış",
+  "new": "Yeni",
+  "markAllRead": "Tümünü okundu işaretle",
+  "bell": {
+    "label": "Bildirimler",
+    "labelCount": "Bildirimler: {{count}} okunmamış",
+    "title": "Bildirimler",
+    "empty": "Henüz bildiriminiz yok",
+    "viewAll": "Tümünü gör",
+    "preferences": "Bildirim tercihleri"
+  },
+  "severities": {
+    "info": "Bilgi",
+    "warning": "Uyarı",
+    "critical": "Kritik"
+  },
+  "channels": {
+    "inApp": "Uygulama içi",
+    "email": "E-posta",
+    "sms": "SMS"
+  },
+  "groups": {
+    "approvals": "Onaylar",
+    "service": "Servis",
+    "activities": "Aktiviteler",
+    "sales": "Satış",
+    "commerce": "Ticaret",
+    "account": "Hesap ve plan"
+  },
+  "kinds": {
+    "approval": {
+      "requested": {
+        "label": "Onay istendi",
+        "description": "Sizden bir onay bekleniyor"
+      },
+      "decided": {
+        "label": "Onay karara bağlandı",
+        "description": "Onaya sunduğunuz kayıt onaylandı veya reddedildi"
+      }
+    },
+    "case": {
+      "assigned": {
+        "label": "Talep atandı",
+        "description": "Size bir talep atandı"
+      },
+      "resolved": {
+        "label": "Talep çözüldü",
+        "description": "Açtığınız veya üstlendiğiniz talep çözüldü"
+      },
+      "sla_at_risk": {
+        "label": "SLA riskte",
+        "description": "Bir talebin SLA süresi dolmak üzere"
+      },
+      "sla_breached": {
+        "label": "SLA aşıldı",
+        "description": "Bir talebin SLA süresi aşıldı"
+      }
+    },
+    "activity": {
+      "due_soon": {
+        "label": "Aktivite vadesi yaklaşıyor",
+        "description": "Size atanan bir aktivitenin vadesi yaklaşıyor"
+      },
+      "overdue": {
+        "label": "Aktivite vadesi geçti",
+        "description": "Size atanan bir aktivitenin vadesi geçti"
+      },
+      "daily_agenda": {
+        "label": "Günlük ajanda",
+        "description": "Bugün vadesi gelen ve geciken işlerinizin özeti"
+      }
+    },
+    "lead": {
+      "assigned": {
+        "label": "Potansiyel atandı",
+        "description": "Size bir potansiyel müşteri atandı"
+      }
+    },
+    "quote": {
+      "accepted": {
+        "label": "Teklif kabul edildi",
+        "description": "Sahibi olduğunuz bir teklif kabul edildi"
+      }
+    },
+    "tenant": {
+      "plan_changed": {
+        "label": "Plan değişti",
+        "description": "Organizasyonunuzun planı değişti"
+      },
+      "suspended": {
+        "label": "Organizasyon askıya alındı",
+        "description": "Organizasyonunuz askıya alındı"
+      },
+      "reactivated": {
+        "label": "Organizasyon yeniden etkinleştirildi",
+        "description": "Askıdaki organizasyonunuz yeniden etkinleştirildi"
+      },
+      "deletion_requested": {
+        "label": "Silme talebi alındı",
+        "description": "Organizasyonunuz için silme süreci başlatıldı"
+      },
+      "deletion_cancelled": {
+        "label": "Silme talebi iptal edildi",
+        "description": "Organizasyonunuzun silme süreci iptal edildi"
+      },
+      "trial_ending": {
+        "label": "Deneme süresi bitiyor",
+        "description": "Deneme sürenizin bitmesine az kaldı"
+      },
+      "trial_expired": {
+        "label": "Deneme süresi bitti",
+        "description": "Deneme süreniz sona erdi"
+      }
+    },
+    "system": {
+      "test_email": {
+        "label": "Test e-postası",
+        "description": ""
+      }
+    }
+  },
+  "toast": {
+    "many": "{{count}} yeni kritik bildirim",
+    "view": "Görüntüle"
+  },
+  "page": {
+    "title": "Bildirimler",
+    "description": "Size gönderilen bildirimler, en yeniden en eskiye.",
+    "preferences": "Bildirim tercihleri",
+    "markRead": "Okundu işaretle",
+    "markReadNamed": "Okundu işaretle: {{title}}",
+    "dismiss": "Gizle",
+    "dismissNamed": "Gizle: {{title}}",
+    "markedAll": "{{count}} bildirim okundu olarak işaretlendi",
+    "empty": "Bildirim yok",
+    "emptyUnread": "Okunmamış bildirim yok",
+    "tabs": {
+      "label": "Bildirim durumu",
+      "all": "Tümü",
+      "unread": "Okunmamış",
+      "read": "Okunmuş"
+    },
+    "columns": {
+      "notification": "Bildirim",
+      "kind": "Tür",
+      "createdAt": "Tarih"
+    },
+    "filters": {
+      "kind": "Tür",
+      "severity": "Önem"
+    }
+  },
+  "preferences": {
+    "title": "Bildirim tercihleri",
+    "description": "Hangi olaylar için hangi kanaldan bildirim almak istediğinizi seçin.",
+    "back": "Bildirimlere dön",
+    "open": "Tercihleri aç",
+    "profileHint": "Hangi bildirimleri hangi kanaldan alacağınızı belirleyin.",
+    "intro": "Zorunlu bildirimler (ör. askıya alma, silme, deneme süresi) kapatılamaz.",
+    "columns": {
+      "kind": "Bildirim türü"
+    },
+    "unavailable": {
+      "platform": "Sunucuda yapılandırılmamış",
+      "plan": "Planınıza dahil değil",
+      "tenant": "Yöneticiniz kapattı"
+    },
+    "unsupported": "Bu tür bu kanalı kullanmaz",
+    "locked": "zorunlu",
+    "lockedHint": "Zorunlu bildirim: kapatılamaz",
+    "resetDefaults": "Varsayılana dön",
+    "emailsOff": "E-postaların tümünü kapat",
+    "saved": "Tercihleriniz kaydedildi",
+    "readOnly": "Organizasyon salt okunur kipte: tercihler şu an değiştirilemez.",
+    "addressIssue": "E-posta adresinize ulaşılamıyor. E-posta bildirimleri geçici olarak denenmiyor; adresinizi yöneticinizle kontrol edin."
+  },
+  "admin": {
+    "title": "Bildirimler",
+    "description": "Kanallar, gönderen bilgisi, teslimat günlüğü ve sorunlu alıcılar.",
+    "readOnly": "Organizasyon salt okunur kipte: ayarlar görüntülenebilir, değiştirilemez.",
+    "tabs": {
+      "label": "Bildirim yönetimi",
+      "settings": "Ayarlar",
+      "deliveries": "Teslimat günlüğü",
+      "issues": "Alıcı sorunları"
+    }
+  },
+  "settings": {
+    "email": {
+      "label": "E-posta bildirimleri",
+      "hint": "Kullanıcılara e-posta ile bildirim gönderilir. Zorunlu bildirimler bu ayardan etkilenmez."
+    },
+    "sms": {
+      "label": "SMS bildirimleri",
+      "hint": "Yalnızca SMS destekleyen kritik bildirim türleri için."
+    },
+    "effective": "Etkin",
+    "notEffective": "Etkin değil",
+    "reason": {
+      "platform": "Bu kanal sunucuda yapılandırılmamış. Platform yöneticinizle görüşün.",
+      "plan": "Bu kanal planınıza dahil değil."
+    },
+    "planLink": "Plan ve kullanım",
+    "senderName": "Gönderen adı",
+    "senderNameHint": "Boşsa organizasyon adı kullanılır. Gönderen adresi platforma aittir.",
+    "replyTo": "Yanıt adresi",
+    "replyToHint": "Alıcılar e-postayı yanıtladığında bu adrese gider (isteğe bağlı).",
+    "saved": "Bildirim ayarları kaydedildi",
+    "errors": {
+      "tooLong": "En fazla {{max}} karakter olabilir",
+      "invalidChars": "Denetim karakteri veya < > \" içeremez",
+      "invalidEmail": "Geçerli bir e-posta adresi girin"
+    },
+    "usage": {
+      "title": "Bugünkü e-posta kullanımı",
+      "withLimit": "Bugün {{count}} e-posta gönderildi (günlük sınır: {{limit}})",
+      "noLimit": "Bugün {{count}} e-posta gönderildi"
+    },
+    "test": {
+      "hint": "Kendi adresinize bir test e-postası gönderir ve sonucu izler."
+    }
+  },
+  "test": {
+    "button": "Test e-postası gönder",
+    "buttonWait": "Tekrar denemek için {{seconds}} sn",
+    "notConfigured": "E-posta sunucuda yapılandırılmamış; test e-postası gönderilemez.",
+    "rateLimited": "Çok fazla deneme yapıldı. {{seconds}} saniye sonra tekrar deneyin.",
+    "sending": "Test e-postası gönderiliyor...",
+    "stillQueued": "Test e-postası hâlâ kuyrukta. Sonucu Teslimat günlüğü sekmesinden izleyebilirsiniz.",
+    "sent": "Test e-postası gönderildi. Gelen kutunuzu kontrol edin.",
+    "failed": "Test e-postası gönderilemedi: {{reason}}",
+    "skipped": "Test e-postası atlandı: {{reason}}"
+  },
+  "delivery": {
+    "statuses": {
+      "pending": "Bekliyor",
+      "sending": "Gönderiliyor",
+      "sent": "Gönderildi",
+      "dead": "Başarısız",
+      "skipped": "Atlandı"
+    },
+    "errorCodes": {
+      "recipientRejected": "Alıcı adresi reddedildi",
+      "messageRejected": "İleti reddedildi",
+      "temporaryFailure": "Geçici hata (denemeler tükendi)",
+      "timeout": "Zaman aşımı",
+      "connectionFailed": "Sunucuya bağlanılamadı",
+      "authFailed": "Sunucu kimlik doğrulaması başarısız",
+      "tlsFailed": "TLS hatası",
+      "expired": "Süresi doldu (çok geç kaldı)"
+    },
+    "skipReasons": {
+      "noAddress": "Adres yok",
+      "addressInvalid": "Adres geçersiz işaretli",
+      "channelDisabled": "Kanal kapalı",
+      "tenantNotActive": "Organizasyon etkin değil",
+      "dailyLimit": "Günlük sınır aşıldı",
+      "userInactive": "Kullanıcı pasif",
+      "preferenceOff": "Kullanıcı tercihi kapalı"
+    },
+    "columns": {
+      "status": "Durum",
+      "channel": "Kanal",
+      "kind": "Tür",
+      "recipient": "Alıcı",
+      "attempts": "Deneme",
+      "reason": "Neden",
+      "createdAt": "Oluşturulma",
+      "lastAttemptAt": "Son deneme"
+    },
+    "filters": {
+      "channel": "Kanal",
+      "status": "Durum",
+      "kind": "Tür",
+      "recipient": "Alıcı",
+      "from": "Başlangıç",
+      "to": "Bitiş"
+    },
+    "summary": {
+      "sentToday": "Bugün gönderilen",
+      "oldestPending": "En eski bekleyen: {{date}}"
+    },
+    "retry": "Yeniden dene ({{count}})",
+    "retried": "{{count}} teslimat yeniden kuyruğa alındı",
+    "empty": "Teslimat kaydı yok",
+    "open": "Ayrıntı",
+    "openNamed": "Teslimat ayrıntısı: {{kind}}",
+    "selectNamed": "Seç: {{kind}}",
+    "detail": {
+      "title": "Teslimat ayrıntısı",
+      "skipReason": "Atlama nedeni",
+      "errorCode": "Hata",
+      "nextAttemptAt": "Sonraki deneme",
+      "sentAt": "Gönderim",
+      "noPersonalData": "Konu, ileti gövdesi, tam adres ve alıcı adı burada gösterilmez ve saklanmaz.",
+      "payload": "Kayıt (JSON)"
+    }
+  },
+  "issues": {
+    "hint": "Adresi art arda reddedilen alıcılara e-posta gönderimi durdurulur. Adres düzeltildikten sonra sıfırlayın.",
+    "columns": {
+      "user": "Kullanıcı",
+      "channel": "Kanal",
+      "failures": "Ardışık red",
+      "invalidSince": "Geçersiz işaretlendi",
+      "lastFailure": "Son hata"
+    },
+    "reset": "Sıfırla",
+    "resetNamed": "Sıfırla: {{name}}",
+    "resetDone": "Alıcı durumu sıfırlandı",
+    "empty": "Sorunlu alıcı yok"
+  },
+  "plan": {
+    "emailsPerDay": "Günlük e-posta",
+    "platformDefault": "platform varsayılanı",
+    "features": {
+      "notifications": {
+        "email": "E-posta bildirimi",
+        "sms": "SMS bildirimi"
+      }
+    }
+  },
+  "errors": {
+    "mandatoryNamed": "\"{{kind}}\" bildirimi zorunludur; {{channel}} kanalı kapatılamaz.",
+    "notification": {
+      "mandatory_preference": "Bu zorunlu bildirim kapatılamaz.",
+      "email_not_configured": "E-posta sunucuda yapılandırılmamış.",
+      "delivery_not_retryable": "Yeniden denenebilecek başarısız teslimat yok."
+    },
+    "general": {
+      "rate_limit_exceeded": "Çok fazla istek gönderildi. Biraz bekleyip tekrar deneyin."
+    }
+  }
+}

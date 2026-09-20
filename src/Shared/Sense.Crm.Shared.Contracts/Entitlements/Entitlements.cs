@@ -10,8 +10,9 @@ public static class GatedModules
     public const string Commerce = "commerce";
     public const string Service = "service";
     public const string Marketing = "marketing";
+    public const string Integrations = "integrations";
 
-    public static IReadOnlyList<string> All { get; } = [Workflows, Commerce, Service, Marketing];
+    public static IReadOnlyList<string> All { get; } = [Workflows, Commerce, Service, Marketing, Integrations];
 
     public static bool IsGated(string? module) => module is not null && All.Contains(module, StringComparer.Ordinal);
 }
@@ -21,6 +22,8 @@ public static class LimitKeys
 {
     public const string Users = "users";
     public const string Records = "records";
+    public const string Webhooks = "webhooks";
+    public const string ApiKeys = "api_keys";
     public const string Storage = "storage";
 
     /// <summary><c>storage</c> limitinin modülü (M8C): <c>IModule.Name</c> = <c>LimitDemand.Module</c> = <c>OverLimitDto.module</c>.</summary>
@@ -132,6 +135,8 @@ public sealed record EntitlementSnapshot(
     IReadOnlyDictionary<string, bool> Modules,
     int? MaxUsers,
     IReadOnlyDictionary<string, int?> MaxRecords,
+    int? MaxWebhooks = null,
+    int? MaxApiKeys = null,
     int? MaxStorageMb = null)
 {
     /// <summary>Depolama kotası bayt olarak; <c>null</c> = sınırsız (M8C).</summary>

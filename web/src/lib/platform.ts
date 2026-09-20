@@ -91,6 +91,8 @@ export interface LimitDraft {
 
 export interface OverridesDraft {
   maxUsers: LimitDraft;
+  /** Storage quota in MB (M8C). */
+  maxStorageMb: LimitDraft;
   maxRecords: Record<string, LimitDraft>;
   modules: Record<GatedModule, ModuleMode>;
 }
@@ -113,10 +115,15 @@ function pick(source: object | undefined, name: string): { present: boolean; val
 
 export function toOverridesDraft(overrides: PlatformOverrides | undefined): OverridesDraft {
   const maxUsers = pick(overrides, "maxUsers");
+  const maxStorageMb = pick(overrides, "maxStorageMb");
   const records = pick(overrides, "maxRecords").value as Record<string, number | null> | undefined;
   const modules = pick(overrides, "modules").value as Record<string, boolean> | undefined;
   return {
     maxUsers: limitDraft(maxUsers.present, maxUsers.value as number | null | undefined),
+    maxStorageMb: limitDraft(
+      maxStorageMb.present,
+      maxStorageMb.value as number | null | undefined
+    ),
     maxRecords: Object.fromEntries(
       RECORD_MODULES.map((module) => {
         const entry = pick(records, module);
@@ -144,6 +151,8 @@ export function toOverridesBody(draft: OverridesDraft): PlatformOverrides | unde
   const body: PlatformOverrides = {};
   const users = limitValue(draft.maxUsers);
   if (users.set) body.maxUsers = users.value;
+  const storage = limitValue(draft.maxStorageMb);
+  if (storage.set) body.maxStorageMb = storage.value;
 
   const maxRecords: Record<string, number | null> = {};
   for (const [module, limit] of Object.entries(draft.maxRecords)) {

@@ -2,6 +2,7 @@ using System.Reflection;
 using Sense.Crm.Shared.Contracts.Context;
 using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
+using Sense.Crm.Shared.Contracts.Observability;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 using Sense.Crm.Shared.Kernel.Results;
@@ -52,12 +53,14 @@ public sealed class EntitlementBehaviour<TRequest, TResponse>(
 
         if (!StatusExempt && (access == AccessLevel.None || (access == AccessLevel.ReadOnly && IsCommand)))
         {
+            CrmMetrics.EntitlementRejected(status, ModuleUnitOfWorkResolver.ModuleOf(typeof(TRequest).Assembly), snapshot.PlanCode);
             return ResultFactory.Fail<TResponse>(EntitlementErrors.Suspended(status));
         }
 
         var module = ModuleUnitOfWorkResolver.ModuleOf(typeof(TRequest).Assembly);
         if (module is not null && GatedModules.IsGated(module) && !snapshot.IsModuleEnabled(module))
         {
+            CrmMetrics.EntitlementRejected("module_disabled", module, snapshot.PlanCode);
             return ResultFactory.Fail<TResponse>(EntitlementErrors.DisabledModule(module));
         }
 
@@ -69,6 +72,7 @@ public sealed class EntitlementBehaviour<TRequest, TResponse>(
                 var check = await limits.EnsureAsync(new LimitDemand(consume.Key, demandModule, consume.Amount), cancellationToken).ConfigureAwait(false);
                 if (check.IsFailure)
                 {
+                    CrmMetrics.EntitlementRejected("limit_exceeded", demandModule, snapshot.PlanCode);
                     return ResultFactory.Fail<TResponse>(check.Error);
                 }
             }

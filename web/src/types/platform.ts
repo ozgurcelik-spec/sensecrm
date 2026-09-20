@@ -77,6 +77,8 @@ export interface PlatformOrganization {
 /** Effective limits (plan + overrides): only finite limits are present (absent = unlimited). */
 export interface PlanLimits {
   maxUsers?: number;
+  /** Storage quota in MB (M8C); absent = unlimited. */
+  maxStorageMb?: number;
   maxRecords: Record<string, number>;
   modules: Partial<Record<GatedModule, boolean>>;
 }
@@ -113,6 +115,8 @@ export interface PlatformDeletion {
 /** Tenant specific exceptions; every key is optional. `maxUsers: null` means explicitly unlimited. */
 export interface PlatformOverrides {
   maxUsers?: number | null;
+  /** Storage quota in MB (M8C): absent key = plan, `null` = unlimited. */
+  maxStorageMb?: number | null;
   maxRecords?: Record<string, number | null>;
   modules?: Partial<Record<GatedModule, boolean>>;
 }
@@ -126,7 +130,7 @@ export interface PlatformOrganizationDetail extends PlatformOrganization {
 }
 
 export interface PlatformOverLimit {
-  limit: "users" | "records";
+  limit: "users" | "records" | "storage";
   module?: string;
   max: number;
   used: number;
@@ -171,8 +175,16 @@ export interface PlatformPlan {
   isActive: boolean;
   sortOrder: number;
   trialDays?: number;
-  limits: { maxUsers?: number | null; maxRecords: Record<string, number | null> };
+  limits: {
+    maxUsers?: number | null;
+    maxStorageMb?: number | null;
+    /** M8A: `null` = platform default, `0` = no e-mail. */
+    maxEmailsPerDay?: number | null;
+    maxRecords: Record<string, number | null>;
+  };
   modules: Partial<Record<GatedModule, boolean>>;
+  /** M8A plan flags (`notifications.email`, `notifications.sms`); a missing key means off. */
+  features?: Record<string, boolean>;
   assignedCount: number;
 }
 
@@ -221,12 +233,15 @@ export interface SubscriptionInfo {
   trialDaysLeft?: number;
   modules: Partial<Record<GatedModule, boolean>>;
   /** Only finite limits are present. */
-  limits: { maxUsers?: number; maxRecords: Record<string, number> };
+  limits: { maxUsers?: number; maxStorageMb?: number; maxRecords: Record<string, number> };
   usage: {
     asOf: string;
     users: number;
     pendingUsers: number;
     records: Record<string, number>;
+    /** M8C; absent on servers without the files module. */
+    storageBytes?: number;
+    fileCount?: number;
   };
   overLimit: PlatformOverLimit[];
 }

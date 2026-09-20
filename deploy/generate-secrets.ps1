@@ -156,13 +156,26 @@ $wroteEnv = Write-SecretFile -Path $envPath -Content (($envLines -join "`n") + "
 $keyPath = Join-Path $secretsDir 'jwt-signing-key.pem'
 $wroteKey = Write-SecretFile -Path $keyPath -Content (New-RsaPrivateKeyPem)
 
+# AES-256 key (base64, 32 bytes) for webhook secrets at rest (M8B). Never replaced by -Force: regenerating it would make every stored webhook secret unreadable.
+$intKeyPath = Join-Path $secretsDir 'integrations-encryption-key'
+if (-not (Test-Path -LiteralPath $intKeyPath)) {
+    $keyBytes = New-Object byte[] 32
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($keyBytes) } finally { $rng.Dispose() }
+    [System.IO.File]::WriteAllText($intKeyPath, [Convert]::ToBase64String($keyBytes), (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "Wrote $intKeyPath"
+} else {
+    Write-Host "Exists, kept: $intKeyPath"
+}
+
 $pwPath = Join-Path $secretsDir 'platform-admin-password'
 $wrotePw = Write-SecretFile -Path $pwPath -Content (New-RandomSecret -Length 24)
 
 # Object storage (M8C): MinIO root account, application account (limited to the crm-files bucket) and the static KMS key that encrypts objects at rest.
 # BACK UP secrets\minio-kms-key WITH the object data: a data backup without the key is unreadable; the key cannot be rotated in the first release.
 $kmsBytes = New-Object 'byte[]' 32
-$Rng.GetBytes($kmsBytes)
+$kmsRng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+try { $kmsRng.GetBytes($kmsBytes) } finally { $kmsRng.Dispose() }
 $minioFiles = [ordered]@{
     'minio-root-user'       = ('crmroot' + (New-RandomSecret -Length 8))
     'minio-root-password'   = (New-RandomSecret -Length 32)
@@ -177,7 +190,15 @@ foreach ($name in $minioFiles.Keys) {
     $minioPaths += $path
 }
 
-foreach ($p in (@($envPath, $keyPath, $pwPath) + $minioPaths)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
+# Observability overlay (docker-compose.observability.yml, C-OPS1): scrape bearer token, Grafana admin password, postgres-exporter role password.
+$obsPaths = @()
+foreach ($name in @('metrics-bearer-token', 'grafana-admin-password', 'pg-monitor-password')) {
+    $p = Join-Path $secretsDir $name
+    [void](Write-SecretFile -Path $p -Content (New-RandomSecret -Length 40))
+    $obsPaths += $p
+}
+
+foreach ($p in (@($envPath, $keyPath, $pwPath) + $minioPaths + $obsPaths)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
 Restrict-Access -Path $secretsDir
 
 Write-Host ''

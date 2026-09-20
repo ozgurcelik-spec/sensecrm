@@ -2,6 +2,7 @@ using Sense.Crm.Modules.Activities.Api;
 using Sense.Crm.Modules.Commerce.Api;
 using Sense.Crm.Modules.Files.Api;
 using Sense.Crm.Modules.Identity.Api;
+using Sense.Crm.Modules.Integrations.Api;
 using Sense.Crm.Modules.Marketing.Api;
 using Sense.Crm.Modules.Platform.Api;
 using Sense.Crm.Modules.Sales.Api;
@@ -27,6 +28,7 @@ public static class ModuleCatalog
         new CommerceModule(),
         new ServiceModule(),
         new PlatformModule(),
+        new IntegrationsModule(),
         new FilesModule(),
     ];
 }

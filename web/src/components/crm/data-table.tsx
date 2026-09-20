@@ -51,6 +51,8 @@ export interface RowSelectionProps<T> {
   onChange: (keys: ReadonlySet<string>) => void;
   /** Accessible name of a row's checkbox. */
   rowLabel: (row: T) => string;
+  /** Rows for which this returns false get no checkbox (and are skipped by "select all"). Default: all rows. */
+  isSelectable?: (row: T) => boolean;
 }
 
 function SortIcon({ active, descending }: { active: boolean; descending: boolean }) {
@@ -88,7 +90,9 @@ export function DataTable<T>({
   const { t } = useTranslation(["common"]);
   const totalPages = totalCount ? Math.max(1, Math.ceil(totalCount / pageSize)) : 1;
   const columnCount = columns.length + (selection ? 1 : 0);
-  const rowKeys = rows?.map(rowKey) ?? [];
+  const rowKeys = (rows ?? [])
+    .filter((row) => selection?.isSelectable?.(row) ?? true)
+    .map(rowKey);
   const selectedOnPage = selection ? rowKeys.filter((key) => selection.selected.has(key)).length : 0;
   const allSelected = rowKeys.length > 0 && selectedOnPage === rowKeys.length;
 
@@ -174,11 +178,13 @@ export function DataTable<T>({
                 >
                   {selection && (
                     <Table.Td>
-                      <Checkbox
-                        aria-label={selection.rowLabel(row)}
-                        checked={selection.selected.has(rowKey(row))}
-                        onChange={(event) => toggleRow(rowKey(row), event.currentTarget.checked)}
-                      />
+                      {(selection.isSelectable?.(row) ?? true) && (
+                        <Checkbox
+                          aria-label={selection.rowLabel(row)}
+                          checked={selection.selected.has(rowKey(row))}
+                          onChange={(event) => toggleRow(rowKey(row), event.currentTarget.checked)}
+                        />
+                      )}
                     </Table.Td>
                   )}
                   {columns.map((column) => (

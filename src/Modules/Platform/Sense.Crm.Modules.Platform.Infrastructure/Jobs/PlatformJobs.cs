@@ -12,6 +12,7 @@ using Sense.Crm.Modules.Platform.Domain.Plans;
 using Sense.Crm.Modules.Platform.Infrastructure.Persistence;
 using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Events;
+using Sense.Crm.Shared.Contracts.Observability;
 using Sense.Crm.Shared.Contracts.Retention;
 
 namespace Sense.Crm.Modules.Platform.Infrastructure.Jobs;
@@ -42,7 +43,7 @@ public sealed class PlanSynchronizer(PlatformDbContext db, IOptions<PlatformOpti
         int created = 0, updated = 0, deactivated = 0;
         foreach (var definition in settings.Plans)
         {
-            var limits = new PlanLimits(definition.Limits.MaxUsers, new Dictionary<string, int?>(definition.Limits.MaxRecords, StringComparer.Ordinal), definition.Limits.MaxStorageMb);
+            var limits = new PlanLimits(definition.Limits.MaxUsers, new Dictionary<string, int?>(definition.Limits.MaxRecords, StringComparer.Ordinal), definition.Limits.MaxWebhooks, definition.Limits.MaxApiKeys, definition.Limits.MaxStorageMb);
             var modules = GatedModules.All.ToDictionary(m => m, m => definition.Modules.TryGetValue(m, out var on) && on, StringComparer.Ordinal);
             if (existing.Remove(definition.Code, out var plan))
             {
@@ -170,6 +171,9 @@ public sealed partial class UsageSnapshotJob(IServiceScopeFactory scopes, IOptio
             }
         }
 
+        CrmMetrics.UsageSnapshotTenants("written", written);
+        CrmMetrics.UsageSnapshotTenants("failed", failed);
+
         var (snapshots, audit) = await PurgeAsync(now, today, ct).ConfigureAwait(false);
         return new UsageSnapshotRun(written, failed, snapshots, audit);
     }
@@ -228,10 +232,12 @@ public sealed partial class TenantErasureJob(IServiceScopeFactory scopes, IOptio
             if (await ProcessAsync(requestId, ct).ConfigureAwait(false))
             {
                 completed++;
+                CrmMetrics.DeletionRunFinished("completed");
             }
             else
             {
                 failed++;
+                CrmMetrics.DeletionRunFinished("failed");
             }
         }
 
@@ -285,9 +291,11 @@ public sealed partial class TenantErasureJob(IServiceScopeFactory scopes, IOptio
                 var report = await eraser.EraseAsync(tenantId, settings.ChunkSize, ct).ConfigureAwait(false);
                 request.StepCompleted(eraser.Name, report.DeletedRows);
                 await db.SaveChangesAsync(ct).ConfigureAwait(false);
+                CrmMetrics.DeletionStepFinished(eraser.Name, "completed", report.Total);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                CrmMetrics.DeletionStepFinished(eraser.Name, "failed");
                 await RecordFailureAsync(db, audit, request, account, eraser.Name, ex, settings, ct).ConfigureAwait(false);
                 return false;
             }

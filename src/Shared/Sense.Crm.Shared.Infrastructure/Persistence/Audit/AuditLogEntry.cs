@@ -36,6 +36,9 @@ public sealed class AuditLogEntry : ITenantEntity
     public DateTimeOffset OccurredAt { get; set; }
 
     public string? CorrelationId { get; set; }
+
+    /// <summary>M8B: işlem bir API anahtarıyla yapıldıysa anahtarın kimliği (JWT işlemlerinde null).</summary>
+    public Guid? ApiKeyId { get; set; }
 }
 
 /// <summary>Sözleşmede sabitlenen eylem adları - web istemcisi bu tam string'leri bekler.</summary>
@@ -73,6 +76,7 @@ public sealed class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditL
         // K3: kiracı indeksleri TenantId ile başlar; "en yeni önce" listeleme tek indeksle karşılanır.
         b.HasIndex(x => new { x.TenantId, x.OccurredAt }).IsDescending(false, true);
         b.HasIndex(x => new { x.TenantId, x.EntityType, x.EntityId });
+        b.HasIndex(x => new { x.TenantId, x.ApiKeyId, x.OccurredAt }).IsDescending(false, false, true).HasFilter("api_key_id IS NOT NULL");
     }
 }
 

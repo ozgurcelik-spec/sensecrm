@@ -11,6 +11,7 @@ using Sense.Crm.Modules.Files.Infrastructure;
 using Sense.Crm.Modules.Identity.Application;
 using Sense.Crm.Modules.Identity.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
+using Sense.Crm.Modules.Integrations.Infrastructure;
 using Sense.Crm.Modules.Marketing.Infrastructure;
 using Sense.Crm.Modules.Platform.Infrastructure;
 using Sense.Crm.Modules.Sales.Infrastructure;
@@ -21,12 +22,11 @@ using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 
-// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|sync-plans|backfill|erase-deleted-tenants]
+// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|sync-plans|backfill|erase-deleted-tenants|reencrypt-integration-secrets|files-reconcile]
 // Yeni modül eklendiğinde DbContext'i buraya da kaydedilir (build/new-module.ps1 çıktısındaki adımlar).
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
-
-// M8C: Docker secret dosyaları (/run/secrets/Files__Storage__AccessKey -> Files:Storage:AccessKey) Api'deki gibi yapılandırmaya girer; dizin yoksa yok sayılır.
-builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
+// Docker secret dosyalari (/run/secrets/<Ad>; "__" = ":"): Integrations__Encryption__Keys__k1 (reencrypt-integration-secrets) (M8B), Files__Storage__AccessKey (M8C).
+builder.Configuration.AddDockerSecrets();
 builder.Services.AddCrmCore(builder.Configuration);
 builder.Services.AddAuditStore(builder.Configuration);
 builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, IdentityDbContext.SchemaName);
@@ -67,6 +67,10 @@ builder.Services.AddActivitiesContractServices();
 builder.Services.AddCommerceContractServices();
 builder.Services.AddServiceContractServices();
 builder.Services.AddMarketingContractServices();
+
+// Integrations (M8B): şema + KVKK imha adımları (delivery_queue) + webhook sırrı anahtar döndürme (reencrypt-integration-secrets).
+builder.Services.AddModuleDbContext<Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext>(builder.Configuration, Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext.SchemaName);
+builder.Services.AddIntegrationsContractServices(builder.Configuration);
 
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);
@@ -109,6 +113,15 @@ switch (command)
         if (reconcileExit != 0)
         {
             return reconcileExit;
+        }
+
+        break;
+
+    case IntegrationsSecretsCommand.Name:
+        var reencryptExit = await IntegrationsSecretsCommand.RunAsync(host.Services, logger, CancellationToken.None);
+        if (reencryptExit != 0)
+        {
+            return reencryptExit;
         }
 
         break;

@@ -144,3 +144,27 @@ describe("days and usage helpers", () => {
     ).toEqual(["commerce.records", "sales.records", "commerce.quotes", "sales.accounts"]);
   });
 });
+
+describe("storage limit override (M8C)", () => {
+  it("round-trips maxStorageMb: absent = plan, null = unlimited, number = custom (0 = uploads off)", () => {
+    expect(toOverridesDraft(undefined).maxStorageMb.mode).toBe("plan");
+    expect(toOverridesDraft({ maxStorageMb: null }).maxStorageMb).toEqual({ mode: "unlimited", value: "" });
+    expect(toOverridesDraft({ maxStorageMb: 2048 }).maxStorageMb).toEqual({ mode: "custom", value: 2048 });
+    expect(toOverridesDraft({ maxStorageMb: 0 }).maxStorageMb).toEqual({ mode: "custom", value: 0 });
+
+    expect(toOverridesBody(toOverridesDraft({ maxStorageMb: null }))).toEqual({ maxStorageMb: null });
+    expect(toOverridesBody(toOverridesDraft({ maxStorageMb: 2048 }))).toEqual({ maxStorageMb: 2048 });
+    expect(toOverridesBody(toOverridesDraft({ maxStorageMb: 0 }))).toEqual({ maxStorageMb: 0 });
+    // Following the plan sends nothing.
+    expect(toOverridesBody(toOverridesDraft({ maxUsers: 3 }))).toEqual({ maxUsers: 3 });
+  });
+
+  it("reads the key case-insensitively like the other limits", () => {
+    expect(toOverridesDraft({ MaxStorageMb: 10 } as never).maxStorageMb).toEqual({ mode: "custom", value: 10 });
+  });
+
+  it("maps the server's Overrides.MaxStorageMb error path", () => {
+    const error = problem(400, { code: "validation", errors: { "Overrides.MaxStorageMb": ["Geçersiz"] } });
+    expect(serverFieldErrors(error)).toEqual({ "overrides.maxStorageMb": "Geçersiz" });
+  });
+});

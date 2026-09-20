@@ -262,6 +262,7 @@
   <data name="field.overrides" xml:space="preserve"><value>Overrides</value></data>
   <data name="field.retention_days" xml:space="preserve"><value>Retention period (days)</value></data>
   <data name="field.mode" xml:space="preserve"><value>Mode</value></data>
+  <!-- M8C: file attachments -->
   <data name="problem.title.payload_too_large" xml:space="preserve"><value>File too large</value></data>
   <data name="problem.title.unsupported_media_type" xml:space="preserve"><value>Unsupported file type</value></data>
   <data name="problem.title.gone" xml:space="preserve"><value>Resource is gone</value></data>
@@ -285,4 +286,24 @@
   <data name="validation.file_record_id" xml:space="preserve"><value>Enter a valid record id.</value></data>
   <data name="validation.file_disposition" xml:space="preserve"><value>Disposition must be attachment or inline.</value></data>
   <data name="validation.file_name" xml:space="preserve"><value>File name is required (at most 2048 characters).</value></data>
+  <!-- M8B: integrations (webhooks, API keys, deliveries) -->
+  <data name="webhook.url_invalid" xml:space="preserve"><value>The webhook URL is invalid: it must be HTTPS without user info, IP addresses or local names, on an allowed port and host ({reason}).</value></data>
+  <data name="webhook.name_taken" xml:space="preserve"><value>A webhook subscription with this name already exists.</value></data>
+  <data name="webhook.delivery_unavailable" xml:space="preserve"><value>Webhook delivery is disabled in this deployment; test and redelivery are unavailable.</value></data>
+  <data name="webhook.disabled" xml:space="preserve"><value>The subscription is disabled; enable it first.</value></data>
+  <data name="delivery.not_redeliverable" xml:space="preserve"><value>The delivery is still in progress; only completed (succeeded or failed) deliveries can be redelivered.</value></data>
+  <data name="api_key.scope_not_allowed" xml:space="preserve"><value>An API key cannot carry this scope: only crm.* permissions can be granted ('{scope}').</value></data>
+  <data name="api_key.expired" xml:space="preserve"><value>The API key has expired.</value></data>
+  <data name="api_key.revoked" xml:space="preserve"><value>The API key has been revoked.</value></data>
+  <data name="api_key.owner_inactive" xml:space="preserve"><value>The user who created the API key is no longer active in this organization.</value></data>
+  <data name="api_key.ip_not_allowed" xml:space="preserve"><value>The API key cannot be used from this IP address.</value></data>
+  <data name="api_key.not_allowed" xml:space="preserve"><value>This endpoint is not available to API keys.</value></data>
+  <data name="api_key.active" xml:space="preserve"><value>An active API key cannot be deleted; revoke it first.</value></data>
+  <data name="api_key.name_taken" xml:space="preserve"><value>An API key with this name already exists.</value></data>
+  <data name="field.url" xml:space="preserve"><value>URL</value></data>
+  <data name="field.event_types" xml:space="preserve"><value>Event types</value></data>
+  <data name="field.scopes" xml:space="preserve"><value>Scopes</value></data>
+  <data name="field.expires_at" xml:space="preserve"><value>Expiry</value></data>
+  <data name="field.allowed_cidrs" xml:space="preserve"><value>Allowed IP ranges</value></data>
+  <data name="field.grace_hours" xml:space="preserve"><value>Grace period (hours)</value></data>
 </root>

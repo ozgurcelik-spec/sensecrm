@@ -35,6 +35,8 @@ public static class EntitlementMath
             effective.Modules,
             effective.MaxUsers,
             effective.MaxRecords,
+            effective.MaxWebhooks,
+            effective.MaxApiKeys,
             effective.MaxStorageMb);
     }
 
@@ -51,12 +53,26 @@ public static class EntitlementMath
         IReadOnlyDictionary<string, int?> maxRecords,
         IReadOnlyDictionary<string, bool> modules,
         UsageCollection usage,
+        int? maxWebhooks = null,
+        int? maxApiKeys = null,
         int? maxStorageMb = null)
     {
         var result = new List<OverLimitDto>();
         if (maxUsers is { } users && usage.UsersUsed > users)
         {
             result.Add(new OverLimitDto(LimitKeys.Users, null, users, usage.UsersUsed));
+        }
+
+        // M8B: webhook/API anahtari limitleri (kullanim: integrations.webhooks, integrations.api_keys; modul kapaliysa raporlanmaz).
+        var integrationsOn = modules.TryGetValue(GatedModules.Integrations, out var integrations) && integrations;
+        if (integrationsOn && maxWebhooks is { } webhooks && usage.Metrics.GetValueOrDefault("integrations.webhooks") > webhooks)
+        {
+            result.Add(new OverLimitDto(LimitKeys.Webhooks, null, webhooks, usage.Metrics["integrations.webhooks"]));
+        }
+
+        if (integrationsOn && maxApiKeys is { } apiKeys && usage.Metrics.GetValueOrDefault("integrations.api_keys") > apiKeys)
+        {
+            result.Add(new OverLimitDto(LimitKeys.ApiKeys, null, apiKeys, usage.Metrics["integrations.api_keys"]));
         }
 
         // M8C: depolama aşımı bayt cinsindendir (max = maxStorageMb × 1 MiB, used = files.storage_bytes).

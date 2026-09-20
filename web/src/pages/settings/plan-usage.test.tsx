@@ -3,6 +3,7 @@ import { screen, within } from "@testing-library/react";
 import { apiClient } from "@/lib/api-client";
 import { renderWithProviders } from "@/test-utils";
 import { clearSession, installApi, problem, setPermissions, type MockClient } from "@/test/crm";
+import { FILES_USAGE } from "@/test/files";
 import { subscriptionInfo } from "@/test/platform";
 import PlanUsagePage from "./plan-usage";
 
@@ -126,5 +127,135 @@ describe("PlanUsagePage", () => {
     installApi(client, { "GET /subscription": () => problem(500, { title: "Sunucu hatası" }) });
     renderWithProviders(<PlanUsagePage />);
     expect(await screen.findByRole("button", { name: "Tekrar dene" })).toBeInTheDocument();
+  });
+});
+
+describe("PlanUsagePage storage (M8C)", () => {
+  const withStorage = (maxStorageMb: number | undefined, storageBytes: number, fileCount = 214) =>
+    subscriptionInfo({
+      limits: { maxUsers: 5, maxStorageMb, maxRecords: {} },
+      usage: {
+        asOf: "2026-09-20T09:00:00Z",
+        users: 3,
+        pendingUsers: 0,
+        records: {},
+        storageBytes,
+        fileCount,
+      },
+    });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setPermissions(["org.settings.manage"]);
+  });
+  afterEach(clearSession);
+
+  it("draws the storage bar in readable sizes, with the file count", async () => {
+    installApi(client, {
+      "GET /subscription": () => withStorage(1024, 300 * 1024 * 1024),
+      "GET /files/usage": () => FILES_USAGE,
+    });
+    renderWithProviders(<PlanUsagePage />);
+
+    const bar = await screen.findByTestId("usage-storage");
+    expect(bar).toHaveTextContent("Depolama");
+    expect(bar).toHaveTextContent("300 MB / 1 GB (29%)");
+    expect(bar).toHaveTextContent("214 dosya");
+    expect(bar).toHaveAttribute("data-level", "ok");
+    expect(within(bar).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "29");
+  });
+
+  it.each([
+    [80, "warn"],
+    [79, "ok"],
+    [100, "full"],
+    [120, "full"],
+  ])("colors the storage bar by level: %s%% of a 100 MB limit is %s", async (usedMb, level) => {
+    installApi(client, {
+      "GET /subscription": () => withStorage(100, usedMb * 1024 * 1024),
+      "GET /files/usage": () => FILES_USAGE,
+    });
+    renderWithProviders(<PlanUsagePage />);
+    expect(await screen.findByTestId("usage-storage")).toHaveAttribute("data-level", level);
+  });
+
+  it("without a storage limit only the used amount is shown ('Sınırsız'), no bar", async () => {
+    installApi(client, {
+      "GET /subscription": () => withStorage(undefined, 3 * 1024 * 1024 * 1024),
+      "GET /files/usage": () => FILES_USAGE,
+    });
+    renderWithProviders(<PlanUsagePage />);
+    const bar = await screen.findByTestId("usage-storage");
+    expect(bar).toHaveTextContent("3 GB · Sınırsız");
+    expect(bar).toHaveAttribute("data-level", "unlimited");
+    expect(within(bar).queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+  it("a zero limit (uploads switched off) reads as full", async () => {
+    installApi(client, {
+      "GET /subscription": () => withStorage(0, 0, 0),
+      "GET /files/usage": () => FILES_USAGE,
+    });
+    renderWithProviders(<PlanUsagePage />);
+    const bar = await screen.findByTestId("usage-storage");
+    expect(bar).toHaveTextContent("0 B / 0 B");
+    expect(bar).toHaveAttribute("data-level", "full");
+  });
+
+  it("shows no storage bar on a server that does not report storage", async () => {
+    installApi(client, { "GET /subscription": () => subscriptionInfo(), "GET /files/usage": () => FILES_USAGE });
+    renderWithProviders(<PlanUsagePage />);
+    await screen.findByTestId("usage-users");
+    expect(screen.queryByTestId("usage-storage")).not.toBeInTheDocument();
+  });
+
+  it("lists the usage per record type with totals and the quarantined / unavailable counts", async () => {
+    installApi(client, {
+      "GET /subscription": () => withStorage(25600, 3221225472),
+      "GET /files/usage": () => FILES_USAGE,
+    });
+    renderWithProviders(<PlanUsagePage />);
+
+    const card = await screen.findByTestId("storage-breakdown");
+    const account = await within(card).findByTestId("storage-row-account");
+    expect(account).toHaveTextContent("Firma");
+    expect(account).toHaveTextContent("80");
+    expect(account).toHaveTextContent("1,1 GB");
+    expect(within(card).getByTestId("storage-row-quote")).toHaveTextContent("Teklif");
+    expect(card).toHaveTextContent("Toplam");
+    expect(card).toHaveTextContent("214");
+    expect(card).toHaveTextContent("3 GB");
+    expect(card).toHaveTextContent("1 karantinada");
+    expect(card).toHaveTextContent("2 kullanılamıyor");
+  });
+
+  it("does not ask for the per-type usage without org.settings.manage", async () => {
+    setPermissions([]);
+    installApi(client, { "GET /subscription": () => withStorage(1024, 1024) });
+    renderWithProviders(<PlanUsagePage />);
+    await screen.findByTestId("usage-storage");
+    expect(screen.queryByTestId("storage-breakdown")).not.toBeInTheDocument();
+    expect(client.get).not.toHaveBeenCalledWith("/files/usage", expect.anything());
+  });
+
+  it("says so when nothing was uploaded yet", async () => {
+    installApi(client, {
+      "GET /subscription": () => withStorage(1024, 0, 0),
+      "GET /files/usage": () => ({ ...FILES_USAGE, byRecordType: [], usedBytes: 0, fileCount: 0 }),
+    });
+    renderWithProviders(<PlanUsagePage />);
+    expect(await screen.findByText("Henüz dosya yüklenmemiş.")).toBeInTheDocument();
+  });
+
+  it("words a storage over-limit entry in bytes", async () => {
+    installApi(client, {
+      "GET /subscription": () => ({
+        ...withStorage(1024, 2 * 1024 * 1024 * 1024),
+        overLimit: [{ limit: "storage", module: "files", max: 1024 * 1024 * 1024, used: 2 * 1024 * 1024 * 1024 }],
+      }),
+      "GET /files/usage": () => FILES_USAGE,
+    });
+    renderWithProviders(<PlanUsagePage />);
+    expect(await screen.findByTestId("over-limit")).toHaveTextContent("Depolama: 2 GB / 1 GB");
   });
 });

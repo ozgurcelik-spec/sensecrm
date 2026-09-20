@@ -8,6 +8,7 @@ using Sense.Crm.Modules.Commerce.Infrastructure;
 using Sense.Crm.Modules.Files.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
+using Sense.Crm.Modules.Integrations.Infrastructure;
 using Sense.Crm.Modules.Marketing.Infrastructure;
 using Sense.Crm.Modules.Platform.Infrastructure;
 using Sense.Crm.Modules.Platform.Infrastructure.Persistence;
@@ -19,16 +20,17 @@ using Sense.Crm.Modules.Workflows.Infrastructure;
 using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Contracts.Configuration;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
+using Sense.Crm.Shared.Infrastructure.Observability;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.Persistence.Outbox;
+using Sense.Crm.Worker.Observability;
 
 // Worker (K5): modül outbox'larını boşaltır (domain event → aynı modül handler'ları, integration event → IEventBus).
 // Zamanlanmış işler, bildirim/e-posta teslimi ve gerçek zamanlı yayın MVP'de yok; yalnız OutboxPollingService<T> kalır.
 // Yeni modül: DbContext + Domain/Contracts assembly'leri (EventTypeRegistry için) + OutboxPollingService<TContext> eklenir.
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
-
-// M8C: Docker secret dosyaları (/run/secrets/Files__Storage__AccessKey -> Files:Storage:AccessKey) Api'deki gibi yapılandırmaya girer; dizin yoksa yok sayılır.
-builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
+// Docker secret dosyalari (/run/secrets/<Ad>; "__" = ":"): Integrations__Encryption__Keys__k1 (M8B), Files__Storage__AccessKey (M8C) vb.
+builder.Configuration.AddDockerSecrets();
 builder.Services.AddCrmCore(builder.Configuration);
 
 builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, IdentityDbContext.SchemaName);
@@ -143,6 +145,24 @@ builder.Services.AddHostedService<Sense.Crm.Worker.OutboxPollingService<Sense.Cr
 builder.Services.AddHostedService<Sense.Crm.Worker.Files.FilesPurgeService>();
 builder.Services.AddHostedService<Sense.Crm.Worker.Files.FilesReconciliationService>();
 
+// Gözlemlenebilirlik (C-OPS1, K20): Observability:Metrics:Enabled=true ise ayrı portta Prometheus /metrics + outbox/workflow/silme örnekleyicisi (varsayılan kapalı).
+builder.Services.AddCrmObservability(builder.Configuration, "crm-worker");
+builder.Services.AddWorkerMetricsSampler(builder.Configuration);
+
+// Integrations (M8B): giden webhook teslimatı. Fan-out olay işleyicileri (Sales/Commerce/Service olaylarının tüketicileri) burada kayıtlıdır; dispatcher (dış çağrıyı YALNIZ Worker yapar), saklama ve KVKK imha
+// adımları da burada. Varsayılan Integrations:Webhooks:Enabled=false → dispatcher boşta (fan-out satır yazmaz). Worker Application assembly'lerini taramaz: yalnız olay işleyicileri hedefli kaydedilir.
+builder.Services.AddModuleDbContext<Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext>(builder.Configuration, Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext.SchemaName,
+    typeof(Sense.Crm.Modules.Integrations.Domain.IWebhookSubscriptionRepository).Assembly,
+    typeof(Sense.Crm.Modules.Integrations.Contracts.IntegrationsPermissions).Assembly);
+builder.Services.AddIntegrationsContractServices(builder.Configuration);
+builder.Services.AddIntegrationsWorkerServices();
+builder.Services.AddIntegrationsEventHandlers();
+builder.Services.AddHostedService<Sense.Crm.Worker.OutboxPollingService<Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext>>();
+builder.Services.AddHostedService<Sense.Crm.Worker.Integrations.WebhookDispatcherService>();
+builder.Services.AddHostedService<Sense.Crm.Worker.Integrations.IntegrationsRetentionService>();
+
 await builder.Build().RunAsync();
 
 namespace Sense.Crm.Worker
@@ -169,6 +189,7 @@ namespace Sense.Crm.Worker
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     // Veritabanı henüz hazır/migrate edilmemiş olabilir; süreç çökmeden bir sonraki turda tekrar denenir.
+                    Sense.Crm.Shared.Contracts.Observability.CrmMetrics.OutboxPollFailed(typeof(TContext).Name.Replace("DbContext", string.Empty, StringComparison.Ordinal).ToLowerInvariant());
                     LogPollFailed(logger, ex, typeof(TContext).Name);
                 }
 

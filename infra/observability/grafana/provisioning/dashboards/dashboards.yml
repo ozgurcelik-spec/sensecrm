@@ -1,0 +1,14 @@
+apiVersion: 1
+
+# Dashboards are files under infra/observability/grafana/dashboards (mounted read-only at /etc/grafana/dashboards).
+providers:
+  - name: crm
+    orgId: 1
+    folder: CRM
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

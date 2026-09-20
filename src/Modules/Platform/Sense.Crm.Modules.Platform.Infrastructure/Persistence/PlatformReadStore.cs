@@ -130,7 +130,7 @@ public sealed class PlatformReadStore(PlatformDbContext db) : IPlatformReadStore
                 r.Plan.IsActive,
                 r.Plan.SortOrder,
                 r.Plan.TrialDays,
-                new PlanLimitsDto(r.Plan.Limits.MaxUsers, r.Plan.Limits.MaxRecords, r.Plan.Limits.MaxStorageMb),
+                new PlanLimitsDto(r.Plan.Limits.MaxUsers, r.Plan.Limits.MaxRecords, r.Plan.Limits.MaxWebhooks, r.Plan.Limits.MaxApiKeys, r.Plan.Limits.MaxStorageMb),
                 r.Plan.Modules,
                 r.Assigned))
             .ToList();

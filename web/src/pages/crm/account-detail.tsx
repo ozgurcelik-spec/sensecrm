@@ -15,6 +15,7 @@ import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { WebsiteValue } from "@/components/crm/website-link";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { LoadError } from "@/components/load-error";
@@ -208,6 +209,7 @@ export default function AccountDetailPage() {
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReadQuotes = usePermission(PERMISSIONS.crmQuotesRead);
   const canReadOrders = usePermission(PERMISSIONS.crmOrdersRead);
+  const attachmentsTab = useAttachmentsTab("account", id);
   const tabs = account
     ? [
         {
@@ -285,6 +287,7 @@ export default function AccountDetailPage() {
               },
             ]
           : []),
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),

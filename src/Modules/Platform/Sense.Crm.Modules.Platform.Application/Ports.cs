@@ -77,6 +77,10 @@ public interface IUsageMeter
 
     /// <summary>Geçerli kiracının kayıt sayıları (<c>Platform:Usage:CacheSeconds</c> önbellekli; yumuşak limit).</summary>
     Task<RecordCounts> GetRecordCountsAsync(CancellationToken ct);
+
+    /// <summary>Gecerli kiracinin tek bir modulunun <b>canli</b> (onbelleksiz) sayaclari (M8B sert limitler: webhook/API anahtari). Modul reporter yoksa bos.</summary>
+    Task<IReadOnlyDictionary<string, long>> CountModuleAsync(string module, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyDictionary<string, long>>(new Dictionary<string, long>());
 }
 
 /// <summary>Kullanım anlık görüntüsü yazma (idempotent upsert: <c>INSERT … ON CONFLICT (tenant_id, day) DO UPDATE</c>).</summary>

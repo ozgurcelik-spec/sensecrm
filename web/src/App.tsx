@@ -54,6 +54,9 @@ const PlatformOrganizationsPage = lazy(() => import("@/pages/platform/organizati
 const PlatformOrganizationDetailPage = lazy(() => import("@/pages/platform/organization-detail"));
 const PlatformPlansPage = lazy(() => import("@/pages/platform/plans"));
 const PlatformAuditPage = lazy(() => import("@/pages/platform/platform-audit"));
+const NotificationsPage = lazy(() => import("@/pages/notifications"));
+const NotificationPreferencesPage = lazy(() => import("@/pages/notifications-preferences"));
+const NotificationSettingsPage = lazy(() => import("@/pages/settings/notifications"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
   const guarded = (
@@ -355,6 +358,17 @@ export default function App() {
               element={
                 <RequirePermission permission={PERMISSIONS.orgSettingsManage}>
                   <PlanUsagePage />
+                </RequirePermission>
+              }
+            />
+            {/* Notifications (M8A): the caller's own notifications and preferences need no permission. */}
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="notifications/preferences" element={<NotificationPreferencesPage />} />
+            <Route
+              path="settings/notifications"
+              element={
+                <RequirePermission permission={PERMISSIONS.orgNotificationsManage}>
+                  <NotificationSettingsPage />
                 </RequirePermission>
               }
             />

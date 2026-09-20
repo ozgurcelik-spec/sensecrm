@@ -16,6 +16,13 @@ using Sense.Crm.Shared.Kernel.Time;
 
 namespace Sense.Crm.Modules.Platform.Infrastructure.Entitlements;
 
+/// <summary>M8B: Integrations reporter metrik anahtarlari (Platform Integrations modulune baglanmaz; anahtarlar sozlesmedir).</summary>
+internal static class IntegrationsMetricKeys
+{
+    public const string Webhooks = "integrations.webhooks";
+    public const string ApiKeys = "integrations.api_keys";
+}
+
 internal static class EntitlementCacheKeys
 {
     public const string Prefix = "ent";
@@ -203,6 +210,18 @@ public sealed class UsageMeter(
         return metrics.FirstOrDefault(m => m.Key == EntitlementMath.StorageBytesKey)?.Value ?? 0;
     }
 
+    public async Task<IReadOnlyDictionary<string, long>> CountModuleAsync(string module, CancellationToken ct)
+    {
+        var reporter = reporters.FirstOrDefault(r => string.Equals(r.Module, module, StringComparison.Ordinal));
+        if (reporter is null)
+        {
+            return new Dictionary<string, long>();
+        }
+
+        var metrics = await reporter.ReportAsync(ct).ConfigureAwait(false);
+        return metrics.ToDictionary(m => m.Key, m => m.Value, StringComparer.Ordinal);
+    }
+
     public async Task<RecordCounts> GetRecordCountsAsync(CancellationToken ct)
     {
         var tenantId = tenant.TenantId;
@@ -262,6 +281,10 @@ public sealed class LimitGuard(
                 return await EnsureRecordsAsync(snapshot, module, demand.Delta, ct).ConfigureAwait(false);
             case LimitKeys.Storage:
                 return await EnsureStorageAsync(snapshot, demand, ct).ConfigureAwait(false);
+            case LimitKeys.Webhooks:
+                return await EnsureIntegrationsAsync(demand, snapshot.MaxWebhooks, IntegrationsMetricKeys.Webhooks, ct).ConfigureAwait(false);
+            case LimitKeys.ApiKeys:
+                return await EnsureIntegrationsAsync(demand, snapshot.MaxApiKeys, IntegrationsMetricKeys.ApiKeys, ct).ConfigureAwait(false);
             default:
                 return Result.Success();
         }
@@ -305,6 +328,29 @@ public sealed class LimitGuard(
 
         var used = await meter.GetStorageBytesAsync(ct).ConfigureAwait(false);
         return used + demand.Delta > max ? EntitlementErrors.Exceeded(LimitKeys.Storage, EntitlementMath.FilesModule, max, used) : Result.Success();
+    }
+
+    /// <summary>
+    /// M8B sert limitler (<c>webhooks</c>, <c>api_keys</c>): kesin, <b>onbelleksiz</b> sayim; sayimdan once Integrations modulunun acik transaction'inda
+    /// <c>pg_advisory_xact_lock(hashtextextended('limit:&lt;anahtar&gt;:'||tenantId, 0))</c> alinir (eszamanli olusturmalar kiraci basina siraya girer, limit asla asilmaz). Limit <c>null</c> (sinirsiz) ise sayim yapilmaz.
+    /// </summary>
+    private async Task<Result> EnsureIntegrationsAsync(LimitDemand demand, int? max, string metricKey, CancellationToken ct)
+    {
+        if (max is not { } limit)
+        {
+            return Result.Success();
+        }
+
+        var module = demand.Module ?? GatedModules.Integrations;
+        var unit = services.GetServices<IModuleUnitOfWork>().FirstOrDefault(u => string.Equals(u.ModuleName, module, StringComparison.OrdinalIgnoreCase));
+        if (unit is not null)
+        {
+            await unit.AcquireAdvisoryLockAsync("limit:" + demand.Key + ":" + tenant.TenantId.ToString("D"), ct).ConfigureAwait(false);
+        }
+
+        var counts = await meter.CountModuleAsync(module, ct).ConfigureAwait(false);
+        var used = counts.GetValueOrDefault(metricKey);
+        return used + demand.Delta > limit ? EntitlementErrors.Exceeded(demand.Key, null, limit, used) : Result.Success();
     }
 
     private async Task<Result> EnsureRecordsAsync(EntitlementSnapshot snapshot, string module, int delta, CancellationToken ct)

@@ -1,0 +1,33 @@
+.auth-shell { min-height: 100vh; display: grid; grid-template-columns: minmax(460px, 1.08fr) minmax(460px, .92fr); background: #fbfcff; color: #1f075d; }
+.auth-showcase { position: relative; overflow: hidden; isolation: isolate; padding: clamp(32px, 5vw, 72px); background: linear-gradient(145deg, #26006f 0%, #3a0b9c 52%, #28006f 100%); color: white; }
+.auth-showcase::after { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .18; background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 24px 24px; mask-image: linear-gradient(to bottom, black, transparent 68%); }
+.auth-showcase-inner { min-height: calc(100vh - clamp(64px, 10vw, 144px)); max-width: 650px; margin: auto; display: flex; flex-direction: column; }
+.auth-orb { position: absolute; border-radius: 50%; z-index: -1; filter: blur(1px); background: #1495eb; }
+.auth-orb-one { width: 420px; height: 420px; right: -210px; top: -170px; opacity: .9; }
+.auth-orb-two { width: 260px; height: 260px; left: -160px; bottom: 40px; opacity: .35; }
+.biriksin-logo { display: inline-flex; align-items: center; gap: 11px; width: fit-content; color: #fff; }
+.biriksin-word { font-size: clamp(27px, 2.6vw, 39px); font-weight: 850; letter-spacing: -2.5px; line-height: 1; }
+.biriksin-mark { width: 29px; height: 36px; display: flex; flex-direction: column; justify-content: space-between; }
+.biriksin-mark i { display: block; height: 12px; background: #1596e9; border-radius: 55% 45% 58% 42% / 54% 44% 56% 46%; transform: skewX(-13deg); }
+.biriksin-mark i:nth-child(2) { transform: skewX(13deg); }
+.biriksin-mark b { display: block; height: 5px; border-radius: 50%; background: currentColor; }
+.auth-showcase-copy { margin-top: clamp(72px, 14vh, 140px); max-width: 570px; }
+.auth-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.25); border-radius: 100px; color: #bce6ff; background: rgba(255,255,255,.08); font-size: 13px; font-weight: 650; }
+.auth-showcase h1 { margin: 21px 0 17px; font-size: clamp(42px, 4.4vw, 69px); line-height: .98; letter-spacing: -3.6px; font-weight: 780; }
+.auth-showcase h1 em { color: #49b8ff; font-style: normal; }
+.auth-showcase-copy p { margin: 0; max-width: 475px; font-size: 17px; line-height: 1.65; color: rgba(255,255,255,.76); }
+.auth-preview { position: relative; margin-top: auto; max-width: 470px; padding: 20px 22px; border: 1px solid rgba(255,255,255,.23); border-radius: 20px; background: rgba(255,255,255,.11); box-shadow: 0 28px 70px rgba(14,0,54,.35); backdrop-filter: blur(14px); transform: rotate(-2deg); }
+.auth-preview-top, .auth-preview-stat { display: flex; justify-content: space-between; align-items: center; }
+.auth-preview-top { font-size: 13px; font-weight: 650; color: rgba(255,255,255,.76); }
+.auth-preview-chart { height: 105px; margin: 17px 0 14px; position: relative; display: flex; align-items: end; gap: 12px; }
+.auth-preview-chart i { flex: 1; height: var(--bar-height); border-radius: 5px 5px 0 0; background: linear-gradient(to top, rgba(34,161,244,.12), rgba(41,172,255,.35)); }
+.auth-preview-chart i:nth-child(1) { --bar-height: 35%; }.auth-preview-chart i:nth-child(2) { --bar-height: 54%; }.auth-preview-chart i:nth-child(3) { --bar-height: 43%; }.auth-preview-chart i:nth-child(4) { --bar-height: 71%; }.auth-preview-chart i:nth-child(5) { --bar-height: 60%; }.auth-preview-chart i:nth-child(6) { --bar-height: 83%; }.auth-preview-chart i:nth-child(7) { --bar-height: 96%; }
+.auth-preview-chart svg { position: absolute; inset: 0; overflow: visible; }.auth-preview-chart path { fill: none; stroke: #47bbff; stroke-width: 3; vector-effect: non-scaling-stroke; }
+.auth-preview-stat { padding-top: 15px; border-top: 1px solid rgba(255,255,255,.17); }.auth-preview-stat span { display: grid; gap: 2px; }.auth-preview-stat b { font-size: 22px; }.auth-preview-stat small { color: rgba(255,255,255,.64); font-size: 11px; }.auth-preview-stat strong { color: #66cdff; font-size: 14px; }
+.auth-trust { display: flex; gap: 8px; align-items: center; margin-top: 36px; color: rgba(255,255,255,.62); font-size: 12px; }
+.auth-panel { min-height: 100vh; position: relative; display: grid; place-items: center; padding: 74px 28px 42px; background: radial-gradient(circle at 85% 8%, #e4f5ff 0, transparent 27%), #fbfcff; }
+.auth-language { position: absolute; top: 22px; right: 30px; }.auth-language button { color: #2b0b7a; font-weight: 700; }.auth-language button:hover { background: #eee9ff; }
+.auth-form-wrap { width: min(100%, 440px); }.auth-mobile-brand { display: none; }.auth-title-block { margin: 0 0 23px; }.auth-product-name { color: #168fe6; font-size: 12px; text-transform: uppercase; letter-spacing: .13em; font-weight: 800; }.auth-title-block h2 { color: #250071; letter-spacing: -1.1px; font-size: 30px; }.auth-card { border: 1px solid #e8e4f3; box-shadow: 0 18px 60px rgba(48,20,105,.09); background: rgba(255,255,255,.9); }
+.auth-card label { color: #37176f; font-size: 13px; font-weight: 700; }.auth-card input { border-color: #ded8eb; height: 47px; border-radius: 11px; }.auth-card input:focus { border-color: #168fe6; box-shadow: 0 0 0 3px rgba(22,143,230,.12); }.auth-card button[type="submit"] { height: 48px; border-radius: 12px; margin-top: 7px; font-weight: 750; background: linear-gradient(105deg, #310584, #178fe3); box-shadow: 0 10px 22px rgba(41,28,140,.24); }.auth-card button[type="submit"]:hover { background: linear-gradient(105deg, #250066, #0d7fcf); transform: translateY(-1px); }.auth-footer { margin-top: 22px; color: #766c89; }.auth-footer a { color: #198ce0; }
+@media (max-width: 900px) { .auth-shell { grid-template-columns: 1fr; }.auth-showcase { display: none; }.auth-panel { padding-top: 88px; }.auth-mobile-brand { display: block; margin-bottom: 55px; }.auth-mobile-brand .biriksin-logo { color: #2f0787; }.auth-mobile-brand .biriksin-word { font-size: 34px; } }
+@media (max-width: 480px) { .auth-panel { padding: 78px 18px 28px; align-items: start; }.auth-language { top: 17px; right: 15px; }.auth-mobile-brand { margin-bottom: 40px; }.auth-card { padding: 22px; }.auth-title-block h2 { font-size: 27px; } }

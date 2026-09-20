@@ -4,6 +4,7 @@ import { Avatar, Menu, Text, UnstyledButton } from "@mantine/core";
 import { CircleUser, LogOut, Moon, Sun } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
+import { ThemeSwitcher } from "./theme-switcher";
 
 function initials(name: string): string {
   return name
@@ -62,6 +63,8 @@ export function UserMenu() {
         >
           {dark ? t("common:themeLight") : t("common:themeDark")}
         </Menu.Item>
+        <Menu.Divider />
+        <ThemeSwitcher />
         <Menu.Divider />
         <Menu.Item
           color="red"

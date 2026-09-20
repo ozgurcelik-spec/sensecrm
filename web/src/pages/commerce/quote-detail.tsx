@@ -16,6 +16,7 @@ import { ExtendDialog, ReasonDialog } from "@/components/commerce/action-dialogs
 import { LinesTable, TermsAndNotes, TotalsCard } from "@/components/commerce/document-parts";
 import { QuoteStatusBadge } from "@/components/commerce/status-badges";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useCrmPermissions } from "@/hooks/use-crm-permissions";
@@ -113,6 +114,7 @@ export default function QuoteDetailPage() {
 
   const busy = action.isPending || convert.isPending;
 
+  const attachmentsTab = useAttachmentsTab("quote", id);
   const tabs = quote
     ? [
         {
@@ -131,6 +133,7 @@ export default function QuoteDetailPage() {
             </Stack>
           ),
         },
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),

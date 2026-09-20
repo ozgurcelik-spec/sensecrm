@@ -97,6 +97,12 @@ public sealed class PlanLimitsDefinition
 {
     public int? MaxUsers { get; set; }
 
+    /// <summary>M8B: abonelik (webhook) sayısı üst sınırı; <c>null</c>/yok = sınırsız, <c>0</c> = oluşturulamaz.</summary>
+    public int? MaxWebhooks { get; set; }
+
+    /// <summary>M8B: aktif API anahtarı sayısı üst sınırı; <c>null</c>/yok = sınırsız, <c>0</c> = oluşturulamaz.</summary>
+    public int? MaxApiKeys { get; set; }
+
     /// <summary>Dosya eki depolama kotası (MiB, M8C); <c>null</c> = sınırsız, <c>0</c> = hiç yükleme yok.</summary>
     public int? MaxStorageMb { get; set; }
 
@@ -146,6 +152,11 @@ public static partial class PlanCatalogValidator
             if (plan.Limits.MaxUsers is < 0)
             {
                 errors.Add($"Plan '{label}': limits.maxUsers must be >= 0.");
+            }
+
+            if (plan.Limits.MaxWebhooks is < 0 || plan.Limits.MaxApiKeys is < 0)
+            {
+                errors.Add($"Plan '{label}': limits.maxWebhooks and limits.maxApiKeys must be >= 0.");
             }
 
             if (plan.Limits.MaxStorageMb is < 0 or > PlatformLimits.MaxStorageMbUpperBound)

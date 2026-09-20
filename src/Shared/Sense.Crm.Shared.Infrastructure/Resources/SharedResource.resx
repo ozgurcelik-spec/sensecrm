@@ -262,6 +262,7 @@
   <data name="field.overrides" xml:space="preserve"><value>İstisnalar</value></data>
   <data name="field.retention_days" xml:space="preserve"><value>Saklama süresi (gün)</value></data>
   <data name="field.mode" xml:space="preserve"><value>Kip</value></data>
+  <!-- M8C: dosya ekleri -->
   <data name="problem.title.payload_too_large" xml:space="preserve"><value>Dosya çok büyük</value></data>
   <data name="problem.title.unsupported_media_type" xml:space="preserve"><value>Desteklenmeyen dosya türü</value></data>
   <data name="problem.title.gone" xml:space="preserve"><value>Kaynak artık yok</value></data>
@@ -285,4 +286,24 @@
   <data name="validation.file_record_id" xml:space="preserve"><value>Geçerli bir kayıt kimliği girin.</value></data>
   <data name="validation.file_disposition" xml:space="preserve"><value>Sunum biçimi attachment veya inline olmalıdır.</value></data>
   <data name="validation.file_name" xml:space="preserve"><value>Dosya adı zorunludur (en çok 2048 karakter).</value></data>
+  <!-- M8B: entegrasyonlar (webhook, API anahtarı, teslimat) -->
+  <data name="webhook.url_invalid" xml:space="preserve"><value>Webhook adresi geçersiz: yalnız HTTPS, kullanıcı bilgisi/IP adresi/yerel ad olmadan, izinli portta ve izinli alan adlarında olmalıdır ({reason}).</value></data>
+  <data name="webhook.name_taken" xml:space="preserve"><value>Bu adla bir webhook aboneliği zaten var.</value></data>
+  <data name="webhook.delivery_unavailable" xml:space="preserve"><value>Bu kurulumda webhook gönderimi kapalı; test ve yeniden gönderme kullanılamaz.</value></data>
+  <data name="webhook.disabled" xml:space="preserve"><value>Abonelik pasif; önce etkinleştirin.</value></data>
+  <data name="delivery.not_redeliverable" xml:space="preserve"><value>Teslimat henüz sürüyor; yalnızca tamamlanmış (başarılı veya başarısız) teslimatlar yeniden gönderilebilir.</value></data>
+  <data name="api_key.scope_not_allowed" xml:space="preserve"><value>API anahtarı bu kapsamı taşıyamaz: yalnız crm.* izinleri verilebilir ('{scope}').</value></data>
+  <data name="api_key.expired" xml:space="preserve"><value>API anahtarının süresi dolmuş.</value></data>
+  <data name="api_key.revoked" xml:space="preserve"><value>API anahtarı iptal edilmiş.</value></data>
+  <data name="api_key.owner_inactive" xml:space="preserve"><value>API anahtarını oluşturan kullanıcı artık bu organizasyonda etkin değil.</value></data>
+  <data name="api_key.ip_not_allowed" xml:space="preserve"><value>Bu IP adresinden API anahtarı kullanılamaz.</value></data>
+  <data name="api_key.not_allowed" xml:space="preserve"><value>Bu uç API anahtarlarına kapalıdır.</value></data>
+  <data name="api_key.active" xml:space="preserve"><value>Etkin API anahtarı silinemez; önce iptal edin.</value></data>
+  <data name="api_key.name_taken" xml:space="preserve"><value>Bu adla bir API anahtarı zaten var.</value></data>
+  <data name="field.url" xml:space="preserve"><value>Adres</value></data>
+  <data name="field.event_types" xml:space="preserve"><value>Olay türleri</value></data>
+  <data name="field.scopes" xml:space="preserve"><value>Kapsamlar</value></data>
+  <data name="field.expires_at" xml:space="preserve"><value>Bitiş</value></data>
+  <data name="field.allowed_cidrs" xml:space="preserve"><value>İzinli IP aralıkları</value></data>
+  <data name="field.grace_hours" xml:space="preserve"><value>Geçiş süresi (saat)</value></data>
 </root>

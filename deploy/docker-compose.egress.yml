@@ -1,0 +1,96 @@
+# CRM - OPTIONAL egress overlay for outbound webhooks (M8B, docs/plan/m8b-entegrasyonlar.md "Egress, ag ve veri yerlesimi").
+#
+#   docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.egress.yml --profile egress up -d
+#   (deploy/.env: WEBHOOKS_ENABLED=true, EGRESS_DNS_UPSTREAM=<resolver>; optional WEBHOOKS_ALLOWED_HOSTS / WEBHOOKS_ALLOWED_PRIVATE_CIDRS)
+#
+# Model: the `backend` network stays `internal: true`. api/worker are NEVER attached to an internet-facing network. Outbound webhook traffic leaves
+# only through two small services on the extra `egress` network:
+#   - egress-dns   : the ONLY resolver the worker uses (CoreDNS forwarding to EGRESS_DNS_UPSTREAM; it sees destination host NAMES: prefer an in-house resolver).
+#   - egress-proxy : Squid, `CONNECT <IP>:443|8443` only (the worker connects to the IP it validated, never to a name); destination-IP ACL denies loopback,
+#                    link-local/cloud metadata, private/CGNAT/special-use ranges (unless the operator opens private CIDRs), multicast/reserved; accepts only the
+#                    backend subnet. This is the SECOND, independent SSRF layer behind the application-level check.
+# Without this overlay (or with WEBHOOKS_ENABLED=false) no outbound call is ever made: fan-out writes nothing, test/redeliver answer 409 webhook.delivery_unavailable.
+# Sharing: the `egress` network and egress-dns are general purpose (M8A notifications can reuse them; SMTP needs its own allowed destinations).
+#
+# Image tags are pinned and were verified to exist with `docker manifest inspect` (no floating tags, C-SEC L10).
+
+services:
+  egress-dns:
+    image: coredns/coredns:1.12.1
+    profiles: ["egress"]
+    restart: unless-stopped
+    command: ["-conf", "/etc/coredns/Corefile"]
+    environment:
+      EGRESS_DNS_UPSTREAM: ${EGRESS_DNS_UPSTREAM:?set EGRESS_DNS_UPSTREAM in deploy/.env (resolver the egress-dns forwards to)}
+    volumes:
+      - ./egress/Corefile:/etc/coredns/Corefile:ro
+    networks:
+      backend:
+        ipv4_address: ${EGRESS_DNS_IP:-10.213.77.53}
+      egress: {}
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+          cpus: "0.25"
+
+  egress-proxy:
+    image: ubuntu/squid:6.10-24.10_edge
+    profiles: ["egress"]
+    restart: unless-stopped
+    # squid.conf.template holds @PLACEHOLDERS@ (Squid has no environment interpolation); they are filled from the environment at start.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        sed -e "s|@BACKEND_SUBNET@|$${BACKEND_SUBNET}|g" -e "s|@ALLOWED_PRIVATE_CIDRS@|$${WEBHOOKS_ALLOWED_PRIVATE_CIDRS}|g" /etc/squid/squid.conf.template > /etc/squid/squid.conf
+        exec squid -N -f /etc/squid/squid.conf
+    environment:
+      BACKEND_SUBNET: ${BACKEND_SUBNET:-10.213.77.0/24}
+      # Space separated; the default is a reserved address that no webhook target can have, so an empty operator list opens nothing.
+      WEBHOOKS_ALLOWED_PRIVATE_CIDRS: ${WEBHOOKS_ALLOWED_PRIVATE_CIDRS:-240.255.255.255/32}
+    volumes:
+      - ./egress/squid.conf:/etc/squid/squid.conf.template:ro
+    networks:
+      backend:
+        ipv4_address: ${EGRESS_PROXY_IP:-10.213.77.54}
+      egress: {}
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"
+
+  # Only the delivery switch/endpoints of the worker are configured here; api reads the same values to report `webhooksEnabled` (it never dials targets).
+  api:
+    environment:
+      Integrations__Webhooks__Enabled: ${WEBHOOKS_ENABLED:-false}
+      Integrations__Webhooks__EgressProxy: http://${EGRESS_PROXY_IP:-10.213.77.54}:3128
+      Integrations__Webhooks__DnsServer: ${EGRESS_DNS_IP:-10.213.77.53}
+      Integrations__Webhooks__AllowedHosts__0: ${WEBHOOKS_ALLOWED_HOSTS:-}
+      Integrations__Webhooks__AllowedPrivateCidrs__0: ${WEBHOOKS_ALLOWED_PRIVATE_CIDRS:-}
+
+  worker:
+    environment:
+      Integrations__Webhooks__Enabled: ${WEBHOOKS_ENABLED:-false}
+      Integrations__Webhooks__EgressProxy: http://${EGRESS_PROXY_IP:-10.213.77.54}:3128
+      Integrations__Webhooks__DnsServer: ${EGRESS_DNS_IP:-10.213.77.53}
+      Integrations__Webhooks__AllowedHosts__0: ${WEBHOOKS_ALLOWED_HOSTS:-}
+      Integrations__Webhooks__AllowedPrivateCidrs__0: ${WEBHOOKS_ALLOWED_PRIVATE_CIDRS:-}
+
+networks:
+  # NOT internal: only egress-dns and egress-proxy are attached (never api/worker/postgres).
+  egress:
+    ipam:
+      config:
+        - subnet: ${EGRESS_SUBNET:-10.213.79.0/24}

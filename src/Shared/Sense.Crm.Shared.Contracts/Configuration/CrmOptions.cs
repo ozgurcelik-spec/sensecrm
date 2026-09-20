@@ -173,6 +173,12 @@ public sealed class RateLimitingOptions
 
     /// <summary>Giriş denemeleri için e-posta anahtarlı ikinci kova (IP kovasına ek; M3). Bellek içi, tek örnek.</summary>
     public RateLimitPolicyOptions LoginEmail { get; set; } = new() { PermitLimit = RateLimitingDefaults.LoginEmailPermitLimit };
+
+    /// <summary>M8B: API anahtarı başına sınır (anahtar trafiği insan kovalarına girmez).</summary>
+    public RateLimitPolicyOptions ApiKey { get; set; } = new() { PermitLimit = RateLimitingDefaults.ApiKeyPermitLimit };
+
+    /// <summary>M8B: kiracının tüm anahtarları için toplam sınır (<c>tenant-api:{tid}</c>).</summary>
+    public RateLimitPolicyOptions ApiKeyTenant { get; set; } = new() { PermitLimit = RateLimitingDefaults.ApiKeyTenantPermitLimit };
 }
 
 /// <summary>İstek boyutu sınırları (M2). Kestrel <c>MaxRequestBodySize</c> değeri buradan gelir.</summary>
@@ -203,6 +209,8 @@ public static class RateLimitingDefaults
     public const int UserPermitLimit = 600;
     public const int TenantPermitLimit = 3000;
     public const int LoginEmailPermitLimit = 20;
+    public const int ApiKeyPermitLimit = 120;
+    public const int ApiKeyTenantPermitLimit = 600;
 }
 
 public static class RateLimitPolicyNames

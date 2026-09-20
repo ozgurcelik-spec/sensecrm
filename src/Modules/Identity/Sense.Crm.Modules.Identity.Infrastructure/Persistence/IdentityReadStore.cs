@@ -72,7 +72,7 @@ public sealed class IdentityReadStore(IdentityDbContext db) : IIdentityReadStore
             .ToListAsync(ct);
 
         var items = rows.Select(e => new AuditEntryDto(
-                e.Id, e.EntityType, e.EntityId, e.Action, e.UserId, e.UserDisplayName, ParseChanges(e.Changes), e.OccurredAt))
+                e.Id, e.EntityType, e.EntityId, e.Action, e.UserId, e.UserDisplayName, ParseChanges(e.Changes), e.OccurredAt, e.ApiKeyId))
             .ToList();
         return new AuditPageDto(items, total);
     }

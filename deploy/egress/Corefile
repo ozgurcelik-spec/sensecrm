@@ -1,0 +1,8 @@
+# CoreDNS for the worker's webhook destination lookups (M8B). The worker points its resolver here (Integrations:Webhooks:DnsServer).
+# {$EGRESS_DNS_UPSTREAM} is the operator's upstream resolver (deploy/.env). Only the backend network can reach this container.
+. {
+    errors
+    log
+    cache 30
+    forward . {$EGRESS_DNS_UPSTREAM}
+}
