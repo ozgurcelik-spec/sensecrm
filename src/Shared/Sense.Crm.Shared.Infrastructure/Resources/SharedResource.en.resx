@@ -262,4 +262,12 @@
   <data name="field.overrides" xml:space="preserve"><value>Overrides</value></data>
   <data name="field.retention_days" xml:space="preserve"><value>Retention period (days)</value></data>
   <data name="field.mode" xml:space="preserve"><value>Mode</value></data>
+  <!-- C-SEC2: destructive platform commands (step-up, confirmation name), platform admin lifecycle, erasure retry -->
+  <data name="platform.confirmation_mismatch" xml:space="preserve"><value>The typed organization name does not match the name on the server.</value></data>
+  <data name="platform.step_up_required" xml:space="preserve"><value>You must re-enter your own password for this action.</value></data>
+  <data name="platform.step_up_failed" xml:space="preserve"><value>The password could not be verified.</value></data>
+  <data name="platform.step_up_rate_limited" xml:space="preserve"><value>Too many wrong password attempts. Try again later.</value></data>
+  <data name="platform.last_platform_admin" xml:space="preserve"><value>The last active platform admin cannot be revoked.</value></data>
+  <data name="platform.not_a_platform_admin" xml:space="preserve"><value>The account is not a platform admin.</value></data>
+  <data name="platform.deletion_not_retryable" xml:space="preserve"><value>The deletion request cannot be retried: it is not in the failed state.</value></data>
 </root>

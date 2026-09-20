@@ -7,9 +7,11 @@ name: ${COMPOSE_PROJECT_NAME:-crm-prod}
 #   docker compose -f deploy/docker-compose.prod.yml up -d
 #
 # Order on `up`: postgres -> db-init (roles + databases, idempotent) -> migrator (must exit 0) -> api, worker -> web.
-# Network model: only `web` publishes a host port (default 127.0.0.1:8080). postgres, conductor, redis, api, worker and the
-# jobs live on the `backend` network, which is `internal: true`: it has NO route to the outside, so a compromised or misconfigured
-# service cannot call out (data residency). TLS is terminated by an external reverse proxy / load balancer (deploy/tls/*.example).
+# Network model: only `web` publishes a host port (default 127.0.0.1:8080), and it sits on `frontend` (the published-port network)
+# plus `edge`. `edge` (web <-> api only) and `backend` (postgres, conductor, redis, api, worker, jobs) are both `internal: true`: they
+# have NO route to the outside, so api/worker/postgres/conductor cannot call out (data residency), and `web` cannot reach the
+# database, Conductor, Redis or the worker at all (it shares a network with `api` only). TLS is terminated by an external reverse
+# proxy / load balancer (deploy/tls/*.example).
 # Every secret comes from deploy/.env (interpolated with `:?` = the stack refuses to start when one is missing) or from files under
 # deploy/secrets (Docker secrets, mounted at /run/secrets). There are no default passwords in this file.
 
@@ -125,7 +127,7 @@ services:
           cpus: "${CONDUCTOR_CPUS:-1.5}"
 
   # Run-once job: applies every module's EF migrations as the owner role. api and worker start only after it exits 0.
-  # First platform admin:  docker compose -f deploy/docker-compose.prod.yml run --rm migrator create-platform-admin
+  # First platform admin:  docker compose -f deploy/docker-compose.prod.yml run --rm --user root migrator create-platform-admin
   migrator:
     image: ${CRM_REGISTRY:-}crm-migrator:${CRM_VERSION:-latest}
     build:
@@ -145,8 +147,16 @@ services:
       PLATFORM_ADMIN_NAME: ${PLATFORM_ADMIN_NAME:-}
       PLATFORM_ORG_NAME: ${PLATFORM_ORG_NAME:-}
       PLATFORM_ADMIN_PASSWORD_FILE: /run/secrets/platform_admin_password
-    secrets:
-      - platform_admin_password
+    # A writable bind mount (NOT a `secrets:` entry, which is always mounted read-only): after a successful create-platform-admin the
+    # Migrator empties this file. The host file is 0600 (owner only), so the bootstrap must run as root inside the container:
+    #   docker compose -f deploy/docker-compose.prod.yml run --rm --user root migrator create-platform-admin
+    # The regular `migrate` run (every `up`, uid 1654) cannot read the file at all.
+    volumes:
+      - type: bind
+        source: ${PLATFORM_ADMIN_PASSWORD_FILE:-./secrets/platform-admin-password}
+        target: /run/secrets/platform_admin_password
+        bind:
+          create_host_path: false
     networks: [backend]
     logging: *logging
 
@@ -172,9 +182,9 @@ services:
       Registration__Mode: ${REGISTRATION_MODE:-disabled}
       # Public host name(s) the SPA is served under (';' separated); localhost is needed for the container health check.
       AllowedHosts: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS in deploy/.env (public host name, e.g. crm.company.local)};localhost
-      # The web container's nginx is the only client of the api: trust its X-Forwarded-* (backend network only).
+      # The web container's nginx is the only client of the api: trust its X-Forwarded-* (it reaches the api over the `edge` network).
       ForwardedHeaders__Enabled: "true"
-      ForwardedHeaders__KnownNetworks__0: ${BACKEND_SUBNET:-10.213.77.0/24}
+      ForwardedHeaders__KnownNetworks__0: ${EDGE_SUBNET:-10.213.79.0/24}
       Docs__Enabled: ${API_DOCS_ENABLED:-false}
       TZ: Europe/Istanbul
     secrets:
@@ -186,7 +196,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-    networks: [backend]
+    networks: [edge, backend]
     logging: *logging
     deploy:
       resources:
@@ -232,12 +242,13 @@ services:
         condition: service_healthy
     environment:
       API_UPSTREAM: http://api:8080
-      # Network of the external proxy/LB whose X-Forwarded-For is trusted for the client address (rate limits, audit IPs).
-      # Default = the frontend network (a proxy on this host reaches the published port through the bridge gateway).
-      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-10.213.78.0/24}
+      # Address/network of the external proxy/LB whose X-Forwarded-For is trusted for the client address (rate limits, audit IPs).
+      # Default = loopback only, i.e. NOTHING is trusted: a client can never spoof its address. Set it explicitly when a proxy/LB is in
+      # front (see deploy/.env.example); never to the frontend subnet/gateway while WEB_BIND is not 127.0.0.1.
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
     ports:
       - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:8080"
-    networks: [frontend, backend]
+    networks: [frontend, edge]
     logging: *logging
     deploy:
       resources:
@@ -273,11 +284,17 @@ networks:
     ipam:
       config:
         - subnet: ${BACKEND_SUBNET:-10.213.77.0/24}
-  # Only for the published web port.
+  # Only for the published web port (Docker cannot publish a port from an internal network). Only `web` is attached to it.
   frontend:
     ipam:
       config:
         - subnet: ${FRONTEND_SUBNET:-10.213.78.0/24}
+  # web <-> api link: internal (no route out, so api gains no outbound path) and shared by NO other service.
+  edge:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${EDGE_SUBNET:-10.213.79.0/24}
 
 volumes:
   pgdata:
@@ -286,6 +303,4 @@ secrets:
   # RSA private key (PEM) that signs the JWT access tokens. Generated by deploy/generate-secrets.*; back it up with the database.
   jwt_signing_key:
     file: ${JWT_SIGNING_KEY_FILE:-./secrets/jwt-signing-key.pem}
-  # Password of the first platform admin (create-platform-admin). Empty this file after the bootstrap.
-  platform_admin_password:
-    file: ${PLATFORM_ADMIN_PASSWORD_FILE:-./secrets/platform-admin-password}
+  # (The first platform admin's password file is a writable bind mount on the migrator service, see there.)

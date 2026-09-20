@@ -122,6 +122,7 @@ public sealed class AcceptInvitationHandler(
     ITenantContextSetter tenantSetter,
     IPermissionCacheInvalidator permissionCache,
     IIdentityUnitOfWork unitOfWork,
+    ITenantEntitlements entitlements,
     TimeProvider clock) : ICommandHandler<AcceptInvitationCommand>
 {
     public async Task<Result> Handle(AcceptInvitationCommand command, CancellationToken cancellationToken)
@@ -138,6 +139,12 @@ public sealed class AcceptInvitationHandler(
             return Error.NotFound(IdentityErrors.InvitationNotFound);
         }
 
+        // C-SEC2 L7: askıdaki (salt okunur/engelli), silme bekleyen ya da silinmiş organizasyona üyelik yazılmaz (istisna komutu kiracı kapısından muaftır).
+        if (await TenantWritesBlockedAsync(entitlements, tenant.Id, clock, cancellationToken).ConfigureAwait(false) is { } blocked)
+        {
+            return blocked;
+        }
+
         // Yazma, davetin ait olduğu organizasyonun kiracı kapsamında yapılır (AuditTenantInterceptor başka kiracıya yazmayı reddeder).
         using (tenantSetter.BeginScope(tenant.Id, tenant.Slug))
         {
@@ -147,6 +154,14 @@ public sealed class AcceptInvitationHandler(
         }
 
         return Result.Success();
+    }
+
+    /// <summary>Kiracının etkin erişimi tam değilse (askı, silme bekleyen/silinmiş, deneme bitti) yazmayı engelleyen hata; aksi null.</summary>
+    internal static async Task<Error?> TenantWritesBlockedAsync(ITenantEntitlements entitlements, Guid tenantId, TimeProvider clock, CancellationToken cancellationToken)
+    {
+        var snapshot = await entitlements.GetAsync(tenantId, cancellationToken).ConfigureAwait(false);
+        var (status, access) = snapshot.Evaluate(clock.GetUtcNow());
+        return access == AccessLevel.Full ? null : EntitlementErrors.Suspended(status);
     }
 }
 
@@ -164,7 +179,9 @@ public sealed class DeclineInvitationHandler(
     IMembershipRepository memberships,
     ITenantRepository tenants,
     ITenantContextSetter tenantSetter,
-    IIdentityUnitOfWork unitOfWork) : ICommandHandler<DeclineInvitationCommand>
+    IIdentityUnitOfWork unitOfWork,
+    ITenantEntitlements entitlements,
+    TimeProvider clock) : ICommandHandler<DeclineInvitationCommand>
 {
     public async Task<Result> Handle(DeclineInvitationCommand command, CancellationToken cancellationToken)
     {
@@ -178,6 +195,12 @@ public sealed class DeclineInvitationHandler(
         if (invitation is null || tenant is null)
         {
             return Error.NotFound(IdentityErrors.InvitationNotFound);
+        }
+
+        // C-SEC2 L7: askıdaki/silme bekleyen organizasyonun üyelik tablosuna yazılmaz.
+        if (await AcceptInvitationHandler.TenantWritesBlockedAsync(entitlements, tenant.Id, clock, cancellationToken).ConfigureAwait(false) is { } blocked)
+        {
+            return blocked;
         }
 
         using (tenantSetter.BeginScope(tenant.Id, tenant.Slug))

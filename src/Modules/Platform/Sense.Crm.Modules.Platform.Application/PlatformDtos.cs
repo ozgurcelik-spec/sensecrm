@@ -132,3 +132,6 @@ public static class OnboardingKeys
     public const string CreateLead = "create_lead";
     public const string CreateWorkflowRule = "create_workflow_rule";
 }
+
+/// <summary>Platform yöneticisi hesabı (<c>GET /platform/admins</c>; C-SEC2 M6).</summary>
+public sealed record PlatformAdminDto(Guid UserId, string Email, string DisplayName, bool IsActive, DateTimeOffset? LastLoginAt);

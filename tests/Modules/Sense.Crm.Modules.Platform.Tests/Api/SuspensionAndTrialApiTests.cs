@@ -57,13 +57,13 @@ internal static class ASuspensionKit
     }
 
     public static Task ASuspendAsync(this HttpClient platform, Guid tenantId, string mode = "readOnly") =>
-        platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{tenantId}/suspend", new { reason = "test askisi", mode }, HttpStatusCode.NoContent);
+        platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{tenantId}/suspend", new { reason = "test askisi", mode, currentPassword = PlatformPassword }, HttpStatusCode.NoContent);
 
     public static Task AReactivateAsync(this HttpClient platform, Guid tenantId) =>
         platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{tenantId}/reactivate", null, HttpStatusCode.NoContent);
 
-    public static Task ARequestDeletionAsync(this HttpClient platform, Guid tenantId) =>
-        platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{tenantId}/deletion-request", new { reason = "test silme talebi", retentionDays = 7 }, HttpStatusCode.OK);
+    public static async Task ARequestDeletionAsync(this HttpClient platform, Guid tenantId) =>
+        await platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{tenantId}/deletion-request", await platform.DeletionBodyAsync(tenantId, "test silme talebi", 7), HttpStatusCode.OK);
 
     public static Task ACancelDeletionAsync(this HttpClient platform, Guid tenantId) =>
         platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{tenantId}/deletion-request/cancel", null, HttpStatusCode.NoContent);

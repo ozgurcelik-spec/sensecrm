@@ -179,11 +179,35 @@ export interface PlatformPlan {
 export interface PlatformSuspendInput {
   reason: string;
   mode: PlatformSuspensionMode;
+  /** The calling platform admin's own password; required by the server only when `mode === "blocked"`. */
+  currentPassword?: string;
 }
 
 export interface PlatformDeletionInput {
   reason: string;
   retentionDays?: number;
+  /** The typed organization name (the server compares it with its own copy). */
+  confirmTenantName: string;
+  /** The calling platform admin's own password (step-up re-authentication). */
+  currentPassword: string;
+}
+
+/** Body of every destructive platform command that only needs the step-up password. */
+export interface PlatformStepUpInput {
+  currentPassword: string;
+}
+
+export interface PlatformAdmin {
+  userId: string;
+  email: string;
+  displayName: string;
+  isActive: boolean;
+  lastLoginAt?: string;
+}
+
+export interface PlatformAdminRevokeInput extends PlatformStepUpInput {
+  /** Also deactivate the account, not just remove the platform-admin flag. */
+  deactivate?: boolean;
 }
 
 export interface PlatformDeletionResult {

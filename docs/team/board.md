@@ -29,6 +29,7 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | C-M6B | Servis/Destek: Talepler (case), yorumlar, SLA süresi | Spec→Backend+Web | **Merged** | `m6/service` | kart kapısı |
 | C-M6C | Pazarlama: Kampanyalar, kampanya üyeleri, lead kaynağı ilişkisi | Spec→Backend+Web | **Merged** | `m6/marketing` | kart kapısı |
 | C-M7 | SaaS hazırlığı (planlar/limitler, kiracı yönetimi, faturalama altyapısı) | Spec→Backend+Web | **Merged** | `main` | M6 merge sonrası şekillenir |
+| C-SEC2 | M7 platform güvenlik sertleştirmesi (H1–H2, M1–M6, L1–L7: korunan kiracı, step-up, imha doğrulaması, denetim tetikleyicileri, ağ ayrımı) | Security | **Review** | `worktree-agent-a78a438c1fa67ab05` | Güvenlik raporu "C-SEC2" bölümü + yeni testler; Lead bağımsız doğrulaması bekliyor |
 
 ## Yürütme sırası
 1. C-M5 biter → doğrula, commit.

@@ -223,6 +223,13 @@ export const PLATFORM_ITEMS: readonly NavItem[] = [
     icon: ScrollText,
     platformAdminOnly: true,
   },
+  {
+    key: "platformAdmins",
+    labelKey: "platformAdmins",
+    path: "/app/platform/admins",
+    icon: ShieldCheck,
+    platformAdminOnly: true,
+  },
 ];
 
 /** CRM modules shown in quick links (everything except the home entry). */

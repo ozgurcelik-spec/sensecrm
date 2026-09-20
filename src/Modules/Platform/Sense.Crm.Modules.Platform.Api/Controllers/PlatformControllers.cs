@@ -24,9 +24,17 @@ public static class PlatformRoutes
 /// <summary>Abonelik değiştirme gövdesi (PUT, tam ve kalıcı değiştirme): <c>planCode*</c>, <c>trialEndsOn?</c> (yok/null = denemesiz), <c>overrides?</c> (yok/null = temiz).</summary>
 public sealed record UpdateSubscriptionRequest(string? PlanCode, DateOnly? TrialEndsOn, JsonElement? Overrides);
 
-public sealed record SuspendRequest(string? Reason, string? Mode);
+/// <summary><c>currentPassword</c>: yalnız <c>mode = blocked</c> için zorunlu (step-up).</summary>
+public sealed record SuspendRequest(string? Reason, string? Mode, string? CurrentPassword = null);
 
-public sealed record DeletionRequestBody(string? Reason, int? RetentionDays);
+/// <summary><c>confirmTenantName*</c> (sunucudaki ad ile eşleşmeli) ve <c>currentPassword*</c> (step-up) zorunludur.</summary>
+public sealed record DeletionRequestBody(string? Reason, int? RetentionDays, string? ConfirmTenantName = null, string? CurrentPassword = null);
+
+/// <summary>Step-up korumalı gövde (imha yeniden deneme): <c>currentPassword*</c>.</summary>
+public sealed record StepUpBody(string? CurrentPassword = null);
+
+/// <summary>Platform yöneticisi geri alma gövdesi: <c>currentPassword*</c> (step-up), <c>deactivate?</c> (hesabı da pasifleştir).</summary>
+public sealed record RevokePlatformAdminBody(string? CurrentPassword = null, bool Deactivate = false);
 
 /// <summary>
 /// Platform konsolu: organizasyonlar, abonelik, askı, silme talebi, kullanım. Sınıf düzeyinde <c>PlatformAdmin</c> politikası (JWT bayrağı, hızlı ret) +
@@ -59,7 +67,7 @@ public sealed class PlatformOrganizationsController : ApiControllerBase
     [HttpPost(PlatformRoutes.TenantIdParam + "/suspend")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Suspend(Guid tenantId, [FromBody] SuspendRequest request, CancellationToken ct) =>
-        FromResult(await Dispatcher.Send(new SuspendOrganizationCommand(tenantId, request.Reason, request.Mode), ct));
+        FromResult(await Dispatcher.Send(new SuspendOrganizationCommand(tenantId, request.Reason, request.Mode, request.CurrentPassword), ct));
 
     [HttpPost(PlatformRoutes.TenantIdParam + "/reactivate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -68,11 +76,17 @@ public sealed class PlatformOrganizationsController : ApiControllerBase
     [HttpPost(PlatformRoutes.TenantIdParam + "/deletion-request")]
     [ProducesResponseType<DeletionRequestResultDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> RequestDeletion(Guid tenantId, [FromBody] DeletionRequestBody request, CancellationToken ct) =>
-        FromResult(await Dispatcher.Send(new RequestDeletionCommand(tenantId, request.Reason, request.RetentionDays), ct));
+        FromResult(await Dispatcher.Send(new RequestDeletionCommand(tenantId, request.Reason, request.RetentionDays, request.ConfirmTenantName, request.CurrentPassword), ct));
 
     [HttpPost(PlatformRoutes.TenantIdParam + "/deletion-request/cancel")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> CancelDeletion(Guid tenantId, CancellationToken ct) => FromResult(await Dispatcher.Send(new CancelDeletionCommand(tenantId), ct));
+
+    /// <summary>Başarısız (<c>failed</c>) imha talebini yeniden denemeye alır (step-up korumalı; C-SEC2 L3). <c>lastError</c> detayda (<c>GET …/{tenantId}</c>) görünür.</summary>
+    [HttpPost(PlatformRoutes.TenantIdParam + "/deletion-request/retry")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RetryDeletion(Guid tenantId, [FromBody] StepUpBody request, CancellationToken ct) =>
+        FromResult(await Dispatcher.Send(new RetryDeletionCommand(tenantId, request.CurrentPassword), ct));
 
     [HttpGet(PlatformRoutes.TenantIdParam + "/usage")]
     [ProducesResponseType<UsageSeriesDto>(StatusCodes.Status200OK)]
@@ -93,6 +107,19 @@ public sealed class PlatformCatalogController : ApiControllerBase
     [HttpGet("plans")]
     [ProducesResponseType<IReadOnlyList<PlanDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Plans(CancellationToken ct) => FromResult(await Dispatcher.Query(new ListPlansQuery(), ct));
+
+    /// <summary>Platform yöneticisi hesapları (C-SEC2 M6; pasif olanlar dahil).</summary>
+    [HttpGet("admins")]
+    [ProducesResponseType<IReadOnlyList<PlatformAdminDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Admins(CancellationToken ct) => FromResult(await Dispatcher.Query(new ListPlatformAdminsQuery(), ct));
+
+    /// <summary>
+    /// Platform yöneticisi yetkisini geri alır (isteğe bağlı hesabı da pasifleştirir; tüm oturumlar kapanır). Son aktif yönetici geri alınamaz (409). Step-up korumalı.
+    /// </summary>
+    [HttpPost("admins/{userId:guid}/revoke")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RevokeAdmin(Guid userId, [FromBody] RevokePlatformAdminBody request, CancellationToken ct) =>
+        FromResult(await Dispatcher.Send(new RevokePlatformAdminCommand(userId, request.CurrentPassword, request.Deactivate), ct));
 
     [HttpGet("audit")]
     [ProducesResponseType<PagedResult<PlatformAuditDto>>(StatusCodes.Status200OK)]

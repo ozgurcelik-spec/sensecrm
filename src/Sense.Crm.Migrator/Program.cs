@@ -14,7 +14,7 @@ using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 
-// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|sync-plans|backfill|erase-deleted-tenants]
+// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|revoke-platform-admin|sync-plans|backfill|erase-deleted-tenants]
 // Yeni modül eklendiğinde DbContext'i buraya da kaydedilir (build/new-module.ps1 çıktısındaki adımlar).
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
 builder.Services.AddCrmCore(builder.Configuration);
@@ -85,6 +85,15 @@ switch (command)
         if (exitCode != 0)
         {
             return exitCode;
+        }
+
+        break;
+
+    case PlatformAdminCommand.RevokeName:
+        var revokeExit = await PlatformAdminCommand.RevokeAsync(host.Services, logger, CancellationToken.None);
+        if (revokeExit != 0)
+        {
+            return revokeExit;
         }
 
         break;

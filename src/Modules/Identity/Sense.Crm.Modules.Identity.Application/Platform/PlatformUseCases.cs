@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sense.Crm.Modules.Identity.Application.Provisioning;
 using Sense.Crm.Modules.Identity.Contracts;
@@ -70,6 +71,7 @@ public sealed class CreateOrganizationHandler(
     IIdentityUnitOfWork unitOfWork,
     IPlanCatalog planCatalog,
     IPlatformAuditSink platformAudit,
+    ILogger<CreateOrganizationHandler> logger,
     TimeProvider clock) : ICommandHandler<CreateOrganizationCommand, CreatedOrganizationDto>
 {
     public async Task<Result<CreatedOrganizationDto>> Handle(CreateOrganizationCommand command, CancellationToken cancellationToken)
@@ -100,7 +102,7 @@ public sealed class CreateOrganizationHandler(
             throw new ValidationException([new FluentValidation.Results.ValidationFailure(nameof(command.PlanCode), IdentityErrors.InvalidPlan)]);
         }
 
-        var provisioned = await provisioner.CreateAsync(command.OrganizationName, command.Locale, cancellationToken, OrganizationOrigin.Platform, planCode, command.TrialEndsOn).ConfigureAwait(false);
+        var provisioned = await provisioner.CreateAsync(command.OrganizationName, command.Locale, cancellationToken, OrganizationOrigin.Platform, planCode, command.TrialEndsOn, actorId).ConfigureAwait(false);
 
         string? generatedPassword = null;
         var accountCreated = admin is null;
@@ -127,12 +129,21 @@ public sealed class CreateOrganizationHandler(
 
         // M7: platform denetimi (organization.created) ve yanıttaki plan (istekteki ya da Platform varsayılanı); Platform hesabı olayla açılır.
         var effectivePlan = planCode ?? planCatalog.ProvisioningPlanCode;
-        await platformAudit.RecordAsync(
-            "organization.created",
-            provisioned.Tenant.Id,
-            provisioned.Tenant.Name,
-            new Dictionary<string, object?> { ["planCode"] = effectivePlan, ["trialEndsOn"] = command.TrialEndsOn?.ToString("yyyy-MM-dd"), ["adminAccountCreated"] = accountCreated },
-            cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await platformAudit.RecordAsync(
+                "organization.created",
+                provisioned.Tenant.Id,
+                provisioned.Tenant.Name,
+                new Dictionary<string, object?> { ["planCode"] = effectivePlan, ["trialEndsOn"] = command.TrialEndsOn?.ToString("yyyy-MM-dd"), ["adminAccountCreated"] = accountCreated },
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // C-SEC2 L4: organizasyon zaten kalıcı; denetim satırı yazılamadıysa istek başarısız sayılmaz — OrganizationCreated olayı (aynı Identity işleminde outbox'a yazıldı, ActorUserId taşır)
+            // Platform işleyicisinde satırı tamamlar. Hata günlüğe gider.
+            logger.LogError(ex, "The organization.created platform audit row could not be written directly; it will be reconciled from the OrganizationCreated event");
+        }
 
         return new CreatedOrganizationDto(
             provisioned.Tenant.Id,

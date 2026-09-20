@@ -31,6 +31,7 @@ public static class PlatformContractServices
         services.AddScoped<ITenantAccountRepository, TenantAccountRepository>();
         services.AddScoped<IDeletionRequestRepository, DeletionRequestRepository>();
         services.AddScoped<IPlatformAudit, PlatformAudit>();
+        services.AddScoped<IPlatformAuditReconciler, PlatformAuditReconciler>();
         services.AddScoped<IPlatformReadStore, PlatformReadStore>();
         services.AddScoped<IUsageExportWriter, UsageExportWriter>();
         services.AddScoped<IUsageMeter, UsageMeter>();
@@ -40,6 +41,7 @@ public static class PlatformContractServices
         services.AddScoped<PlanSynchronizer>();
         services.AddScoped<AccountBackfill>();
         services.AddScoped<DeletedTenantsReplay>();
+        services.AddScoped<TenantErasureVerifier>();
 
         // Gerçek zorlama uygulamaları: AddCrmCore'un TryAdd varsayılanlarının yerine.
         services.Replace(ServiceDescriptor.Scoped<ITenantEntitlements, TenantEntitlementsService>());

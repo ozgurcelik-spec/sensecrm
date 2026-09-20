@@ -67,6 +67,32 @@ public sealed class PlatformAudit(PlatformDbContext db, ICurrentUser user, TimeP
     private static string? Truncate(string? value, int max) => value is { Length: > 0 } && value.Length > max ? value[..max] : value;
 }
 
+/// <summary><see cref="IPlatformAuditReconciler"/>: (eylem, hedef kiracı) için satır yoksa ekler (L4; olay tabanlı tamamlama, en-az-bir-kez teslimde idempotent).</summary>
+public sealed class PlatformAuditReconciler(PlatformDbContext db) : IPlatformAuditReconciler
+{
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    public async Task EnsureAsync(string action, Guid targetTenantId, string? targetTenantName, Guid? actorUserId, DateTime occurredAtUtc, IReadOnlyDictionary<string, object?> details, CancellationToken ct)
+    {
+        var pending = db.ChangeTracker.Entries<PlatformAuditEntry>().Any(e => e.State == EntityState.Added && e.Entity.Action == action && e.Entity.TargetTenantId == targetTenantId);
+        if (pending || await db.AuditEntries.AsNoTracking().AnyAsync(e => e.Action == action && e.TargetTenantId == targetTenantId, ct).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        db.AuditEntries.Add(new PlatformAuditEntry
+        {
+            Id = Guid.CreateVersion7(),
+            OccurredAt = occurredAtUtc,
+            ActorUserId = actorUserId,
+            Action = action,
+            TargetTenantId = targetTenantId,
+            TargetTenantName = targetTenantName,
+            Details = JsonSerializer.Serialize(details, Json),
+        });
+    }
+}
+
 /// <summary>
 /// <see cref="IPlatformAuditSink"/>: başka modülün (Identity <c>POST /platform/organizations</c>) platform eylemini kendi transaction'ından bağımsız, hemen kalıcı olarak yazar
 /// (aktör: çağıran platform yöneticisi). Satır kiracı iş verisi/kişisel veri içermez.

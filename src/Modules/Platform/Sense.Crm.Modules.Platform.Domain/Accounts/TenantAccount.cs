@@ -182,10 +182,14 @@ public sealed class TenantAccount : AggregateRoot<Guid>
         return change;
     }
 
-    /// <summary><c>active → suspended</c>. Sistem kiracısı 422; <c>active</c> değilse <c>platform.invalid_transition</c> (409).</summary>
-    public Result Suspend(string reason, string mode, DateTime nowUtc)
+    /// <summary>
+    /// <c>active → suspended</c>. Sistem kiracısı 422; <c>active</c> değilse <c>platform.invalid_transition</c> (409).
+    /// <paramref name="hasActivePlatformAdminMember"/> (C-SEC2 H1): kiracıda aktif bir platform yöneticisi üyesi varsa da <c>platform.system_tenant_protected</c> (422) —
+    /// <c>is_system</c> bayrağı eski kurulumlarda eksik olsa bile işletim organizasyonu askıya alınamaz (sunucu tarafı kural; çağıran dizinden bilir).
+    /// </summary>
+    public Result Suspend(string reason, string mode, DateTime nowUtc, bool hasActivePlatformAdminMember = false)
     {
-        if (IsSystem)
+        if (IsSystem || hasActivePlatformAdminMember)
         {
             return Error.Rule(PlatformErrors.SystemTenantProtected);
         }
@@ -218,9 +222,9 @@ public sealed class TenantAccount : AggregateRoot<Guid>
     }
 
     /// <summary><c>active|suspended → pending_deletion</c>; önceki durumu döner (silme talebi saklar). Sistem kiracısı 422.</summary>
-    public Result<string> MarkPendingDeletion()
+    public Result<string> MarkPendingDeletion(bool hasActivePlatformAdminMember = false)
     {
-        if (IsSystem)
+        if (IsSystem || hasActivePlatformAdminMember)
         {
             return Error.Rule(PlatformErrors.SystemTenantProtected);
         }
@@ -247,10 +251,13 @@ public sealed class TenantAccount : AggregateRoot<Guid>
         return Result.Success();
     }
 
-    /// <summary><c>pending_deletion → deleted</c> (yalnız imha işi): mezar taşı — ad/slug redakte, istisna temizlenir.</summary>
-    public Result MarkDeleted(DateTime nowUtc)
+    /// <summary>
+    /// <c>pending_deletion → deleted</c> (yalnız imha işi): mezar taşı — ad/slug redakte, istisna, askı gerekçesi (serbest metin) ve kipi temizlenir (L1).
+    /// Sistem kiracısı ya da aktif platform yöneticisi üyesi olan kiracı hiçbir zaman silinmiş işaretlenemez (H1/M1).
+    /// </summary>
+    public Result MarkDeleted(DateTime nowUtc, bool hasActivePlatformAdminMember = false)
     {
-        if (IsSystem)
+        if (IsSystem || hasActivePlatformAdminMember)
         {
             return Error.Rule(PlatformErrors.SystemTenantProtected);
         }
@@ -267,6 +274,10 @@ public sealed class TenantAccount : AggregateRoot<Guid>
         // Kimlikler UUIDv7'dir (zamana göre sıralı): ilk 8 hex ~65 sn'lik pencerede aynıdır ve slug benzersiz indeksini çakıştırır; son 8 hex rastgele bitlerdendir.
         Slug = PlatformLimits.DeletedSlugPrefix + TenantId.ToString("N")[^8..];
         Overrides = null;
+
+        // Askı gerekçesi serbest metindir (kişisel veri içerebilir): tombstone'da kalmaz; askı kipi de anlamsızdır.
+        SuspendedReason = null;
+        SuspensionMode = null;
         return Result.Success();
     }
 

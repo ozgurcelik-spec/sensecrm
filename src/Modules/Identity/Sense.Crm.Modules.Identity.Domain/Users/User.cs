@@ -153,6 +153,35 @@ public sealed class User : AggregateRoot<Guid>
     /// </summary>
     public void GrantPlatformAdmin() => IsPlatformAdmin = true;
 
+    /// <summary>
+    /// Platform yöneticisi bayrağını kaldırır (M6). İdempotenttir. Son aktif platform yöneticisinin geri alınmaması kuralı kullanım katmanındadır
+    /// (yalnız veritabanı sayımıyla bilinir); çağıran ayrıca refresh token ailelerini iptal etmelidir.
+    /// </summary>
+    public void RevokePlatformAdmin() => IsPlatformAdmin = false;
+
+    /// <summary>
+    /// Hesabı pasifleştirir (M6): giriş ve yenileme reddedilir, platform yöneticisi doğrulaması (<c>IsActive &amp;&amp; IsPlatformAdmin</c>) düşer. Güvenlik damgası yenilenir.
+    /// Refresh token ailelerinin iptali çağıranın işidir (<c>IRefreshTokenRepository.RevokeAllOfUserAsync</c>). İdempotenttir.
+    /// </summary>
+    public void Deactivate()
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        IsActive = false;
+        SecurityStamp = NewStamp();
+    }
+
+    /// <summary>Pasif hesabı yeniden açar (kilit ve hatalı deneme sayacı sıfırlanır). İdempotenttir.</summary>
+    public void Reactivate()
+    {
+        IsActive = true;
+        FailedAccessCount = 0;
+        LockoutEndUtc = null;
+    }
+
     private static string NewStamp() => Guid.NewGuid().ToString("N");
 }
 

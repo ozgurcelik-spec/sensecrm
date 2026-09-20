@@ -262,4 +262,12 @@
   <data name="field.overrides" xml:space="preserve"><value>İstisnalar</value></data>
   <data name="field.retention_days" xml:space="preserve"><value>Saklama süresi (gün)</value></data>
   <data name="field.mode" xml:space="preserve"><value>Kip</value></data>
+  <!-- C-SEC2: yıkıcı platform komutları (step-up, onay adı), platform yöneticisi yaşam döngüsü, imha yeniden deneme -->
+  <data name="platform.confirmation_mismatch" xml:space="preserve"><value>Yazılan organizasyon adı sunucudaki adla eşleşmiyor.</value></data>
+  <data name="platform.step_up_required" xml:space="preserve"><value>Bu işlem için kendi parolanızı yeniden girmelisiniz.</value></data>
+  <data name="platform.step_up_failed" xml:space="preserve"><value>Parola doğrulanamadı.</value></data>
+  <data name="platform.step_up_rate_limited" xml:space="preserve"><value>Çok fazla hatalı parola denemesi. Bir süre sonra yeniden deneyin.</value></data>
+  <data name="platform.last_platform_admin" xml:space="preserve"><value>Son aktif platform yöneticisinin yetkisi geri alınamaz.</value></data>
+  <data name="platform.not_a_platform_admin" xml:space="preserve"><value>Hesap zaten platform yöneticisi değil.</value></data>
+  <data name="platform.deletion_not_retryable" xml:space="preserve"><value>Silme talebi yeniden denenemez: talep başarısız durumda değil.</value></data>
 </root>

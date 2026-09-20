@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Group, Modal, NumberInput, Stack, Text, TextInput, Textarea } from "@mantine/core";
 import { TriangleAlert } from "lucide-react";
+import { StepUpField } from "@/components/platform/step-up-field";
 import { useRequestPlatformDeletion } from "@/hooks/use-platform";
 import { toast, toastApiError } from "@/hooks/use-toast";
 import {
@@ -10,6 +11,7 @@ import {
   MIN_RETENTION_DAYS,
   SUSPEND_REASON_MAX,
   serverFieldErrors,
+  stepUpFieldError,
 } from "@/lib/platform";
 import { formatDateTime } from "@/lib/dates";
 
@@ -33,14 +35,21 @@ export function DeletionRequestDialog({
   const [reason, setReason] = useState("");
   const [retention, setRetention] = useState<number | "">(DEFAULT_RETENTION_DAYS);
   const [confirmName, setConfirmName] = useState("");
-  const [errors, setErrors] = useState<{ reason?: string; retentionDays?: string }>({});
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{
+    reason?: string;
+    retentionDays?: string;
+    confirmTenantName?: string;
+    password?: string;
+  }>({});
 
   const retentionValid =
     typeof retention === "number" &&
     Number.isInteger(retention) &&
     retention >= MIN_RETENTION_DAYS &&
     retention <= MAX_RETENTION_DAYS;
-  const canSubmit = reason.trim() !== "" && retentionValid && confirmName === organizationName;
+  const canSubmit =
+    reason.trim() !== "" && retentionValid && confirmName === organizationName && password !== "";
 
   async function submit() {
     setErrors({});
@@ -48,6 +57,8 @@ export function DeletionRequestDialog({
       const result = await request.mutateAsync({
         reason: reason.trim(),
         retentionDays: retention === "" ? undefined : retention,
+        confirmTenantName: confirmName,
+        currentPassword: password,
       });
       toast({
         variant: "success",
@@ -55,6 +66,11 @@ export function DeletionRequestDialog({
       });
       onClose();
     } catch (error) {
+      const stepUp = stepUpFieldError(error);
+      if (stepUp) {
+        setErrors({ [stepUp.field]: stepUp.message });
+        return;
+      }
       const fields = serverFieldErrors(error);
       if (fields.reason || fields.retentionDays) {
         setErrors({ reason: fields.reason, retentionDays: fields.retentionDays });
@@ -78,6 +94,7 @@ export function DeletionRequestDialog({
           maxLength={SUSPEND_REASON_MAX}
           value={reason}
           onChange={(event) => setReason(event.currentTarget.value)}
+          description={t("platform:reasonHint")}
           error={errors.reason}
           data-autofocus
         />
@@ -106,12 +123,24 @@ export function DeletionRequestDialog({
         <TextInput
           label={t("platform:deletion.confirmLabel", { name: organizationName })}
           value={confirmName}
-          onChange={(event) => setConfirmName(event.currentTarget.value)}
+          onChange={(event) => {
+            setConfirmName(event.currentTarget.value);
+            setErrors((current) => ({ ...current, confirmTenantName: undefined }));
+          }}
+          error={errors.confirmTenantName}
           autoComplete="off"
         />
         <Text size="xs" c="dimmed">
           {t("platform:deletion.confirmHint")}
         </Text>
+        <StepUpField
+          value={password}
+          onChange={(value) => {
+            setPassword(value);
+            setErrors((current) => ({ ...current, password: undefined }));
+          }}
+          error={errors.password}
+        />
         <Group justify="flex-end" mt="sm">
           <Button variant="default" onClick={onClose} disabled={request.isPending}>
             {t("common:cancel")}

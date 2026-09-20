@@ -4,12 +4,15 @@ import type {
   CreatedPlatformOrganization,
   CreatePlatformOrganizationInput,
   ListResult,
+  PlatformAdmin,
+  PlatformAdminRevokeInput,
   PlatformAuditEntry,
   PlatformDeletionInput,
   PlatformDeletionResult,
   PlatformOrganization,
   PlatformOrganizationDetail,
   PlatformPlan,
+  PlatformStepUpInput,
   PlatformSubscriptionInput,
   PlatformSubscriptionResult,
   PlatformSuspendInput,
@@ -45,6 +48,7 @@ export const platformKeys = {
   detail: (id: string) => ["platform", "organizations", "detail", id] as const,
   usage: (id: string, query: UsageRangeQuery) => ["platform", "usage", id, query] as const,
   plans: ["platform", "plans"] as const,
+  admins: ["platform", "admins"] as const,
   audit: (query: PlatformAuditQuery) => ["platform", "audit", query] as const,
 };
 
@@ -103,6 +107,11 @@ export async function cancelPlatformDeletion(id: string): Promise<void> {
   await apiClient.post(`${BASE}/${seg(id)}/deletion-request/cancel`);
 }
 
+/** Retry a failed erasure (server: only while the latest request is `failed`); needs the caller's own password. */
+export async function retryPlatformDeletion(id: string, input: PlatformStepUpInput): Promise<void> {
+  await apiClient.post(`${BASE}/${seg(id)}/deletion-request/retry`, input);
+}
+
 export async function getPlatformUsage(
   id: string,
   query: UsageRangeQuery
@@ -136,4 +145,15 @@ export async function exportPlatformUsage(range: UsageRangeQuery): Promise<Blob>
     responseType: "blob",
   });
   return data;
+}
+
+export const listPlatformAdmins = (): Promise<PlatformAdmin[]> =>
+  getArray<PlatformAdmin>("/platform/admins");
+
+/** Removes the platform-admin flag (optionally deactivates the account); needs the caller's own password. */
+export async function revokePlatformAdmin(
+  userId: string,
+  input: PlatformAdminRevokeInput
+): Promise<void> {
+  await apiClient.post(`/platform/admins/${seg(userId)}/revoke`, input);
 }

@@ -5,15 +5,19 @@
 .DESCRIPTION
     pg_dump (plain SQL, no owners/privileges/comments; crm: schema "public" excluded, db-init owns it) runs INSIDE the postgres container, is gzip-compressed there, copied out with
     "docker compose cp" (binary-safe, no PowerShell pipeline encoding problems), integrity-checked and pruned by age.
+    Encryption is MANDATORY: without -GpgRecipient (or the BACKUP_GPG_RECIPIENT environment variable) the script refuses to run (exit code 2,
+    before any docker command) unless -NoEncryption is passed, which stores the backup in CLEAR TEXT and prints a loud warning.
     Not included: deploy\.env and deploy\secrets\ (JWT signing key, DB passwords) - back those up separately and encrypted.
 
 .PARAMETER BackupDir      Target directory (default deploy\backups).
 .PARAMETER RetentionDays  Delete backups this script created that are older than N days (default 14).
 .PARAMETER EnvFile        Compose env file (default deploy\.env).
-.PARAMETER GpgRecipient   Optional: additionally encrypt every file with gpg for this recipient (gpg + public key required); the plain .gz is removed.
+.PARAMETER GpgRecipient   Required unless -NoEncryption: encrypt every file with gpg for this recipient (gpg + public key required); the plain .gz is removed.
+                          Default: the BACKUP_GPG_RECIPIENT environment variable.
+.PARAMETER NoEncryption   Explicit opt-out: store the backup in clear text (loud warning).
 
 .EXAMPLE
-    .\backup.ps1 -BackupDir D:\backups\crm -RetentionDays 30
+    .\backup.ps1 -BackupDir D:\backups\crm -RetentionDays 30 -GpgRecipient backup@company.local
     Scheduled task: powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\crm\deploy\backup.ps1
 #>
 [CmdletBinding()]
@@ -21,10 +25,25 @@ param(
     [string]$BackupDir = (Join-Path $PSScriptRoot 'backups'),
     [int]$RetentionDays = 14,
     [string]$EnvFile = (Join-Path $PSScriptRoot '.env'),
-    [string]$GpgRecipient = ''
+    [string]$GpgRecipient = $env:BACKUP_GPG_RECIPIENT,
+    [switch]$NoEncryption
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Encryption is mandatory. Checked BEFORE any docker command so a misconfigured run never produces a clear-text dump.
+if ($NoEncryption) {
+    Write-Warning 'WARNING: -NoEncryption given: the backups are stored in CLEAR TEXT (all customer data, password hashes, tokens). Protect the target directory, or use -GpgRecipient.'
+    $GpgRecipient = ''
+} elseif (-not $GpgRecipient) {
+    [Console]::Error.WriteLine('REFUSING to run: backup encryption is mandatory and no key is configured.')
+    [Console]::Error.WriteLine('  pass -GpgRecipient <gpg key id / e-mail> (or set BACKUP_GPG_RECIPIENT; the public key must be in the gpg keyring),')
+    [Console]::Error.WriteLine('  or pass -NoEncryption to knowingly store the backup in clear text.')
+    exit 2
+} elseif (-not (Get-Command gpg -ErrorAction SilentlyContinue)) {
+    [Console]::Error.WriteLine('REFUSING to run: -GpgRecipient is set but gpg is not installed / not on PATH.')
+    exit 2
+}
 
 $compose = @('compose', '-f', (Join-Path $PSScriptRoot 'docker-compose.prod.yml'))
 if (Test-Path -LiteralPath $EnvFile) { $compose += @('--env-file', $EnvFile) }
@@ -77,9 +96,14 @@ foreach ($db in @('crm', 'conductor')) {
 
     if ($GpgRecipient) {
         & gpg --batch --yes --encrypt --recipient $GpgRecipient --output "$target.gpg" $target
-        if ($LASTEXITCODE -ne 0) { throw "gpg failed with exit code $LASTEXITCODE" }
+        if ($LASTEXITCODE -ne 0) {
+            Remove-Item -LiteralPath $target, "$target.gpg" -Force -ErrorAction SilentlyContinue
+            throw "gpg failed with exit code $LASTEXITCODE (the clear-text dump was removed)"
+        }
         Remove-Item -LiteralPath $target -Force
         $target = "$target.gpg"
+    } else {
+        Write-Warning "$target is stored in CLEAR TEXT"
     }
     $size = [math]::Round((Get-Item -LiteralPath $target).Length / 1KB, 1)
     Write-Host "[$(Get-Date -Format T)] wrote $target ($size KB)"

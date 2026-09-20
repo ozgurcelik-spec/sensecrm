@@ -46,7 +46,7 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
         }
 
         var definition = WorkflowDefinitions.Workflow(request.Name, request.Version);
-        var workflow = new FakeWorkflow(Guid.NewGuid().ToString(), request.Name, request.Input, (JsonArray)definition["tasks"]!);
+        var workflow = new FakeWorkflow(Guid.NewGuid().ToString(), request.Name, request.Input, (JsonArray)definition["tasks"]!) { CorrelationId = request.CorrelationId };
         _workflows[workflow.Id] = workflow;
 
         // Gerçek Conductor gibi: başlatma hemen döner, görevler ayrı bir işlemde (Worker) ve başlatan işlem commit edildikten SONRA
@@ -79,6 +79,10 @@ public sealed partial class FakeWorkflowEngine(IServiceProvider services) : IWor
     public IReadOnlyCollection<string> RemovedWorkflowIds => _removed.ToArray();
 
     private readonly ConcurrentQueue<string> _removed = new();
+
+    /// <summary>C-SEC2 L2: ilişkilendirme kimliğiyle (CRM yürütme kimliği) başlatılmış workflow'lar — yetim yürütme temizliği testi için.</summary>
+    public Task<IReadOnlyList<string>> FindIdsByCorrelationAsync(string workflowName, string correlationId, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<string>>(_workflows.Values.Where(w => w.Name == workflowName && w.CorrelationId == correlationId).Select(w => w.Id).ToList());
 
     public Task RemoveAsync(string workflowId, CancellationToken cancellationToken)
     {
@@ -215,6 +219,9 @@ public sealed class FakeWorkflow(string id, string name, JsonObject input, JsonA
     public string Name { get; } = name;
 
     public JsonObject Input { get; } = input;
+
+    /// <summary>Başlatma isteğindeki ilişkilendirme kimliği (CRM yürütme kimliği).</summary>
+    public string? CorrelationId { get; set; }
 
     public JsonArray Tasks { get; } = tasks;
 

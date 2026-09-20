@@ -354,6 +354,10 @@ internal sealed class ErasureScenario : IDisposable
         await ErasureKit.InviteAndAcceptAsync(B.Admin, Shared.Email, roleB, Shared.Client, B.TenantId);
         await ErasureKit.InviteAndAcceptAsync(A.Admin, PlatformAdminEmail, roleA, Platform, A.TenantId);
 
+        // C-SEC2 H1: aktif platform yöneticisi üyesi olan kiracı askıya alınamaz/silinemez/imha edilemez. Senaryonun platform yöneticisi A'ya üye olur (hesap/üyelik imhası
+        // testleri için) ama üyeliği hemen pasifleştirilir (satır kalır, imhada kaldırılır; hesap kalır). Koruma kuralının kendisi StepUpAndProtectionApiTests'te sınanır.
+        await Factory.SqlAsync("UPDATE identity.memberships SET is_active = FALSE WHERE tenant_id = @t AND user_id = @u", ("t", A.TenantId), ("u", PlatformAdminUserId));
+
         await SeedAsync(A, seed);
         await SeedAsync(B, seed);
         await SettleAsync();
@@ -446,7 +450,7 @@ internal sealed class ErasureScenario : IDisposable
 
     public async Task<ErasureRequestInfo> RequestDeletionAsync(int? retentionDays = 7, string reason = "KVKK silme talebi")
     {
-        var body = await Platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{A.TenantId}/deletion-request", new { reason, retentionDays }, HttpStatusCode.OK);
+        var body = await Platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{A.TenantId}/deletion-request", new { reason, retentionDays, confirmTenantName = A.Name, currentPassword = PlatformPassword }, HttpStatusCode.OK);
         Request = new ErasureRequestInfo(body.ErGuid("requestId"), body.GetProperty("scheduledFor").GetDateTimeOffset());
         return Request;
     }

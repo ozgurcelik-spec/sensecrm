@@ -63,7 +63,8 @@ else
 fi
 
 secret 24 | write_file "$out/secrets/platform-admin-password" || true
-chmod 644 "$out/secrets/platform-admin-password" 2>/dev/null || true
+# 0600 (owner only): the migrator's create-platform-admin runs with `--user root`, which can read and empty it regardless of the mode.
+chmod 600 "$out/secrets/platform-admin-password" 2>/dev/null || true
 chmod 600 "$out/.env" 2>/dev/null || true
 
 cat <<'EOF'
@@ -72,6 +73,8 @@ Done. Next steps:
   1. Review deploy/.env (ALLOWED_HOSTS, WEB_BIND/WEB_PORT, PLATFORM_ADMIN_EMAIL, resource limits).
   2. Store .env and secrets/ in your secret vault / encrypted backup. The JWT key and DB passwords are needed to restore.
   3. docker compose -f deploy/docker-compose.prod.yml up -d ; then create the first platform admin:
-       docker compose -f deploy/docker-compose.prod.yml run --rm migrator create-platform-admin
-     The password is in deploy/secrets/platform-admin-password (read it once, then empty the file).
+       docker compose -f deploy/docker-compose.prod.yml run --rm --user root migrator create-platform-admin
+     The password is in deploy/secrets/platform-admin-password (mode 0600, read it once). The migrator empties the file after a
+     successful create (if it warns that it could not, empty it by hand); the admin must change the password at first login.
+  4. TRUSTED_PROXY_CIDR defaults to 127.0.0.1/32 (X-Forwarded-For is NOT trusted). Set it when a reverse proxy/LB is in front (see .env.example).
 EOF

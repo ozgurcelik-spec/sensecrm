@@ -18,6 +18,33 @@ public static class PlatformErrors
     /// <summary>Sistem kiracısına askı/silme/plan değişikliği → 422.</summary>
     public const string SystemTenantProtected = "platform.system_tenant_protected";
 
+    /// <summary>Yazılan kiracı adı sunucudaki adla eşleşmiyor → 422 (yıkıcı komutlar; C-SEC2 H2).</summary>
+    public const string ConfirmationMismatch = "platform.confirmation_mismatch";
+
+    /// <summary>Step-up: çağıranın parolası verilmedi → 422 (401 DEĞİL: oturum düşmesin).</summary>
+    public const string StepUpRequired = "platform.step_up_required";
+
+    /// <summary>Step-up: parola yanlış → 422.</summary>
+    public const string StepUpFailed = "platform.step_up_failed";
+
+    /// <summary>Step-up: hatalı deneme sınırı aşıldı ya da hesap kilitli → 429.</summary>
+    public const string StepUpRateLimited = "platform.step_up_rate_limited";
+
+    /// <summary>Son aktif platform yöneticisi geri alınamaz/pasifleştirilemez → 409.</summary>
+    public const string LastPlatformAdmin = "platform.last_platform_admin";
+
+    /// <summary>Hedef hesap platform yöneticisi değil → 409 (geri alınacak bir şey yok).</summary>
+    public const string NotAPlatformAdmin = "platform.not_a_platform_admin";
+
+    /// <summary>Yeniden deneme yalnız <c>failed</c> talepte → 409.</summary>
+    public const string DeletionNotRetryable = "platform.deletion_not_retryable";
+
+    /// <summary>İmha sonrası doğrulama: kiracı kimlikli tabloda hâlâ satır var (<c>DeletionRequest.LastError</c> kodu; tombstone yazılmaz).</summary>
+    public const string ErasureVerificationFailed = "erasure.verification_failed";
+
+    /// <summary>İmha ön koşulu (yeniden doğrulama) sağlanmadı: talep artık koşmaya uygun değil (<c>DeletionRequest.LastError</c> kodu).</summary>
+    public const string ErasurePreconditionFailed = "erasure.precondition_failed";
+
     // Doğrulama mesajı anahtarları
     public const string InvalidTrialDate = "validation.platform_trial_date";
     public const string InvalidReason = "validation.platform_reason";
@@ -46,6 +73,12 @@ public static class PlatformLimits
     public const int CorrelationIdMaxLength = 128;
     public const int LastErrorMaxLength = 2000;
     public const string DeletedNamePlaceholder = "[deleted]";
+
+    /// <summary>Serbest metin gerekçenin imhada yerine yazılan yer tutucu (<c>deletion_requests.reason</c>, <c>platform_audit_entries.details.reason</c>; L1).</summary>
+    public const string RedactedReasonPlaceholder = "[redacted]";
+
+    /// <summary>Platform denetiminin (retention işi) silebileceği en genç satır yaşı (gün): veritabanı tetikleyicisi bunun altını hiçbir işaretle silmez (M3).</summary>
+    public const int MinAuditRetentionDays = 30;
     public const string DeletedSlugPrefix = "deleted-";
     public const int MinRetentionDays = 7;
     public const int MaxRetentionDays = 90;
@@ -99,6 +132,12 @@ public static class PlatformAuditActions
     public const string DeletionFailed = "deletion.failed";
     public const string UsageRefreshed = "usage.refreshed";
     public const string UsageExported = "usage.exported";
+
+    /// <summary>Başarısız imha talebi yeniden denemeye alındı (C-SEC2 L3).</summary>
+    public const string DeletionRetried = "deletion.retried";
+
+    /// <summary>Platform yöneticisi yetkisi geri alındı (C-SEC2 M6).</summary>
+    public const string PlatformAdminRevoked = "platform_admin.revoked";
 }
 
 /// <summary>Plan limitleri (<c>null</c> = sınırsız; <c>0</c> = o modülde yeni kayıt açılamaz).</summary>

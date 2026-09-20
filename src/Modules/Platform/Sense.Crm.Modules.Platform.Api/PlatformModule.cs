@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sense.Crm.Modules.Platform.Application;
+using Sense.Crm.Modules.Platform.Application.Console;
 using Sense.Crm.Modules.Platform.Contracts;
 using Sense.Crm.Modules.Platform.Domain.Accounts;
 using Sense.Crm.Modules.Platform.Infrastructure;
@@ -44,5 +45,8 @@ public sealed class PlatformModule : IModule
             typeof(TenantSuspended).Assembly);
 
         services.AddPlatformContractServices(configuration);
+
+        // C-SEC2 H2: yıkıcı komutlar için step-up (çağıranın parolası); yalnız API host'unda (Identity'nin IStepUpAuthenticator uygulaması burada kayıtlıdır).
+        services.AddScoped<IStepUpGuard, StepUpGuard>();
     }
 }

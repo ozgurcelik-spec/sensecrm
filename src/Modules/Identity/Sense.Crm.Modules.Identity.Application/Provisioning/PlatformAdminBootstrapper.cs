@@ -21,7 +21,10 @@ public enum PlatformAdminOutcome
 }
 
 /// <param name="TenantId">Yalnız <see cref="PlatformAdminOutcome.Created"/>: yeni işletim organizasyonu (Migrator Platform hesabını <c>is_system</c> yazar).</param>
-public sealed record PlatformAdminResult(PlatformAdminOutcome Outcome, string? Problem = null, Guid? TenantId = null);
+/// <param name="UserId">
+/// Oluşturulan/terfi ettirilen/zaten yönetici olan hesap (C-SEC2 H1: Migrator, <c>Promoted</c>/<c>Unchanged</c> için hesabın kiracılarını da <c>is_system</c> işaretler).
+/// </param>
+public sealed record PlatformAdminResult(PlatformAdminOutcome Outcome, string? Problem = null, Guid? TenantId = null, Guid? UserId = null);
 
 /// <summary>
 /// İlk platform yöneticisini oluşturur (Migrator <c>create-platform-admin</c>; ortam değişkenlerinden). İdempotenttir: hesap varsa
@@ -56,12 +59,12 @@ public sealed class PlatformAdminBootstrapper(
         {
             if (existing.IsPlatformAdmin)
             {
-                return new PlatformAdminResult(PlatformAdminOutcome.Unchanged);
+                return new PlatformAdminResult(PlatformAdminOutcome.Unchanged, UserId: existing.Id);
             }
 
             existing.GrantPlatformAdmin();
             await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return new PlatformAdminResult(PlatformAdminOutcome.Promoted);
+            return new PlatformAdminResult(PlatformAdminOutcome.Promoted, UserId: existing.Id);
         }
 
         if (string.IsNullOrEmpty(password) || password.Length < IdentityDefaults.PlatformAdminMinPasswordLength || password.Length > IdentityLimits.PasswordMaxLength)
@@ -91,13 +94,14 @@ public sealed class PlatformAdminBootstrapper(
 
         var provisioned = await provisioner.CreateAsync(organization, Cultures.TurkishLanguage, cancellationToken, Contracts.OrganizationOrigin.Bootstrap).ConfigureAwait(false);
 
-        var user = User.Create(email.Trim(), name, Cultures.TurkishLanguage, hasher.Hash(password));
+        // C-SEC2 M6: başlangıç parolası bir dosyada/ortamda durur; ilk girişte değiştirilmek zorundadır (yalnız /me ve parola değiştirme uçları açık).
+        var user = User.Create(email.Trim(), name, Cultures.TurkishLanguage, hasher.Hash(password), mustChangePassword: true);
         user.GrantPlatformAdmin();
         user.SetDefaultTenant(provisioned.Tenant.Id);
         users.Add(user);
         memberships.Add(Membership.Create(provisioned.Tenant.Id, user.Id, provisioned.Administrator.Id, clock.GetUtcNow().UtcDateTime));
 
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return new PlatformAdminResult(PlatformAdminOutcome.Created, TenantId: provisioned.Tenant.Id);
+        return new PlatformAdminResult(PlatformAdminOutcome.Created, TenantId: provisioned.Tenant.Id, UserId: user.Id);
     }
 }

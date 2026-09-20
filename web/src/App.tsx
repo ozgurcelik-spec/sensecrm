@@ -54,6 +54,7 @@ const PlatformOrganizationsPage = lazy(() => import("@/pages/platform/organizati
 const PlatformOrganizationDetailPage = lazy(() => import("@/pages/platform/organization-detail"));
 const PlatformPlansPage = lazy(() => import("@/pages/platform/plans"));
 const PlatformAuditPage = lazy(() => import("@/pages/platform/platform-audit"));
+const PlatformAdminsPage = lazy(() => import("@/pages/platform/platform-admins"));
 
 function RequirePermission({ permission, children }: { permission: string; children: ReactNode }) {
   const guarded = (
@@ -372,6 +373,7 @@ export default function App() {
               <Route path="organizations/:tenantId" element={<PlatformOrganizationDetailPage />} />
               <Route path="plans" element={<PlatformPlansPage />} />
               <Route path="audit" element={<PlatformAuditPage />} />
+              <Route path="admins" element={<PlatformAdminsPage />} />
             </Route>
             <Route
               path="settings/audit"
