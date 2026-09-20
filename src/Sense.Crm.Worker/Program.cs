@@ -7,6 +7,7 @@ using Sense.Crm.Modules.Activities.Infrastructure.Persistence;
 using Sense.Crm.Modules.Commerce.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
+using Sense.Crm.Modules.Integrations.Infrastructure;
 using Sense.Crm.Modules.Marketing.Infrastructure;
 using Sense.Crm.Modules.Platform.Infrastructure;
 using Sense.Crm.Modules.Platform.Infrastructure.Persistence;
@@ -27,6 +28,8 @@ using Sense.Crm.Worker.Observability;
 // Zamanlanmış işler, bildirim/e-posta teslimi ve gerçek zamanlı yayın MVP'de yok; yalnız OutboxPollingService<T> kalır.
 // Yeni modül: DbContext + Domain/Contracts assembly'leri (EventTypeRegistry için) + OutboxPollingService<TContext> eklenir.
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
+// Docker secret dosyalari (/run/secrets/<Ad>; "__" = ":"): Integrations__Encryption__Keys__k1 vb. (M8B).
+builder.Configuration.AddDockerSecrets();
 builder.Services.AddCrmCore(builder.Configuration);
 
 builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, IdentityDbContext.SchemaName);
@@ -131,6 +134,20 @@ builder.Services.AddHostedService<Sense.Crm.Worker.Platform.TenantErasureService
 // Gözlemlenebilirlik (C-OPS1, K20): Observability:Metrics:Enabled=true ise ayrı portta Prometheus /metrics + outbox/workflow/silme örnekleyicisi (varsayılan kapalı).
 builder.Services.AddCrmObservability(builder.Configuration, "crm-worker");
 builder.Services.AddWorkerMetricsSampler(builder.Configuration);
+
+// Integrations (M8B): giden webhook teslimatı. Fan-out olay işleyicileri (Sales/Commerce/Service olaylarının tüketicileri) burada kayıtlıdır; dispatcher (dış çağrıyı YALNIZ Worker yapar), saklama ve KVKK imha
+// adımları da burada. Varsayılan Integrations:Webhooks:Enabled=false → dispatcher boşta (fan-out satır yazmaz). Worker Application assembly'lerini taramaz: yalnız olay işleyicileri hedefli kaydedilir.
+builder.Services.AddModuleDbContext<Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext>(builder.Configuration, Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext.SchemaName,
+    typeof(Sense.Crm.Modules.Integrations.Domain.IWebhookSubscriptionRepository).Assembly,
+    typeof(Sense.Crm.Modules.Integrations.Contracts.IntegrationsPermissions).Assembly);
+builder.Services.AddIntegrationsContractServices(builder.Configuration);
+builder.Services.AddIntegrationsWorkerServices();
+builder.Services.AddIntegrationsEventHandlers();
+builder.Services.AddHostedService<Sense.Crm.Worker.OutboxPollingService<Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext>>();
+builder.Services.AddHostedService<Sense.Crm.Worker.Integrations.WebhookDispatcherService>();
+builder.Services.AddHostedService<Sense.Crm.Worker.Integrations.IntegrationsRetentionService>();
 
 await builder.Build().RunAsync();
 

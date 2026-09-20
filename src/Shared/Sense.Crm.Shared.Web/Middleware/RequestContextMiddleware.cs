@@ -30,7 +30,8 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
                 Roles: roles,
                 IsPlatformAdmin: principal.HasClaim(c => c.Type == ClaimNames.PlatformAdmin && c.Value == ClaimNames.TrueValue),
                 CorrelationId: correlationId,
-                IpAddress: context.Connection.RemoteIpAddress?.ToString());
+                IpAddress: context.Connection.RemoteIpAddress?.ToString(),
+                ApiKey: ApiKeyFrom(principal));
 
             userAccessor.Set(user);
 
@@ -48,6 +49,20 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
         {
             tenantScope?.Dispose();
         }
+    }
+
+    /// <summary>M8B: API anahtarı kimliği yalnız <b>sunucuda kurulan</b> ApiKey şeması claim'lerinden okunur (istemci JWT'si <c>api_key_id</c> taşıyamaz: JWT şeması bunları üretmez ve şema seçici <c>crmk_</c> önekine göre ayrılır).</summary>
+    private static ApiKeyPrincipal? ApiKeyFrom(System.Security.Claims.ClaimsPrincipal principal)
+    {
+        if (!principal.Identities.Any(i => i.AuthenticationType == ApiKeyClaimNames.Scheme)
+            || !principal.HasClaim(c => c.Type == ApiKeyClaimNames.AuthMethod && c.Value == ApiKeyClaimNames.AuthMethodApiKey)
+            || ParseGuid(principal.FindFirst(ApiKeyClaimNames.ApiKeyId)?.Value) is not { } keyId)
+        {
+            return null;
+        }
+
+        var scopes = principal.FindAll(ApiKeyClaimNames.Scopes).Select(c => c.Value).ToHashSet(StringComparer.Ordinal);
+        return new ApiKeyPrincipal(keyId, principal.FindFirst(ApiKeyClaimNames.ApiKeyPrefix)?.Value ?? string.Empty, principal.FindFirst(ApiKeyClaimNames.ApiKeyName)?.Value ?? string.Empty, scopes);
     }
 
     private static Guid? ParseGuid(string? value) => Guid.TryParse(value, out var g) ? g : null;

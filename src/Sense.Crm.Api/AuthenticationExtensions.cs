@@ -68,7 +68,11 @@ public static class AuthenticationExtensions
         var key = new RsaSecurityKey(rsa) { KeyId = string.IsNullOrWhiteSpace(auth.KeyId) ? Thumbprint(rsa) : auth.KeyId };
         services.AddSingleton(key);
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        // M8B (D9): varsayılan şema "Smart" — Authorization: Bearer crmk_… → ApiKey şeması (sunucuda kurulan makine kimliği), diğer her şey → JwtBearer (mevcut davranış aynen).
+        services.AddAuthentication(ApiKeySchemes.Smart)
+            .AddPolicyScheme(ApiKeySchemes.Smart, ApiKeySchemes.Smart, o =>
+                o.ForwardDefaultSelector = ctx => ApiKeySchemes.IsApiKeyRequest(ctx) ? ApiKeyClaimNames.Scheme : JwtBearerDefaults.AuthenticationScheme)
+            .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyClaimNames.Scheme, _ => { })
             .AddJwtBearer(o =>
             {
                 o.MapInboundClaims = false;

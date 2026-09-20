@@ -138,6 +138,7 @@ public sealed class RequestAuthorizationTests
         {
             "AddMemberCommand", "CreateAccountCommand", "CreateContactCommand", "CreateLeadCommand", "CreateDealCommand", "CreateActivityCommand", "CreateRuleCommand",
             "CreateProductCommand", "CreateQuoteCommand", "CreateOrderCommand", "ConvertQuoteCommand", "CreateCaseCommand", "CreateCampaignCommand",
+            "CreateWebhookSubscriptionCommand", "CreateApiKeyCommand",
         };
 
         RequestTypes().Where(t => t.IsDefined(typeof(ConsumesLimitAttribute), inherit: true)).Select(t => t.Name).Order(StringComparer.Ordinal)

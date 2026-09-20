@@ -154,6 +154,18 @@ $wroteEnv = Write-SecretFile -Path $envPath -Content (($envLines -join "`n") + "
 $keyPath = Join-Path $secretsDir 'jwt-signing-key.pem'
 $wroteKey = Write-SecretFile -Path $keyPath -Content (New-RsaPrivateKeyPem)
 
+# AES-256 key (base64, 32 bytes) for webhook secrets at rest (M8B). Never replaced by -Force: regenerating it would make every stored webhook secret unreadable.
+$intKeyPath = Join-Path $secretsDir 'integrations-encryption-key'
+if (-not (Test-Path -LiteralPath $intKeyPath)) {
+    $keyBytes = New-Object byte[] 32
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($keyBytes) } finally { $rng.Dispose() }
+    [System.IO.File]::WriteAllText($intKeyPath, [Convert]::ToBase64String($keyBytes), (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "Wrote $intKeyPath"
+} else {
+    Write-Host "Exists, kept: $intKeyPath"
+}
+
 $pwPath = Join-Path $secretsDir 'platform-admin-password'
 $wrotePw = Write-SecretFile -Path $pwPath -Content (New-RandomSecret -Length 24)
 

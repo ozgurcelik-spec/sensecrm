@@ -43,7 +43,7 @@ public sealed class PlanSynchronizer(PlatformDbContext db, IOptions<PlatformOpti
         int created = 0, updated = 0, deactivated = 0;
         foreach (var definition in settings.Plans)
         {
-            var limits = new PlanLimits(definition.Limits.MaxUsers, new Dictionary<string, int?>(definition.Limits.MaxRecords, StringComparer.Ordinal));
+            var limits = new PlanLimits(definition.Limits.MaxUsers, new Dictionary<string, int?>(definition.Limits.MaxRecords, StringComparer.Ordinal), definition.Limits.MaxWebhooks, definition.Limits.MaxApiKeys);
             var modules = GatedModules.All.ToDictionary(m => m, m => definition.Modules.TryGetValue(m, out var on) && on, StringComparer.Ordinal);
             if (existing.Remove(definition.Code, out var plan))
             {

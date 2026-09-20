@@ -82,5 +82,6 @@ public sealed class HostHardeningTests(CrmApiFactory factory)
             b.UseEnvironment("Production");
             b.UseSetting("Auth:SigningKeyPem", rsa.ExportPkcs8PrivateKeyPem());
             b.UseSetting("Docs:Enabled", docsEnabled ? "true" : "false");
+            b.UseSetting("Integrations:Webhooks:Enabled", "false"); // production default: the fixture's direct-egress webhook test setup is not a valid production config
         });
 }

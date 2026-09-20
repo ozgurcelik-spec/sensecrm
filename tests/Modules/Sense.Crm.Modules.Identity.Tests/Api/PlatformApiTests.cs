@@ -372,6 +372,7 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
             b.UseSetting("Auth:SigningKeyPem", signingKeyPem);
             b.UseSetting("ConnectionStrings:Database", connectionString);
             b.UseSetting("Registration:Mode", registrationMode ?? string.Empty);
+            b.UseSetting("Integrations:Webhooks:Enabled", "false"); // production default (see HostHardeningTests)
         });
 
     private static string NewSigningKeyPem()
