@@ -61,7 +61,7 @@ public sealed record UsageCollection(int UsersActive, int UsersPending, IReadOnl
 }
 
 /// <summary>Önbellekli kayıt sayıları (<c>asOf</c>: sayım anı).</summary>
-public sealed record RecordCounts(DateTimeOffset AsOf, IReadOnlyDictionary<string, long> Records);
+public sealed record RecordCounts(DateTimeOffset AsOf, IReadOnlyDictionary<string, long> Records, long StorageBytes = 0, long FileCount = 0);
 
 /// <summary>Kullanım sayımı: tüm <c>IUsageReporter</c>'ları kiracı kapsamında (filtre atlamadan) çağırır.</summary>
 public interface IUsageMeter
@@ -71,6 +71,9 @@ public interface IUsageMeter
 
     /// <summary>Geçerli kiracının kesin (önbelleksiz) kullanıcı sayıları.</summary>
     Task<(int Active, int Pending)> CountUsersAsync(CancellationToken ct);
+
+    /// <summary>Geçerli kiracının kesin (önbelleksiz) dosya depolama kullanımı, bayt (M8C; <c>files.storage_bytes</c>). Files yüklü değilse 0.</summary>
+    Task<long> GetStorageBytesAsync(CancellationToken ct) => Task.FromResult(0L);
 
     /// <summary>Geçerli kiracının kayıt sayıları (<c>Platform:Usage:CacheSeconds</c> önbellekli; yumuşak limit).</summary>
     Task<RecordCounts> GetRecordCountsAsync(CancellationToken ct);

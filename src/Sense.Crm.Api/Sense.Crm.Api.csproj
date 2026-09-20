@@ -16,6 +16,7 @@
     <ProjectReference Include="../Modules/Service/Sense.Crm.Modules.Service.Api/Sense.Crm.Modules.Service.Api.csproj" />
     <ProjectReference Include="../Modules/Platform/Sense.Crm.Modules.Platform.Api/Sense.Crm.Modules.Platform.Api.csproj" />
     <ProjectReference Include="../Modules/Integrations/Sense.Crm.Modules.Integrations.Api/Sense.Crm.Modules.Integrations.Api.csproj" />
+    <ProjectReference Include="../Modules/Files/Sense.Crm.Modules.Files.Api/Sense.Crm.Modules.Files.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

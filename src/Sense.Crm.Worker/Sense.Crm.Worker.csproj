@@ -15,6 +15,7 @@
     <ProjectReference Include="../Modules/Service/Sense.Crm.Modules.Service.Infrastructure/Sense.Crm.Modules.Service.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Sense.Crm.Modules.Platform.Infrastructure.csproj" />
     <ProjectReference Include="../Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/Sense.Crm.Modules.Integrations.Infrastructure.csproj" />
+    <ProjectReference Include="../Modules/Files/Sense.Crm.Modules.Files.Infrastructure/Sense.Crm.Modules.Files.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

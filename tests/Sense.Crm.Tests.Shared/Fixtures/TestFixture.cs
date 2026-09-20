@@ -29,7 +29,7 @@ namespace Sense.Crm.Tests.Shared.Fixtures;
 public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestingEnvironment = "Testing";
-    private static readonly string[] Schemas = ["identity", "sales", "activities", "workflows", "marketing", "commerce", "service", "platform", "integrations", AuditDbContext.SchemaName];
+    private static readonly string[] Schemas = ["identity", "sales", "activities", "workflows", "marketing", "commerce", "service", "platform", "integrations", "files", AuditDbContext.SchemaName];
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("crm_test")

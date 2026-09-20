@@ -373,6 +373,7 @@ public sealed class PlatformApiTests(CrmApiFactory factory)
             b.UseSetting("ConnectionStrings:Database", connectionString);
             b.UseSetting("Registration:Mode", registrationMode ?? string.Empty);
             b.UseSetting("Integrations:Webhooks:Enabled", "false"); // production default (see HostHardeningTests)
+            b.UseSetting("Files:Storage:Endpoint", "http://localhost:9000"); // M8C: Production requires an s3 endpoint (never contacted at startup).
         });
 
     private static string NewSigningKeyPem()

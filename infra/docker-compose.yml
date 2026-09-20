@@ -91,5 +91,50 @@ services:
       retries: 30
       start_period: 40s
 
+  # --- Nesne deposu (dosya ekleri, M8C/K19): MinIO topluluk sürümü, yalnız yerel geliştirme ------------------------------------
+  # Host portları standart + 10000 (S3 API 9000 -> 19000, konsol 9001 -> 19001), yalnız 127.0.0.1. Buradaki kimlik bilgileri YALNIZ yerel geliştirme içindir;
+  # üretim deploy/docker-compose.prod.yml'dedir (port yayınlamaz, Docker secret'lar, KMS anahtarıyla sifreleme). İmaj etiketi sabittir (latest yok).
+  # API'yi bu depoya bağlamak için (varsayılan geliştirme sağlayıcısı "filesystem"dir, Docker gerekmez):
+  #   Files__Storage__Provider=s3  Files__Storage__Endpoint=http://localhost:19000  Files__Storage__AccessKey=crm-files-app  Files__Storage__SecretKey=crm-files-app-secret
+  # Geliştirmede şifreleme kapalıdır (Files__Storage__Encryption=none varsayılanı); KMS anahtarı yalnız üretimde.
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: crm-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-crmminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-crmminio-dev-secret}
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-19000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-19001}:9001"
+    volumes:
+      - crm_minio:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Tek seferlik, idempotent: kova + yalnız bu kovaya izinli uygulama hesabı (deploy/minio/init.sh; üretimle aynı betik).
+  minio-init:
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    container_name: crm-minio-init
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/init.sh"]
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_BUCKET: crm-files
+      MINIO_ENCRYPTION: none
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-crmminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-crmminio-dev-secret}
+      MINIO_APP_ACCESS_KEY: crm-files-app
+      MINIO_APP_SECRET_KEY: crm-files-app-secret
+    volumes:
+      - ../deploy/minio/init.sh:/init.sh:ro
+
 volumes:
+  crm_minio:
   crm_pg:

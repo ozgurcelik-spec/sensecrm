@@ -95,6 +95,10 @@ public static class HttpStatusMap
         ErrorType.Rule => StatusCodes.Status422UnprocessableEntity,
         ErrorType.Payment => StatusCodes.Status402PaymentRequired,
         ErrorType.TooManyRequests => StatusCodes.Status429TooManyRequests,
+        ErrorType.PayloadTooLarge => StatusCodes.Status413PayloadTooLarge,
+        ErrorType.UnsupportedMediaType => StatusCodes.Status415UnsupportedMediaType,
+        ErrorType.Gone => StatusCodes.Status410Gone,
+        ErrorType.Unavailable => StatusCodes.Status503ServiceUnavailable,
         _ => StatusCodes.Status500InternalServerError,
     };
 }

@@ -29,6 +29,8 @@ kullanıcı ──HTTPS──▶ [TLS sonlandırıcı: Caddy/nginx/LB]  (sizin; 
 | `worker` | `crm-worker` | Outbox işleyici, Conductor görev işleyicileri, yürütme durumu senkronu | 768 MB / 1 CPU |
 | `web` | `crm-web` | SPA + `/api` ters vekil | 128 MB / 0,5 CPU |
 | `redis` | `redis:7.4.11-alpine` | Yalnız birden çok `api` kopyasında (önbellek L2) | 384 MB |
+| `minio` | `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z` | **M8C:** dosya ekleri nesne deposu (S3 uyumlu). **Yalnız `backend` ağı, port yayınlamaz**, konsol kapalı, KMS anahtarıyla SSE-S3; bkz. §18 | 1 GB |
+| `minio-init` | `quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z` | Tek seferlik/idempotent: kova + varsayılan şifreleme + **yalnız bu kovaya** izinli uygulama hesabı (`deploy/minio/init.sh`) — **her `up`'ta** | — |
 
 Güvenlik duruşu (varsayılan): yalnız `web` portu yayınlanır; `backend` ağı `internal: true` olduğundan API/Worker/Postgres/Conductor dışarıya bağlantı
 başlatamaz; parola yok — sırlar `.env`/`secrets/` içindedir ve `:?` ile zorunludur; API ve Worker veritabanına yalnız DML yetkili `crm_app` rolüyle
@@ -146,6 +148,9 @@ yoksa istemci IP'si (hız sınırı, denetim) yanlış görünür. `web` konteyn
 | JWT imza anahtarı (RS256) | `secrets/jwt-signing-key.pem` → `/run/secrets/Auth__SigningKeyPem` | Yeni anahtar → `up -d api`: tüm access token'lar geçersiz olur, kullanıcılar (refresh token ile otomatik ya da yeniden giriş yaparak) devam eder |
 | Platform yöneticisi parolası | `secrets/platform-admin-password` (yalnız bootstrap) | Bootstrap sonrası dosyayı boşaltın |
 | `REDIS_PASSWORD` | `.env` | Redis kullanılıyorsa `REDIS_CONNECTION` ile birlikte |
+| **M8C** `minio-root-user` / `minio-root-password` | `secrets/minio-root-user`, `secrets/minio-root-password` → yalnız `minio` ve `minio-init` | Yeni değer + `up -d minio minio-init`; uygulama hesabı etkilenmez. Uygulamada kök kimlik bilgisi **yoktur** |
+| **M8C** `minio-app-access-key` / `minio-app-secret-key` | `secrets/minio-app-*` → `/run/secrets/Files__Storage__AccessKey|SecretKey` (api, worker, migrator) | Dosyaları yenileyip `up -d`: `minio-init` hesabın parolasını günceller (`mc admin user add` idempotent), api/worker yeniden yaratılır |
+| **M8C** `minio-kms-key` (`crm-files-key:<base64 32 bayt>`) | `secrets/minio-kms-key` → yalnız `minio` | **Döndürülemez** (ilk sürüm: yeni anahtar = yeniden şifreleme işi, kapsam dışı). **Veri yedeğiyle birlikte yedeklenir; kaybı = dosyaların kaybıdır** (nesneler anahtarsız okunamaz) |
 | **Webhook sırrı şifreleme anahtarı (AES-256, base64/32 bayt; M8B)** | `secrets/integrations-encryption-key` → `/run/secrets/Integrations__Encryption__Keys__k1` (api, worker, migrator) | **Yoksa api/worker/migrator başlamaz.** Döndürme: yeni anahtarı `Integrations__Encryption__Keys__k2` olarak ekleyin + `Integrations__Encryption__CurrentKeyId=k2` → `migrator reencrypt-integration-secrets` (idempotent; eski anahtarla çözüp yenisiyle yazar) → eski anahtarı kaldırın. **Yedeği veritabanı yedeğinden AYRI saklayın**; kayıp = saklı sırlar okunamaz (her abonelikte sırrı döndürün, alıcılar yeni sırrı alır). `generate-secrets` bunu üretir ve **asla `FORCE=1` ile yeniden üretmez** (`FORCE_INTEGRATIONS_KEY=1` gerekir) |
 
 Üretimde API, `Auth:SigningKeyPem` veya `ConnectionStrings:Database` yoksa **başlamaz** (testli: `PlatformApiTests.Production_RefusesToStart_*`);
@@ -170,7 +175,8 @@ geçici geliştirme anahtarı yalnız Development/Testing ortamlarındadır.
 süresini aşan (yalnız bu betiğin adlandırdığı) dosyaların silinmesi. **Zamanlama:** Linux cron `30 2 * * *` (gece 02:30) ve pilot süresince ek olarak iş saatlerinde 4 saatte bir;
 Windows Görev Zamanlayıcı: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\crm\deploy\backup.ps1`.
 Yedekleri **aynı diskin dışına ve veri merkezi içinde** (NAS/ikinci sunucu) kopyalayın ve şifreleyin (`gpg`/`openssl` seçenekleri veya disk/NAS şifrelemesi).
-Ayrı yedeklenecekler: `deploy/.env`, `deploy/secrets/` (şifreli). Aylık **geri yükleme provası** yapın (§13).
+Ayrı yedeklenecekler: `deploy/.env`, `deploy/secrets/` (şifreli; **M8C: `minio-kms-key` dâhil**). Aylık **geri yükleme provası** yapın (§13).
+**M8C nesne kovası:** aynı betikler veritabanı dökümlerinden **sonra** kovayı `mc mirror` ile `files-<zaman>.tar.gz` olarak yedekler (sıra bilinçli: geri yüklemede satırsız nesne = zararsız yetim, nesnesiz satır = `missing`). Nesne yedeği düz metindir (SSE-S3 okuyana şeffaf) → **şifrelenmesi zorunludur** (`BACKUP_GPG_RECIPIENT` / `BACKUP_OPENSSL_PASSFILE`; şifresizse betik uyarır). Geri yükleme: [`deploy/restore.md`](../../deploy/restore.md) "Nesne deposu".
 
 ## 7. Geri yükleme
 
@@ -204,7 +210,9 @@ Postgres ana sürümü yükseltme (17 → 18): mantıksal yedek al → yeni sür
 | Dış (LB) sağlık kontrolü | `GET /healthz` (vekil ayakta) ve `GET /api/v1/auth/config` (API ayakta) | 200 |
 | Worker | `docker inspect --format '{{.State.Health.Status}}' <proje>-worker-1` | `healthy` (15 sn'de bir yenilenen sinyal dosyası; 60 sn eskirse `unhealthy`) |
 | Conductor | `docker compose ... exec conductor curl -fsS localhost:8080/health` | `{"healthy":true,...}` |
-| Tümü | `docker compose -f deploy/docker-compose.prod.yml ps -a` | api/worker/web/postgres/conductor `healthy`; db-init, migrator `Exited (0)` |
+| **M8C** Nesne deposu | API `/health` tam raporunda `storage` denetimi (erişim + kova + varsayılan şifreleme); `docker compose ... ps minio` | `Healthy`. Depo kapalıyken `Degraded` (**`/health/ready`'ye girmez**: CRM'nin geri kalanı çalışır, dosya uçları `503 file.storage_unavailable`). Disk: `miniodata` doluluğu >%80 uyarısı kurun |
+| **M8C** Uzlaştırma sayacı | `migrator files-reconcile --dry-run` çıktısı / `crm.files.reconcile.missing` metriği / `select count(*) from files.attachments where state = 'missing'` | 0 (`> 0` ise §18.5) |
+| Tümü | `docker compose -f deploy/docker-compose.prod.yml ps -a` | api/worker/web/postgres/conductor/minio `healthy`; db-init, minio-init, migrator `Exited (0)` |
 
 `/health*` uçları `web` üzerinden dışarı verilmez (yalnız `/api/*` vekil edilir); iç izleme aracınız docker `healthcheck` durumunu veya `exec` çıktısını okuyabilir
 (ör. cron + `docker inspect`, Zabbix/Prometheus `cadvisor`). Diskler: `docker system df`, `pgdata` doluluğu ve yedek dizini için ayrıca uyarı kurun (>%80).
@@ -291,8 +299,9 @@ Lead/fırsat olayları işlenmiyorsa outbox birikir: `SELECT count(*) FROM sales
      yalnız bu kiracıya ait hesaplar ve oturumları; başka kiracıda üyeliği olan (ortak) hesaplar ve platform yöneticisi hesapları **kalır** (yalnız bu kiracıdaki üyelik/rol gider). Adımlar idempotenttir ve `erased_steps` ile yeniden başlatılır; hata → `failed`, üstel bekleme, `Platform:Deletion:MaxAttempts` (10) sonrası `deletion.failed` denetimi + günlük uyarısı (konsolda kırmızı).
   4. **Mezar taşı:** `platform.tenant_accounts` satırı `deleted` (ad `[deleted]`, slug `deleted-xxxxxxxx`), `platform.deletion_requests` satırı imha raporuyla (kişisel veri yok) ve `platform.platform_audit_entries` (hedef adı redakte) **bilerek kalır** (hesap verebilirlik; `Platform:Audit:RetentionDays` = 1825 gün).
   Sistem (işletim) organizasyonu asla imha edilmez. Önbellek girdileri (kiracı önekli, TTL ≤ 10 dk) imha sonunda geçersiz kılınır.
-  **Yedekler:** imha yedekleri temizlemez; silinmiş veri yedeklerde saklama süresi (`RETENTION_DAYS`) boyunca kalır — saklama ve imha politikasını buna göre yazın. **Geri yükleme sonrası** imha edilmiş kiracının yeniden görünmemesi için
-  `migrator erase-deleted-tenants` çalıştırılır (tüm mezar taşları için imhayı yeniden koşar; idempotent).
+  **Dosya ekleri (M8C):** imha, `files-objects` adımıyla (sıra 95: `workflows-conductor` 90'dan sonra, `module:files` 100'den önce) kiracının **tüm nesnelerini** `{tenantId}/` önekiyle siler ve **doğrular** (önekte 0 nesne değilse adım `failed` olur ve yeniden denenir); satırlar ve `file_access_log` modül adımında gider; rapora `files.objects` sayısı girer (kişisel veri yok). **Dosya adları kişisel veri olabilir** (veritabanında ve denetimde; imhada gider); dosya içeriği günlüğe hiç yazılmaz.
+  **Yedekler:** imha yedekleri temizlemez; silinmiş veri yedeklerde (**nesne kovası arşivleri dâhil**) saklama süresi (`RETENTION_DAYS`) boyunca kalır — saklama ve imha politikasını buna göre yazın. **Geri yükleme sonrası** imha edilmiş kiracının yeniden görünmemesi için
+  `migrator erase-deleted-tenants` çalıştırılır (tüm mezar taşları için imhayı yeniden koşar; idempotent; **geri yüklenen nesneleri de yeniden siler**). Dosya **indirme izi** (kim neyi ne zaman): `select occurred_at, user_id, file_id, action from files.file_access_log where tenant_id = '<kiracı>' order by occurred_at desc limit 100;` (IP/ad yok; `Files:AccessLog:RetentionDays` = 365 gün sonra Worker siler).
 - **Erişim:** kiracı ayrımı satır bazlıdır (`TenantId` + global filtre; testli); platform yöneticisi organizasyon açar, plan/deneme/askı/silme yönetir ve sayaç (kullanım) görür ama kiracı iş verisini **okuyamaz** (taklit yok; M7). Yönetici hesapları ve yedek erişimini kısıtlayın; `.env`/`secrets/` dosya izinleri sıkı tutulmalıdır.
 - **İletim:** dış trafik TLS ile (§3.7); iç ağ (backend) yalnız konteynerler arasıdır.
 - **VERBİS / aydınlatma metni / veri işleyen sözleşmeleri** teknik değil, kurumsal iştir (kontrol listesi: [m5-pilot-yayin.md](../plan/m5-pilot-yayin.md)).
@@ -316,6 +325,7 @@ Ayrıntı ve varsayılanlar: [`deploy/.env.example`](../../deploy/.env.example).
 **Platform (M7):** `Platform__Signup__PlanCode` (`starter`), `Platform__Provisioning__DefaultPlanCode` (`internal`), `Platform__Plans__<n>__…` (plan kataloğu; yalnız **Migrator** için anlamlıdır — `migrate`/`sync-plans`; örnek: `appsettings.json`), `Platform__Entitlements__CacheSeconds` (30),
 `Platform__Usage__{CacheSeconds 300, SnapshotPollMinutes 30, RetentionDays 400}`, `Platform__Audit__RetentionDays` (1825), `Platform__Deletion__{RetentionDays 30, MinRetentionDays 7, MaxRetentionDays 90, PollMinutes 10, MaxAttempts 10, ChunkSize 10000}`.
 Bilinmeyen plan kodu ve tutarsız aralıklar açılışta reddedilir (Migrator ≠ 0 çıkış; API/Worker başlamaz). Compose `environment` ve `.env.example` satırlarını DevOps ekler.
+**Dosya ekleri (M8C):** `Files__Storage__{Provider s3|filesystem|memory, Endpoint, Region, Bucket, AccessKey|SecretKey (dosyadan), ForcePathStyle, Encryption required|none, AcknowledgeUnencrypted, RootPath}`, `Files__Upload__{MaxFileMb 25, MaxFilesPerRequest 10, MaxRequestMb 110, TempDirectory, AllowedExtensions}`, `Files__Scanner__{Provider none, FailMode open|closed, OnInfected reject|quarantine}`, `Files__Purge__{SoftDeleteRetentionDays 7, PollMinutes 60, RecordMissingGraceDays 30}`, `Files__Reconcile__{PollHours 24, OrphanGraceHours 24, MaxOrphanDeleteFraction 0.05, MaxOrphanDeletePerRun 1000}`, `Files__AccessLog__RetentionDays` (365), `Files__RateLimiting__{Upload 30, Download 120, ConcurrentUploadsPerTenant 4, MaxConcurrentUploads 16}`; plan limiti `Platform__Plans__<n>__limits__maxStorageMb`. Üretimde `Provider != s3` ya da `Encryption=none` (`AcknowledgeUnencrypted=true` beyanı olmadan) API/Worker/Migrator'ı **başlatmaz**; tutarsız aralıklar (`MaxFileMb` 1–200, `MaxFileMb ≤ MaxRequestMb ≤ MaxFilesPerRequest × MaxFileMb`) açılışta reddedilir. Compose değişkenleri: `MINIO_IMAGE`, `MINIO_MC_IMAGE`, `FILES_BUCKET`, `MINIO_MEM_LIMIT`, `API_TMP_SIZE`.
 
 ## 15. Ek: uçtan uca tarayıcı testleri (Playwright)
 
@@ -527,3 +537,47 @@ Kaynak: [m8b-entegrasyonlar.md](../plan/m8b-entegrasyonlar.md), karar K19. **Web
 - **Geri yükleme (§7) ve prova (§13):** anahtar yedeği geri yüklemeyle birlikte gerekir; **imha edilmiş bir kiracının API anahtarı çalışmaz** (satır yok → 401; `migrator erase-deleted-tenants` sonrası doğrulayın). Anahtar kaybında: aboneliklerde sır döndürülür.
 - **Ortam değişkenleri (§14'e ek):** `Integrations__Webhooks__{Enabled,EgressProxy,DnsServer,AllowedHosts,AllowedPrivateCidrs,AllowedPorts,TimeoutSeconds,MaxAttempts,PerTenantPerMinute,…}`, `Integrations__ApiKeys__{DefaultLifetimeDays,MaxLifetimeDays,CacheSeconds,FailureThrottle__MaxFailures,…}`, `Integrations__Encryption__{CurrentKeyId,Keys__<id>}`, `Integrations__OpenApi__CacheMinutes`, `RateLimiting__ApiKey__PermitLimit`, `RateLimiting__ApiKeyTenant__PermitLimit`. Aralık tutarsızlığı açılışta reddedilir (`ValidateOnStart`).
 - **OpenAPI:** `GET /api/v1/integrations/openapi.json` yalnız kimliği doğrulanmış `org.integrations.manage` sahibine sunulur; anonim `/openapi/v1.json` ve `/scalar` Production'da kapalıdır (`Docs:Enabled`, §9).
+
+## 18. Nesne deposu (dosya ekleri, M8C, karar K21)
+
+Bağlayıcı plan: [m8c-dosya-ekleri.md](../plan/m8c-dosya-ekleri.md). Kullanıcılar kayıtlara (firma, kişi, potansiyel müşteri, fırsat, aktivite, talep, teklif, sipariş, kampanya) dosya ekler; baytlar **API üzerinden akışla** tek bir kovaya (`crm-files`) `{tenantId}/{yyyy}/{fileId}` anahtarıyla yazılır; tarayıcıya presigned URL **verilmez**.
+
+### 18.1 Sunucu seçimi, imaj doğrulaması ve lisans notu (K21)
+
+- **Uygulama S3-genel:** adaptör `AWSSDK.S3`tir (MinIO SDK'sı değil); sunucu değişebilir (MinIO / SeaweedFS S3 / Garage / Ceph RGW) — yalnız `Files__Storage__*` + `minio-init` betiği değişir, **uygulama kodu değişmez**.
+- **Doğrulama (2026-09-20):** `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z` ve `quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z` **çekilebilir** (manifest doğrulandı; `latest` da bu sürüme çözülür — topluluk sürümünün son yayınıdır). Etiketler **sabitlenir**, `latest` kullanılmaz; kurum içi registry aynası önerilir (kurumsal ağ dışına çekim gerektirmez, kaynak kaybolursa etkilenmezsiniz).
+- **Lisans:** MinIO AGPLv3'tür. Bu kurulumda MinIO **değiştirilmeden, iç bir hizmet olarak** çalışır (uygulama ağ üzerinden S3 protokolüyle konuşur, MinIO koduna bağlanmaz/dağıtmaz) — bu kullanım AGPL'nin kaynak paylaşım yükümlülüğünü doğurmaz; ancak **hukuk onayı** alınmalıdır (MinIO'yu değiştirip kullanıcılara ağ üzerinden sunarsanız değişiklikleri yayınlamanız gerekir). Ticari lisans (AIStor) ayrı bir karardır.
+- **Bakım uyarısı:** MinIO topluluk sürümü **bakım modundadır** (yeni güvenlik yamaları/özellikleri garanti değildir; yönetim konsolu özellikleri de topluluk sürümünde kısıtlıdır). Bu yüzden: depo yalnız iç ağdadır (`internal` ağ, port yok), servis hesabı yalnız tek kovaya yetkilidir, şifreleme `required`. **Karar noktası:** güvenlik yamasına ihtiyaç doğarsa ya kurumsal bir ayna/derleme kaynağı belirlenir ya da **SeaweedFS S3 veya Garage**'a geçilir (compose'daki `minio`/`minio-init` servisleri ve `init.sh` politikası değişir; uygulama ve testler aynı kalır; nesneler `mc mirror`/`rclone` ile taşınır).
+
+### 18.2 Kurulum, yapılandırma ve şifreleme
+
+- `generate-secrets.*` beş sırrı üretir (§4). `docker compose ... up -d`: `minio` (sağlıklı) → `minio-init` (kova + `mc encrypt set sse-s3` + `crm-files-app` politikası/hesabı) → `migrator`/`api`/`worker`. **Kova/şifreleme/hesap yapılamazsa `minio-init` başarısız olur ve yığın başlamaz** (sessizce şifresiz kalınmaz). API her yüklemeden önce (30 sn önbellekli) `GetBucketEncryption` ile şifrelemeyi doğrular; yoksa yüklemeler `503 file.storage_unavailable` olur.
+- **MinIO konsolu kapalıdır** (`MINIO_BROWSER=off`); yönetim geçici bir mc konteyneriyle yapılır: `docker compose -f deploy/docker-compose.prod.yml run --rm --no-deps --entrypoint /bin/sh minio-init` (kök kimlik bilgileri secret dosyalarındadır; `mc alias set local http://minio:9000 ...`). Erişim yalnız `docker compose` sahibinedir.
+- **API geçici dosyaları:** yükleme önce geçici dosyaya yazılır (`Files__Upload__TempDirectory=/tmp`, **tmpfs**, `API_TMP_SIZE` = eşzamanlı yükleme × `MaxFileMb`; kiracı başına en çok 4, genel 16 eşzamanlı yükleme).
+- **Web ters vekili (nginx) — DEVOPS/WEB İŞİ (bu karta `web/` dâhil değildi):** `web/nginx/default.conf.template` içinde (1) `location = /api/v1/files` (yükleme): `client_max_body_size` = `Files:Upload:MaxRequestMb` + 5 (varsayılan **115m**), `proxy_request_buffering off`, `proxy_read_timeout 300s`, `proxy_send_timeout 300s`; (2) `location ~ ^/api/v1/files/[0-9a-fA-F-]{36}/content$` (indirme): `proxy_buffering off`, 300 sn zaman aşımı; ikisinde de `/api/` bloğundaki `add_header` deseni; genel `client_max_body_size 20m` **değişmez**; (3) CSP'ye yalnız `img-src 'self' data: blob:` ve `frame-src 'self' blob:` eklenir (önizleme; `object-src 'none'`, `script-src 'self'` aynen). Bunlar eklenmeden 20 MB üstü yüklemeler vekilde 413 alır ve önizleme CSP'ye takılır.
+
+### 18.3 Kota (`maxStorageMb`) ve planlar
+
+`platform.plans.limits.maxStorageMb` (`null` = sınırsız, `0` = hiç yükleme yok, ≥ 0, üst sınır 1 048 576 MiB) ve kiracı istisnası `overrides.maxStorageMb` (anahtar yok = plan, `null` = açıkça sınırsız). Örnek plan sayıları (`Platform:Plans`, **ticari karar değildir**): `internal` sınırsız, `starter` 1024, `business` 25600, `enterprise` 512000. Zorlama **sert ve kesindir** (kiracı başına istişari kilit; eşzamanlı yüklemelerle aşılamaz); aşımda `402 file.quota_exceeded`. Silme kotayı anında düşürür; plan düşürme dosyayı silmez (indirme/silme açık, yeni yükleme 402). Kullanım `files.storage_bytes`/`files.files` metrikleriyle günlük anlık görüntüye ve **finans CSV'sine** (`GET /platform/usage/export`) girer. Kiracı yöneticisi: `GET /api/v1/files/usage`, `GET /api/v1/subscription`.
+
+### 18.4 Yaşam döngüsü işleri (Worker) ve komutlar
+
+| İş | Ne yapar | Ayar |
+|---|---|---|
+| Temizlik (`FilesPurgeService`, 60 dk) | Yumuşak silinen dosyaların nesnesini `SoftDeleteRetentionDays` (7) sonra fiziksel siler; erişim günlüğü saklama temizliği (365 gün) | `Files__Purge__*`, `Files__AccessLog__RetentionDays` |
+| Uzlaştırma (`FilesReconciliationService`, 24 saat) | Nesne ↔ satır: nesnesiz satır `missing`, boyut uyuşmazlığı `missing`, geri gelen nesne `ready`; grace (24 sa) sonrası **yetim nesne siler (güvenlik supabıyla)**; kayıt-yok süpürmesi (kaydı silinen dosya `RecordMissingGraceDays` = 30 gün sonra yumuşak silinir) | `Files__Reconcile__*` |
+| `migrator files-reconcile [--dry-run] [--tenant <id>]` | Aynı kod elle; çıktıda yalnız sayılar (kiracı başına `objects rows missing restored sizeMismatch orphans orphansDeleted guardTripped foreign`) | Geri yükleme sonrası önce `--dry-run` |
+
+Güvenlik kuralları: **bilinmeyen kiracı önekleri ve anahtarı ayrıştırılamayan nesneler asla silinmez**; yetim sayısı `MaxOrphanDeletePerRun` (1000) ya da nesnelerin `MaxOrphanDeleteFraction` (%5) oranını aşarsa **hiçbir şey silinmez** (`guardTripped=True`, `Error` günlüğü, `crm.files.reconcile.guard_tripped` sayacı) — yanlış geri yükleme sonrası toplu silmeyi önler. İşler `pg_try_advisory_lock` ile tek örnektir; depo arızası turu erteler (Worker düşmez).
+
+### 18.5 Sorun giderme
+
+| Belirti | Neden | Çözüm |
+|---|---|---|
+| Yüklemeler `503 file.storage_unavailable` | `minio` kapalı/sağlıksız, kimlik bilgisi yanlış ya da kovada varsayılan şifreleme yok | `docker compose ... ps minio`, `logs minio`; `/health` `storage` denetimi (`Degraded` açıklaması); `up -d minio-init` (kova/şifreleme/hesabı yeniden kurar) |
+| API/Worker açılışta çıkıyor: `Files:Storage:Provider must be 's3' in Production` / `Encryption 'none' ...` | Yanlış yapılandırma (üretimde `filesystem`/`memory` ya da şifresiz) | `Files__Storage__Provider=s3`, `Encryption` boş/`required`; şifresiz disk bilinçli kabulse `Files__Storage__AcknowledgeUnencrypted=true` |
+| Dosya indirme `410 file.content_missing`; kullanıcıya "dosya kullanılamıyor" | Uzlaştırma nesnesi olmayan satırı `missing` işaretledi (geri yükleme sırası, elle silinmiş nesne, disk sorunu) | `files-reconcile --dry-run`; nesne yedekten geri konursa bir sonraki uzlaştırmada `ready` olur; kalıcı kayıpsa kullanıcı dosyayı silip yeniden yükler. `missing` sayacı > 0 → uyarı |
+| `files-reconcile` `guardTripped=True` | Çok sayıda yetim (yanlış/eski nesne yedeği geri yüklendi?) | Nedeni inceleyin; **elle silmeden önce** veritabanı ve nesne yedeğinin aynı zaman noktasından olduğunu doğrulayın; gerçekten yetimse `Files__Reconcile__MaxOrphanDeleteFraction` ile geçici gevşetip yeniden koşun |
+| Yüklemede `413 file.too_large` (vekilden) | nginx `client_max_body_size` (§18.2) | Vekil ayarını `MaxRequestMb + 5` yapın |
+| Yüklemeler `429 general.rate_limit_exceeded` | Kiracı başına 4 / genel 16 eşzamanlı yükleme ya da kullanıcı başına 30 parça/dk | Beklenen; `Files__RateLimiting__*` ile ayarlanır |
+| Disk dolu (`api` `/tmp`) | tmpfs küçük (yükleme geçici dosyaları) | `API_TMP_SIZE` artırın |

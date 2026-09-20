@@ -124,6 +124,68 @@ services:
           memory: ${CONDUCTOR_MEM_LIMIT:-1536m}
           cpus: "${CONDUCTOR_CPUS:-1.5}"
 
+  # Object storage for file attachments (M8C, K19): MinIO community edition (AGPLv3, used unmodified as an internal service). The image tag is pinned
+  # (never `latest`; see the runbook "Object storage" for the licence/maintenance note and how to switch to another S3-compatible server).
+  # NOT published: no `ports`, backend network only (internal). The browser console is off (MINIO_BROWSER=off); administer with
+  # `docker compose exec minio-init mc ...` style one-off containers or `docker compose run --rm --entrypoint sh minio-init`.
+  # Objects are encrypted at rest with SSE-S3 using a static KMS key from the Docker secret minio_kms_key (no external KES/network call).
+  # BACK THE KEY UP TOGETHER WITH THE DATA: a data backup without the key is unreadable.
+  minio:
+    image: ${MINIO_IMAGE:-quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z}
+    restart: unless-stopped
+    command: ["server", "/data"]
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+      MINIO_KMS_SECRET_KEY_FILE: /run/secrets/minio_kms_key
+      MINIO_BROWSER: "off"
+      TZ: Europe/Istanbul
+    secrets:
+      - minio_root_user
+      - minio_root_password
+      - minio_kms_key
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [backend]
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: ${MINIO_MEM_LIMIT:-1g}
+
+  # Run-once, idempotent (every `up`): creates the bucket, enables default SSE-S3, and creates the application account limited to THIS bucket.
+  # The application never holds the root credentials. See deploy/minio/init.sh.
+  minio-init:
+    image: ${MINIO_MC_IMAGE:-quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z}
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/init.sh"]
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_BUCKET: ${FILES_BUCKET:-crm-files}
+      MINIO_ENCRYPTION: required
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+      MINIO_APP_ACCESS_KEY_FILE: /run/secrets/minio_app_access_key
+      MINIO_APP_SECRET_KEY_FILE: /run/secrets/minio_app_secret_key
+    volumes:
+      - ./minio/init.sh:/init.sh:ro
+    secrets:
+      - minio_root_user
+      - minio_root_password
+      - minio_app_access_key
+      - minio_app_secret_key
+    networks: [backend]
+    logging: *logging
+
   # Run-once job: applies every module's EF migrations as the owner role. api and worker start only after it exits 0.
   # First platform admin:  docker compose -f deploy/docker-compose.prod.yml run --rm migrator create-platform-admin
   migrator:
@@ -137,9 +199,14 @@ services:
         condition: service_healthy
       db-init:
         condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
     command: ["migrate"]
     environment:
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=crm;Username=crm_owner;Password=${CRM_OWNER_PASSWORD:?set CRM_OWNER_PASSWORD in deploy/.env}
+      # M8C: erase-deleted-tenants / files-reconcile need the object store (application account from the Docker secrets below).
+      Files__Storage__Endpoint: http://minio:9000
+      Files__Storage__Bucket: ${FILES_BUCKET:-crm-files}
       # create-platform-admin (the password is read from the Docker secret file, never from the environment or logs)
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-}
       PLATFORM_ADMIN_NAME: ${PLATFORM_ADMIN_NAME:-}
@@ -149,6 +216,10 @@ services:
       - platform_admin_password
       - source: integrations_encryption_key
         target: Integrations__Encryption__Keys__k1
+      - source: minio_app_access_key
+        target: Files__Storage__AccessKey
+      - source: minio_app_secret_key
+        target: Files__Storage__SecretKey
     networks: [backend]
     logging: *logging
 
@@ -163,8 +234,15 @@ services:
         condition: service_completed_successfully
       conductor:
         condition: service_started
+      minio-init:
+        condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      # M8C file attachments: S3-compatible object storage on the backend network (Production requires provider s3 + encryption required).
+      Files__Storage__Endpoint: http://minio:9000
+      Files__Storage__Bucket: ${FILES_BUCKET:-crm-files}
+      # Upload temp files live on tmpfs (below): sized for concurrent uploads x Files:Upload:MaxFileMb.
+      Files__Upload__TempDirectory: /tmp
       # Least-privilege application role (DML only); DDL happens in the migrator with crm_owner.
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=crm;Username=crm_app;Password=${CRM_APP_PASSWORD:?set CRM_APP_PASSWORD in deploy/.env}
       ConnectionStrings__Redis: ${REDIS_CONNECTION:-}
@@ -184,6 +262,12 @@ services:
         target: Auth__SigningKeyPem
       - source: integrations_encryption_key
         target: Integrations__Encryption__Keys__k1
+      - source: minio_app_access_key
+        target: Files__Storage__AccessKey
+      - source: minio_app_secret_key
+        target: Files__Storage__SecretKey
+    tmpfs:
+      - /tmp:size=${API_TMP_SIZE:-512m},mode=1777
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
       interval: 30s
@@ -210,15 +294,24 @@ services:
         condition: service_completed_successfully
       conductor:
         condition: service_started
+      minio-init:
+        condition: service_completed_successfully
     environment:
       DOTNET_ENVIRONMENT: Production
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=crm;Username=crm_app;Password=${CRM_APP_PASSWORD:?set CRM_APP_PASSWORD in deploy/.env}
       ConnectionStrings__Redis: ${REDIS_CONNECTION:-}
       Conductor__BaseUrl: http://conductor:8080
+      # M8C: file lifecycle jobs (purge, reconciliation) and the KVKK object erasure need the object store.
+      Files__Storage__Endpoint: http://minio:9000
+      Files__Storage__Bucket: ${FILES_BUCKET:-crm-files}
       TZ: Europe/Istanbul
     secrets:
       - source: integrations_encryption_key
         target: Integrations__Encryption__Keys__k1
+      - source: minio_app_access_key
+        target: Files__Storage__AccessKey
+      - source: minio_app_secret_key
+        target: Files__Storage__SecretKey
     networks: [backend]
     logging: *logging
     deploy:
@@ -288,8 +381,22 @@ networks:
 
 volumes:
   pgdata:
+  miniodata:
 
 secrets:
+  # Object storage (M8C). Generated by deploy/generate-secrets.*. minio_kms_key is the static KMS key ("crm-files-key:<base64 of 32 random bytes>")
+  # that encrypts every object at rest: BACK IT UP with the object data (losing it = losing the files; it cannot be rotated in the first release).
+  minio_root_user:
+    file: ${MINIO_ROOT_USER_FILE:-./secrets/minio-root-user}
+  minio_root_password:
+    file: ${MINIO_ROOT_PASSWORD_FILE:-./secrets/minio-root-password}
+  minio_kms_key:
+    file: ${MINIO_KMS_KEY_FILE:-./secrets/minio-kms-key}
+  # Application account limited to the crm-files bucket (what api/worker/migrator use; never the root account).
+  minio_app_access_key:
+    file: ${MINIO_APP_ACCESS_KEY_FILE:-./secrets/minio-app-access-key}
+  minio_app_secret_key:
+    file: ${MINIO_APP_SECRET_KEY_FILE:-./secrets/minio-app-secret-key}
   # RSA private key (PEM) that signs the JWT access tokens. Generated by deploy/generate-secrets.*; back it up with the database.
   jwt_signing_key:
     file: ${JWT_SIGNING_KEY_FILE:-./secrets/jwt-signing-key.pem}

@@ -83,5 +83,6 @@ public sealed class HostHardeningTests(CrmApiFactory factory)
             b.UseSetting("Auth:SigningKeyPem", rsa.ExportPkcs8PrivateKeyPem());
             b.UseSetting("Docs:Enabled", docsEnabled ? "true" : "false");
             b.UseSetting("Integrations:Webhooks:Enabled", "false"); // production default: the fixture's direct-egress webhook test setup is not a valid production config
+            b.UseSetting("Files:Storage:Endpoint", "http://localhost:9000"); // M8C: Production requires an s3 endpoint (never contacted at startup).
         });
 }

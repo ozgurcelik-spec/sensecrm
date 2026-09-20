@@ -49,6 +49,8 @@
   <ItemGroup Label="Infrastructure">
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.*" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.*" />
+    <!-- M8C dosya ekleri: S3 uyumlu depolama istemcisi (MinIO/SeaweedFS/Garage/Ceph RGW; sunucudan bağımsız, bkz. K19). -->
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.*" />
   </ItemGroup>
 
   <ItemGroup Label="Observability">
@@ -68,6 +70,7 @@
     <PackageVersion Include="Shouldly" Version="4.*" />
     <PackageVersion Include="NSubstitute" Version="6.*" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.*" />
+    <PackageVersion Include="Testcontainers.Minio" Version="4.*" />
     <PackageVersion Include="Respawn" Version="6.*" />
     <PackageVersion Include="NetArchTest.Rules" Version="1.*" />
     <PackageVersion Include="coverlet.collector" Version="10.*" />

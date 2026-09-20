@@ -84,6 +84,7 @@ public sealed class Plan : Entity<string>
         a.MaxUsers == b.MaxUsers
         && a.MaxWebhooks == b.MaxWebhooks
         && a.MaxApiKeys == b.MaxApiKeys
+        && a.MaxStorageMb == b.MaxStorageMb
         && a.MaxRecords.Count == b.MaxRecords.Count
         && a.MaxRecords.All(kv => b.MaxRecords.TryGetValue(kv.Key, out var other) && other == kv.Value);
 

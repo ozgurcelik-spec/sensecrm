@@ -36,8 +36,16 @@ public static class EntitlementMath
             effective.MaxUsers,
             effective.MaxRecords,
             effective.MaxWebhooks,
-            effective.MaxApiKeys);
+            effective.MaxApiKeys,
+            effective.MaxStorageMb);
     }
+
+    /// <summary>Dosya eki metrik anahtarları (Files modülünün <c>IUsageReporter</c>'ı; <c>UsageKeys</c> biçimi <c>{modül}.{varlık}</c>).</summary>
+    public const string StorageBytesKey = "files.storage_bytes";
+
+    public const string FileCountKey = "files.files";
+
+    public const string FilesModule = LimitKeys.StorageModule;
 
     /// <summary>Mevcut kullanım (kullanıcı = etkin + bekleyen; kayıtlar yalnız açık modüller) sonlu limitin üstündeyse aşım listesi.</summary>
     public static IReadOnlyList<OverLimitDto> OverLimits(
@@ -46,7 +54,8 @@ public static class EntitlementMath
         IReadOnlyDictionary<string, bool> modules,
         UsageCollection usage,
         int? maxWebhooks = null,
-        int? maxApiKeys = null)
+        int? maxApiKeys = null,
+        int? maxStorageMb = null)
     {
         var result = new List<OverLimitDto>();
         if (maxUsers is { } users && usage.UsersUsed > users)
@@ -64,6 +73,12 @@ public static class EntitlementMath
         if (integrationsOn && maxApiKeys is { } apiKeys && usage.Metrics.GetValueOrDefault("integrations.api_keys") > apiKeys)
         {
             result.Add(new OverLimitDto(LimitKeys.ApiKeys, null, apiKeys, usage.Metrics["integrations.api_keys"]));
+        }
+
+        // M8C: depolama aşımı bayt cinsindendir (max = maxStorageMb × 1 MiB, used = files.storage_bytes).
+        if (maxStorageMb is { } storageMb && usage.Metrics.TryGetValue(StorageBytesKey, out var storageUsed) && storageUsed > storageMb * 1024L * 1024L)
+        {
+            result.Add(new OverLimitDto(LimitKeys.Storage, FilesModule, storageMb * 1024L * 1024L, storageUsed));
         }
 
         var records = usage.Records;

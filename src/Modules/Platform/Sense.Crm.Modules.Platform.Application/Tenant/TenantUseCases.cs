@@ -33,12 +33,18 @@ public sealed class GetSubscriptionHandler(ITenantContext tenant, ITenantEntitle
             .Where(r => snapshot.IsModuleEnabled(r.Key))
             .ToDictionary(r => r.Key, r => r.Value, StringComparer.Ordinal);
 
-        var usage = new UsageCollection(users.Active, users.Pending, counts.Records.ToDictionary(r => r.Key + ".records", r => r.Value, StringComparer.Ordinal));
+        var metrics = counts.Records.ToDictionary(r => r.Key + ".records", r => r.Value, StringComparer.Ordinal);
+        metrics[EntitlementMath.StorageBytesKey] = counts.StorageBytes; // M8C
         // M8B: webhook/API anahtari sayaclari canlidir (sert limit; onbelleksiz), yalniz modul planda aciksa sorgulanir.
         var integrationsOn = snapshot.IsModuleEnabled(GatedModules.Integrations);
         var integrationsCounts = integrationsOn ? await meter.CountModuleAsync(GatedModules.Integrations, cancellationToken).ConfigureAwait(false) : new Dictionary<string, long>();
-        var usageWithIntegrations = new UsageCollection(usage.UsersActive, usage.UsersPending, usage.Metrics.Concat(integrationsCounts).GroupBy(m => m.Key).ToDictionary(g => g.Key, g => g.Last().Value, StringComparer.Ordinal));
-        var overLimit = EntitlementMath.OverLimits(snapshot.MaxUsers, snapshot.MaxRecords, snapshot.Modules, usageWithIntegrations, snapshot.MaxWebhooks, snapshot.MaxApiKeys);
+        foreach (var (key, value) in integrationsCounts)
+        {
+            metrics[key] = value;
+        }
+
+        var usageWithIntegrations = new UsageCollection(users.Active, users.Pending, metrics);
+        var overLimit = EntitlementMath.OverLimits(snapshot.MaxUsers, snapshot.MaxRecords, snapshot.Modules, usageWithIntegrations, snapshot.MaxWebhooks, snapshot.MaxApiKeys, snapshot.MaxStorageMb);
 
         var modules = GatedModules.All.ToDictionary(m => m, m => snapshot.IsModuleEnabled(m), StringComparer.Ordinal);
         return new SubscriptionDto(
@@ -49,14 +55,16 @@ public sealed class GetSubscriptionHandler(ITenantContext tenant, ITenantEntitle
             snapshot.TrialEndsOn,
             EntitlementMath.TrialDaysLeft(snapshot, status, now),
             modules,
-            new SubscriptionLimitsDto(snapshot.MaxUsers, EntitlementMath.FiniteRecords(snapshot.MaxRecords), snapshot.MaxWebhooks, snapshot.MaxApiKeys),
+            new SubscriptionLimitsDto(snapshot.MaxUsers, EntitlementMath.FiniteRecords(snapshot.MaxRecords), snapshot.MaxWebhooks, snapshot.MaxApiKeys, snapshot.MaxStorageMb),
             new SubscriptionUsageDto(
                 counts.AsOf,
                 users.Active,
                 users.Pending,
                 records,
                 integrationsOn ? integrationsCounts.GetValueOrDefault("integrations.webhooks") : null,
-                integrationsOn ? integrationsCounts.GetValueOrDefault("integrations.api_keys") : null),
+                integrationsOn ? integrationsCounts.GetValueOrDefault("integrations.api_keys") : null,
+                counts.StorageBytes,
+                counts.FileCount),
             overLimit);
     }
 }
