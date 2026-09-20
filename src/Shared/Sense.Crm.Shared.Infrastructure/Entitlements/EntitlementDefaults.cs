@@ -56,3 +56,18 @@ public sealed class DenyPlatformAdminVerifier : IPlatformAdminVerifier
 {
     public Task<bool> IsPlatformAdminAsync(Guid userId, CancellationToken ct) => Task.FromResult(false);
 }
+
+/// <summary>Varsayılan API anahtarı doğrulayıcısı: her anahtarı reddeder (Integrations modülü gerçeğini Replace eder).</summary>
+public sealed class DenyApiKeyAuthenticator : IApiKeyAuthenticator
+{
+    public Task<ApiKeyAuthResult> AuthenticateAsync(IReadOnlyList<string> authorizationHeaders, string? remoteIp, CancellationToken ct = default) =>
+        Task.FromResult(ApiKeyAuthResult.Fail(Error.Unauthorized(ErrorCodes.Unauthenticated)));
+}
+
+/// <summary>Varsayılan kullanım alıcısı: hiçbir şey kaydetmez.</summary>
+public sealed class NoOpApiKeyUsageSink : IApiKeyUsageSink
+{
+    public void Record(Guid tenantId, Guid keyId, int statusCode)
+    {
+    }
+}

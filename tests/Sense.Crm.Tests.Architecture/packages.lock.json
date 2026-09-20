@@ -661,6 +661,7 @@
           "Sense.Crm.Modules.Activities.Api": "[1.0.0, )",
           "Sense.Crm.Modules.Commerce.Api": "[1.0.0, )",
           "Sense.Crm.Modules.Identity.Api": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Api": "[1.0.0, )",
           "Sense.Crm.Modules.Marketing.Api": "[1.0.0, )",
           "Sense.Crm.Modules.Platform.Api": "[1.0.0, )",
           "Sense.Crm.Modules.Sales.Api": "[1.0.0, )",
@@ -810,6 +811,61 @@
           "Sense.Crm.Modules.Identity.Application": "[1.0.0, )",
           "Sense.Crm.Shared.Infrastructure": "[1.0.0, )",
           "System.IdentityModel.Tokens.Jwt": "[8.*, )"
+        }
+      },
+      "sense.crm.modules.integrations.api": {
+        "type": "Project",
+        "dependencies": {
+          "Sense.Crm.Modules.Integrations.Application": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Infrastructure": "[1.0.0, )",
+          "Sense.Crm.Shared.Infrastructure": "[1.0.0, )",
+          "Sense.Crm.Shared.Web": "[1.0.0, )"
+        }
+      },
+      "sense.crm.modules.integrations.application": {
+        "type": "Project",
+        "dependencies": {
+          "FluentValidation": "[12.*, )",
+          "Sense.Crm.Modules.Commerce.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Identity.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Domain": "[1.0.0, )",
+          "Sense.Crm.Modules.Sales.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Service.Contracts": "[1.0.0, )",
+          "Sense.Crm.Shared.Contracts": "[1.0.0, )",
+          "Sense.Crm.Shared.Kernel": "[1.0.0, )"
+        }
+      },
+      "sense.crm.modules.integrations.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "Sense.Crm.Shared.Contracts": "[1.0.0, )",
+          "Sense.Crm.Shared.Kernel": "[1.0.0, )"
+        }
+      },
+      "sense.crm.modules.integrations.domain": {
+        "type": "Project",
+        "dependencies": {
+          "Sense.Crm.Shared.Kernel": "[1.0.0, )"
+        }
+      },
+      "sense.crm.modules.integrations.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "EFCore.NamingConventions": "[10.0.*, )",
+          "Microsoft.EntityFrameworkCore": "[10.0.*, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.*, )",
+          "Sense.Crm.Modules.Commerce.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Identity.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Application": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Integrations.Domain": "[1.0.0, )",
+          "Sense.Crm.Modules.Sales.Contracts": "[1.0.0, )",
+          "Sense.Crm.Modules.Service.Contracts": "[1.0.0, )",
+          "Sense.Crm.Shared.Contracts": "[1.0.0, )",
+          "Sense.Crm.Shared.Infrastructure": "[1.0.0, )",
+          "Sense.Crm.Shared.Kernel": "[1.0.0, )"
         }
       },
       "sense.crm.modules.marketing.api": {

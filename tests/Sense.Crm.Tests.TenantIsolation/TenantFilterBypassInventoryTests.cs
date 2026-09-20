@@ -36,6 +36,10 @@ public sealed class TenantFilterBypassInventoryTests
     /// </summary>
     private static readonly Dictionary<string, int> ExpectedRawSql = new(StringComparer.Ordinal)
     {
+        // M8B: kuyruk talep sorgusu (kuresel delivery_queue), KVKK kuyruk imhasi, gunluk kullanim upsert'i (kiraci kimligi her zaman parametre).
+        ["src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/Delivery/WebhookDispatcher.cs"] = 1,
+        ["src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/IntegrationsContractServices.cs"] = 1,
+        ["src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/Security/ApiKeyUsage.cs"] = 1,
         ["src/Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/PlatformSupport.cs"] = 6,
         ["src/Modules/Marketing/Sense.Crm.Modules.Marketing.Infrastructure/Persistence/Repositories.cs"] = 1,
         ["src/Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Entitlements/EntitlementServices.cs"] = 2,

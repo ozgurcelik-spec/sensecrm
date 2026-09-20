@@ -29,7 +29,7 @@ namespace Sense.Crm.Tests.Shared.Fixtures;
 public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestingEnvironment = "Testing";
-    private static readonly string[] Schemas = ["identity", "sales", "activities", "workflows", "marketing", "commerce", "service", "platform", AuditDbContext.SchemaName];
+    private static readonly string[] Schemas = ["identity", "sales", "activities", "workflows", "marketing", "commerce", "service", "platform", "integrations", AuditDbContext.SchemaName];
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("crm_test")
@@ -92,6 +92,12 @@ public sealed class CrmApiFactory : WebApplicationFactory<Program>, IAsyncLifeti
         // Yaşam döngüsü testleri kendi Platform:* ayarını WithWebHostBuilder ile verir.
         builder.UseSetting("Platform:Signup:PlanCode", "internal");
         builder.UseSetting("Platform:Provisioning:DefaultPlanCode", "internal");
+
+        // M8B: webhook gonderimi acik (dogrudan cikis + loopback yalniz Testing), sabit test sifreleme anahtari (0x00..0x1F).
+        builder.UseSetting("Integrations:Webhooks:Enabled", "true");
+        builder.UseSetting("Integrations:Webhooks:AllowDirectEgress", "true");
+        builder.UseSetting("Integrations:Webhooks:DevAllowLoopback", "true");
+        builder.UseSetting("Integrations:Encryption:Keys:k1", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=");
         builder.ConfigureServices(services =>
         {
             // Workflow motoru: gerçek Conductor yerine gerçek tanım + görev işleyicilerini çalıştıran sahte motor (tüm test projeleri).

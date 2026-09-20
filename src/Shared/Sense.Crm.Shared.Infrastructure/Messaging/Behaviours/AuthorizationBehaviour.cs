@@ -24,8 +24,25 @@ public sealed class AuthorizationBehaviour<TRequest, TResponse>(ICurrentUser use
     /// <summary>M7 (D5): platform yöneticisi isteği — bayrak JWT'den değil her istekte veritabanından doğrulanır (iki katmanlı savunma).</summary>
     private static readonly bool PlatformOnly = typeof(TRequest).IsDefined(typeof(PlatformAdminOnlyAttribute), inherit: true);
 
+    /// <summary>M8B: API anahtarı çağrılarında izinsiz (<c>[AnyAuthenticatedUser]</c>) istek yalnız bu bilinçli istisnayla çalışır.</summary>
+    private static readonly bool ApiKeyAllowed = typeof(TRequest).IsDefined(typeof(ApiKeyAllowedAttribute), inherit: false);
+
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
+        // M8B (D9/D10): makine kimliği (API anahtarı) platform yönetimi yapamaz (oluşturan platform yöneticisi olsa da) ve izinsiz (yalnız kimlik) istek çağıramaz.
+        if (user.ApiKey is not null && !IsSystemContext(user))
+        {
+            if (PlatformOnly)
+            {
+                return ResultFactory.Fail<TResponse>(Error.Forbidden(ErrorCodes.Forbidden));
+            }
+
+            if (Required.Length == 0 && !ApiKeyAllowed)
+            {
+                return ResultFactory.Fail<TResponse>(Error.Forbidden(ApiKeyErrorCodes.NotAllowed));
+            }
+        }
+
         if (PlatformOnly && !IsSystemContext(user))
         {
             if (!user.IsAuthenticated || user.UserId is null)

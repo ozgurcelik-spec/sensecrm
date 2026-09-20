@@ -92,7 +92,7 @@ public sealed class GetOrganizationHandler(
             row.IsSystem,
             row.CreatedAt,
             row.Usage,
-            new EffectiveLimitsDto(effective.MaxUsers, EntitlementMath.FiniteRecords(effective.MaxRecords), effective.Modules),
+            new EffectiveLimitsDto(effective.MaxUsers, EntitlementMath.FiniteRecords(effective.MaxRecords), effective.Modules, effective.MaxWebhooks, effective.MaxApiKeys),
             overrides,
             planChangedAt,
             suspension,

@@ -147,6 +147,8 @@ services:
       PLATFORM_ADMIN_PASSWORD_FILE: /run/secrets/platform_admin_password
     secrets:
       - platform_admin_password
+      - source: integrations_encryption_key
+        target: Integrations__Encryption__Keys__k1
     networks: [backend]
     logging: *logging
 
@@ -180,6 +182,8 @@ services:
     secrets:
       - source: jwt_signing_key
         target: Auth__SigningKeyPem
+      - source: integrations_encryption_key
+        target: Integrations__Encryption__Keys__k1
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
       interval: 30s
@@ -212,6 +216,9 @@ services:
       ConnectionStrings__Redis: ${REDIS_CONNECTION:-}
       Conductor__BaseUrl: http://conductor:8080
       TZ: Europe/Istanbul
+    secrets:
+      - source: integrations_encryption_key
+        target: Integrations__Encryption__Keys__k1
     networks: [backend]
     logging: *logging
     deploy:
@@ -289,3 +296,7 @@ secrets:
   # Password of the first platform admin (create-platform-admin). Empty this file after the bootstrap.
   platform_admin_password:
     file: ${PLATFORM_ADMIN_PASSWORD_FILE:-./secrets/platform-admin-password}
+  # AES-256 key (base64, 32 bytes) that encrypts webhook signing secrets at rest (M8B). REQUIRED: api, worker and migrator refuse to start without it.
+  # Back it up SEPARATELY from the database backup; losing it makes stored webhook secrets unreadable (rotate them). Rotation: runbook section 4.
+  integrations_encryption_key:
+    file: ${INTEGRATIONS_KEY_FILE:-./secrets/integrations-encryption-key}

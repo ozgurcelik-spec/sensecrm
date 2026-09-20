@@ -34,16 +34,36 @@ public static class EntitlementMath
             timeZone,
             effective.Modules,
             effective.MaxUsers,
-            effective.MaxRecords);
+            effective.MaxRecords,
+            effective.MaxWebhooks,
+            effective.MaxApiKeys);
     }
 
     /// <summary>Mevcut kullanım (kullanıcı = etkin + bekleyen; kayıtlar yalnız açık modüller) sonlu limitin üstündeyse aşım listesi.</summary>
-    public static IReadOnlyList<OverLimitDto> OverLimits(int? maxUsers, IReadOnlyDictionary<string, int?> maxRecords, IReadOnlyDictionary<string, bool> modules, UsageCollection usage)
+    public static IReadOnlyList<OverLimitDto> OverLimits(
+        int? maxUsers,
+        IReadOnlyDictionary<string, int?> maxRecords,
+        IReadOnlyDictionary<string, bool> modules,
+        UsageCollection usage,
+        int? maxWebhooks = null,
+        int? maxApiKeys = null)
     {
         var result = new List<OverLimitDto>();
         if (maxUsers is { } users && usage.UsersUsed > users)
         {
             result.Add(new OverLimitDto(LimitKeys.Users, null, users, usage.UsersUsed));
+        }
+
+        // M8B: webhook/API anahtari limitleri (kullanim: integrations.webhooks, integrations.api_keys; modul kapaliysa raporlanmaz).
+        var integrationsOn = modules.TryGetValue(GatedModules.Integrations, out var integrations) && integrations;
+        if (integrationsOn && maxWebhooks is { } webhooks && usage.Metrics.GetValueOrDefault("integrations.webhooks") > webhooks)
+        {
+            result.Add(new OverLimitDto(LimitKeys.Webhooks, null, webhooks, usage.Metrics["integrations.webhooks"]));
+        }
+
+        if (integrationsOn && maxApiKeys is { } apiKeys && usage.Metrics.GetValueOrDefault("integrations.api_keys") > apiKeys)
+        {
+            result.Add(new OverLimitDto(LimitKeys.ApiKeys, null, apiKeys, usage.Metrics["integrations.api_keys"]));
         }
 
         var records = usage.Records;

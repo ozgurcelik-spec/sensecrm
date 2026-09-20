@@ -84,6 +84,9 @@ try
 
     app.UseAuthentication();
 
+    // M8B: API anahtarı kullanım sayacı — hız sınırlayıcıdan ÖNCE (429 yanıtları da sayılır); yalnız ApiKey kimliğiyle gelen istekleri sayar.
+    app.UseApiKeyUsage();
+
     // Hız sınırlama kimlik doğrulamadan SONRA: anonim auth uçları IP başına ([EnableRateLimiting]), kimliği doğrulanmış tüm istekler
     // ayrıca kullanıcı ve kiracı başına genel sınırdan geçer (M2). Kullanıcı/kiracı anahtarı doğrulanmış JWT claim'lerinden okunur.
     app.UseRateLimiter();

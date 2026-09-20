@@ -26,6 +26,13 @@
     <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Domain/Sense.Crm.Modules.Identity.Domain.csproj" />
     <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/Sense.Crm.Modules.Identity.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Integrations/">
+    <Project Path="src/Modules/Integrations/Sense.Crm.Modules.Integrations.Api/Sense.Crm.Modules.Integrations.Api.csproj" />
+    <Project Path="src/Modules/Integrations/Sense.Crm.Modules.Integrations.Application/Sense.Crm.Modules.Integrations.Application.csproj" />
+    <Project Path="src/Modules/Integrations/Sense.Crm.Modules.Integrations.Contracts/Sense.Crm.Modules.Integrations.Contracts.csproj" />
+    <Project Path="src/Modules/Integrations/Sense.Crm.Modules.Integrations.Domain/Sense.Crm.Modules.Integrations.Domain.csproj" />
+    <Project Path="src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/Sense.Crm.Modules.Integrations.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Marketing/">
     <Project Path="src/Modules/Marketing/Sense.Crm.Modules.Marketing.Api/Sense.Crm.Modules.Marketing.Api.csproj" />
     <Project Path="src/Modules/Marketing/Sense.Crm.Modules.Marketing.Application/Sense.Crm.Modules.Marketing.Application.csproj" />
@@ -76,6 +83,7 @@
     <Project Path="tests/Modules/Sense.Crm.Modules.Activities.Tests/Sense.Crm.Modules.Activities.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Commerce.Tests/Sense.Crm.Modules.Commerce.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Identity.Tests/Sense.Crm.Modules.Identity.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Integrations.Tests/Sense.Crm.Modules.Integrations.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Marketing.Tests/Sense.Crm.Modules.Marketing.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Platform.Tests/Sense.Crm.Modules.Platform.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Sales.Tests/Sense.Crm.Modules.Sales.Tests.csproj" />

@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Sales.Domain;
 using Sense.Crm.Modules.Sales.Domain.Contacts;
 using Sense.Crm.Shared.Contracts.Context;
 using Sense.Crm.Shared.Contracts.Entitlements;
+using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -82,7 +83,7 @@ public sealed class CreateContactValidator : ContactFieldsValidator<CreateContac
     public CreateContactValidator() => RuleFor(x => x.AccountId).NotEqual(Guid.Empty).When(x => x.AccountId is not null);
 }
 
-public sealed class CreateContactHandler(IContactRepository contacts, IAccountRepository accounts, OwnerResolver owners, ITenantContext tenant)
+public sealed class CreateContactHandler(IContactRepository contacts, IAccountRepository accounts, OwnerResolver owners, ITenantContext tenant, IIntegrationEventOutbox outbox, ICurrentUser user)
     : ICommandHandler<CreateContactCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateContactCommand command, CancellationToken cancellationToken)
@@ -111,6 +112,9 @@ public sealed class CreateContactHandler(IContactRepository contacts, IAccountRe
             command.Title,
             command.MailingAddress.ToDomain());
         contacts.Add(contact);
+
+        // M8B: webhook contact.created (aynı transaction'da outbox'a yazılır).
+        outbox.Enqueue(new ContactCreated(tenant.TenantId, contact.Id, contact.AccountId, contact.OwnerUserId, user.UserId));
         return contact.Id;
     }
 }

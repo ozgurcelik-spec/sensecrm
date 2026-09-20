@@ -102,7 +102,7 @@ public static class PlatformAuditActions
 }
 
 /// <summary>Plan limitleri (<c>null</c> = sınırsız; <c>0</c> = o modülde yeni kayıt açılamaz).</summary>
-public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords)
+public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, int? MaxWebhooks = null, int? MaxApiKeys = null)
 {
     public static PlanLimits Unlimited { get; } = new(null, new Dictionary<string, int?>());
 }
@@ -111,7 +111,15 @@ public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?>
 /// Kiracıya özel istisna (kısmi). <c>maxUsers</c> anahtarının <b>varlığı</b> esastır: <see cref="MaxUsersSet"/> ve <c>MaxUsers == null</c> açıkça
 /// "sınırsız" demektir; anahtar yoksa plan geçerlidir. <c>maxRecords</c> içinde <c>null</c> değer de aynı şekilde "sınırsız"dır.
 /// </summary>
-public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules)
+public sealed record TenantOverrides(
+    bool MaxUsersSet,
+    int? MaxUsers,
+    IReadOnlyDictionary<string, int?> MaxRecords,
+    IReadOnlyDictionary<string, bool> Modules,
+    bool MaxWebhooksSet = false,
+    int? MaxWebhooks = null,
+    bool MaxApiKeysSet = false,
+    int? MaxApiKeys = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -120,7 +128,7 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
 
     public static TenantOverrides None { get; } = new(false, null, new Dictionary<string, int?>(), new Dictionary<string, bool>());
 
-    public bool IsEmpty => !MaxUsersSet && MaxRecords.Count == 0 && Modules.Count == 0;
+    public bool IsEmpty => !MaxUsersSet && !MaxWebhooksSet && !MaxApiKeysSet && MaxRecords.Count == 0 && Modules.Count == 0;
 
     /// <summary>
     /// Yapısal eşitlik (metin karşılaştırması değil): <c>jsonb</c> sütunu JSON metnini normalize eder (boşluk, anahtar sırası), bu yüzden saklı metin ile yeni
@@ -131,6 +139,10 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
         ArgumentNullException.ThrowIfNull(other);
         return MaxUsersSet == other.MaxUsersSet
             && MaxUsers == other.MaxUsers
+            && MaxWebhooksSet == other.MaxWebhooksSet
+            && MaxWebhooks == other.MaxWebhooks
+            && MaxApiKeysSet == other.MaxApiKeysSet
+            && MaxApiKeys == other.MaxApiKeys
             && SameMap(MaxRecords, other.MaxRecords)
             && SameMap(Modules, other.Modules);
     }
@@ -145,6 +157,16 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
         if (MaxUsersSet)
         {
             map["maxUsers"] = MaxUsers;
+        }
+
+        if (MaxWebhooksSet)
+        {
+            map["maxWebhooks"] = MaxWebhooks;
+        }
+
+        if (MaxApiKeysSet)
+        {
+            map["maxApiKeys"] = MaxApiKeys;
         }
 
         if (MaxRecords.Count > 0)
@@ -182,6 +204,10 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
 
         var maxUsersSet = false;
         int? maxUsers = null;
+        var maxWebhooksSet = false;
+        int? maxWebhooks = null;
+        var maxApiKeysSet = false;
+        int? maxApiKeys = null;
         var records = new Dictionary<string, int?>(StringComparer.Ordinal);
         var modules = new Dictionary<string, bool>(StringComparer.Ordinal);
 
@@ -192,6 +218,14 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
                 case "maxusers":
                     maxUsersSet = true;
                     maxUsers = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var users) ? users : null;
+                    break;
+                case "maxwebhooks":
+                    maxWebhooksSet = true;
+                    maxWebhooks = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var webhooks) ? webhooks : null;
+                    break;
+                case "maxapikeys":
+                    maxApiKeysSet = true;
+                    maxApiKeys = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var apiKeys) ? apiKeys : null;
                     break;
                 case "maxrecords" when property.Value.ValueKind == JsonValueKind.Object:
                     foreach (var record in property.Value.EnumerateObject())
@@ -212,12 +246,12 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
             }
         }
 
-        return new TenantOverrides(maxUsersSet, maxUsers, records, modules);
+        return new TenantOverrides(maxUsersSet, maxUsers, records, modules, maxWebhooksSet, maxWebhooks, maxApiKeysSet, maxApiKeys);
     }
 }
 
 /// <summary>Plan + istisna birleşiminin sonucu (etkin haklar).</summary>
-public sealed record EffectiveLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules);
+public sealed record EffectiveLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules, int? MaxWebhooks = null, int? MaxApiKeys = null);
 
 /// <summary>
 /// Etkin hak birleştirme (saf fonksiyon, birim testli): <b>etkin değer = istisna varsa o, yoksa plan</b>. <c>maxUsers: null</c> istisnası açıkça sınırsız;
@@ -249,6 +283,8 @@ public static class EffectiveEntitlements
                 : planModules.TryGetValue(module, out var included) && included;
         }
 
-        return new EffectiveLimits(maxUsers, records, modules);
+        var maxWebhooks = over.MaxWebhooksSet ? over.MaxWebhooks : planLimits.MaxWebhooks;
+        var maxApiKeys = over.MaxApiKeysSet ? over.MaxApiKeys : planLimits.MaxApiKeys;
+        return new EffectiveLimits(maxUsers, records, modules, maxWebhooks, maxApiKeys);
     }
 }
