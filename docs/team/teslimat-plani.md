@@ -48,7 +48,7 @@ v0.13'ün J3 (şablon + PDF) dilimi, PDF denemesi geçtikten ve ihtiyaç doğduk
 | **v0.4** | S1: teklif/sipariş alan paritesi + Kaydet ve Yeni · S2: fatura + tahsilat · S3: fiyat listeleri · S4: tedarikçi + satın alma · S5: `LookupDialog` hızlı oluşturma | Backend `main`'de, web çalışıyor |
 | **v0.5** | A1: gruplu menü + hızlı oluştur + rozetler · A2: genel arama (`pg_trgm`) · A3: İş Kuyruğu + Ana Sayfa widget'ları | Backend bitiyor |
 | **v0.6** | L1: filtre + kayıtlı görünüm + kolon seçici · L2: etiketler · L3: toplu işlemler · L4: CSV dışa aktarma · L5: CSV içe aktarma (kuru koşu + hata raporu) | Plan hazır |
-| **v0.7** | H0: EF sorgu-filtresi denemesi (spike) · H1: yönetici hattı + kayıt görünürlüğü (varsayılan tüm organizasyon) · H2: alan izinleri · H3: giriş geçmişi + oturumlar | Plan hazır |
+| **v0.7** | H0: EF sorgu-filtresi denemesi (**bitti**, [sonuç](../analysis/m9h-h0-spike.md); plan düzeltildi) · H1a: filtre altyapısı + bağlam (davranış değişmez) · H1b: yönetici hattı + kayıt görünürlüğü (varsayılan tüm organizasyon) · H2: alan izinleri · H3: giriş geçmişi + oturumlar | Plan hazır, H0 sonrası düzeltildi |
 | **v0.8** | D1: gecikme kolonları + arama kaydı · D2: toplantı + RSVP · D3: takvim · D4: anımsatıcılar · D5: görev tekrarı | Plan hazır |
 | **v0.9** | E1: firma/kişi alanları + telefon/VKN doğrulama · E2: potansiyel/fırsat/talep alanları · E3: yinelenen uyarı + dönüştürme önizleme · E4: il/ilçe seçimi | Plan hazır |
 | **v0.10** | F0: dinamik GroupBy denemesi (spike) · F1: hazır raporlar · F2: pano kurucu · F3: hedefler · F4: rapor kurucu · F5: öngörü | Plan hazır |
