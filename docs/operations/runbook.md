@@ -312,3 +312,8 @@ Ayrıntı ve varsayılanlar: [`deploy/.env.example`](../../deploy/.env.example).
 **Platform (M7):** `Platform__Signup__PlanCode` (`starter`), `Platform__Provisioning__DefaultPlanCode` (`internal`), `Platform__Plans__<n>__…` (plan kataloğu; yalnız **Migrator** için anlamlıdır — `migrate`/`sync-plans`; örnek: `appsettings.json`), `Platform__Entitlements__CacheSeconds` (30),
 `Platform__Usage__{CacheSeconds 300, SnapshotPollMinutes 30, RetentionDays 400}`, `Platform__Audit__RetentionDays` (1825), `Platform__Deletion__{RetentionDays 30, MinRetentionDays 7, MaxRetentionDays 90, PollMinutes 10, MaxAttempts 10, ChunkSize 10000}`.
 Bilinmeyen plan kodu ve tutarsız aralıklar açılışta reddedilir (Migrator ≠ 0 çıkış; API/Worker başlamaz). Compose `environment` ve `.env.example` satırlarını DevOps ekler.
+
+## 15. Ek: uçtan uca tarayıcı testleri (Playwright)
+
+Yayın öncesi doğrulama için [`e2e/`](../../e2e) paketi, üretim compose'unu **ayrı bir compose projesinde** (`crm-e2e`, `127.0.0.1:8181`, tek kullanımlık sırlar) kaldırıp gerçek tarayıcıyla kritik akışları, erişilebilirliği (axe) ve nginx güvenlik başlıklarını sınar; işi bitince yalnız o projeyi siler (`crm-prod-*` ve diğer yığınlara dokunmaz).
+`.\e2e\run.ps1` (Windows) veya `./e2e/run.sh` (Linux/macOS) — ayrıntı, seçenekler ve sorun giderme: [`e2e/README.md`](../../e2e/README.md); ürün bulguları: README'nin "Bulgular ve bilinen sorunlar" bölümü. CI'da `e2e` işi (`.github/workflows/ci.yml`) aynı betiği çalıştırır ve raporu artifact olarak yükler.
