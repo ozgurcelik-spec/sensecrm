@@ -312,3 +312,195 @@ Ayrıntı ve varsayılanlar: [`deploy/.env.example`](../../deploy/.env.example).
 **Platform (M7):** `Platform__Signup__PlanCode` (`starter`), `Platform__Provisioning__DefaultPlanCode` (`internal`), `Platform__Plans__<n>__…` (plan kataloğu; yalnız **Migrator** için anlamlıdır — `migrate`/`sync-plans`; örnek: `appsettings.json`), `Platform__Entitlements__CacheSeconds` (30),
 `Platform__Usage__{CacheSeconds 300, SnapshotPollMinutes 30, RetentionDays 400}`, `Platform__Audit__RetentionDays` (1825), `Platform__Deletion__{RetentionDays 30, MinRetentionDays 7, MaxRetentionDays 90, PollMinutes 10, MaxAttempts 10, ChunkSize 10000}`.
 Bilinmeyen plan kodu ve tutarsız aralıklar açılışta reddedilir (Migrator ≠ 0 çıkış; API/Worker başlamaz). Compose `environment` ve `.env.example` satırlarını DevOps ekler.
+
+## 15. Gözlemlenebilirlik: izleme ve metrikler (C-OPS1, K20)
+
+Varsayılan `up` **hiçbir izleme bileşeni çalıştırmaz** ve hiçbir yeni port açmaz. İzleme yığını isteğe bağlı bir compose **overlay**'idir: [`deploy/docker-compose.observability.yml`](../../deploy/docker-compose.observability.yml).
+Kapsam: yalnız **metrikler** (Prometheus + Grafana); iz (trace) ve merkezî günlük yığını (Seq/Loki) yoktur (K20). Günlükler §10'daki gibi konsoldan/`docker logs`'tan okunur.
+
+### 15.1 Bileşenler ve ağ
+
+| Bileşen | İmaj (sabit) | Ağ | Yayın |
+|---|---|---|---|
+| `api` metrik dinleyicisi | uygulama içinde, **ayrı port 9464** | `backend` (internal) | **Yok** (nginx bu portu bilmez) |
+| `worker` metrik dinleyicisi | uygulama içinde, **port 9465** | `backend` (internal) | **Yok** |
+| `prometheus` | `prom/prometheus:v3.5.1` | `backend` + `observability` (ikisi de internal) | **Yok** (yalnız `docker compose exec`) |
+| `postgres-exporter` (+ tek seferlik `monitor-init`) | `quay.io/prometheuscommunity/postgres-exporter:v0.17.1` | `backend` + `observability` | **Yok** |
+| `grafana` | `grafana/grafana:12.2.1` | `observability` + `observability-ui` | **`127.0.0.1:${GRAFANA_PORT:-3000}` yalnız loopback** (bind geçersiz kılma yoktur) |
+| `node-exporter`, `cadvisor` (profil `host-metrics`, isteğe bağlı) | `prom/node-exporter:v1.9.1`, `gcr.io/cadvisor/cadvisor:v0.52.1` | `observability` | Yok |
+
+- **Çıkış yok (egress = none):** Prometheus, exporter'lar ve uygulama yalnız `internal: true` ağlardadır; dışarıya çıkış yolu yoktur. **Tek istisna Grafana:** Docker, internal bir ağdan port yayınlayamadığı için Grafana ayrıca normal bir köprü ağa (`observability-ui`) bağlıdır. Grafana dışarı çağrı yapmayacak şekilde ayarlıdır (güncelleme/eklenti/haber/telemetri denetimleri kapalı, kayıt ve anonim erişim kapalı, eklenti yönetimi kapalı), ancak ağ katmanında çıkış **yetkisi teknik olarak vardır**. Katı veri yerleşimi (KVKK) gerekiyorsa ana bilgisayar güvenlik duvarında `observability-ui` alt ağından (`docker network inspect <proje>_observability-ui`) çıkışı engelleyin (Linux: `DOCKER-USER` zincirinde `-s <alt ağ> -j DROP`; yayınlanan `127.0.0.1` portu bundan etkilenmez).
+- **İç ağ notu:** Prometheus `backend` ağındadır (api/worker'ı kazımak için); dolayısıyla `backend` ağındaki her konteyner (web/nginx dahil) `prometheus:9090`'a erişebilir. nginx yalnız `/api/` yolunu `api:8080`'e vekiller, Prometheus'a yol vermez; `backend`'e yeni bir servis eklerken bunu hesaba katın (Prometheus arayüzü kimlik doğrulamasızdır ve salt-okur metrik/kural verisi gösterir, yönetim uçları — `--web.enable-lifecycle`/admin API — kapalıdır).
+- **Uygulama tarafı:** `Observability:Metrics:Enabled` **varsayılan kapalıdır**; yalnız overlay `api`/`worker`'a `Observability__Metrics__Enabled=true`, `BindAddress=0.0.0.0` ve belirteç dosyasını verir. Dinleyici ana uygulama hattından **bağımsız** küçük bir Kestrel'dir: yalnız `GET|HEAD /metrics` sunar, başka her yol 404, `AllowedHosts`/hız sınırı/kimlik doğrulama ana uygulamaya aittir ve burayı etkilemez. Dinleyici açılamazsa uygulama çalışmaya devam eder (günlükte `Metrics endpoint could not start`).
+- **Koruma katmanları:** (1) ağ yalıtımı (`backend` internal, port yayınlanmaz), (2) bearer belirteç (`secrets/metrics-bearer-token`; uygulama ve Prometheus aynı Docker secret'ını okur; sabit zamanlı karşılaştırma; dosya boşsa uygulama belirteç sormaz), (3) yalnız `/metrics` yolu.
+
+### 15.2 Etkinleştirme
+
+```bash
+# 1) Yeni sırları üret (mevcut dosyalar korunur; .env'e dokunulmaz): metrics-bearer-token, grafana-admin-password, pg-monitor-password
+./deploy/generate-secrets.sh            # Windows: .\deploy\generate-secrets.ps1
+# 2) (İsteğe bağlı) deploy/.env: GRAFANA_PORT, PROM_RETENTION_TIME, PROM_RETENTION_SIZE ... (bkz. .env.example'ın sonu)
+# 3) Overlay ile başlat (api/worker yeni ortam değişkenleriyle yeniden oluşturulur)
+docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml up -d
+# ana bilgisayar metrikleri (Linux; node-exporter + cAdvisor):
+docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml --profile host-metrics up -d
+```
+
+Doğrulama:
+
+```bash
+# Hedefler UP mı? (Prometheus yayınlanmadığı için konteynerin içinden)
+docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml exec prometheus \
+  wget -qO- 'http://localhost:9090/api/v1/query?query=up'
+# /metrics yalnız iç ağda: web portundan ulaşılamaz (SPA sayfası döner, metrik dönmez)
+curl -s http://127.0.0.1:${WEB_PORT:-8080}/metrics | head -c 200 ; curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:${WEB_PORT:-8080}/api/metrics   # 404
+# Grafana: http://127.0.0.1:3000 (kullanıcı GRAFANA_ADMIN_USER=admin; parola: deploy/secrets/grafana-admin-password)
+```
+
+Uzak sunucuda Grafana'ya SSH tüneli ile bağlanın (`ssh -L 3000:127.0.0.1:3000 sunucu`) ya da aynı makinedeki TLS vekilinizle `127.0.0.1:3000`'i yayınlayın (Grafana kendi oturum açma ekranını kullanır; anonim erişim kapalıdır).
+Kapatmak için overlay'siz `up -d` yeterlidir (api/worker metrik ortam değişkenleri olmadan yeniden oluşur; Prometheus/Grafana verileri `promdata`/`grafanadata` birimlerinde kalır, `--remove-orphans` ile konteynerler silinir).
+
+### 15.3 Ne açığa ÇIKARILMAMALI
+
+- `9464`/`9465` (uygulama metrikleri), `9090` (Prometheus), `9187` (postgres-exporter), `9100`/`8080` (node-exporter/cAdvisor) **asla** `ports:` ile yayınlanmaz, nginx'te `location /metrics` (veya `9464`'e `proxy_pass`) eklenmez, TLS vekiline yönlendirilmez. Mimari test (`ObservabilityArchitectureTests`) üretim compose'unda tek yayınlanan portun `web` olduğunu, overlay'de tek yayınlanan portun `127.0.0.1:…:3000` (Grafana) olduğunu ve nginx yapılandırmasında `metrics`/`9464` geçmediğini denetler.
+- Grafana'yı `0.0.0.0`'a bağlamayın; internete/kurumsal ağa açmanız gerekirse önüne kimlik doğrulamalı TLS vekili koyun. Yönetici parolası `secrets/grafana-admin-password` dosyasındadır (varsayılan parola **yoktur**); `secrets/` dizinini `.env` gibi yedekleyin ve sürüm denetimine koymayın.
+- Metrikler kiracı veya kullanıcı kimliği, e-posta, IP taşımaz (etiketler yalnız `module|status|reason|outcome|task_type|plan|step|background_job` ve HTTP için yol **şablonu**). Buna rağmen metrik çıktısını dış bir SaaS'a göndermeyin: kiracı sayıları, plan adları ve hata oranları ticari bilgidir.
+- Prometheus/Grafana birimleri (`promdata`, `grafanadata`) iş verisi içermez ama sistem topolojisini gösterir; yedek/erişim politikanızda buna göre ele alın.
+
+### 15.4 Panolar (Grafana klasörü "CRM"; dosyadan provizyonlanır, arayüzden düzenlenemez)
+
+Kaynak: [`infra/observability/grafana/dashboards`](../../infra/observability/grafana/dashboards) (değişiklik = dosyayı düzenleyip commit; Grafana 30 sn içinde okur).
+
+| Pano | İçerik |
+|---|---|
+| `CRM - API overview` | RED (istek hızı, hata oranı, süre p50/p95/p99, **yol şablonu** başına), doygunluk (CPU, bellek, GC, thread pool, Kestrel bağlantıları, hız sınırlayıcı), bağımlılıklar (Conductor HttpClient, Npgsql, EF Core) |
+| `CRM - Background processing` | Outbox bekleyen/ölü/en eski yaş ve gönderim gecikmesi (modül başına), workflow yürütmeleri, Conductor yoklama/görev sonuçları ve süreleri, worker süreci |
+| `CRM - Security signals` | Giriş sonuçları, kilitlenmeler, refresh yeniden kullanım tespiti, hız sınırlama, 401/403/429, plan/askı reddi |
+| `CRM - Tenant lifecycle and deletion` | KVKK silme hattı (durum, gecikme, adım sonuçları, silinen satır), kullanım anlık görüntüsü, plan zorlaması (neden/plan/modül) |
+| `CRM - PostgreSQL basics` | `pg_up`, bağlantılar, işlem hızı, önbellek isabeti, kilitler, deadlock, boyut, WAL, uygulama havuzları |
+
+### 15.5 Metrik sözlüğü (uygulama)
+
+Tümü tek `Sense.Crm` Meter'ından gelir (kaynak: `Sense.Crm.Shared.Contracts.Observability.CrmMetrics`); Prometheus adları noktaların `_` olduğu biçimdir. Framework metrikleri (`http_server_request_duration_seconds`, `dotnet_*`, `kestrel_*`, `aspnetcore_rate_limiting_*`, `http_client_*`, `microsoft_entityframeworkcore_*`, `db_client_*`) yerleşik Meter'lardır.
+
+| Metrik | Etiketler | Anlamı |
+|---|---|---|
+| `crm_auth_logins_total` | `outcome` = success / invalid_credentials / rate_limited / locked_out / inactive / no_organization / suspended | giriş sonuçları |
+| `crm_auth_lockouts_total`, `crm_auth_refresh_reuse_detected_total` | – | hesap kilitleme; iptal edilmiş refresh token'ın süre aşımı dışında tekrar kullanımı (aile kapatılır) |
+| `crm_auth_refresh_rejected_total` | `reason` = unknown / expired / reuse / concurrent / user_inactive | reddedilen yenilemeler |
+| `crm_entitlement_rejections_total` | `reason` (etkin durum: trial_expired, suspended, pending_deletion, deleted \| module_disabled \| limit_exceeded), `module`, `plan` | plan/yaşam döngüsü zorlaması reddi |
+| `crm_event_handlers_skipped_total` | `handler` (kod sınıf adı) | plan/askı nedeniyle atlanan olay işleyicileri |
+| `crm_outbox_messages_total`, `crm_outbox_dispatch_lag_seconds`, `crm_outbox_poll_failures_total` | `module`, `outcome` = dispatched / retry / dead | outbox işleme |
+| `crm_outbox_pending`, `crm_outbox_dead`, `crm_outbox_oldest_pending_age_seconds` | `module` | **Worker** örnekleyicisi (15 sn; `processed_at IS NULL` kısmi indeksi) |
+| `crm_conductor_polls_total`, `crm_conductor_tasks_total`, `crm_conductor_task_duration_seconds` | `outcome` (tasks/empty/error; completed/failed/failed_terminal/blocked/report_failed), `task_type` | Conductor yoklama ve görevler |
+| `crm_workflow_executions_total`, `crm_workflow_executions_running` | `status` (completed/failed/terminated) | workflow yürütmeleri |
+| `crm_tenant_deletion_runs_total`, `_steps_total`, `_rows_deleted_total`, `crm_tenant_deletion_requests`, `crm_tenant_deletion_oldest_due_age_seconds` | `outcome`, `step`, `status` | KVKK imha hattı |
+| `crm_usage_snapshot_tenants_total`, `crm_background_failures_total` | `outcome`; `background_job` | günlük kullanım işi; arka plan turu hataları |
+
+Nadir olay sayaçları (refresh yeniden kullanımı, kilitlenme, ölü mesaj, başarısız görev …) süreç açılırken **0 ile önceden oluşturulur**; böylece Prometheus'ta ilk olay bile `increase()`/`rate()` ile görülür (gerçek yığında doğrulandı: ilk `crm_auth_refresh_reuse_detected_total` artışı `CrmRefreshTokenReuse` alarmını tetikledi).
+
+Yeni bir metrik eklerken: etiket olarak **asla** kiracı/kullanıcı/kayıt kimliği, e-posta, IP koymayın; yalnız `CrmMetrics.Tag` sabitlerini kullanın (test kapısı çıktıdaki etiket adlarını denetler).
+
+### 15.6 Alarmlar
+
+Kurallar: [`infra/observability/prometheus/rules/crm-alerts.yml`](../../infra/observability/prometheus/rules/crm-alerts.yml) (`promtool check rules` ile doğrulanır). Tetiklenenleri şu ikisi gösterir: Prometheus'un `/api/v1/alerts` ucu (`docker compose … exec prometheus wget -qO- http://localhost:9090/api/v1/alerts`; Prometheus yayınlanmadığı için konteynerin içinden) ve panolardaki "Firing alerts" kutusu (`ALERTS` serisi).
+**Varsayılan olarak bildirim kanalı yoktur** (Alertmanager/e-posta yok: yığının çıkışı yoktur ve SMTP rölesi kurum politikasına bağlıdır). Bildirim istenirse: kurum içi SMTP rölesine erişen bir Alertmanager konteynerini yalnız `observability` ağına ekleyin ve `prometheus.yml`'e `alerting:` bloğu ekleyin; ya da Prometheus'u kurum içi mevcut izleme aracınıza federasyonla bağlayın. Eşikler pilot içindir (≈ 50 eşzamanlı kullanıcı, tek api + tek worker); gerçek trafikle ayarlayın.
+
+Her alarmın `runbook_url` etiketi aşağıdaki başlığa (`#### <AlarmAdı>`) gider; başlık ve bağlantı bir mimari testle senkron tutulur.
+
+### 15.7 Alarm müdahale rehberi
+
+#### CrmTargetDown
+`up == 0`: ilgili süreç kapalı/yeniden başlıyor ya da metrik dinleyicisi/belirteç yanlış. `docker compose … ps`, `logs --since 15m <servis>`; `Metrics endpoint listening on …` satırını arayın. Belirteç uyuşmazlığı: Prometheus `HTTP 401` görür (`secrets/metrics-bearer-token` her iki tarafta aynı dosya olmalı). `postgres` hedefi düşükse `monitor-init` çıkışı ve `pg-monitor-password` dosyası.
+
+#### CrmScrapeTargetMissing
+DNS keşfi `api`/`worker` adresi bulamıyor: konteynerler çalışmıyor ya da `backend` ağında değil. `docker compose … up -d api worker`.
+
+#### CrmApiHighErrorRate
+5xx > %5 (10 dk). `logs api` (`Error` düzeyi, `X-Correlation-Id`), `CRM - API overview` → "5xx by route template" ile sorunlu yolu bulun; `/health/ready` (Postgres?), Conductor bağlantısı, son dağıtım. Kalıcıysa son sürüme geri dönün (§8).
+
+#### CrmApiSlowRoute
+Bir yol şablonunun p95'i > 1 sn. Panoda o yolun süresini ve `DB command p95` / havuz kullanımını karşılaştırın; yavaş sorgu günlüğü (`PG_LOG_MIN_DURATION_MS`) ve eksik indeks kontrolü. Yalnız o yol yavaşsa sorgu/indeks, hepsi yavaşsa kaynak (CPU/thread pool/DB).
+
+#### CrmApiRateLimiting
+Hız sınırlayıcı sürekli 429 veriyor. Hangi ilkenin (Auth/User/Tenant/LoginEmail) reddettiğini `CRM - Security signals` panosundan görün. Kötü niyetli tek kaynak ise vekil/güvenlik duvarında engelleyin; meşru yük ise `RateLimiting__<İlke>__PermitLimit` değerini yükseltin (§9.1).
+
+#### CrmRuntimeThreadPoolStarvation
+Thread pool kuyruğu büyüyor: engelleyici çağrı veya aşırı yük. Aynı anda CPU/aktif istek grafiklerine bakın; `logs` içinde zaman aşımı; geçiciyse yükü azaltın, kalıcıysa `API_CPUS`/kopya sayısı ve kodda senkron bekleme araştırılır.
+
+#### CrmRuntimeHighMemory
+Çalışma kümesi konteyner sınırının %85'i üstünde. Sızıntı şüphesinde GC grafiklerini (heap büyüyor mu?) izleyin; sınır aşılırsa konteyner OOM ile yeniden başlar (`docker inspect … OOMKilled`). Geçici çözüm: `API_MEM_LIMIT`/`WORKER_MEM_LIMIT`'i yükseltin ve kural eşiğini güncelleyin.
+
+#### CrmOutboxBacklog
+Bir modülün outbox'ında > 500 bekleyen mesaj. Worker ayakta mı (`ps`), `CRM - Background processing` → "Messages handled/s" akıyor mu? Yavaşsa Postgres/handler süreleri; ölüyse yeniden başlatın. Bekleyen sayısı: `docker compose … exec postgres psql -U postgres -d crm -c "SELECT count(*) FROM sales.outbox_messages WHERE processed_at IS NULL AND NOT is_dead"` (şema adını değiştirin).
+
+#### CrmOutboxStuck
+En eski bekleyen mesaj > 10 dk. Worker düşmüş, işleyici hata veriyor (üstel geri çekilme en çok `Outbox:MaxBackoffSeconds` = 1 sa) ya da veritabanı erişilemez. `logs worker` içinde `Outbox message … failed; retrying` (EventId 1101, günlük kapsamında `CorrelationId` ile isteğe kadar izlenir). Nedeni giderince mesajlar kendiliğinden işlenir; beklemek istemiyorsanız `UPDATE <şema>.outbox_messages SET next_attempt_at = NULL WHERE processed_at IS NULL AND NOT is_dead`.
+
+#### CrmOutboxDeadLetters
+Mesajlar `Outbox:MaxAttempts` sonrası ölü. Hata metni: `SELECT type, attempts, left(error, 300) FROM <şema>.outbox_messages WHERE is_dead AND processed_at IS NULL ORDER BY occurred_at` (hata metni istisna yığını içerir; kişisel veri içermemelidir, yine de paylaşırken kırpın). Nedeni giderdikten sonra yeniden kuyruğa alın: `UPDATE <şema>.outbox_messages SET is_dead = false, attempts = 0, next_attempt_at = NULL, error = NULL WHERE is_dead AND processed_at IS NULL` (yedek almadan toplu güncelleme yapmayın; kimin/neyin etkilendiğini önce SELECT ile görün).
+
+#### CrmOutboxPollFailing
+Tur tümüyle başarısız (`Outbox polling failed`, EventId 4000): veritabanı erişilemez, şema migrate edilmemiş ya da `crm_app` yetkisi eksik. `logs worker`, `pg_isready`, migrator çıkış kodu (§8).
+
+#### CrmWorkerSamplerMissing
+Worker ayakta ama outbox/silme göstergeleri yok: örnekleyici veritabanını okuyamıyor (`Metrics sampling failed` uyarısı, EventId 4300). Bu durumda birikim/silme alarmları **kördür**; bağlantı ve izinleri (`crm_app` SELECT) düzeltin.
+
+#### CrmConductorUnreachable
+Worker Conductor'a ulaşamıyor (workflow görevleri çalışmıyor). `conductor` konteyneri `healthy` mi, veritabanı `conductor` erişilebilir mi (§11.1). Geri gelince bekleyen görevler işlenir.
+
+#### CrmConductorTaskFailures
+Görevlerin > %20'si başarısız (askıdaki kiracıların `blocked` görevleri sayılmaz). Hangi `task_type` başarısız: pano "Tasks handled by task type and outcome". `logs worker` içinde `Workflow task … failed` (EventId 5000) ve yürütme listesindeki hata nedeni; `failed_terminal` iş kuralı hatasıdır (yeniden denenmez), `failed` geçici hatadır.
+
+#### CrmWorkflowExecutionsFailing
+30 dk'da > 5 yürütme `failed` oldu. Workflow modülünde yürütme listesi/hata nedeni; kural tanımı hatası mı, Conductor kesintisi mi (`engine_unavailable`, `engine_workflow_not_found`)?
+
+#### CrmBackgroundJobFailing
+Platform işleri (kullanım anlık görüntüsü / KVKK imha) turları hata veriyor (`Platform job … failed`, EventId 4200). Veritabanı bağlantısı, `pg_try_advisory_lock` ve hata ayrıntısı için `logs worker`.
+
+#### CrmLoginFailureSpike
+Uzun süre saniyede > 1 başarısız giriş. Tek kaynak mı çok hesap mı? `CRM - Security signals` → "Login attempts by outcome". Çok hesap + `rate_limited` = parola püskürtme/credential stuffing: vekilde kaynak IP engelleyin, auth hız sınırlarını sıkılaştırın (`RateLimiting__Auth__PermitLimit`), hedef hesapları denetim kaydından inceleyin. (Metriklerde IP/hesap yoktur; ayrıntı için API günlüğüne ve `audit.audit_log_entries`'e bakın.)
+
+#### CrmAccountLockouts
+15 dk'da > 5 hesap kilitlendi: toplu saldırı ya da bayat parolayla sürekli yeniden deneyen bir istemci/entegrasyon. Kilit 15 dk sürer (`Identity__LockoutMinutes`); kullanıcı parola sıfırlama yapabilir.
+
+#### CrmRefreshTokenReuse
+İptal edilmiş bir refresh token süre aşımı dışında yeniden sunuldu: olası token hırsızlığı. Aile iptal edildi (kullanıcı yeniden giriş yapar). Tekrarlıyorsa etkilenen kullanıcıyı denetim kaydından bulun, parolasını sıfırlatın, paylaşılan/güvensiz cihaz olup olmadığını sorun. Tek seferlik ve zararsız durumlar (sekme çakışması) `concurrent` olarak ayrı sayılır ve bu alarmı tetiklemez.
+
+#### CrmTenantDeletionOverdue
+Zamanı gelmiş KVKK silme talebi > 1 sa ilerlemiyor. Worker'da `TenantErasureService` (Platform işleri) çalışıyor mu, başka bir kopya `pg_try_advisory_lock`'u tutuyor mu; `Tenant erasure failed for …` (EventId 5010). Yasal süre sorumluluğu: gecikmeyi kaydedin.
+
+#### CrmTenantDeletionFailed
+Bir silme talebi `failed`. Adım hatası `platform.deletion_requests.last_error`'da (kişisel veri içermez); `MaxAttempts` sonrası talep failed kalır ve `deletion.failed` denetimi yazılır: nedeni giderip talebi platform yöneticisi arayüzünden yeniden başlatın ya da Migrator `erase-deleted-tenants` ile tamamlayın (§12).
+
+#### CrmUsageSnapshotFailing
+Bazı kiracılar için günlük kullanım anlık görüntüsü yazılamadı; sonraki turda yeniden denenir. Süreklilik varsa `logs worker` (`Usage snapshot failed for tenant …`, EventId 5000). Kullanım geçmişinde boşluk oluşur (geriye dönük üretilemez).
+
+#### CrmPostgresDown
+`pg_up == 0`: tüm uygulama etkilenir. `docker compose … ps postgres`, `logs postgres`, disk doluluğu (`docker system df`, `pgdata`), bellek sınırı (OOM). Geri yükleme gerekiyorsa §7.
+
+#### CrmPostgresConnectionsHigh
+Bağlantılar `max_connections`'ın > %80'i. Havuz boyutlarını (api/worker/conductor) ve `idle in transaction` oturumlarını inceleyin: `SELECT state, count(*) FROM pg_stat_activity GROUP BY 1`. Geçici çözüm `PG_MAX_CONNECTIONS` (bellek etkisine dikkat).
+
+#### CrmPostgresDeadlocks
+`crm` veritabanında deadlock. Ayrıntı PostgreSQL günlüğündedir (`deadlock detected`; sorgular). Genellikle aynı satırlara ters sırada yazan eşzamanlı işler; uygulama yeniden dener (EF yeniden deneme). Tekrarlıyorsa ilgili use-case'i geliştirmeye bildirin.
+
+#### CrmPostgresCacheHitLow
+Tampon önbelleği isabet oranı < %90 (30 dk, anlamlı disk okumasıyla). Çalışma kümesi `shared_buffers`/sayfa önbelleğine sığmıyor: `PG_SHARED_BUFFERS` ve `PG_MEM_LIMIT`'i artırmayı, eksik indeksleri değerlendirin.
+
+#### CrmPrometheusStorageNearLimit
+Prometheus depolaması `PROM_RETENTION_SIZE` sınırının > %90'ında; sınıra ulaşınca en eski veri silinir. `PROM_RETENTION_SIZE`'ı artırın ya da `PROM_RETENTION_TIME`'ı kısaltın (bkz. §15.8).
+
+### 15.8 Saklama ve boyutlandırma
+
+- **Saklama:** `PROM_RETENTION_TIME` (varsayılan **30 gün**) ve `PROM_RETENTION_SIZE` (varsayılan **5 GB**); hangisi önce dolarsa eski bloklar silinir. `promdata` birimi `docker volume ls`'te `<proje>_promdata`; yedeklenmesi gerekmez (metrikler yeniden üretilebilir tanı verisidir).
+- **Ölçek (ölçülen; pilot topolojisi: 1 api + 1 worker + postgres-exporter, kazıma 15 sn):** ≈ **3 000 aktif seri** (`prometheus_tsdb_head_series`: api ≈ 500, worker ≈ 280, postgres-exporter ≈ 620, Prometheus kendisi ≈ 880) ve ≈ **150 örnek/sn** (≈ 13 milyon örnek/gün). Prometheus örnek başına ortalama ~1–2 bayt harcar ⇒ **≈ 15–30 MB/gün, 30 günde < 1 GB** (5 GB sınırı bolca yeter). Hedef sayısı arttıkça (api/worker kopyaları, node-exporter/cAdvisor) seri sayısı doğrusal artar; en çok seri `postgres-exporter` (`pg_settings_*`) ve `cadvisor` üretir. Seri sayısı, yeni kiracı/kullanıcı eklenmesiyle **artmaz** (kimlik etiketi yok); yalnız yeni yol şablonu, plan, modül veya görev türü eklenince büyür.
+- **Kaynak sınırları:** Prometheus 512 MB / 0.5 CPU, Grafana 512 MB / 0.5 CPU, postgres-exporter 128 MB (`PROM_MEM_LIMIT`, `GRAFANA_MEM_LIMIT` …). Uygulamaya ek yük ihmal edilebilir: kazıma yanıtı 1 sn önbelleklenir, örnekleyici 15 sn'de birkaç indeksli sorgu çalıştırır.
+- **Kardinalite kuralı:** seri sayısı sabit kalmalıdır: kiracı/kullanıcı/kayıt kimliği etiketi yoktur, HTTP yol **şablonu** (ham URL değil), Npgsql havuz adı etiketi düşürülür. Seri sayısı beklenmedik büyürse `topk(10, count by (__name__)({__name__=~".+"}))` ile hangi metriğin büyüdüğüne bakın.
+
+### 15.9 Sır döndürme ve bakım
+
+- `secrets/metrics-bearer-token`: dosyayı değiştirip `up -d api worker prometheus` (üçü de yeniden oluşur; kısa süre `CrmTargetDown` görülebilir).
+- `secrets/grafana-admin-password`: yalnız ilk açılışta uygulanır (Grafana veritabanında saklanır); sonradan değiştirmek için `docker compose … exec grafana grafana cli admin reset-admin-password <yeni>`, ardından dosyayı da güncelleyin (kayıt için).
+- `secrets/pg-monitor-password`: dosyayı değiştirip `up -d monitor-init postgres-exporter` (rol parolası her `up`'ta yeniden eşitlenir).
+- Panoyu değiştirmek: `infra/observability/grafana/dashboards/*.json` dosyasını düzenleyin (arayüzden kaydedilemez, `allowUiUpdates: false`).

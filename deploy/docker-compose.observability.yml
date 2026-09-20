@@ -1,0 +1,248 @@
+# CRM - observability overlay: Prometheus + Grafana (+ postgres-exporter; optional node-exporter/cAdvisor). C-OPS1 / K20.
+#
+# NOT part of the default `up`. Use it as an overlay on the production file (it only makes sense together with it):
+#
+#   docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml up -d
+#   docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml --profile host-metrics up -d   # + node/cAdvisor
+#
+# Needs three extra secret files under deploy/secrets (deploy/generate-secrets.* creates them; existing files are kept):
+#   metrics-bearer-token, grafana-admin-password, pg-monitor-password.  There is NO default Grafana password.
+#
+# Network model (nothing new is reachable from outside; only Grafana publishes a port, on loopback):
+#   - api/worker serve /metrics on their OWN listeners (api :9464, worker :9465) - separate from the app port, so nginx (web) can never
+#     proxy them - protected by network isolation (`backend` is `internal: true`) plus the bearer token secret.
+#   - prometheus joins `backend` (to scrape) and `observability`; both are `internal: true` => Prometheus has NO route to the outside.
+#   - postgres-exporter joins `backend` + `observability`; internal only.
+#   - grafana joins `observability` (to query Prometheus) and `observability-ui`, a normal bridge that exists ONLY because Docker cannot publish
+#     a port from an internal network. Grafana is configured not to call out (no update/plugin/news checks, no sign-up, no anonymous access);
+#     residual egress capability is documented in docs/operations/runbook.md (firewall recommendation).
+#   - Grafana's port is bound to 127.0.0.1 only; reach it with an SSH tunnel or put your TLS reverse proxy in front on the same host.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+services:
+  # ---- the application: enable the separate metrics listeners --------------------------------------------------------------------
+  api:
+    environment:
+      Observability__Metrics__Enabled: "true"
+      Observability__Metrics__BindAddress: 0.0.0.0
+      Observability__Metrics__Port: "9464"
+      Observability__Metrics__BearerTokenFile: /run/secrets/metrics_bearer_token
+    secrets:
+      - metrics_bearer_token
+
+  worker:
+    environment:
+      Observability__Metrics__Enabled: "true"
+      Observability__Metrics__BindAddress: 0.0.0.0
+      Observability__Metrics__Port: "9465"
+      Observability__Metrics__BearerTokenFile: /run/secrets/metrics_bearer_token
+    secrets:
+      - metrics_bearer_token
+
+  # ---- Prometheus ------------------------------------------------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.5.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # Retention: whichever limit is hit first wins. ~15 s scrape, a few thousand series => well under 1 GB per 30 days (see the runbook sizing table).
+      - --storage.tsdb.retention.time=${PROM_RETENTION_TIME:-30d}
+      - --storage.tsdb.retention.size=${PROM_RETENTION_SIZE:-5GB}
+      - --web.listen-address=:9090
+    volumes:
+      - ../infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../infra/observability/prometheus/rules:/etc/prometheus/rules:ro
+      - promdata:/prometheus
+    secrets:
+      - metrics_bearer_token
+    depends_on:
+      api:
+        condition: service_started
+      worker:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks: [backend, observability]
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: ${PROM_MEM_LIMIT:-512m}
+          cpus: "${PROM_CPUS:-0.5}"
+
+  # ---- Grafana (the only published port: 127.0.0.1) --------------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:12.2.1
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      # Password comes from a Docker secret; there is no default and no fallback.
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_SECURITY_ALLOW_EMBEDDING: "false"
+      # No phone-home: update checks, telemetry, news feed, plugin catalog/installation.
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_ANALYTICS_FEEDBACK_LINKS_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
+      GF_PLUGINS_PUBLIC_KEY_RETRIEVAL_DISABLED: "true"
+      GF_SNAPSHOTS_EXTERNAL_ENABLED: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/crm-api-overview.json
+      GF_LOG_MODE: console
+      TZ: Europe/Istanbul
+    secrets:
+      - grafana_admin_password
+    volumes:
+      - ../infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../infra/observability/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [observability, observability-ui]
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: ${GRAFANA_MEM_LIMIT:-512m}
+          cpus: "${GRAFANA_CPUS:-0.5}"
+
+  # ---- PostgreSQL metrics ----------------------------------------------------------------------------------------------------------
+  # Creates the read-only crm_monitor role (pg_monitor) for the exporter; idempotent, runs on every `up`.
+  monitor-init:
+    image: postgres:17.11-alpine
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - ../infra/observability/postgres/init-monitor.sql:/init-monitor.sql:ro
+    secrets:
+      - pg_monitor_password
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        psql -X -v ON_ERROR_STOP=1 -d postgres -v pw="$$(cat /run/secrets/pg_monitor_password)" -f /init-monitor.sql
+    networks: [backend]
+    logging: *logging
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+    restart: unless-stopped
+    depends_on:
+      monitor-init:
+        condition: service_completed_successfully
+    environment:
+      DATA_SOURCE_URI: postgres:5432/postgres?sslmode=disable
+      DATA_SOURCE_USER: crm_monitor
+      DATA_SOURCE_PASS_FILE: /run/secrets/pg_monitor_password
+    command:
+      - --web.listen-address=:9187
+    secrets:
+      - pg_monitor_password
+    networks: [backend, observability]
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+
+  # ---- optional host metrics (profile `host-metrics`; Linux hosts; privileged host mounts are read-only) --------------------------------
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    profiles: ["host-metrics"]
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+      - --collector.disable-defaults
+      - --collector.cpu
+      - --collector.meminfo
+      - --collector.filesystem
+      - --collector.diskstats
+      - --collector.loadavg
+      - --collector.netdev
+      - --collector.uname
+      - --collector.filefd
+      - --collector.pressure
+    volumes:
+      - /:/host:ro
+    networks: [observability]
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+          cpus: "0.2"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    profiles: ["host-metrics"]
+    restart: unless-stopped
+    command:
+      - --housekeeping_interval=30s
+      - --docker_only=true
+      - --store_container_labels=false
+      - --disable_metrics=percpu,sched,tcp,udp,advtcp,hugetlb,referenced_memory,cpu_topology,resctrl
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks: [observability]
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.3"
+
+networks:
+  # Prometheus <-> Grafana <-> exporters. No route to the outside.
+  observability:
+    internal: true
+  # Exists only so Grafana's 127.0.0.1 port can be published (Docker cannot publish from an internal network).
+  observability-ui: {}
+
+volumes:
+  promdata:
+  grafanadata:
+
+secrets:
+  # Bearer token for the app /metrics listeners (api + worker read it; Prometheus presents it). Empty file = no token check in the app.
+  metrics_bearer_token:
+    file: ${METRICS_BEARER_TOKEN_FILE:-./secrets/metrics-bearer-token}
+  grafana_admin_password:
+    file: ${GRAFANA_ADMIN_PASSWORD_FILE:-./secrets/grafana-admin-password}
+  pg_monitor_password:
+    file: ${PG_MONITOR_PASSWORD_FILE:-./secrets/pg-monitor-password}

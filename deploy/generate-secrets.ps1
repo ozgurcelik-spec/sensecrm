@@ -157,7 +157,15 @@ $wroteKey = Write-SecretFile -Path $keyPath -Content (New-RsaPrivateKeyPem)
 $pwPath = Join-Path $secretsDir 'platform-admin-password'
 $wrotePw = Write-SecretFile -Path $pwPath -Content (New-RandomSecret -Length 24)
 
-foreach ($p in @($envPath, $keyPath, $pwPath)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
+# Observability overlay (docker-compose.observability.yml, C-OPS1): scrape bearer token, Grafana admin password, postgres-exporter role password.
+$obsPaths = @()
+foreach ($name in @('metrics-bearer-token', 'grafana-admin-password', 'pg-monitor-password')) {
+    $p = Join-Path $secretsDir $name
+    [void](Write-SecretFile -Path $p -Content (New-RandomSecret -Length 40))
+    $obsPaths += $p
+}
+
+foreach ($p in (@($envPath, $keyPath, $pwPath) + $obsPaths)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
 Restrict-Access -Path $secretsDir
 
 Write-Host ''

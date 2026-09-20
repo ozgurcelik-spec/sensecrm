@@ -66,6 +66,10 @@ jobs:
           PUBLIC_HOSTNAME: crm.ci.local
       - run: docker compose -f deploy/docker-compose.prod.yml config --quiet
       - run: docker compose -f deploy/docker-compose.prod.yml --profile redis config --quiet
+      # C-OPS1: the observability overlay must stay valid (merged with the production file) and its alert rules / Prometheus config must pass promtool.
+      - run: docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml --profile host-metrics config --quiet
+      - run: docker run --rm --entrypoint promtool -v "$PWD/infra/observability/prometheus:/p:ro" prom/prometheus:v3.5.1 check rules /p/rules/crm-alerts.yml
+      - run: docker run --rm --entrypoint promtool -v "$PWD/infra/observability/prometheus:/p:ro" prom/prometheus:v3.5.1 check config --syntax-only /p/prometheus.yml
       - name: Compose refuses to start without secrets
         run: |
           rm -f deploy/.env

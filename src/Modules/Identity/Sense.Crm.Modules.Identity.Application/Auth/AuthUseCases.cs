@@ -7,6 +7,7 @@ using Sense.Crm.Modules.Identity.Domain.Users;
 using Sense.Crm.Shared.Contracts.Context;
 using Sense.Crm.Shared.Contracts.Entitlements;
 using Sense.Crm.Shared.Contracts.Messaging;
+using Sense.Crm.Shared.Contracts.Observability;
 using Sense.Crm.Shared.Contracts.Security;
 using Sense.Crm.Shared.Kernel.Results;
 
@@ -111,6 +112,7 @@ public sealed class LoginHandler(
         // E-posta anahtarlı ikinci hız kovası + IP+hesap engeli: parola doğrulamasına (pahalı) girmeden reddedilir.
         if (!throttle.TryAcquireEmailBucket(normalizedEmail) || throttle.IsBlocked(command.IpAddress, normalizedEmail))
         {
+            CrmMetrics.LoginOutcome(LoginOutcomes.RateLimited);
             return new Error(ErrorCodes.RateLimitExceeded, ErrorType.TooManyRequests);
         }
 
@@ -119,6 +121,7 @@ public sealed class LoginHandler(
         {
             hasher.VerifyDummy(command.Password);
             throttle.RecordFailure(command.IpAddress, normalizedEmail);
+            CrmMetrics.LoginOutcome(LoginOutcomes.InvalidCredentials);
             return Error.Unauthorized(IdentityErrors.InvalidCredentials);
         }
 
@@ -129,11 +132,16 @@ public sealed class LoginHandler(
             if (!user.IsLockedOut(now))
             {
                 user.RecordFailedAccess(now, new LockoutPolicy(options.Value.MaxFailedAccessAttempts, TimeSpan.FromMinutes(options.Value.LockoutMinutes)));
+                if (user.IsLockedOut(now))
+                {
+                    CrmMetrics.LockoutStarted();
+                }
 
                 // Hata sonucu UnitOfWorkBehaviour'da kaydedilmez; kilitleme sayacı yine de kalıcı olmalı.
                 await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
 
+            CrmMetrics.LoginOutcome(LoginOutcomes.InvalidCredentials);
             return Error.Unauthorized(IdentityErrors.InvalidCredentials);
         }
 
@@ -141,6 +149,7 @@ public sealed class LoginHandler(
         var canSignIn = user.CanSignIn(now);
         if (canSignIn.IsFailure)
         {
+            CrmMetrics.LoginOutcome(canSignIn.Error.Code == IdentityErrors.LockedOut ? LoginOutcomes.LockedOut : LoginOutcomes.Inactive);
             return canSignIn.Error;
         }
 
@@ -162,14 +171,28 @@ public sealed class LoginHandler(
                 throttle.Reset(command.IpAddress, normalizedEmail);
                 user.RecordSuccessfulLogin(now);
                 user.SetDefaultTenant(tenantId);
+                CrmMetrics.LoginOutcome(LoginOutcomes.Success);
                 return sessions.Issue(user, session, command.DeviceInfo, command.IpAddress);
             }
 
             blockedReason ??= resolution.BlockedReason;
         }
 
+        CrmMetrics.LoginOutcome(blockedReason is not null ? LoginOutcomes.Suspended : LoginOutcomes.NoOrganization);
         return blockedReason is not null ? EntitlementErrors.Suspended(blockedReason) : Error.Forbidden(IdentityErrors.NoActiveOrganization);
     }
+}
+
+/// <summary>Giriş sonucu metrik değerleri (<c>crm.auth.logins{outcome}</c>; sabit küme, düşük kardinalite).</summary>
+internal static class LoginOutcomes
+{
+    public const string Success = "success";
+    public const string InvalidCredentials = "invalid_credentials";
+    public const string RateLimited = "rate_limited";
+    public const string LockedOut = "locked_out";
+    public const string Inactive = "inactive";
+    public const string NoOrganization = "no_organization";
+    public const string Suspended = "suspended";
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -207,6 +230,7 @@ public sealed class RefreshTokenHandler(
         var existing = await refreshTokens.GetByHashAsync(secrets.Hash(command.RefreshToken), cancellationToken).ConfigureAwait(false);
         if (existing is null)
         {
+            CrmMetrics.RefreshRejectedFor("unknown");
             return Error.Unauthorized(IdentityErrors.InvalidRefreshToken);
         }
 
@@ -216,6 +240,12 @@ public sealed class RefreshTokenHandler(
             {
                 // Reuse detection: kullanılmış/iptal edilmiş token tekrar geldi → aynı aile tamamen kapatılır ve kalıcılaştırılır.
                 await RevokeFamilyAsync(existing, now, cancellationToken).ConfigureAwait(false);
+                CrmMetrics.RefreshReuseDetected();
+                CrmMetrics.RefreshRejectedFor("reuse");
+            }
+            else
+            {
+                CrmMetrics.RefreshRejectedFor("concurrent");
             }
 
             return Error.Unauthorized(IdentityErrors.InvalidRefreshToken);
@@ -223,6 +253,7 @@ public sealed class RefreshTokenHandler(
 
         if (!existing.IsActive(now))
         {
+            CrmMetrics.RefreshRejectedFor("expired");
             return Error.Unauthorized(IdentityErrors.InvalidRefreshToken); // süresi doldu (token veya aile mutlak ömrü)
         }
 
@@ -235,6 +266,7 @@ public sealed class RefreshTokenHandler(
         {
             existing.Revoke(now);
             await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            CrmMetrics.RefreshRejectedFor("user_inactive");
             return Error.Unauthorized(IdentityErrors.InvalidRefreshToken);
         }
 

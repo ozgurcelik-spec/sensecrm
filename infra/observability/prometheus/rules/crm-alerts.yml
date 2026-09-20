@@ -1,0 +1,288 @@
+# Alert rules for the CRM observability overlay (C-OPS1 / K20). Evaluated by Prometheus; visible in the Prometheus UI (Alerts) and, via
+# the ALERTS series, on the Grafana dashboards. There is NO notification channel by default (no Alertmanager, no e-mail: the stack has no
+# egress) - see docs/operations/runbook.md section 15.6 for how to route them.
+#
+# Conventions: alert names start with "Crm"; every alert has severity (critical | warning | info), a summary, a description and a runbook_url
+# pointing at the heading "#### <AlertName>" in docs/operations/runbook.md (checked by ObservabilityArchitectureTests). Thresholds are sized for the
+# pilot (about 50 concurrent users, one api + one worker replica); tune them with real traffic.
+#
+# Metric names: app metrics come from the OpenTelemetry Prometheus exporter (crm_* are the application's own, low-cardinality counters and gauges;
+# there is no tenant or user label anywhere), runtime/HTTP/EF/Npgsql from the framework meters, pg_* from postgres-exporter.
+
+groups:
+  # ------------------------------------------------------------------------------------------------------------------------------------
+  - name: crm-availability
+    rules:
+      - alert: CrmTargetDown
+        expr: up{job=~"crm-api|crm-worker|postgres"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Scrape target {{ $labels.job }} ({{ $labels.instance }}) is down"
+          description: "Prometheus cannot scrape {{ $labels.job }} for 2 minutes. The process is down, restarting, or the metrics listener/token is misconfigured."
+          runbook_url: "docs/operations/runbook.md#crmtargetdown"
+
+      - alert: CrmScrapeTargetMissing
+        expr: absent(up{job="crm-api"}) or absent(up{job="crm-worker"})
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "No crm-api or crm-worker target is discovered"
+          description: "DNS discovery returns no address for api/worker. The containers are not running or are not on the backend network."
+          runbook_url: "docs/operations/runbook.md#crmscrapetargetmissing"
+
+  # ------------------------------------------------------------------------------------------------------------------------------------
+  - name: crm-api
+    rules:
+      - alert: CrmApiHighErrorRate
+        expr: |
+          sum(rate(http_server_request_duration_seconds_count{job="crm-api",http_response_status_code=~"5.."}[5m]))
+            / clamp_min(sum(rate(http_server_request_duration_seconds_count{job="crm-api"}[5m])), 0.001) > 0.05
+          and sum(rate(http_server_request_duration_seconds_count{job="crm-api"}[5m])) > 0.1
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: "More than 5% of API requests fail with 5xx"
+          description: "5xx ratio is {{ $value | humanizePercentage }} over 5 minutes (traffic above 0.1 req/s)."
+          runbook_url: "docs/operations/runbook.md#crmapihigherrorrate"
+
+      - alert: CrmApiSlowRoute
+        expr: |
+          histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{job="crm-api",http_route!=""}[10m]))) > 1
+          and on (http_route) sum by (http_route) (rate(http_server_request_duration_seconds_count{job="crm-api",http_route!=""}[10m])) > 0.05
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "p95 latency above 1 s on route {{ $labels.http_route }}"
+          description: "The route template {{ $labels.http_route }} has a p95 of {{ $value | humanizeDuration }} for 15 minutes."
+          runbook_url: "docs/operations/runbook.md#crmapislowroute"
+
+      - alert: CrmApiRateLimiting
+        expr: sum(rate(aspnetcore_rate_limiting_requests_total{job="crm-api",aspnetcore_rate_limiting_result!="acquired"}[5m])) > 1
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "The API rate limiter is rejecting requests continuously"
+          description: "{{ $value | humanize }} requests/s are rejected (429). Either a client is misbehaving/attacking or the limits are too low for legitimate load."
+          runbook_url: "docs/operations/runbook.md#crmapiratelimiting"
+
+      - alert: CrmRuntimeThreadPoolStarvation
+        expr: dotnet_thread_pool_queue_length_total{job=~"crm-api|crm-worker"} > 50
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Thread pool queue is growing in {{ $labels.job }}"
+          description: "{{ $value }} work items are queued: blocking calls or overload; latency and health checks will degrade."
+          runbook_url: "docs/operations/runbook.md#crmruntimethreadpoolstarvation"
+
+      - alert: CrmRuntimeHighMemory
+        expr: |
+          dotnet_process_memory_working_set_bytes{job="crm-api"} > 0.85 * 1073741824
+          or dotnet_process_memory_working_set_bytes{job="crm-worker"} > 0.85 * 805306368
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} working set is above 85% of its default container limit"
+          description: "Working set is {{ $value | humanize1024 }}B (defaults: API_MEM_LIMIT=1g, WORKER_MEM_LIMIT=768m). If you raised the limits, adjust this rule."
+          runbook_url: "docs/operations/runbook.md#crmruntimehighmemory"
+
+  # ------------------------------------------------------------------------------------------------------------------------------------
+  - name: crm-background
+    rules:
+      - alert: CrmOutboxBacklog
+        expr: max by (module) (crm_outbox_pending{job="crm-worker"}) > 500
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Outbox backlog of {{ $value }} messages in module {{ $labels.module }}"
+          description: "The worker dispatches slower than messages arrive (or is down). Domain events and workflow triggers are delayed."
+          runbook_url: "docs/operations/runbook.md#crmoutboxbacklog"
+
+      - alert: CrmOutboxStuck
+        expr: max by (module) (crm_outbox_oldest_pending_age_seconds{job="crm-worker"}) > 600
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: "Oldest outbox message in {{ $labels.module }} is {{ $value | humanizeDuration }} old"
+          description: "Messages are not being dispatched: worker down, repeated handler failures with back-off, or the database is unreachable."
+          runbook_url: "docs/operations/runbook.md#crmoutboxstuck"
+
+      - alert: CrmOutboxDeadLetters
+        expr: max by (module) (crm_outbox_dead{job="crm-worker"}) > 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $value }} dead-lettered outbox message(s) in module {{ $labels.module }}"
+          description: "Messages exceeded Outbox:MaxAttempts and are parked. They need an operator: fix the cause, then requeue (runbook)."
+          runbook_url: "docs/operations/runbook.md#crmoutboxdeadletters"
+
+      - alert: CrmOutboxPollFailing
+        expr: sum by (module) (increase(crm_outbox_poll_failures_total{job="crm-worker"}[10m])) > 5
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Outbox polling keeps failing for module {{ $labels.module }}"
+          description: "Whole polling rounds fail (database down, not migrated, or a handler-independent error). See the worker log."
+          runbook_url: "docs/operations/runbook.md#crmoutboxpollfailing"
+
+      - alert: CrmWorkerSamplerMissing
+        expr: absent(crm_outbox_pending{job="crm-worker"}) and on() (up{job="crm-worker"} == 1)
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "The worker is up but publishes no outbox/lifecycle gauges"
+          description: "The sampler cannot query the database (grants, connectivity) so backlog and deletion alerts are blind."
+          runbook_url: "docs/operations/runbook.md#crmworkersamplermissing"
+
+      - alert: CrmConductorUnreachable
+        expr: sum(rate(crm_conductor_polls_total{job="crm-worker",outcome="error"}[5m])) > 0
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "The worker cannot poll Conductor"
+          description: "Workflow tasks are not being executed. Check the conductor container and its database."
+          runbook_url: "docs/operations/runbook.md#crmconductorunreachable"
+
+      - alert: CrmConductorTaskFailures
+        expr: |
+          sum(increase(crm_conductor_tasks_total{job="crm-worker",outcome=~"failed|failed_terminal|report_failed"}[15m]))
+            / clamp_min(sum(increase(crm_conductor_tasks_total{job="crm-worker"}[15m])), 1) > 0.2
+          and sum(increase(crm_conductor_tasks_total{job="crm-worker"}[15m])) > 10
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "More than 20% of Conductor tasks fail"
+          description: "Failure ratio {{ $value | humanizePercentage }} over 15 minutes (blocked tasks of suspended tenants are not counted)."
+          runbook_url: "docs/operations/runbook.md#crmconductortaskfailures"
+
+      - alert: CrmWorkflowExecutionsFailing
+        expr: sum(increase(crm_workflow_executions_total{job="crm-worker",status="failed"}[30m])) > 5
+        for: 0m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value | humanize }} workflow executions failed in 30 minutes"
+          description: "Rules run but their executions end in failed. Look at the executions list in the workflows module."
+          runbook_url: "docs/operations/runbook.md#crmworkflowexecutionsfailing"
+
+      - alert: CrmBackgroundJobFailing
+        expr: sum by (background_job) (increase(crm_background_failures_total[30m])) > 2
+        for: 0m
+        labels: { severity: warning }
+        annotations:
+          summary: "Background job {{ $labels.background_job }} keeps failing"
+          description: "Whole rounds of the job failed more than twice in 30 minutes (see the worker log)."
+          runbook_url: "docs/operations/runbook.md#crmbackgroundjobfailing"
+
+  # ------------------------------------------------------------------------------------------------------------------------------------
+  - name: crm-security
+    rules:
+      - alert: CrmLoginFailureSpike
+        expr: sum(rate(crm_auth_logins_total{outcome=~"invalid_credentials|locked_out|rate_limited"}[5m])) > 1
+        for: 10m
+        labels: { severity: warning, category: security }
+        annotations:
+          summary: "Sustained failed-login rate ({{ $value | humanize }}/s)"
+          description: "More than one failed sign-in per second for 10 minutes: credential stuffing or password spraying is likely."
+          runbook_url: "docs/operations/runbook.md#crmloginfailurespike"
+
+      - alert: CrmAccountLockouts
+        expr: sum(increase(crm_auth_lockouts_total[15m])) > 5
+        for: 0m
+        labels: { severity: warning, category: security }
+        annotations:
+          summary: "{{ $value | humanize }} accounts were locked out in 15 minutes"
+          description: "Several accounts hit the failed-attempt limit: an attack on many accounts, or a broken client that keeps retrying with a stale password."
+          runbook_url: "docs/operations/runbook.md#crmaccountlockouts"
+
+      - alert: CrmRefreshTokenReuse
+        expr: sum(increase(crm_auth_refresh_reuse_detected_total[10m])) > 0
+        for: 0m
+        labels: { severity: warning, category: security }
+        annotations:
+          summary: "A revoked refresh token was replayed (possible token theft)"
+          description: "{{ $value | humanize }} reuse detection(s) in 10 minutes. The affected token family was revoked; the user must sign in again."
+          runbook_url: "docs/operations/runbook.md#crmrefreshtokenreuse"
+
+  # ------------------------------------------------------------------------------------------------------------------------------------
+  - name: crm-tenant-lifecycle
+    rules:
+      - alert: CrmTenantDeletionOverdue
+        expr: max(crm_tenant_deletion_oldest_due_age_seconds{job="crm-worker"}) > 3600
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "A KVKK deletion request has been due for {{ $value | humanizeDuration }}"
+          description: "The erasure job is not making progress (job down, advisory lock held, or repeated step failures)."
+          runbook_url: "docs/operations/runbook.md#crmtenantdeletionoverdue"
+
+      - alert: CrmTenantDeletionFailed
+        expr: max(crm_tenant_deletion_requests{job="crm-worker",status="failed"}) > 0
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value }} deletion request(s) are in status failed"
+          description: "An erasure step failed; the job retries with back-off up to Platform:Deletion:MaxAttempts and then leaves the request failed for an operator."
+          runbook_url: "docs/operations/runbook.md#crmtenantdeletionfailed"
+
+      - alert: CrmUsageSnapshotFailing
+        expr: sum(increase(crm_usage_snapshot_tenants_total{outcome="failed"}[1h])) > 0
+        for: 0m
+        labels: { severity: info }
+        annotations:
+          summary: "Usage snapshots failed for some tenants in the last hour"
+          description: "The daily snapshot is retried on the next round; persistent failures leave gaps in the usage history and export."
+          runbook_url: "docs/operations/runbook.md#crmusagesnapshotfailing"
+
+  # ------------------------------------------------------------------------------------------------------------------------------------
+  - name: crm-postgres
+    rules:
+      - alert: CrmPostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "PostgreSQL does not answer the exporter"
+          description: "pg_up is 0. The whole application depends on the database; check the postgres container and disk space."
+          runbook_url: "docs/operations/runbook.md#crmpostgresdown"
+
+      - alert: CrmPostgresConnectionsHigh
+        expr: sum(pg_stat_activity_count) / max(pg_settings_max_connections) > 0.8
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "PostgreSQL connections are at {{ $value | humanizePercentage }} of max_connections"
+          description: "Risk of 'too many clients'. Check pool sizes (api/worker/conductor) and long idle-in-transaction sessions."
+          runbook_url: "docs/operations/runbook.md#crmpostgresconnectionshigh"
+
+      - alert: CrmPostgresDeadlocks
+        expr: sum(increase(pg_stat_database_deadlocks{datname="crm"}[15m])) > 0
+        for: 0m
+        labels: { severity: warning }
+        annotations:
+          summary: "Deadlocks detected in the crm database"
+          description: "{{ $value | humanize }} deadlock(s) in 15 minutes; the log shows the statements (log_min_duration_statement, deadlock_timeout)."
+          runbook_url: "docs/operations/runbook.md#crmpostgresdeadlocks"
+
+      - alert: CrmPostgresCacheHitLow
+        expr: |
+          sum(rate(pg_stat_database_blks_hit{datname="crm"}[30m]))
+            / clamp_min(sum(rate(pg_stat_database_blks_hit{datname="crm"}[30m])) + sum(rate(pg_stat_database_blks_read{datname="crm"}[30m])), 1) < 0.9
+          and sum(rate(pg_stat_database_blks_read{datname="crm"}[30m])) > 50
+        for: 30m
+        labels: { severity: info }
+        annotations:
+          summary: "Buffer cache hit ratio is {{ $value | humanizePercentage }}"
+          description: "The working set does not fit in shared_buffers/the page cache: consider raising PG_SHARED_BUFFERS / PG_MEM_LIMIT."
+          runbook_url: "docs/operations/runbook.md#crmpostgrescachehitlow"
+
+  # ------------------------------------------------------------------------------------------------------------------------------------
+  - name: crm-observability
+    rules:
+      - alert: CrmPrometheusStorageNearLimit
+        expr: prometheus_tsdb_storage_blocks_bytes / prometheus_tsdb_retention_limit_bytes > 0.9
+        for: 30m
+        labels: { severity: info }
+        annotations:
+          summary: "Prometheus storage is at {{ $value | humanizePercentage }} of its size limit"
+          description: "Old data is dropped once the size limit (PROM_RETENTION_SIZE) is reached; raise it or shorten PROM_RETENTION_TIME."
+          runbook_url: "docs/operations/runbook.md#crmprometheusstoragenearlimit"

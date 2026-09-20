@@ -64,6 +64,12 @@ fi
 
 secret 24 | write_file "$out/secrets/platform-admin-password" || true
 chmod 644 "$out/secrets/platform-admin-password" 2>/dev/null || true
+
+# Observability overlay (docker-compose.observability.yml, C-OPS1): scrape bearer token, Grafana admin password, postgres-exporter role password.
+for name in metrics-bearer-token grafana-admin-password pg-monitor-password; do
+  secret 40 | write_file "$out/secrets/$name" || true
+  chmod 644 "$out/secrets/$name" 2>/dev/null || true
+done
 chmod 600 "$out/.env" 2>/dev/null || true
 
 cat <<'EOF'
