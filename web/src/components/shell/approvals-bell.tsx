@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Indicator } from "@mantine/core";
-import { Bell } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { usePendingApprovalCount } from "@/hooks/use-approvals";
 import { useModuleEnabled } from "@/hooks/use-module-enabled";
 import { usePermission } from "@/hooks/use-permission";
@@ -31,7 +31,7 @@ export function ApprovalsBell() {
           count > 0 ? t("workflows:approvals.bellCount", { count }) : t("workflows:approvals.bell")
         }
       >
-        <Bell size={18} />
+        <ClipboardCheck size={18} />
       </ActionIcon>
     </Indicator>
   );

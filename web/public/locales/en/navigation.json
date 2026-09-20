@@ -26,5 +26,6 @@
   "platform": "Platform",
   "platformOrganizations": "Organizations",
   "platformPlans": "Plans",
-  "platformAudit": "Platform audit"
+  "platformAudit": "Platform audit",
+  "notificationsSettings": "Notifications"
 }

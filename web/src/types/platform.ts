@@ -178,9 +178,13 @@ export interface PlatformPlan {
   limits: {
     maxUsers?: number | null;
     maxStorageMb?: number | null;
+    /** M8A: `null` = platform default, `0` = no e-mail. */
+    maxEmailsPerDay?: number | null;
     maxRecords: Record<string, number | null>;
   };
   modules: Partial<Record<GatedModule, boolean>>;
+  /** M8A plan flags (`notifications.email`, `notifications.sms`); a missing key means off. */
+  features?: Record<string, boolean>;
   assignedCount: number;
 }
 
