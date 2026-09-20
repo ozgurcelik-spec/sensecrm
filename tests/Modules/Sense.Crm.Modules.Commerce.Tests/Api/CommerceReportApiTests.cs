@@ -14,7 +14,7 @@ public sealed class CommerceReportApiTests(CrmApiFactory factory)
 {
     private const string SummaryPath = $"{Base}/reports/commerce/summary";
 
-    private static readonly string[] QuoteStatuses = ["draft", "sent", "accepted", "rejected", "expired"];
+    private static readonly string[] QuoteStatuses = ["draft", "sent", "negotiation", "accepted", "rejected", "expired"];
     private static readonly string[] OrderStatuses = ["draft", "confirmed", "fulfilled", "cancelled"];
 
     private static (int Count, decimal Amount) Row(JsonElement group, string status)

@@ -2,7 +2,9 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sense.Crm.Modules.Commerce.Application;
+using Sense.Crm.Modules.Commerce.Application.Invoices;
 using Sense.Crm.Modules.Commerce.Application.Orders;
+using Sense.Crm.Modules.Commerce.Application.PurchaseOrders;
 using Sense.Crm.Modules.Commerce.Application.Quotes;
 using Sense.Crm.Modules.Commerce.Contracts;
 using Sense.Crm.Modules.Commerce.Domain;
@@ -19,7 +21,7 @@ namespace Sense.Crm.Modules.Commerce.Api;
 /// Commerce modülü kompozisyon kökü (docs/plan/m6a-ticaret.md): ürün kataloğu, kalemli teklifler (durum makinesi, süre dolumu),
 /// satış siparişleri (doğrudan veya tekliften tek transaction'da dönüşüm), kiracı+yıl bazında numara sayacı ve ticaret raporu.
 /// Diğer modüllere yalnız <c>Sales.Contracts</c> (<c>IRecordLookup</c>, <c>IRecordRelationLookup</c>) ve <c>Identity.Contracts</c> ile konuşur.
-/// <c>crm.products/quotes/orders.read|write</c> izinlerini kataloğa katar.
+/// M9C: fatura (tahsilat defteri), fiyat listesi, tedarikçi, satın alma emri ve belge alan paritesi. <c>crm.products/quotes/orders/invoices/pricebooks/vendors/purchaseorders.read|write</c> izinlerini kataloğa katar.
 /// </summary>
 public sealed class CommerceModule : IModule
 {
@@ -59,6 +61,16 @@ public sealed class CommerceModule : IModule
         services.AddScoped<IDocumentNumberAllocator, DocumentNumberAllocator>();
         services.AddScoped<ICommerceTransaction, CommerceTransaction>();
 
+        // M9C: fatura, satın alma emri, tedarikçi, fiyat listesi.
+        services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+        services.AddScoped<IVendorRepository, VendorRepository>();
+        services.AddScoped<IPriceBookRepository, PriceBookRepository>();
+        services.AddScoped<IInvoiceReadStore, InvoiceReadStore>();
+        services.AddScoped<IPurchaseOrderReadStore, PurchaseOrderReadStore>();
+        services.AddScoped<IVendorReadStore, VendorReadStore>();
+        services.AddScoped<IPriceBookReadStore, PriceBookReadStore>();
+
         services.AddScoped<OwnerResolver>();
         services.AddScoped<RelatedRecordVerifier>();
         services.AddScoped<LineProductVerifier>();
@@ -66,6 +78,13 @@ public sealed class CommerceModule : IModule
         services.AddScoped<CommerceClock>();
         services.AddScoped<QuoteTransitions>();
         services.AddScoped<OrderTransitions>();
+        services.AddScoped<InvoiceTransitions>();
+        services.AddScoped<PurchaseOrderTransitions>();
+        services.AddScoped<IPriceResolver, PriceResolver>();
+        services.AddScoped<DocumentLinePricer>();
+        services.AddScoped<PriceBookSelector>();
+        services.AddScoped<SalesDocumentPreparer>();
+        services.AddScoped<PurchaseOrderPreparer>();
         services.AddSingleton<IAuditEntityPermissions, CommerceAuditEntityPermissions>();
     }
 }

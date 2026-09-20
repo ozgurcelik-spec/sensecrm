@@ -424,6 +424,25 @@ internal sealed class ErasureScenario : IDisposable
         await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/quotes/{draftQuote.ErGuid("id")}", null, noContent);
         await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/products/{doomedProduct.ErGuid("id")}", null, noContent);
 
+        // Commerce (M9C): tedarikçi, satın alma emri (+kalem), fiyat listesi (+girdi, firma varsayılanı), fatura (+kalem, tahsilat), siparişten dönüşüm, yumuşak silinenler.
+        var vendor = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/vendors", new { name = $"Tedarikci {tag}", email = "tedarik@example.com", phone = "5550001111", address = new { city = $"Sehir {tag}" } }, created);
+        var doomedVendor = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/vendors", new { name = $"Tedarikci {tag} Silinecek" }, created);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/purchase-orders", new { subject = $"Satin alma {tag}", vendorId = vendor.ErGuid("id"), lines = new[] { line } }, created);
+        var book = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/pricebooks", new { name = $"Liste {tag}", pricingModel = "perProduct" }, created);
+        var doomedBook = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/pricebooks", new { name = $"Liste {tag} Silinecek", pricingModel = "flat", adjustmentPercent = -5m }, created);
+        await admin.SendJsonAsync(HttpMethod.Put, $"{Base}/pricebooks/{book.ErGuid("id")}/entries/{product.ErGuid("id")}", new { unitPrice = 90m }, noContent);
+        await admin.SendJsonAsync(HttpMethod.Put, $"{Base}/pricebooks/accounts/{account.ErGuid("id")}/default", new { priceBookId = book.ErGuid("id") }, noContent);
+        var invoice = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices", new { subject = $"Fatura {tag}", accountId = account.ErGuid("id"), lines = new[] { line } }, created);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices/{invoice.ErGuid("id")}/send", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices/{invoice.ErGuid("id")}/payments", new { amount = 25m, reference = $"Ref {tag}" }, created);
+        var doomedInvoice = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices", new { subject = $"Fatura {tag} Silinecek", accountId = account.ErGuid("id"), lines = new[] { line } }, created);
+        var convertible = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/orders", new { subject = $"Faturalanacak {tag}", accountId = account.ErGuid("id"), lines = new[] { line } }, created);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/orders/{convertible.ErGuid("id")}/confirm", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/orders/{convertible.ErGuid("id")}/invoice", null, created);
+        await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/invoices/{doomedInvoice.ErGuid("id")}", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/vendors/{doomedVendor.ErGuid("id")}", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/pricebooks/{doomedBook.ErGuid("id")}", null, noContent);
+
         // Service: talep + yorumlar + olay satırları.
         var supportCase = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/cases", new { subject = $"Destek {tag}" }, created);
         var caseId = supportCase.ErGuid("id");

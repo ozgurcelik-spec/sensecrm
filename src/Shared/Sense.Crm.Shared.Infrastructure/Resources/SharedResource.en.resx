@@ -207,6 +207,74 @@
   <data name="permission.crm.quotes.write" xml:space="preserve"><value>Create, edit, delete and change the status of quotes</value></data>
   <data name="permission.crm.orders.read" xml:space="preserve"><value>View sales orders</value></data>
   <data name="permission.crm.orders.write" xml:space="preserve"><value>Create, edit, delete and change the status of sales orders</value></data>
+  <!-- Sales documents and inventory (Milestone 9C) -->
+  <data name="order.not_invoiceable" xml:space="preserve"><value>Only confirmed or fulfilled orders can be converted to an invoice.</value></data>
+  <data name="order.already_invoiced" xml:space="preserve"><value>This order already has a non-cancelled invoice.</value></data>
+  <data name="order.has_active_invoice" xml:space="preserve"><value>An order with an active invoice cannot be cancelled; cancel the invoice first.</value></data>
+  <data name="invoice.not_editable" xml:space="preserve"><value>Only draft invoices can be edited or deleted.</value></data>
+  <data name="invoice.invalid_transition" xml:space="preserve"><value>The invoice cannot move from "{from}" to "{to}".</value></data>
+  <data name="invoice.no_lines" xml:space="preserve"><value>An invoice must have at least one line.</value></data>
+  <data name="invoice.has_payments" xml:space="preserve"><value>The invoice has payments; delete the payments first.</value></data>
+  <data name="invoice.not_payable" xml:space="preserve"><value>A payment cannot be recorded on this invoice (only sent invoices with a balance accept payments).</value></data>
+  <data name="invoice.payment_exceeds_balance" xml:space="preserve"><value>The payment amount exceeds the invoice balance ({balance}).</value></data>
+  <data name="purchase_order.not_editable" xml:space="preserve"><value>Only draft purchase orders can be edited or deleted.</value></data>
+  <data name="purchase_order.invalid_transition" xml:space="preserve"><value>The purchase order cannot move from "{from}" to "{to}".</value></data>
+  <data name="purchase_order.no_lines" xml:space="preserve"><value>A purchase order must have at least one line.</value></data>
+  <data name="vendor.in_use" xml:space="preserve"><value>Purchase orders are linked to this vendor; it cannot be deleted.</value></data>
+  <data name="pricebook.name_taken" xml:space="preserve"><value>A price book with this name already exists.</value></data>
+  <data name="pricebook.model_immutable" xml:space="preserve"><value>The pricing model and currency of a price book cannot be changed after creation ({property}).</value></data>
+  <data name="pricebook.model_mismatch" xml:space="preserve"><value>Product entries are only available on per-product price books.</value></data>
+  <data name="pricebook.not_effective" xml:space="preserve"><value>The price book is not effective right now (inactive or outside its validity dates).</value></data>
+  <data name="pricebook.entry_limit" xml:space="preserve"><value>A price book can hold at most {max} product entries.</value></data>
+  <data name="validation.adjustment_negative_total" xml:space="preserve"><value>The adjustment cannot make the document total negative.</value></data>
+  <data name="validation.adjustment_requires_lines" xml:space="preserve"><value>A document without lines cannot carry an adjustment.</value></data>
+  <data name="validation.due_before_order" xml:space="preserve"><value>The due date cannot be earlier than the order date.</value></data>
+  <data name="validation.due_before_invoice" xml:space="preserve"><value>The due date cannot be earlier than the invoice date.</value></data>
+  <data name="validation.due_before_po" xml:space="preserve"><value>The due date cannot be earlier than the purchase order date.</value></data>
+  <data name="validation.price_book_inactive" xml:space="preserve"><value>The selected price book is not effective right now.</value></data>
+  <data name="validation.price_book_currency" xml:space="preserve"><value>The price book currency must match the document currency.</value></data>
+  <data name="validation.line_unit_price_required" xml:space="preserve"><value>A unit price is required for a line without a product.</value></data>
+  <data name="validation.line_price_unresolvable" xml:space="preserve"><value>The line price could not be determined; enter a unit price.</value></data>
+  <data name="validation.entry_currency_mismatch" xml:space="preserve"><value>The product currency must match the price book currency.</value></data>
+  <data name="validation.paid_in_future" xml:space="preserve"><value>The payment date cannot be in the future.</value></data>
+  <data name="validation.paid_before_invoice" xml:space="preserve"><value>The payment date cannot be earlier than the invoice date.</value></data>
+  <data name="validation.flat_percent_required" xml:space="preserve"><value>The percentage is only used by, and required for, the flat pricing model (between -99.99 and 1000).</value></data>
+  <data name="validation.valid_range" xml:space="preserve"><value>The end date cannot be earlier than the start date.</value></data>
+  <data name="validation.product_ids" xml:space="preserve"><value>Send between 1 and 100 unique product ids.</value></data>
+  <data name="field.adjustment" xml:space="preserve"><value>Adjustment</value></data>
+  <data name="field.carrier" xml:space="preserve"><value>Carrier</value></data>
+  <data name="field.billing_address" xml:space="preserve"><value>Billing address</value></data>
+  <data name="field.shipping_address" xml:space="preserve"><value>Shipping address</value></data>
+  <data name="field.building" xml:space="preserve"><value>Unit / building</value></data>
+  <data name="field.customer_po_number" xml:space="preserve"><value>Customer PO number</value></data>
+  <data name="field.excise_tax" xml:space="preserve"><value>Excise tax</value></data>
+  <data name="field.sales_commission" xml:space="preserve"><value>Sales commission</value></data>
+  <data name="field.pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="field.due_date" xml:space="preserve"><value>Due date</value></data>
+  <data name="field.invoice_date" xml:space="preserve"><value>Invoice date</value></data>
+  <data name="field.po_date" xml:space="preserve"><value>Purchase order date</value></data>
+  <data name="field.paid_on" xml:space="preserve"><value>Payment date</value></data>
+  <data name="field.method" xml:space="preserve"><value>Method</value></data>
+  <data name="field.reference" xml:space="preserve"><value>Reference</value></data>
+  <data name="field.category" xml:space="preserve"><value>Category</value></data>
+  <data name="field.gl_account" xml:space="preserve"><value>GL account</value></data>
+  <data name="field.email_opt_out" xml:space="preserve"><value>Email opt out</value></data>
+  <data name="field.price_book_id" xml:space="preserve"><value>Price book</value></data>
+  <data name="field.vendor_id" xml:space="preserve"><value>Vendor</value></data>
+  <data name="field.pricing_model" xml:space="preserve"><value>Pricing model</value></data>
+  <data name="field.adjustment_percent" xml:space="preserve"><value>Percentage</value></data>
+  <data name="field.valid_from" xml:space="preserve"><value>Valid from</value></data>
+  <data name="field.valid_to" xml:space="preserve"><value>Valid to</value></data>
+  <data name="field.purchase_price" xml:space="preserve"><value>Purchase price</value></data>
+  <data name="field.product_ids" xml:space="preserve"><value>Products</value></data>
+  <data name="permission.crm.invoices.read" xml:space="preserve"><value>View invoices</value></data>
+  <data name="permission.crm.invoices.write" xml:space="preserve"><value>Create, edit, delete, change the status of invoices and record payments</value></data>
+  <data name="permission.crm.pricebooks.read" xml:space="preserve"><value>View price books</value></data>
+  <data name="permission.crm.pricebooks.write" xml:space="preserve"><value>Create, edit and delete price books and their entries</value></data>
+  <data name="permission.crm.vendors.read" xml:space="preserve"><value>View vendors</value></data>
+  <data name="permission.crm.vendors.write" xml:space="preserve"><value>Create, edit and delete vendors</value></data>
+  <data name="permission.crm.purchaseorders.read" xml:space="preserve"><value>View purchase orders</value></data>
+  <data name="permission.crm.purchaseorders.write" xml:space="preserve"><value>Create, edit, delete and change the status of purchase orders</value></data>
   <!-- Service/Support: cases, comments, SLA (Milestone 6B) -->
   <data name="case.account_not_found" xml:space="preserve"><value>The account to link to the case was not found.</value></data>
   <data name="case.contact_not_found" xml:space="preserve"><value>The contact to link to the case was not found.</value></data>
