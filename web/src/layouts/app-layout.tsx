@@ -148,7 +148,7 @@ export default function AppLayout() {
         </ScrollArea>
       </AppShell.Navbar>
 
-      <AppShell.Main>
+      <AppShell.Main className={classes.main}>
         <SubscriptionBanner />
         <RouteBoundary>
           <Outlet />
