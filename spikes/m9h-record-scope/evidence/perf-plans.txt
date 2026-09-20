@@ -1,0 +1,435 @@
+=== baseline: no RecordScope filter (today) / list25 ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted)
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=0.55..4.69 rows=25 width=71) (actual time=0.065..0.067 rows=25 loops=1)
+  Buffers: shared hit=6
+  ->  Incremental Sort  (cost=0.55..32635.80 rows=197267 width=71) (actual time=0.064..0.065 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=6
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.42..23758.78 rows=197267 width=71) (actual time=0.040..0.050 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: (NOT is_deleted)
+              Buffers: shared hit=6
+Planning Time: 0.134 ms
+Execution Time: 0.102 ms
+
+=== baseline: no RecordScope filter (today) / list25+stage ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND d.stage_id = @_8__locals1_stageId
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=1.51..29.51 rows=25 width=71) (actual time=0.069..0.072 rows=25 loops=1)
+  Buffers: shared hit=11
+  ->  Incremental Sort  (cost=1.51..25278.20 rows=22567 width=71) (actual time=0.069..0.070 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=11
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.42..24262.69 rows=22567 width=71) (actual time=0.036..0.057 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: ((NOT is_deleted) AND (stage_id = '15030476-ea63-411c-9e25-34778f35848a'::uuid))
+              Rows Removed by Filter: 130
+              Buffers: shared hit=11
+Planning Time: 0.086 ms
+Execution Time: 0.123 ms
+
+=== baseline: no RecordScope filter (today) / count ===
+SELECT count(*)::int
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted)
+Aggregate  (cost=8789.89..8789.90 rows=1 width=4) (actual time=61.969..61.971 rows=1 loops=1)
+  Buffers: shared hit=4242
+  ->  Index Scan using ix_deals_tenant_id on deals d  (cost=0.42..8296.72 rows=197267 width=0) (actual time=0.102..40.851 rows=195745 loops=1)
+        Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+        Filter: (NOT is_deleted)
+        Rows Removed by Filter: 4255
+        Buffers: shared hit=4242
+Planning Time: 0.104 ms
+Execution Time: 62.032 ms
+
+=== baseline: no RecordScope filter (today) / detail(visible) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND d.id = @_8__locals1_ownedId
+LIMIT 1
+Limit  (cost=0.42..8.44 rows=1 width=732) (actual time=0.049..0.050 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.44 rows=1 width=732) (actual time=0.048..0.048 rows=1 loops=1)
+        Index Cond: (id = '6b180a46-4e59-43fa-9371-436284bb1c16'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid))
+        Buffers: shared hit=4
+Planning Time: 0.117 ms
+Execution Time: 0.092 ms
+
+=== baseline: no RecordScope filter (today) / detail(hidden) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND d.id = @_8__locals1_hiddenId
+LIMIT 1
+Limit  (cost=0.42..8.44 rows=1 width=732) (actual time=0.053..0.053 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.44 rows=1 width=732) (actual time=0.051..0.052 rows=1 loops=1)
+        Index Cond: (id = '5bd5c53e-36e4-419a-88af-0548065d0134'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid))
+        Buffers: shared hit=4
+Planning Time: 0.133 ms
+Execution Time: 0.097 ms
+
+=== ReadAll (admin) through filter / list25 ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=0.55..4.69 rows=25 width=71) (actual time=0.098..0.101 rows=25 loops=1)
+  Buffers: shared hit=6
+  ->  Incremental Sort  (cost=0.55..32635.80 rows=197267 width=71) (actual time=0.097..0.099 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=6
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.42..23758.78 rows=197267 width=71) (actual time=0.076..0.084 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: (NOT is_deleted)
+              Buffers: shared hit=6
+Planning Time: 0.118 ms
+Execution Time: 0.141 ms
+
+=== ReadAll (admin) through filter / list25+stage ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.stage_id = @_8__locals1_stageId
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=1.51..29.51 rows=25 width=71) (actual time=0.073..0.076 rows=25 loops=1)
+  Buffers: shared hit=11
+  ->  Incremental Sort  (cost=1.51..25278.20 rows=22567 width=71) (actual time=0.073..0.074 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=11
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.42..24262.69 rows=22567 width=71) (actual time=0.040..0.060 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: ((NOT is_deleted) AND (stage_id = '15030476-ea63-411c-9e25-34778f35848a'::uuid))
+              Rows Removed by Filter: 130
+              Buffers: shared hit=11
+Planning Time: 0.118 ms
+Execution Time: 0.106 ms
+
+=== ReadAll (admin) through filter / count ===
+SELECT count(*)::int
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+Aggregate  (cost=8789.89..8789.90 rows=1 width=4) (actual time=44.343..44.344 rows=1 loops=1)
+  Buffers: shared hit=4242
+  ->  Index Scan using ix_deals_tenant_id on deals d  (cost=0.42..8296.72 rows=197267 width=0) (actual time=0.050..34.047 rows=195745 loops=1)
+        Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+        Filter: (NOT is_deleted)
+        Rows Removed by Filter: 4255
+        Buffers: shared hit=4242
+Planning Time: 0.086 ms
+Execution Time: 44.411 ms
+
+=== ReadAll (admin) through filter / detail(visible) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_ownedId
+LIMIT 1
+Limit  (cost=0.42..8.44 rows=1 width=732) (actual time=0.051..0.051 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.44 rows=1 width=732) (actual time=0.050..0.050 rows=1 loops=1)
+        Index Cond: (id = '6b180a46-4e59-43fa-9371-436284bb1c16'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid))
+        Buffers: shared hit=4
+Planning Time: 0.118 ms
+Execution Time: 0.089 ms
+
+=== ReadAll (admin) through filter / detail(hidden) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_hiddenId
+LIMIT 1
+Limit  (cost=0.42..8.44 rows=1 width=732) (actual time=0.053..0.053 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.44 rows=1 width=732) (actual time=0.052..0.052 rows=1 loops=1)
+        Index Cond: (id = '5bd5c53e-36e4-419a-88af-0548065d0134'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid))
+        Buffers: shared hit=4
+Planning Time: 0.120 ms
+Execution Time: 0.103 ms
+
+=== own (0 subordinates, 1 owner) / list25 ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=31.02..795.83 rows=25 width=71) (actual time=1.428..1.433 rows=25 loops=1)
+  Buffers: shared hit=252
+  ->  Incremental Sort  (cost=31.02..24046.06 rows=785 width=71) (actual time=1.426..1.428 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=252
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.42..24010.74 rows=785 width=71) (actual time=0.103..1.400 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: ((NOT is_deleted) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59}'::uuid[])))
+              Rows Removed by Filter: 6474
+              Buffers: shared hit=252
+Planning Time: 0.177 ms
+Execution Time: 1.498 ms
+
+=== own (0 subordinates, 1 owner) / list25+stage ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.stage_id = @_8__locals1_stageId
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=724.77..724.84 rows=25 width=71) (actual time=2.261..2.267 rows=25 loops=1)
+  Buffers: shared hit=298
+  ->  Sort  (cost=724.77..725.00 rows=90 width=71) (actual time=2.258..2.262 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Sort Method: top-N heapsort  Memory: 28kB
+        Buffers: shared hit=298
+        ->  Bitmap Heap Scan on deals d  (cost=386.57..722.23 rows=90 width=71) (actual time=1.713..2.203 rows=261 loops=1)
+              Recheck Cond: ((tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59}'::uuid[])) AND (stage_id = '15030476-ea63-411c-9e25-34778f35848a'::uuid))
+              Filter: (NOT is_deleted)
+              Rows Removed by Filter: 5
+              Heap Blocks: exact=266
+              Buffers: shared hit=298
+              ->  BitmapAnd  (cost=386.57..386.57 rows=92 width=0) (actual time=1.663..1.665 rows=0 loops=1)
+                    Buffers: shared hit=32
+                    ->  Bitmap Index Scan on ix_deals_tenant_id_owner_user_id  (cost=0.00..12.45 rows=803 width=0) (actual time=0.124..0.124 rows=800 loops=1)
+                          Index Cond: ((tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59}'::uuid[])))
+                          Buffers: shared hit=3
+                    ->  Bitmap Index Scan on ix_deals_stage_id  (cost=0.00..373.82 rows=34320 width=0) (actual time=1.463..1.463 rows=33333 loops=1)
+                          Index Cond: (stage_id = '15030476-ea63-411c-9e25-34778f35848a'::uuid)
+                          Buffers: shared hit=29
+Planning Time: 0.167 ms
+Execution Time: 2.436 ms
+
+=== own (0 subordinates, 1 owner) / count ===
+SELECT count(*)::int
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+Aggregate  (cost=1353.19..1353.21 rows=1 width=4) (actual time=2.368..2.369 rows=1 loops=1)
+  Buffers: shared hit=803
+  ->  Index Scan using ix_deals_tenant_id_owner_user_id on deals d  (cost=0.42..1351.23 rows=785 width=0) (actual time=0.103..2.319 rows=783 loops=1)
+        Index Cond: ((tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59}'::uuid[])))
+        Filter: (NOT is_deleted)
+        Rows Removed by Filter: 17
+        Buffers: shared hit=803
+Planning Time: 0.108 ms
+Execution Time: 2.455 ms
+
+=== own (0 subordinates, 1 owner) / detail(visible) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_ownedId
+LIMIT 1
+Limit  (cost=0.42..8.44 rows=1 width=732) (actual time=0.084..0.085 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.44 rows=1 width=732) (actual time=0.082..0.083 rows=1 loops=1)
+        Index Cond: (id = '6b180a46-4e59-43fa-9371-436284bb1c16'::uuid)
+        Filter: ((NOT is_deleted) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59}'::uuid[])) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid))
+        Buffers: shared hit=4
+Planning Time: 0.191 ms
+Execution Time: 0.129 ms
+
+=== own (0 subordinates, 1 owner) / detail(hidden) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_hiddenId
+LIMIT 1
+Limit  (cost=0.42..8.44 rows=1 width=732) (actual time=0.050..0.050 rows=0 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.44 rows=1 width=732) (actual time=0.049..0.049 rows=0 loops=1)
+        Index Cond: (id = '5bd5c53e-36e4-419a-88af-0548065d0134'::uuid)
+        Filter: ((NOT is_deleted) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59}'::uuid[])) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid))
+        Rows Removed by Filter: 1
+        Buffers: shared hit=4
+Planning Time: 0.113 ms
+Execution Time: 0.086 ms
+
+=== 5 subordinates (6 owners) / list25 ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=5.79..140.94 rows=25 width=71) (actual time=0.243..0.246 rows=25 loops=1)
+  Buffers: shared hit=46
+  ->  Incremental Sort  (cost=5.79..25482.57 rows=4713 width=71) (actual time=0.242..0.244 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=46
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.42..25270.49 rows=4713 width=71) (actual time=0.058..0.226 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: ((NOT is_deleted) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8}'::uuid[])))
+              Rows Removed by Filter: 1082
+              Buffers: shared hit=46
+Planning Time: 0.129 ms
+Execution Time: 0.286 ms
+
+=== 5 subordinates (6 owners) / list25+stage ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.stage_id = @_8__locals1_stageId
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=48.25..1242.61 rows=25 width=71) (actual time=1.110..1.114 rows=25 loops=1)
+  Buffers: shared hit=261
+  ->  Incremental Sort  (cost=48.25..25798.64 rows=539 width=71) (actual time=1.108..1.110 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=261
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.42..25774.39 rows=539 width=71) (actual time=0.103..1.085 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: ((NOT is_deleted) AND (stage_id = '15030476-ea63-411c-9e25-34778f35848a'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8}'::uuid[])))
+              Rows Removed by Filter: 6724
+              Buffers: shared hit=261
+Planning Time: 0.182 ms
+Execution Time: 1.172 ms
+
+=== 5 subordinates (6 owners) / count ===
+SELECT count(*)::int
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+Aggregate  (cost=6241.77..6241.78 rows=1 width=4) (actual time=12.718..12.720 rows=1 loops=1)
+  Buffers: shared hit=4818
+  ->  Index Scan using ix_deals_tenant_id_owner_user_id on deals d  (cost=0.42..6229.99 rows=4713 width=0) (actual time=0.088..12.502 rows=4698 loops=1)
+        Index Cond: ((tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8}'::uuid[])))
+        Filter: (NOT is_deleted)
+        Rows Removed by Filter: 102
+        Buffers: shared hit=4818
+Planning Time: 0.120 ms
+Execution Time: 12.780 ms
+
+=== 5 subordinates (6 owners) / detail(visible) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_ownedId
+LIMIT 1
+Limit  (cost=0.42..8.45 rows=1 width=732) (actual time=0.059..0.059 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.45 rows=1 width=732) (actual time=0.058..0.058 rows=1 loops=1)
+        Index Cond: (id = '6b180a46-4e59-43fa-9371-436284bb1c16'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8}'::uuid[])))
+        Buffers: shared hit=4
+Planning Time: 0.217 ms
+Execution Time: 0.105 ms
+
+=== 5 subordinates (6 owners) / detail(hidden) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_hiddenId
+LIMIT 1
+Limit  (cost=0.42..8.45 rows=1 width=732) (actual time=0.049..0.050 rows=0 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.42..8.45 rows=1 width=732) (actual time=0.048..0.049 rows=0 loops=1)
+        Index Cond: (id = '5bd5c53e-36e4-419a-88af-0548065d0134'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8}'::uuid[])))
+        Rows Removed by Filter: 1
+        Buffers: shared hit=4
+Planning Time: 0.239 ms
+Execution Time: 0.092 ms
+
+=== 200 subordinates (201 owners) / list25 ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=1.09..6.12 rows=25 width=71) (actual time=0.079..0.082 rows=25 loops=1)
+  Buffers: shared hit=6
+  ->  Incremental Sort  (cost=1.09..31912.19 rows=158780 width=71) (actual time=0.078..0.079 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=6
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.93..24767.09 rows=158780 width=71) (actual time=0.052..0.065 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: ((NOT is_deleted) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8,affec3b6-4cf9-0492-377a-8114c86fc093,3e0469fb-1349-91f8-f75a-2760e409c6ed,7668f673-d566-9995-175e-f91b5d171945,8808a13b-854c-2563-da1a-5f6cb2130868,990d67a9-f946-96b1-abe2-dccf06900322,03aa1a0b-0375-b046-1c1b-8f35b234e67a,d781eaae-8248-db6c-e1a7-b82e58e60435,d09979d7-94a6-ee60-d836-f884739f7196,ef06d5cb-f353-86ff-2203-d186eeff7923,726dedc0-d678-8b05-f486-730edcc0e871,8a62f0be-aa5a-e938-956f-5ea290321336,2b4233eb-ec7a-45e1-fb8d-dd1aab794f7b,7ac18a18-93e1-d2bd-5b46-958ce1d2a8d0,2baab43f-784b-5b53-0b53-47a50490bb0a,10880c7f-4e42-09ee-da79-711e1ea1723e,2e129db1-5b6d-6db5-342b-a5d328642262,87dc1e13-1a13-69fd-f8f1-c824a6a62dff,00a65dd4-7e84-2bcc-3d82-a296301071fb,5e6c9b24-8295-88e0-ac8f-7d8074a4bfd4,0f8f84c1-8bfd-5244-ed97-6f63924a8a0e,a507ac92-0f79-7876-259f-3c91f5cdef99,078d079e-6146-dec4-dbf2-135a8e513e2e,b6f7fac0-074f-6508-e5a4-540ad89b55c0,244fd63d-0adb-f673-130f-ce2f222078a5,40b13b85-e6e4-fc9c-4a6f-24379db20a39,0c673c53-a29a-cb19-c7e5-5b292d259e4d,d21dbd2c-4e17-8b2c-b55d-ce0c6a43effc,c6f273ac-241a-0421-6e0a-703c18c36532,9ece8c40-20f8-aed1-0676-cd1c56a41889,8cd5a487-792e-9504-5574-fe205e4efdf9,41a2abe1-09f2-43e1-2e72-133cf46ea5db,657bc81a-9e2f-ba42-93ed-712d02a82191,e6f39564-6455-6eb0-f7e3-10ccfaebe1d1,89a0afa8-bca0-3ba7-4e75-fe1e36d1a431,3695b09d-29f3-d88d-21ad-2bbfc230edae,bb534b67-41a8-63fd-098b-8ea0a709d680,fd8689cb-8011-3b68-be58-6d8b5a6aa06a,f0b3b762-3d3b-edf8-9845-9673d778319e,93b1ad3c-faeb-254e-a3c6-8ee7ea23c582,ff0aa5fe-bff0-1840-387a-57bf41db361d,e0218145-4edb-d5c9-103b-73061e58cd9c,cd654cbb-5fea-850a-df5a-28ef7a6e2994,92007d4f-eb0c-6860-0f6e-a3423d65dea0,923b25d9-d294-c984-05bf-d70ac7604701,5d68f620-8533-5588-b67c-f713ed6b3cfb,903a4fb3-dc3d-b3f1-94ff-4d50d5dd1f06,603ac517-5e0b-004e-988f-a8b1fda8c142,5a7b32f2-8b60-7c1c-dca4-f6821054a998,a45c60cc-393d-eac0-9b74-2f8bb58e275f,0bbf349b-0c07-a177-7892-a8d13937571e,75626fed-9acb-1954-5a0e-2c0a6d5b19d7,0699ddd4-0db0-b8a9-86ec-f120f5b872e5,81a84a94-d831-3e42-7536-74c2eeaa0186,03a2b89f-8492-2364-4395-d2951dadff6c,0d44502f-9db3-fa0f-1c2d-d0b523573f8b,c16fd6e4-7644-c245-1f53-235797d05252,9708fa05-fcb3-e7f4-ccc6-75379da49353,be2b07d8-4f10-f8b3-b3ca-e84b620cf166,8f03eb40-2fb5-1efd-87a8-fa821ef71e36,994204a8-bf2b-1cb2-dd87-5643c0607be7,ee8c50f6-6027-b586-7b02-9f14d8cc6566,c8ce9fdd-b99d-bb5d-3a80-b207246f74b5,e40c701b-30b0-98a3-c632-425d845f95e3,446e3045-851a-8538-cd64-d8b7e82dbc37,1af70c87-71c5-0d65-f8ba-3d678e90e1e9,ceb8dce4-ae22-145e-7852-2275f277435d,8c4b3595-f450-9c39-f643-5176354b61b9,00ed29a6-4066-51af-e714-82b5470432f5,5e9ea435-dd2d-f6ec-8040-2f291d9df643,f0c42ab7-3bcb-8e92-099a-b3c7d389b57e,05d7c468-97b1-33cd-e5c4-345442737622,f330353f-8c4c-c942-05ec-099bead3053c,a9f93a64-f168-d5eb-0de5-29331648591b,3d62bbb6-5605-350d-9cf4-3fad107b093e,e876db23-879f-faa9-793f-6a102e5063e6,2b2c3ac6-fd56-56c6-6b63-49297f7c8f34,9edb9251-5fc5-ae08-c2d8-f9bca5c16c4b,ccf718bf-7d49-ae99-1b33-f88452a627ed,7f11aff8-ee3a-b2d4-561f-4f5bb996f538,5e50bebf-aee0-312a-d55e-13ced21b88e6,d59cfe08-3c72-a3fa-d01d-607c9e347122,117c29a4-d1b2-6107-f195-70a5d1595ee0,2077a0f8-539e-be89-0a3d-c0beb6c7a444,3ebab37e-751c-c294-662d-6b3a24d01b40,13731d57-d401-49e7-b6a3-a549e4042293,0e4552ac-be2f-5ff5-416f-ea0a7c0fbf7a,90706f14-ef10-87cf-9501-b926fe97533e,538065c7-53a7-d586-8f7d-19de1cdff3e3,2a3db663-01df-919c-b3d7-8ca7411be0c6,a132cbbd-6a2c-2981-165a-239e22fba6c7,91d8d21d-21d6-4d88-90aa-e88a01537e24,b79fbe59-e7c2-9744-7e50-05b13814cd9f,88c0f392-517a-d8ea-55bb-7643a67dcbeb,485ddf8d-d909-40f6-9b2f-2274af864ad3,2a33a355-3c5e-b270-ef85-39bad6cb85d9,aeda7752-7e83-076e-c42b-0ec2d880d066,08f396f5-b6e7-70cb-d38d-3f8482e01fd3,ae3f6165-9170-5e89-2a73-f195dde2614b,279c2dda-b764-f322-52da-0f367f5de63d,dc3e25c2-fcc4-745b-ec2c-63a6b7d533ff,f33f03fa-2ffa-e853-dbd6-286eda6fe956,abe5a16d-74fe-e59f-90e3-9afda20d83e9,3e0b60da-5927-2efc-2f96-e17d69885577,4af5cc2e-4db3-f648-5af1-3a1f12e0fdac,df44b9c5-39df-5d09-1ad6-90600e8b7e8a,0c534ed3-fff7-d2bf-d32e-e19d84644e3f,31e2aef0-101b-c6d8-dc07-a67cfe06f76e,a902632a-0d51-4d07-42b2-afaa469a83ee,70103367-f6a9-a727-3dab-6a05f5a90393,f978328d-425b-b310-0da6-7c3328e63cc1,409595f1-7886-1425-3740-bef972498026,7f6ce5fb-3e7d-e92d-09f6-b00a6b4d0c62,129a0a72-0c4b-4698-c2f5-844fd56d8927,db9ed813-f4bf-e56c-01a6-80350b1eca6b,6ecb47db-85de-5e16-e2b7-10a80aa8fb44,79956d61-7467-f7c6-4719-1c06d0a10a6a,92913dcd-57aa-0525-1aec-0eb8d6cb2e11,6ad14ba9-986e-3615-423d-fca256d04e3f,a38529e1-58a9-63ab-4eb7-68f71129ec6a,fdf702fa-f3b7-b5be-c238-b8900297a334,6b9c1fa3-229c-bd1c-7f79-69ccdcdbebb1,669887c4-4e4c-f99b-635d-2527050a40de,4dfe1721-ef86-ac47-8966-23af161be673,0abe8cb9-712b-9e10-52b9-44291f7d3b20,3dcce8ef-d228-6f5b-d738-01f253bdff37,599b60f3-43e0-cd5d-7623-c0e586b44ab6,3e513663-1c0f-8721-5dcf-00a6b2ea53d7,d47169f5-796b-1525-be18-69128f34c0f5,6e9d4e72-2290-a03f-b3dd-5e061be5d594,fe8ebf28-c4d4-9b95-5b47-2a56b68abead,7a7d35b2-9ec0-a79d-e027-233d614177ae,c8158407-99c2-d62a-f196-fc55313c6361,9f0162db-78f2-ec3c-5bf9-14d6ed0542d2,b7e1ed2f-896e-ab1b-8a73-c2637526ffdc,ec6c96ca-6a73-096f-cb5f-bb0c9141cad6,ba480fb2-95a9-3fa5-f892-b0b57a463faf,713f82ea-9162-8af7-ff82-ce3c5fdfd6df,b4e4a40d-d336-fdc4-42a4-979964afcada,323c19aa-eef8-9897-3db5-4691f479fd5d,adb8301d-4757-2413-db36-043b5b3bd8b2,b93a24c9-b2d2-3d1f-3ce9-bf57591f5cdb,8c05ebc8-a306-28a4-2e6a-bf78cdda001c,ddd90be9-1283-db1f-7cc7-c0f72b0ed60d,12617f98-66d4-8f44-2708-7c11f0fb8123,e1494936-9ea6-f285-ac25-f5252cf13c83,7739a973-62f6-bcb4-b853-2e67a97adc32,110fc6a2-a981-a291-c268-a35db1d432d8,1e082b4d-340e-a7fc-f38a-499bd2c4e304,1877bacd-c485-fb40-864b-f4373c4e2c97,91008bdb-3875-626f-72b5-7d1962139acd,6effb1c8-a4b6-5c0d-ad17-cad8eacfdc9c,09ca19d3-3161-03c9-669f-fa623d80c632,1a99c062-b0d1-69fa-b764-17ab76461007,b1f04996-2ebf-8250-a52e-4115f9fbcc9a,17ee0908-c059-36c6-df80-90ca9775f4fc,59a13502-6d00-5d0c-5e0f-41a07602849b,873724f5-26b9-f4f2-ae27-48ee08c65e36,cc73e3f5-b9a0-05b5-7473-7e717fbb2d9b,bf4fccca-eccd-a7d5-8620-8821fdc13120,1b17202f-9e1a-a006-a10f-1c088bad1281,b4ba7135-27f2-2c32-3112-a11607c0a5eb,90e2708f-dfb3-7fdf-49bd-b3115b7e5144,a8425ae4-5f7a-10e8-acf3-efbb5ae3c33d,fad62cb9-f360-e0ac-47f3-7e2ed83c11dd,72067d8f-de4c-af96-baab-f1da48d036c9,1c41fa72-1e39-d674-70fb-8dde77840f72,309b2ca8-c490-6e1e-84c7-099dcbe0f77a,efd26284-8a33-a8f0-5316-6a215622efbe,b821b16b-d0c2-8bcc-588f-4e36b5339a76,e8e2b01a-977d-e88d-a739-4bc5589720cd,d75d1e85-21ad-8579-79ff-a0c15dc60899,2664c383-f104-759b-d4ae-aa4131524be7,8cb7effe-1578-0a43-f1ff-a0e6c4539d61,e0d31137-6361-8eab-9b6d-0941e5b37f8d,2bf58aa8-f09e-9af3-0468-10fc540e5c5d,036c0be3-9d41-7a93-8d08-01e819bed016,6ab1bcee-388c-2807-86bd-e1fbdb76a5b2,11accbe5-3dab-5414-5dd2-97c5517b1c10,881c70af-a3cc-bdb8-3eab-f1844a48f872,a4ac639e-e9a9-6aa0-6c70-35d17179668c,aa6ac598-40d9-09b2-fc0a-9aa29ef5a74d,b4a78de0-e667-836b-aa87-279fec0357fd,ac2ddda2-0010-6500-cd29-bdb59e88d13d,b9ec40ba-c24c-6662-d51e-455a4ca482c1,429f317e-3400-0632-e969-5e61269910de,5a65af8f-394a-7636-87eb-48c827478907,1c6d83f7-26c0-b8eb-381c-061c65d16a97,ec2f8cc3-df85-505c-e827-9aa7191a2f7a,df6bc8d3-a7e9-5c83-525a-336a861c644d,74e87659-76ec-89ad-e706-41e6870bbbfa,ddc7ae85-265f-bab9-81ae-3dd289ce2ea4,b28f6a8d-92ab-b50f-d7dd-6f8eb118b158,f05a08bc-123a-e592-06e0-e3942ad53ef4,406ee831-53da-4c3f-a28e-db0d9b67ddb0,519c1c32-6c80-7690-b5aa-8cb44bfebebd}'::uuid[])))
+              Rows Removed by Filter: 6
+              Buffers: shared hit=6
+Planning Time: 0.190 ms
+Execution Time: 0.128 ms
+
+=== 200 subordinates (201 owners) / list25+stage ===
+SELECT d.id AS "Id", d.name AS "Name", d.amount AS "Amount", d.stage_id AS "StageId", d.owner_user_id AS "OwnerUserId", d.created_at AS "CreatedAt"
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.stage_id = @_8__locals1_stageId
+ORDER BY d.created_at DESC, d.id
+LIMIT @p
+Limit  (cost=2.33..38.23 rows=25 width=71) (actual time=0.112..0.116 rows=25 loops=1)
+  Buffers: shared hit=11
+  ->  Incremental Sort  (cost=2.33..26088.37 rows=18164 width=71) (actual time=0.111..0.113 rows=25 loops=1)
+        Sort Key: created_at DESC, id
+        Presorted Key: created_at
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+        Buffers: shared hit=11
+        ->  Index Scan Backward using ix_deals_tenant_id_created_at on deals d  (cost=0.93..25270.99 rows=18164 width=71) (actual time=0.068..0.097 rows=26 loops=1)
+              Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+              Filter: ((NOT is_deleted) AND (stage_id = '15030476-ea63-411c-9e25-34778f35848a'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8,affec3b6-4cf9-0492-377a-8114c86fc093,3e0469fb-1349-91f8-f75a-2760e409c6ed,7668f673-d566-9995-175e-f91b5d171945,8808a13b-854c-2563-da1a-5f6cb2130868,990d67a9-f946-96b1-abe2-dccf06900322,03aa1a0b-0375-b046-1c1b-8f35b234e67a,d781eaae-8248-db6c-e1a7-b82e58e60435,d09979d7-94a6-ee60-d836-f884739f7196,ef06d5cb-f353-86ff-2203-d186eeff7923,726dedc0-d678-8b05-f486-730edcc0e871,8a62f0be-aa5a-e938-956f-5ea290321336,2b4233eb-ec7a-45e1-fb8d-dd1aab794f7b,7ac18a18-93e1-d2bd-5b46-958ce1d2a8d0,2baab43f-784b-5b53-0b53-47a50490bb0a,10880c7f-4e42-09ee-da79-711e1ea1723e,2e129db1-5b6d-6db5-342b-a5d328642262,87dc1e13-1a13-69fd-f8f1-c824a6a62dff,00a65dd4-7e84-2bcc-3d82-a296301071fb,5e6c9b24-8295-88e0-ac8f-7d8074a4bfd4,0f8f84c1-8bfd-5244-ed97-6f63924a8a0e,a507ac92-0f79-7876-259f-3c91f5cdef99,078d079e-6146-dec4-dbf2-135a8e513e2e,b6f7fac0-074f-6508-e5a4-540ad89b55c0,244fd63d-0adb-f673-130f-ce2f222078a5,40b13b85-e6e4-fc9c-4a6f-24379db20a39,0c673c53-a29a-cb19-c7e5-5b292d259e4d,d21dbd2c-4e17-8b2c-b55d-ce0c6a43effc,c6f273ac-241a-0421-6e0a-703c18c36532,9ece8c40-20f8-aed1-0676-cd1c56a41889,8cd5a487-792e-9504-5574-fe205e4efdf9,41a2abe1-09f2-43e1-2e72-133cf46ea5db,657bc81a-9e2f-ba42-93ed-712d02a82191,e6f39564-6455-6eb0-f7e3-10ccfaebe1d1,89a0afa8-bca0-3ba7-4e75-fe1e36d1a431,3695b09d-29f3-d88d-21ad-2bbfc230edae,bb534b67-41a8-63fd-098b-8ea0a709d680,fd8689cb-8011-3b68-be58-6d8b5a6aa06a,f0b3b762-3d3b-edf8-9845-9673d778319e,93b1ad3c-faeb-254e-a3c6-8ee7ea23c582,ff0aa5fe-bff0-1840-387a-57bf41db361d,e0218145-4edb-d5c9-103b-73061e58cd9c,cd654cbb-5fea-850a-df5a-28ef7a6e2994,92007d4f-eb0c-6860-0f6e-a3423d65dea0,923b25d9-d294-c984-05bf-d70ac7604701,5d68f620-8533-5588-b67c-f713ed6b3cfb,903a4fb3-dc3d-b3f1-94ff-4d50d5dd1f06,603ac517-5e0b-004e-988f-a8b1fda8c142,5a7b32f2-8b60-7c1c-dca4-f6821054a998,a45c60cc-393d-eac0-9b74-2f8bb58e275f,0bbf349b-0c07-a177-7892-a8d13937571e,75626fed-9acb-1954-5a0e-2c0a6d5b19d7,0699ddd4-0db0-b8a9-86ec-f120f5b872e5,81a84a94-d831-3e42-7536-74c2eeaa0186,03a2b89f-8492-2364-4395-d2951dadff6c,0d44502f-9db3-fa0f-1c2d-d0b523573f8b,c16fd6e4-7644-c245-1f53-235797d05252,9708fa05-fcb3-e7f4-ccc6-75379da49353,be2b07d8-4f10-f8b3-b3ca-e84b620cf166,8f03eb40-2fb5-1efd-87a8-fa821ef71e36,994204a8-bf2b-1cb2-dd87-5643c0607be7,ee8c50f6-6027-b586-7b02-9f14d8cc6566,c8ce9fdd-b99d-bb5d-3a80-b207246f74b5,e40c701b-30b0-98a3-c632-425d845f95e3,446e3045-851a-8538-cd64-d8b7e82dbc37,1af70c87-71c5-0d65-f8ba-3d678e90e1e9,ceb8dce4-ae22-145e-7852-2275f277435d,8c4b3595-f450-9c39-f643-5176354b61b9,00ed29a6-4066-51af-e714-82b5470432f5,5e9ea435-dd2d-f6ec-8040-2f291d9df643,f0c42ab7-3bcb-8e92-099a-b3c7d389b57e,05d7c468-97b1-33cd-e5c4-345442737622,f330353f-8c4c-c942-05ec-099bead3053c,a9f93a64-f168-d5eb-0de5-29331648591b,3d62bbb6-5605-350d-9cf4-3fad107b093e,e876db23-879f-faa9-793f-6a102e5063e6,2b2c3ac6-fd56-56c6-6b63-49297f7c8f34,9edb9251-5fc5-ae08-c2d8-f9bca5c16c4b,ccf718bf-7d49-ae99-1b33-f88452a627ed,7f11aff8-ee3a-b2d4-561f-4f5bb996f538,5e50bebf-aee0-312a-d55e-13ced21b88e6,d59cfe08-3c72-a3fa-d01d-607c9e347122,117c29a4-d1b2-6107-f195-70a5d1595ee0,2077a0f8-539e-be89-0a3d-c0beb6c7a444,3ebab37e-751c-c294-662d-6b3a24d01b40,13731d57-d401-49e7-b6a3-a549e4042293,0e4552ac-be2f-5ff5-416f-ea0a7c0fbf7a,90706f14-ef10-87cf-9501-b926fe97533e,538065c7-53a7-d586-8f7d-19de1cdff3e3,2a3db663-01df-919c-b3d7-8ca7411be0c6,a132cbbd-6a2c-2981-165a-239e22fba6c7,91d8d21d-21d6-4d88-90aa-e88a01537e24,b79fbe59-e7c2-9744-7e50-05b13814cd9f,88c0f392-517a-d8ea-55bb-7643a67dcbeb,485ddf8d-d909-40f6-9b2f-2274af864ad3,2a33a355-3c5e-b270-ef85-39bad6cb85d9,aeda7752-7e83-076e-c42b-0ec2d880d066,08f396f5-b6e7-70cb-d38d-3f8482e01fd3,ae3f6165-9170-5e89-2a73-f195dde2614b,279c2dda-b764-f322-52da-0f367f5de63d,dc3e25c2-fcc4-745b-ec2c-63a6b7d533ff,f33f03fa-2ffa-e853-dbd6-286eda6fe956,abe5a16d-74fe-e59f-90e3-9afda20d83e9,3e0b60da-5927-2efc-2f96-e17d69885577,4af5cc2e-4db3-f648-5af1-3a1f12e0fdac,df44b9c5-39df-5d09-1ad6-90600e8b7e8a,0c534ed3-fff7-d2bf-d32e-e19d84644e3f,31e2aef0-101b-c6d8-dc07-a67cfe06f76e,a902632a-0d51-4d07-42b2-afaa469a83ee,70103367-f6a9-a727-3dab-6a05f5a90393,f978328d-425b-b310-0da6-7c3328e63cc1,409595f1-7886-1425-3740-bef972498026,7f6ce5fb-3e7d-e92d-09f6-b00a6b4d0c62,129a0a72-0c4b-4698-c2f5-844fd56d8927,db9ed813-f4bf-e56c-01a6-80350b1eca6b,6ecb47db-85de-5e16-e2b7-10a80aa8fb44,79956d61-7467-f7c6-4719-1c06d0a10a6a,92913dcd-57aa-0525-1aec-0eb8d6cb2e11,6ad14ba9-986e-3615-423d-fca256d04e3f,a38529e1-58a9-63ab-4eb7-68f71129ec6a,fdf702fa-f3b7-b5be-c238-b8900297a334,6b9c1fa3-229c-bd1c-7f79-69ccdcdbebb1,669887c4-4e4c-f99b-635d-2527050a40de,4dfe1721-ef86-ac47-8966-23af161be673,0abe8cb9-712b-9e10-52b9-44291f7d3b20,3dcce8ef-d228-6f5b-d738-01f253bdff37,599b60f3-43e0-cd5d-7623-c0e586b44ab6,3e513663-1c0f-8721-5dcf-00a6b2ea53d7,d47169f5-796b-1525-be18-69128f34c0f5,6e9d4e72-2290-a03f-b3dd-5e061be5d594,fe8ebf28-c4d4-9b95-5b47-2a56b68abead,7a7d35b2-9ec0-a79d-e027-233d614177ae,c8158407-99c2-d62a-f196-fc55313c6361,9f0162db-78f2-ec3c-5bf9-14d6ed0542d2,b7e1ed2f-896e-ab1b-8a73-c2637526ffdc,ec6c96ca-6a73-096f-cb5f-bb0c9141cad6,ba480fb2-95a9-3fa5-f892-b0b57a463faf,713f82ea-9162-8af7-ff82-ce3c5fdfd6df,b4e4a40d-d336-fdc4-42a4-979964afcada,323c19aa-eef8-9897-3db5-4691f479fd5d,adb8301d-4757-2413-db36-043b5b3bd8b2,b93a24c9-b2d2-3d1f-3ce9-bf57591f5cdb,8c05ebc8-a306-28a4-2e6a-bf78cdda001c,ddd90be9-1283-db1f-7cc7-c0f72b0ed60d,12617f98-66d4-8f44-2708-7c11f0fb8123,e1494936-9ea6-f285-ac25-f5252cf13c83,7739a973-62f6-bcb4-b853-2e67a97adc32,110fc6a2-a981-a291-c268-a35db1d432d8,1e082b4d-340e-a7fc-f38a-499bd2c4e304,1877bacd-c485-fb40-864b-f4373c4e2c97,91008bdb-3875-626f-72b5-7d1962139acd,6effb1c8-a4b6-5c0d-ad17-cad8eacfdc9c,09ca19d3-3161-03c9-669f-fa623d80c632,1a99c062-b0d1-69fa-b764-17ab76461007,b1f04996-2ebf-8250-a52e-4115f9fbcc9a,17ee0908-c059-36c6-df80-90ca9775f4fc,59a13502-6d00-5d0c-5e0f-41a07602849b,873724f5-26b9-f4f2-ae27-48ee08c65e36,cc73e3f5-b9a0-05b5-7473-7e717fbb2d9b,bf4fccca-eccd-a7d5-8620-8821fdc13120,1b17202f-9e1a-a006-a10f-1c088bad1281,b4ba7135-27f2-2c32-3112-a11607c0a5eb,90e2708f-dfb3-7fdf-49bd-b3115b7e5144,a8425ae4-5f7a-10e8-acf3-efbb5ae3c33d,fad62cb9-f360-e0ac-47f3-7e2ed83c11dd,72067d8f-de4c-af96-baab-f1da48d036c9,1c41fa72-1e39-d674-70fb-8dde77840f72,309b2ca8-c490-6e1e-84c7-099dcbe0f77a,efd26284-8a33-a8f0-5316-6a215622efbe,b821b16b-d0c2-8bcc-588f-4e36b5339a76,e8e2b01a-977d-e88d-a739-4bc5589720cd,d75d1e85-21ad-8579-79ff-a0c15dc60899,2664c383-f104-759b-d4ae-aa4131524be7,8cb7effe-1578-0a43-f1ff-a0e6c4539d61,e0d31137-6361-8eab-9b6d-0941e5b37f8d,2bf58aa8-f09e-9af3-0468-10fc540e5c5d,036c0be3-9d41-7a93-8d08-01e819bed016,6ab1bcee-388c-2807-86bd-e1fbdb76a5b2,11accbe5-3dab-5414-5dd2-97c5517b1c10,881c70af-a3cc-bdb8-3eab-f1844a48f872,a4ac639e-e9a9-6aa0-6c70-35d17179668c,aa6ac598-40d9-09b2-fc0a-9aa29ef5a74d,b4a78de0-e667-836b-aa87-279fec0357fd,ac2ddda2-0010-6500-cd29-bdb59e88d13d,b9ec40ba-c24c-6662-d51e-455a4ca482c1,429f317e-3400-0632-e969-5e61269910de,5a65af8f-394a-7636-87eb-48c827478907,1c6d83f7-26c0-b8eb-381c-061c65d16a97,ec2f8cc3-df85-505c-e827-9aa7191a2f7a,df6bc8d3-a7e9-5c83-525a-336a861c644d,74e87659-76ec-89ad-e706-41e6870bbbfa,ddc7ae85-265f-bab9-81ae-3dd289ce2ea4,b28f6a8d-92ab-b50f-d7dd-6f8eb118b158,f05a08bc-123a-e592-06e0-e3942ad53ef4,406ee831-53da-4c3f-a28e-db0d9b67ddb0,519c1c32-6c80-7690-b5aa-8cb44bfebebd}'::uuid[])))
+              Rows Removed by Filter: 148
+              Buffers: shared hit=11
+Planning Time: 0.229 ms
+Execution Time: 0.162 ms
+
+=== 200 subordinates (201 owners) / count ===
+SELECT count(*)::int
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+Finalize Aggregate  (cost=9293.71..9293.72 rows=1 width=4) (actual time=55.565..62.485 rows=1 loops=1)
+  Buffers: shared hit=4273
+  ->  Gather  (cost=9293.60..9293.71 rows=1 width=8) (actual time=55.270..62.475 rows=2 loops=1)
+        Workers Planned: 1
+        Workers Launched: 1
+        Buffers: shared hit=4273
+        ->  Partial Aggregate  (cost=8293.60..8293.61 rows=1 width=8) (actual time=34.726..34.728 rows=1 loops=2)
+              Buffers: shared hit=4273
+              ->  Parallel Index Scan using ix_deals_tenant_id on deals d  (cost=0.93..8060.10 rows=93400 width=0) (actual time=0.042..31.337 rows=78690 loops=2)
+                    Index Cond: (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid)
+                    Filter: ((NOT is_deleted) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8,affec3b6-4cf9-0492-377a-8114c86fc093,3e0469fb-1349-91f8-f75a-2760e409c6ed,7668f673-d566-9995-175e-f91b5d171945,8808a13b-854c-2563-da1a-5f6cb2130868,990d67a9-f946-96b1-abe2-dccf06900322,03aa1a0b-0375-b046-1c1b-8f35b234e67a,d781eaae-8248-db6c-e1a7-b82e58e60435,d09979d7-94a6-ee60-d836-f884739f7196,ef06d5cb-f353-86ff-2203-d186eeff7923,726dedc0-d678-8b05-f486-730edcc0e871,8a62f0be-aa5a-e938-956f-5ea290321336,2b4233eb-ec7a-45e1-fb8d-dd1aab794f7b,7ac18a18-93e1-d2bd-5b46-958ce1d2a8d0,2baab43f-784b-5b53-0b53-47a50490bb0a,10880c7f-4e42-09ee-da79-711e1ea1723e,2e129db1-5b6d-6db5-342b-a5d328642262,87dc1e13-1a13-69fd-f8f1-c824a6a62dff,00a65dd4-7e84-2bcc-3d82-a296301071fb,5e6c9b24-8295-88e0-ac8f-7d8074a4bfd4,0f8f84c1-8bfd-5244-ed97-6f63924a8a0e,a507ac92-0f79-7876-259f-3c91f5cdef99,078d079e-6146-dec4-dbf2-135a8e513e2e,b6f7fac0-074f-6508-e5a4-540ad89b55c0,244fd63d-0adb-f673-130f-ce2f222078a5,40b13b85-e6e4-fc9c-4a6f-24379db20a39,0c673c53-a29a-cb19-c7e5-5b292d259e4d,d21dbd2c-4e17-8b2c-b55d-ce0c6a43effc,c6f273ac-241a-0421-6e0a-703c18c36532,9ece8c40-20f8-aed1-0676-cd1c56a41889,8cd5a487-792e-9504-5574-fe205e4efdf9,41a2abe1-09f2-43e1-2e72-133cf46ea5db,657bc81a-9e2f-ba42-93ed-712d02a82191,e6f39564-6455-6eb0-f7e3-10ccfaebe1d1,89a0afa8-bca0-3ba7-4e75-fe1e36d1a431,3695b09d-29f3-d88d-21ad-2bbfc230edae,bb534b67-41a8-63fd-098b-8ea0a709d680,fd8689cb-8011-3b68-be58-6d8b5a6aa06a,f0b3b762-3d3b-edf8-9845-9673d778319e,93b1ad3c-faeb-254e-a3c6-8ee7ea23c582,ff0aa5fe-bff0-1840-387a-57bf41db361d,e0218145-4edb-d5c9-103b-73061e58cd9c,cd654cbb-5fea-850a-df5a-28ef7a6e2994,92007d4f-eb0c-6860-0f6e-a3423d65dea0,923b25d9-d294-c984-05bf-d70ac7604701,5d68f620-8533-5588-b67c-f713ed6b3cfb,903a4fb3-dc3d-b3f1-94ff-4d50d5dd1f06,603ac517-5e0b-004e-988f-a8b1fda8c142,5a7b32f2-8b60-7c1c-dca4-f6821054a998,a45c60cc-393d-eac0-9b74-2f8bb58e275f,0bbf349b-0c07-a177-7892-a8d13937571e,75626fed-9acb-1954-5a0e-2c0a6d5b19d7,0699ddd4-0db0-b8a9-86ec-f120f5b872e5,81a84a94-d831-3e42-7536-74c2eeaa0186,03a2b89f-8492-2364-4395-d2951dadff6c,0d44502f-9db3-fa0f-1c2d-d0b523573f8b,c16fd6e4-7644-c245-1f53-235797d05252,9708fa05-fcb3-e7f4-ccc6-75379da49353,be2b07d8-4f10-f8b3-b3ca-e84b620cf166,8f03eb40-2fb5-1efd-87a8-fa821ef71e36,994204a8-bf2b-1cb2-dd87-5643c0607be7,ee8c50f6-6027-b586-7b02-9f14d8cc6566,c8ce9fdd-b99d-bb5d-3a80-b207246f74b5,e40c701b-30b0-98a3-c632-425d845f95e3,446e3045-851a-8538-cd64-d8b7e82dbc37,1af70c87-71c5-0d65-f8ba-3d678e90e1e9,ceb8dce4-ae22-145e-7852-2275f277435d,8c4b3595-f450-9c39-f643-5176354b61b9,00ed29a6-4066-51af-e714-82b5470432f5,5e9ea435-dd2d-f6ec-8040-2f291d9df643,f0c42ab7-3bcb-8e92-099a-b3c7d389b57e,05d7c468-97b1-33cd-e5c4-345442737622,f330353f-8c4c-c942-05ec-099bead3053c,a9f93a64-f168-d5eb-0de5-29331648591b,3d62bbb6-5605-350d-9cf4-3fad107b093e,e876db23-879f-faa9-793f-6a102e5063e6,2b2c3ac6-fd56-56c6-6b63-49297f7c8f34,9edb9251-5fc5-ae08-c2d8-f9bca5c16c4b,ccf718bf-7d49-ae99-1b33-f88452a627ed,7f11aff8-ee3a-b2d4-561f-4f5bb996f538,5e50bebf-aee0-312a-d55e-13ced21b88e6,d59cfe08-3c72-a3fa-d01d-607c9e347122,117c29a4-d1b2-6107-f195-70a5d1595ee0,2077a0f8-539e-be89-0a3d-c0beb6c7a444,3ebab37e-751c-c294-662d-6b3a24d01b40,13731d57-d401-49e7-b6a3-a549e4042293,0e4552ac-be2f-5ff5-416f-ea0a7c0fbf7a,90706f14-ef10-87cf-9501-b926fe97533e,538065c7-53a7-d586-8f7d-19de1cdff3e3,2a3db663-01df-919c-b3d7-8ca7411be0c6,a132cbbd-6a2c-2981-165a-239e22fba6c7,91d8d21d-21d6-4d88-90aa-e88a01537e24,b79fbe59-e7c2-9744-7e50-05b13814cd9f,88c0f392-517a-d8ea-55bb-7643a67dcbeb,485ddf8d-d909-40f6-9b2f-2274af864ad3,2a33a355-3c5e-b270-ef85-39bad6cb85d9,aeda7752-7e83-076e-c42b-0ec2d880d066,08f396f5-b6e7-70cb-d38d-3f8482e01fd3,ae3f6165-9170-5e89-2a73-f195dde2614b,279c2dda-b764-f322-52da-0f367f5de63d,dc3e25c2-fcc4-745b-ec2c-63a6b7d533ff,f33f03fa-2ffa-e853-dbd6-286eda6fe956,abe5a16d-74fe-e59f-90e3-9afda20d83e9,3e0b60da-5927-2efc-2f96-e17d69885577,4af5cc2e-4db3-f648-5af1-3a1f12e0fdac,df44b9c5-39df-5d09-1ad6-90600e8b7e8a,0c534ed3-fff7-d2bf-d32e-e19d84644e3f,31e2aef0-101b-c6d8-dc07-a67cfe06f76e,a902632a-0d51-4d07-42b2-afaa469a83ee,70103367-f6a9-a727-3dab-6a05f5a90393,f978328d-425b-b310-0da6-7c3328e63cc1,409595f1-7886-1425-3740-bef972498026,7f6ce5fb-3e7d-e92d-09f6-b00a6b4d0c62,129a0a72-0c4b-4698-c2f5-844fd56d8927,db9ed813-f4bf-e56c-01a6-80350b1eca6b,6ecb47db-85de-5e16-e2b7-10a80aa8fb44,79956d61-7467-f7c6-4719-1c06d0a10a6a,92913dcd-57aa-0525-1aec-0eb8d6cb2e11,6ad14ba9-986e-3615-423d-fca256d04e3f,a38529e1-58a9-63ab-4eb7-68f71129ec6a,fdf702fa-f3b7-b5be-c238-b8900297a334,6b9c1fa3-229c-bd1c-7f79-69ccdcdbebb1,669887c4-4e4c-f99b-635d-2527050a40de,4dfe1721-ef86-ac47-8966-23af161be673,0abe8cb9-712b-9e10-52b9-44291f7d3b20,3dcce8ef-d228-6f5b-d738-01f253bdff37,599b60f3-43e0-cd5d-7623-c0e586b44ab6,3e513663-1c0f-8721-5dcf-00a6b2ea53d7,d47169f5-796b-1525-be18-69128f34c0f5,6e9d4e72-2290-a03f-b3dd-5e061be5d594,fe8ebf28-c4d4-9b95-5b47-2a56b68abead,7a7d35b2-9ec0-a79d-e027-233d614177ae,c8158407-99c2-d62a-f196-fc55313c6361,9f0162db-78f2-ec3c-5bf9-14d6ed0542d2,b7e1ed2f-896e-ab1b-8a73-c2637526ffdc,ec6c96ca-6a73-096f-cb5f-bb0c9141cad6,ba480fb2-95a9-3fa5-f892-b0b57a463faf,713f82ea-9162-8af7-ff82-ce3c5fdfd6df,b4e4a40d-d336-fdc4-42a4-979964afcada,323c19aa-eef8-9897-3db5-4691f479fd5d,adb8301d-4757-2413-db36-043b5b3bd8b2,b93a24c9-b2d2-3d1f-3ce9-bf57591f5cdb,8c05ebc8-a306-28a4-2e6a-bf78cdda001c,ddd90be9-1283-db1f-7cc7-c0f72b0ed60d,12617f98-66d4-8f44-2708-7c11f0fb8123,e1494936-9ea6-f285-ac25-f5252cf13c83,7739a973-62f6-bcb4-b853-2e67a97adc32,110fc6a2-a981-a291-c268-a35db1d432d8,1e082b4d-340e-a7fc-f38a-499bd2c4e304,1877bacd-c485-fb40-864b-f4373c4e2c97,91008bdb-3875-626f-72b5-7d1962139acd,6effb1c8-a4b6-5c0d-ad17-cad8eacfdc9c,09ca19d3-3161-03c9-669f-fa623d80c632,1a99c062-b0d1-69fa-b764-17ab76461007,b1f04996-2ebf-8250-a52e-4115f9fbcc9a,17ee0908-c059-36c6-df80-90ca9775f4fc,59a13502-6d00-5d0c-5e0f-41a07602849b,873724f5-26b9-f4f2-ae27-48ee08c65e36,cc73e3f5-b9a0-05b5-7473-7e717fbb2d9b,bf4fccca-eccd-a7d5-8620-8821fdc13120,1b17202f-9e1a-a006-a10f-1c088bad1281,b4ba7135-27f2-2c32-3112-a11607c0a5eb,90e2708f-dfb3-7fdf-49bd-b3115b7e5144,a8425ae4-5f7a-10e8-acf3-efbb5ae3c33d,fad62cb9-f360-e0ac-47f3-7e2ed83c11dd,72067d8f-de4c-af96-baab-f1da48d036c9,1c41fa72-1e39-d674-70fb-8dde77840f72,309b2ca8-c490-6e1e-84c7-099dcbe0f77a,efd26284-8a33-a8f0-5316-6a215622efbe,b821b16b-d0c2-8bcc-588f-4e36b5339a76,e8e2b01a-977d-e88d-a739-4bc5589720cd,d75d1e85-21ad-8579-79ff-a0c15dc60899,2664c383-f104-759b-d4ae-aa4131524be7,8cb7effe-1578-0a43-f1ff-a0e6c4539d61,e0d31137-6361-8eab-9b6d-0941e5b37f8d,2bf58aa8-f09e-9af3-0468-10fc540e5c5d,036c0be3-9d41-7a93-8d08-01e819bed016,6ab1bcee-388c-2807-86bd-e1fbdb76a5b2,11accbe5-3dab-5414-5dd2-97c5517b1c10,881c70af-a3cc-bdb8-3eab-f1844a48f872,a4ac639e-e9a9-6aa0-6c70-35d17179668c,aa6ac598-40d9-09b2-fc0a-9aa29ef5a74d,b4a78de0-e667-836b-aa87-279fec0357fd,ac2ddda2-0010-6500-cd29-bdb59e88d13d,b9ec40ba-c24c-6662-d51e-455a4ca482c1,429f317e-3400-0632-e969-5e61269910de,5a65af8f-394a-7636-87eb-48c827478907,1c6d83f7-26c0-b8eb-381c-061c65d16a97,ec2f8cc3-df85-505c-e827-9aa7191a2f7a,df6bc8d3-a7e9-5c83-525a-336a861c644d,74e87659-76ec-89ad-e706-41e6870bbbfa,ddc7ae85-265f-bab9-81ae-3dd289ce2ea4,b28f6a8d-92ab-b50f-d7dd-6f8eb118b158,f05a08bc-123a-e592-06e0-e3942ad53ef4,406ee831-53da-4c3f-a28e-db0d9b67ddb0,519c1c32-6c80-7690-b5aa-8cb44bfebebd}'::uuid[])))
+                    Rows Removed by Filter: 21310
+                    Buffers: shared hit=4273
+Planning Time: 0.170 ms
+Execution Time: 62.557 ms
+
+=== 200 subordinates (201 owners) / detail(visible) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_ownedId
+LIMIT 1
+Limit  (cost=0.93..8.95 rows=1 width=732) (actual time=0.052..0.053 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.93..8.95 rows=1 width=732) (actual time=0.050..0.051 rows=1 loops=1)
+        Index Cond: (id = '6b180a46-4e59-43fa-9371-436284bb1c16'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8,affec3b6-4cf9-0492-377a-8114c86fc093,3e0469fb-1349-91f8-f75a-2760e409c6ed,7668f673-d566-9995-175e-f91b5d171945,8808a13b-854c-2563-da1a-5f6cb2130868,990d67a9-f946-96b1-abe2-dccf06900322,03aa1a0b-0375-b046-1c1b-8f35b234e67a,d781eaae-8248-db6c-e1a7-b82e58e60435,d09979d7-94a6-ee60-d836-f884739f7196,ef06d5cb-f353-86ff-2203-d186eeff7923,726dedc0-d678-8b05-f486-730edcc0e871,8a62f0be-aa5a-e938-956f-5ea290321336,2b4233eb-ec7a-45e1-fb8d-dd1aab794f7b,7ac18a18-93e1-d2bd-5b46-958ce1d2a8d0,2baab43f-784b-5b53-0b53-47a50490bb0a,10880c7f-4e42-09ee-da79-711e1ea1723e,2e129db1-5b6d-6db5-342b-a5d328642262,87dc1e13-1a13-69fd-f8f1-c824a6a62dff,00a65dd4-7e84-2bcc-3d82-a296301071fb,5e6c9b24-8295-88e0-ac8f-7d8074a4bfd4,0f8f84c1-8bfd-5244-ed97-6f63924a8a0e,a507ac92-0f79-7876-259f-3c91f5cdef99,078d079e-6146-dec4-dbf2-135a8e513e2e,b6f7fac0-074f-6508-e5a4-540ad89b55c0,244fd63d-0adb-f673-130f-ce2f222078a5,40b13b85-e6e4-fc9c-4a6f-24379db20a39,0c673c53-a29a-cb19-c7e5-5b292d259e4d,d21dbd2c-4e17-8b2c-b55d-ce0c6a43effc,c6f273ac-241a-0421-6e0a-703c18c36532,9ece8c40-20f8-aed1-0676-cd1c56a41889,8cd5a487-792e-9504-5574-fe205e4efdf9,41a2abe1-09f2-43e1-2e72-133cf46ea5db,657bc81a-9e2f-ba42-93ed-712d02a82191,e6f39564-6455-6eb0-f7e3-10ccfaebe1d1,89a0afa8-bca0-3ba7-4e75-fe1e36d1a431,3695b09d-29f3-d88d-21ad-2bbfc230edae,bb534b67-41a8-63fd-098b-8ea0a709d680,fd8689cb-8011-3b68-be58-6d8b5a6aa06a,f0b3b762-3d3b-edf8-9845-9673d778319e,93b1ad3c-faeb-254e-a3c6-8ee7ea23c582,ff0aa5fe-bff0-1840-387a-57bf41db361d,e0218145-4edb-d5c9-103b-73061e58cd9c,cd654cbb-5fea-850a-df5a-28ef7a6e2994,92007d4f-eb0c-6860-0f6e-a3423d65dea0,923b25d9-d294-c984-05bf-d70ac7604701,5d68f620-8533-5588-b67c-f713ed6b3cfb,903a4fb3-dc3d-b3f1-94ff-4d50d5dd1f06,603ac517-5e0b-004e-988f-a8b1fda8c142,5a7b32f2-8b60-7c1c-dca4-f6821054a998,a45c60cc-393d-eac0-9b74-2f8bb58e275f,0bbf349b-0c07-a177-7892-a8d13937571e,75626fed-9acb-1954-5a0e-2c0a6d5b19d7,0699ddd4-0db0-b8a9-86ec-f120f5b872e5,81a84a94-d831-3e42-7536-74c2eeaa0186,03a2b89f-8492-2364-4395-d2951dadff6c,0d44502f-9db3-fa0f-1c2d-d0b523573f8b,c16fd6e4-7644-c245-1f53-235797d05252,9708fa05-fcb3-e7f4-ccc6-75379da49353,be2b07d8-4f10-f8b3-b3ca-e84b620cf166,8f03eb40-2fb5-1efd-87a8-fa821ef71e36,994204a8-bf2b-1cb2-dd87-5643c0607be7,ee8c50f6-6027-b586-7b02-9f14d8cc6566,c8ce9fdd-b99d-bb5d-3a80-b207246f74b5,e40c701b-30b0-98a3-c632-425d845f95e3,446e3045-851a-8538-cd64-d8b7e82dbc37,1af70c87-71c5-0d65-f8ba-3d678e90e1e9,ceb8dce4-ae22-145e-7852-2275f277435d,8c4b3595-f450-9c39-f643-5176354b61b9,00ed29a6-4066-51af-e714-82b5470432f5,5e9ea435-dd2d-f6ec-8040-2f291d9df643,f0c42ab7-3bcb-8e92-099a-b3c7d389b57e,05d7c468-97b1-33cd-e5c4-345442737622,f330353f-8c4c-c942-05ec-099bead3053c,a9f93a64-f168-d5eb-0de5-29331648591b,3d62bbb6-5605-350d-9cf4-3fad107b093e,e876db23-879f-faa9-793f-6a102e5063e6,2b2c3ac6-fd56-56c6-6b63-49297f7c8f34,9edb9251-5fc5-ae08-c2d8-f9bca5c16c4b,ccf718bf-7d49-ae99-1b33-f88452a627ed,7f11aff8-ee3a-b2d4-561f-4f5bb996f538,5e50bebf-aee0-312a-d55e-13ced21b88e6,d59cfe08-3c72-a3fa-d01d-607c9e347122,117c29a4-d1b2-6107-f195-70a5d1595ee0,2077a0f8-539e-be89-0a3d-c0beb6c7a444,3ebab37e-751c-c294-662d-6b3a24d01b40,13731d57-d401-49e7-b6a3-a549e4042293,0e4552ac-be2f-5ff5-416f-ea0a7c0fbf7a,90706f14-ef10-87cf-9501-b926fe97533e,538065c7-53a7-d586-8f7d-19de1cdff3e3,2a3db663-01df-919c-b3d7-8ca7411be0c6,a132cbbd-6a2c-2981-165a-239e22fba6c7,91d8d21d-21d6-4d88-90aa-e88a01537e24,b79fbe59-e7c2-9744-7e50-05b13814cd9f,88c0f392-517a-d8ea-55bb-7643a67dcbeb,485ddf8d-d909-40f6-9b2f-2274af864ad3,2a33a355-3c5e-b270-ef85-39bad6cb85d9,aeda7752-7e83-076e-c42b-0ec2d880d066,08f396f5-b6e7-70cb-d38d-3f8482e01fd3,ae3f6165-9170-5e89-2a73-f195dde2614b,279c2dda-b764-f322-52da-0f367f5de63d,dc3e25c2-fcc4-745b-ec2c-63a6b7d533ff,f33f03fa-2ffa-e853-dbd6-286eda6fe956,abe5a16d-74fe-e59f-90e3-9afda20d83e9,3e0b60da-5927-2efc-2f96-e17d69885577,4af5cc2e-4db3-f648-5af1-3a1f12e0fdac,df44b9c5-39df-5d09-1ad6-90600e8b7e8a,0c534ed3-fff7-d2bf-d32e-e19d84644e3f,31e2aef0-101b-c6d8-dc07-a67cfe06f76e,a902632a-0d51-4d07-42b2-afaa469a83ee,70103367-f6a9-a727-3dab-6a05f5a90393,f978328d-425b-b310-0da6-7c3328e63cc1,409595f1-7886-1425-3740-bef972498026,7f6ce5fb-3e7d-e92d-09f6-b00a6b4d0c62,129a0a72-0c4b-4698-c2f5-844fd56d8927,db9ed813-f4bf-e56c-01a6-80350b1eca6b,6ecb47db-85de-5e16-e2b7-10a80aa8fb44,79956d61-7467-f7c6-4719-1c06d0a10a6a,92913dcd-57aa-0525-1aec-0eb8d6cb2e11,6ad14ba9-986e-3615-423d-fca256d04e3f,a38529e1-58a9-63ab-4eb7-68f71129ec6a,fdf702fa-f3b7-b5be-c238-b8900297a334,6b9c1fa3-229c-bd1c-7f79-69ccdcdbebb1,669887c4-4e4c-f99b-635d-2527050a40de,4dfe1721-ef86-ac47-8966-23af161be673,0abe8cb9-712b-9e10-52b9-44291f7d3b20,3dcce8ef-d228-6f5b-d738-01f253bdff37,599b60f3-43e0-cd5d-7623-c0e586b44ab6,3e513663-1c0f-8721-5dcf-00a6b2ea53d7,d47169f5-796b-1525-be18-69128f34c0f5,6e9d4e72-2290-a03f-b3dd-5e061be5d594,fe8ebf28-c4d4-9b95-5b47-2a56b68abead,7a7d35b2-9ec0-a79d-e027-233d614177ae,c8158407-99c2-d62a-f196-fc55313c6361,9f0162db-78f2-ec3c-5bf9-14d6ed0542d2,b7e1ed2f-896e-ab1b-8a73-c2637526ffdc,ec6c96ca-6a73-096f-cb5f-bb0c9141cad6,ba480fb2-95a9-3fa5-f892-b0b57a463faf,713f82ea-9162-8af7-ff82-ce3c5fdfd6df,b4e4a40d-d336-fdc4-42a4-979964afcada,323c19aa-eef8-9897-3db5-4691f479fd5d,adb8301d-4757-2413-db36-043b5b3bd8b2,b93a24c9-b2d2-3d1f-3ce9-bf57591f5cdb,8c05ebc8-a306-28a4-2e6a-bf78cdda001c,ddd90be9-1283-db1f-7cc7-c0f72b0ed60d,12617f98-66d4-8f44-2708-7c11f0fb8123,e1494936-9ea6-f285-ac25-f5252cf13c83,7739a973-62f6-bcb4-b853-2e67a97adc32,110fc6a2-a981-a291-c268-a35db1d432d8,1e082b4d-340e-a7fc-f38a-499bd2c4e304,1877bacd-c485-fb40-864b-f4373c4e2c97,91008bdb-3875-626f-72b5-7d1962139acd,6effb1c8-a4b6-5c0d-ad17-cad8eacfdc9c,09ca19d3-3161-03c9-669f-fa623d80c632,1a99c062-b0d1-69fa-b764-17ab76461007,b1f04996-2ebf-8250-a52e-4115f9fbcc9a,17ee0908-c059-36c6-df80-90ca9775f4fc,59a13502-6d00-5d0c-5e0f-41a07602849b,873724f5-26b9-f4f2-ae27-48ee08c65e36,cc73e3f5-b9a0-05b5-7473-7e717fbb2d9b,bf4fccca-eccd-a7d5-8620-8821fdc13120,1b17202f-9e1a-a006-a10f-1c088bad1281,b4ba7135-27f2-2c32-3112-a11607c0a5eb,90e2708f-dfb3-7fdf-49bd-b3115b7e5144,a8425ae4-5f7a-10e8-acf3-efbb5ae3c33d,fad62cb9-f360-e0ac-47f3-7e2ed83c11dd,72067d8f-de4c-af96-baab-f1da48d036c9,1c41fa72-1e39-d674-70fb-8dde77840f72,309b2ca8-c490-6e1e-84c7-099dcbe0f77a,efd26284-8a33-a8f0-5316-6a215622efbe,b821b16b-d0c2-8bcc-588f-4e36b5339a76,e8e2b01a-977d-e88d-a739-4bc5589720cd,d75d1e85-21ad-8579-79ff-a0c15dc60899,2664c383-f104-759b-d4ae-aa4131524be7,8cb7effe-1578-0a43-f1ff-a0e6c4539d61,e0d31137-6361-8eab-9b6d-0941e5b37f8d,2bf58aa8-f09e-9af3-0468-10fc540e5c5d,036c0be3-9d41-7a93-8d08-01e819bed016,6ab1bcee-388c-2807-86bd-e1fbdb76a5b2,11accbe5-3dab-5414-5dd2-97c5517b1c10,881c70af-a3cc-bdb8-3eab-f1844a48f872,a4ac639e-e9a9-6aa0-6c70-35d17179668c,aa6ac598-40d9-09b2-fc0a-9aa29ef5a74d,b4a78de0-e667-836b-aa87-279fec0357fd,ac2ddda2-0010-6500-cd29-bdb59e88d13d,b9ec40ba-c24c-6662-d51e-455a4ca482c1,429f317e-3400-0632-e969-5e61269910de,5a65af8f-394a-7636-87eb-48c827478907,1c6d83f7-26c0-b8eb-381c-061c65d16a97,ec2f8cc3-df85-505c-e827-9aa7191a2f7a,df6bc8d3-a7e9-5c83-525a-336a861c644d,74e87659-76ec-89ad-e706-41e6870bbbfa,ddc7ae85-265f-bab9-81ae-3dd289ce2ea4,b28f6a8d-92ab-b50f-d7dd-6f8eb118b158,f05a08bc-123a-e592-06e0-e3942ad53ef4,406ee831-53da-4c3f-a28e-db0d9b67ddb0,519c1c32-6c80-7690-b5aa-8cb44bfebebd}'::uuid[])))
+        Buffers: shared hit=4
+Planning Time: 0.204 ms
+Execution Time: 0.087 ms
+
+=== 200 subordinates (201 owners) / detail(hidden) ===
+SELECT d.id, d.account_id, d.amount, d.closed_at, d.closing_date, d.contact_id, d.created_at, d.created_user_id, d.currency, d.deleted_at, d.deleted_user_id, d.is_deleted, d.lost_reason, d.modified_date, d.modified_user_id, d.name, d.owner_user_id, d.pipeline_id, d.stage_id, d.tenant_id
+FROM sales.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.id = @_8__locals1_hiddenId
+LIMIT 1
+Limit  (cost=0.93..8.95 rows=1 width=732) (actual time=0.044..0.044 rows=0 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using pk_deals on deals d  (cost=0.93..8.95 rows=1 width=732) (actual time=0.043..0.044 rows=0 loops=1)
+        Index Cond: (id = '5bd5c53e-36e4-419a-88af-0548065d0134'::uuid)
+        Filter: ((NOT is_deleted) AND (tenant_id = '11111111-1111-1111-1111-111111111111'::uuid) AND (owner_user_id = ANY ('{3d517fe6-ebab-7b8c-fcf9-8db6259c8a59,24c9e15e-52af-c47c-225b-757e7bee1f9d,7e58d63b-6019-7ceb-55a1-c487989a3720,92877af7-0a45-fd6a-2ed7-fe81e1236b78,3f02ebe3-d792-9b09-1e3d-8ccfde2f3bc6,0a791842-f52a-0acf-bb3a-783378c066b8,affec3b6-4cf9-0492-377a-8114c86fc093,3e0469fb-1349-91f8-f75a-2760e409c6ed,7668f673-d566-9995-175e-f91b5d171945,8808a13b-854c-2563-da1a-5f6cb2130868,990d67a9-f946-96b1-abe2-dccf06900322,03aa1a0b-0375-b046-1c1b-8f35b234e67a,d781eaae-8248-db6c-e1a7-b82e58e60435,d09979d7-94a6-ee60-d836-f884739f7196,ef06d5cb-f353-86ff-2203-d186eeff7923,726dedc0-d678-8b05-f486-730edcc0e871,8a62f0be-aa5a-e938-956f-5ea290321336,2b4233eb-ec7a-45e1-fb8d-dd1aab794f7b,7ac18a18-93e1-d2bd-5b46-958ce1d2a8d0,2baab43f-784b-5b53-0b53-47a50490bb0a,10880c7f-4e42-09ee-da79-711e1ea1723e,2e129db1-5b6d-6db5-342b-a5d328642262,87dc1e13-1a13-69fd-f8f1-c824a6a62dff,00a65dd4-7e84-2bcc-3d82-a296301071fb,5e6c9b24-8295-88e0-ac8f-7d8074a4bfd4,0f8f84c1-8bfd-5244-ed97-6f63924a8a0e,a507ac92-0f79-7876-259f-3c91f5cdef99,078d079e-6146-dec4-dbf2-135a8e513e2e,b6f7fac0-074f-6508-e5a4-540ad89b55c0,244fd63d-0adb-f673-130f-ce2f222078a5,40b13b85-e6e4-fc9c-4a6f-24379db20a39,0c673c53-a29a-cb19-c7e5-5b292d259e4d,d21dbd2c-4e17-8b2c-b55d-ce0c6a43effc,c6f273ac-241a-0421-6e0a-703c18c36532,9ece8c40-20f8-aed1-0676-cd1c56a41889,8cd5a487-792e-9504-5574-fe205e4efdf9,41a2abe1-09f2-43e1-2e72-133cf46ea5db,657bc81a-9e2f-ba42-93ed-712d02a82191,e6f39564-6455-6eb0-f7e3-10ccfaebe1d1,89a0afa8-bca0-3ba7-4e75-fe1e36d1a431,3695b09d-29f3-d88d-21ad-2bbfc230edae,bb534b67-41a8-63fd-098b-8ea0a709d680,fd8689cb-8011-3b68-be58-6d8b5a6aa06a,f0b3b762-3d3b-edf8-9845-9673d778319e,93b1ad3c-faeb-254e-a3c6-8ee7ea23c582,ff0aa5fe-bff0-1840-387a-57bf41db361d,e0218145-4edb-d5c9-103b-73061e58cd9c,cd654cbb-5fea-850a-df5a-28ef7a6e2994,92007d4f-eb0c-6860-0f6e-a3423d65dea0,923b25d9-d294-c984-05bf-d70ac7604701,5d68f620-8533-5588-b67c-f713ed6b3cfb,903a4fb3-dc3d-b3f1-94ff-4d50d5dd1f06,603ac517-5e0b-004e-988f-a8b1fda8c142,5a7b32f2-8b60-7c1c-dca4-f6821054a998,a45c60cc-393d-eac0-9b74-2f8bb58e275f,0bbf349b-0c07-a177-7892-a8d13937571e,75626fed-9acb-1954-5a0e-2c0a6d5b19d7,0699ddd4-0db0-b8a9-86ec-f120f5b872e5,81a84a94-d831-3e42-7536-74c2eeaa0186,03a2b89f-8492-2364-4395-d2951dadff6c,0d44502f-9db3-fa0f-1c2d-d0b523573f8b,c16fd6e4-7644-c245-1f53-235797d05252,9708fa05-fcb3-e7f4-ccc6-75379da49353,be2b07d8-4f10-f8b3-b3ca-e84b620cf166,8f03eb40-2fb5-1efd-87a8-fa821ef71e36,994204a8-bf2b-1cb2-dd87-5643c0607be7,ee8c50f6-6027-b586-7b02-9f14d8cc6566,c8ce9fdd-b99d-bb5d-3a80-b207246f74b5,e40c701b-30b0-98a3-c632-425d845f95e3,446e3045-851a-8538-cd64-d8b7e82dbc37,1af70c87-71c5-0d65-f8ba-3d678e90e1e9,ceb8dce4-ae22-145e-7852-2275f277435d,8c4b3595-f450-9c39-f643-5176354b61b9,00ed29a6-4066-51af-e714-82b5470432f5,5e9ea435-dd2d-f6ec-8040-2f291d9df643,f0c42ab7-3bcb-8e92-099a-b3c7d389b57e,05d7c468-97b1-33cd-e5c4-345442737622,f330353f-8c4c-c942-05ec-099bead3053c,a9f93a64-f168-d5eb-0de5-29331648591b,3d62bbb6-5605-350d-9cf4-3fad107b093e,e876db23-879f-faa9-793f-6a102e5063e6,2b2c3ac6-fd56-56c6-6b63-49297f7c8f34,9edb9251-5fc5-ae08-c2d8-f9bca5c16c4b,ccf718bf-7d49-ae99-1b33-f88452a627ed,7f11aff8-ee3a-b2d4-561f-4f5bb996f538,5e50bebf-aee0-312a-d55e-13ced21b88e6,d59cfe08-3c72-a3fa-d01d-607c9e347122,117c29a4-d1b2-6107-f195-70a5d1595ee0,2077a0f8-539e-be89-0a3d-c0beb6c7a444,3ebab37e-751c-c294-662d-6b3a24d01b40,13731d57-d401-49e7-b6a3-a549e4042293,0e4552ac-be2f-5ff5-416f-ea0a7c0fbf7a,90706f14-ef10-87cf-9501-b926fe97533e,538065c7-53a7-d586-8f7d-19de1cdff3e3,2a3db663-01df-919c-b3d7-8ca7411be0c6,a132cbbd-6a2c-2981-165a-239e22fba6c7,91d8d21d-21d6-4d88-90aa-e88a01537e24,b79fbe59-e7c2-9744-7e50-05b13814cd9f,88c0f392-517a-d8ea-55bb-7643a67dcbeb,485ddf8d-d909-40f6-9b2f-2274af864ad3,2a33a355-3c5e-b270-ef85-39bad6cb85d9,aeda7752-7e83-076e-c42b-0ec2d880d066,08f396f5-b6e7-70cb-d38d-3f8482e01fd3,ae3f6165-9170-5e89-2a73-f195dde2614b,279c2dda-b764-f322-52da-0f367f5de63d,dc3e25c2-fcc4-745b-ec2c-63a6b7d533ff,f33f03fa-2ffa-e853-dbd6-286eda6fe956,abe5a16d-74fe-e59f-90e3-9afda20d83e9,3e0b60da-5927-2efc-2f96-e17d69885577,4af5cc2e-4db3-f648-5af1-3a1f12e0fdac,df44b9c5-39df-5d09-1ad6-90600e8b7e8a,0c534ed3-fff7-d2bf-d32e-e19d84644e3f,31e2aef0-101b-c6d8-dc07-a67cfe06f76e,a902632a-0d51-4d07-42b2-afaa469a83ee,70103367-f6a9-a727-3dab-6a05f5a90393,f978328d-425b-b310-0da6-7c3328e63cc1,409595f1-7886-1425-3740-bef972498026,7f6ce5fb-3e7d-e92d-09f6-b00a6b4d0c62,129a0a72-0c4b-4698-c2f5-844fd56d8927,db9ed813-f4bf-e56c-01a6-80350b1eca6b,6ecb47db-85de-5e16-e2b7-10a80aa8fb44,79956d61-7467-f7c6-4719-1c06d0a10a6a,92913dcd-57aa-0525-1aec-0eb8d6cb2e11,6ad14ba9-986e-3615-423d-fca256d04e3f,a38529e1-58a9-63ab-4eb7-68f71129ec6a,fdf702fa-f3b7-b5be-c238-b8900297a334,6b9c1fa3-229c-bd1c-7f79-69ccdcdbebb1,669887c4-4e4c-f99b-635d-2527050a40de,4dfe1721-ef86-ac47-8966-23af161be673,0abe8cb9-712b-9e10-52b9-44291f7d3b20,3dcce8ef-d228-6f5b-d738-01f253bdff37,599b60f3-43e0-cd5d-7623-c0e586b44ab6,3e513663-1c0f-8721-5dcf-00a6b2ea53d7,d47169f5-796b-1525-be18-69128f34c0f5,6e9d4e72-2290-a03f-b3dd-5e061be5d594,fe8ebf28-c4d4-9b95-5b47-2a56b68abead,7a7d35b2-9ec0-a79d-e027-233d614177ae,c8158407-99c2-d62a-f196-fc55313c6361,9f0162db-78f2-ec3c-5bf9-14d6ed0542d2,b7e1ed2f-896e-ab1b-8a73-c2637526ffdc,ec6c96ca-6a73-096f-cb5f-bb0c9141cad6,ba480fb2-95a9-3fa5-f892-b0b57a463faf,713f82ea-9162-8af7-ff82-ce3c5fdfd6df,b4e4a40d-d336-fdc4-42a4-979964afcada,323c19aa-eef8-9897-3db5-4691f479fd5d,adb8301d-4757-2413-db36-043b5b3bd8b2,b93a24c9-b2d2-3d1f-3ce9-bf57591f5cdb,8c05ebc8-a306-28a4-2e6a-bf78cdda001c,ddd90be9-1283-db1f-7cc7-c0f72b0ed60d,12617f98-66d4-8f44-2708-7c11f0fb8123,e1494936-9ea6-f285-ac25-f5252cf13c83,7739a973-62f6-bcb4-b853-2e67a97adc32,110fc6a2-a981-a291-c268-a35db1d432d8,1e082b4d-340e-a7fc-f38a-499bd2c4e304,1877bacd-c485-fb40-864b-f4373c4e2c97,91008bdb-3875-626f-72b5-7d1962139acd,6effb1c8-a4b6-5c0d-ad17-cad8eacfdc9c,09ca19d3-3161-03c9-669f-fa623d80c632,1a99c062-b0d1-69fa-b764-17ab76461007,b1f04996-2ebf-8250-a52e-4115f9fbcc9a,17ee0908-c059-36c6-df80-90ca9775f4fc,59a13502-6d00-5d0c-5e0f-41a07602849b,873724f5-26b9-f4f2-ae27-48ee08c65e36,cc73e3f5-b9a0-05b5-7473-7e717fbb2d9b,bf4fccca-eccd-a7d5-8620-8821fdc13120,1b17202f-9e1a-a006-a10f-1c088bad1281,b4ba7135-27f2-2c32-3112-a11607c0a5eb,90e2708f-dfb3-7fdf-49bd-b3115b7e5144,a8425ae4-5f7a-10e8-acf3-efbb5ae3c33d,fad62cb9-f360-e0ac-47f3-7e2ed83c11dd,72067d8f-de4c-af96-baab-f1da48d036c9,1c41fa72-1e39-d674-70fb-8dde77840f72,309b2ca8-c490-6e1e-84c7-099dcbe0f77a,efd26284-8a33-a8f0-5316-6a215622efbe,b821b16b-d0c2-8bcc-588f-4e36b5339a76,e8e2b01a-977d-e88d-a739-4bc5589720cd,d75d1e85-21ad-8579-79ff-a0c15dc60899,2664c383-f104-759b-d4ae-aa4131524be7,8cb7effe-1578-0a43-f1ff-a0e6c4539d61,e0d31137-6361-8eab-9b6d-0941e5b37f8d,2bf58aa8-f09e-9af3-0468-10fc540e5c5d,036c0be3-9d41-7a93-8d08-01e819bed016,6ab1bcee-388c-2807-86bd-e1fbdb76a5b2,11accbe5-3dab-5414-5dd2-97c5517b1c10,881c70af-a3cc-bdb8-3eab-f1844a48f872,a4ac639e-e9a9-6aa0-6c70-35d17179668c,aa6ac598-40d9-09b2-fc0a-9aa29ef5a74d,b4a78de0-e667-836b-aa87-279fec0357fd,ac2ddda2-0010-6500-cd29-bdb59e88d13d,b9ec40ba-c24c-6662-d51e-455a4ca482c1,429f317e-3400-0632-e969-5e61269910de,5a65af8f-394a-7636-87eb-48c827478907,1c6d83f7-26c0-b8eb-381c-061c65d16a97,ec2f8cc3-df85-505c-e827-9aa7191a2f7a,df6bc8d3-a7e9-5c83-525a-336a861c644d,74e87659-76ec-89ad-e706-41e6870bbbfa,ddc7ae85-265f-bab9-81ae-3dd289ce2ea4,b28f6a8d-92ab-b50f-d7dd-6f8eb118b158,f05a08bc-123a-e592-06e0-e3942ad53ef4,406ee831-53da-4c3f-a28e-db0d9b67ddb0,519c1c32-6c80-7690-b5aa-8cb44bfebebd}'::uuid[])))
+        Rows Removed by Filter: 1
+        Buffers: shared hit=4
+Planning Time: 0.159 ms
+Execution Time: 0.074 ms
+

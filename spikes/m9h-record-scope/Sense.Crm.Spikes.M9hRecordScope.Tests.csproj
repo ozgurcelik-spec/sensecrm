@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ATILABILIR (throwaway) SPIKE — M9H H0 (docs/analysis/m9h-h0-spike.md). Ürüne dahil DEĞİL: Sense.Crm.slnx'te yok, hiçbir üretim projesi bunu referans almaz.
+    Ad ".Tests" ile bittiği için Directory.Build.props onu test projesi (Exe) sayar. Kilit dosyası üretilmez (bilinçli: kilitli restore kapısına girmesin).
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <NoWarn>$(NoWarn);CA5351;CA1707;CA2007;CA1848;CA1859;NU1901;NU1902;NU1903;NU1904</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../tests/Sense.Crm.Tests.Shared/Sense.Crm.Tests.Shared.csproj" />
+    <ProjectReference Include="../../src/Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Sense.Crm.Modules.Sales.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Modules/Sales/Sense.Crm.Modules.Sales.Domain/Sense.Crm.Modules.Sales.Domain.csproj" />
+    <ProjectReference Include="../../src/Shared/Sense.Crm.Shared.Web/Sense.Crm.Shared.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+</Project>

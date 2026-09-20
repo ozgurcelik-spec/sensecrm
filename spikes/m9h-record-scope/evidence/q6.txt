@@ -1,0 +1,56 @@
+[Q6 read-only write, NO mapping] 500 {"type":"https://errors.crm.local/general.internal_error","title":"Beklenmeyen hata","status":500,"detail":"record.read_only:deal","instance":"/api/v1/deals/01a0be6b-8b9f-7980-8792-6221802465e5","code":"general.internal_error","traceId":"0HNON0GUTBP8M"}
+
+[Q6 IDOR GET /api/v1/deals/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR PUT /api/v1/deals/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR DELETE /api/v1/deals/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR GET /api/v1/accounts/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/accounts/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR DELETE /api/v1/accounts/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/accounts/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 read-only write, WITH mapping] 403 {"type":"record.read_only","title":"Forbidden","status":403,"instance":"/api/v1/deals/01a0be6b-b6ff-70aa-8180-31c73c35ff7c","code":"record.read_only","args":{"resource":"deal"}}
+
+[Q6 create-on-hidden-account] 404 {"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals","code":"not_found","traceId":"0HNON0GUTBPB5"}
+
+[Q6 visible deal / hidden account] accountName present=True value=""
+
+[Q6 read-only write, NO mapping] 500 {"type":"https://errors.crm.local/general.internal_error","title":"Beklenmeyen hata","status":500,"detail":"record.read_only:deal","instance":"/api/v1/deals/01a0be6d-c5f5-7ba5-97d1-61961b850218","code":"general.internal_error","traceId":"0HNON0IA6D3TS"}
+
+[Q6 IDOR GET /api/v1/deals/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR PUT /api/v1/deals/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR DELETE /api/v1/deals/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR GET /api/v1/accounts/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/accounts/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 IDOR DELETE /api/v1/accounts/{id}] status=404/404
+body(hidden)={"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/accounts/{id}","code":"not_found","traceId":"#"}
+headers(hidden)=api-supported-versions=1.0;Content-Language=tr-TR;Content-Type=application/problem+json; charset=utf-8;Cross-Origin-Opener-Policy=same-origin;Permissions-Policy=camera=(), microphone=(), geolocation=(), payment=();Referrer-Policy=no-referrer;X-Content-Type-Options=nosniff;X-Frame-Options=DENY
+
+[Q6 read-only write, WITH mapping] 403 {"type":"record.read_only","title":"Forbidden","status":403,"instance":"/api/v1/deals/01a0be6d-f1ff-78ca-9589-ef6bbd74490b","code":"record.read_only","args":{"resource":"deal"}}
+
+[Q6 create-on-hidden-account] 404 {"type":"https://errors.crm.local/not_found","title":"Kayıt bulunamadı","status":404,"detail":"Kayıt bulunamadı.","instance":"/api/v1/deals","code":"not_found","traceId":"0HNON0IA6D40B"}
+
+[Q6 visible deal / hidden account] accountName present=True value=""
+

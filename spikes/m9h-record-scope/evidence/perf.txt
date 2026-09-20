@@ -1,0 +1,2 @@
+[Q4 seed] 300k deals seeded in 40,5s (T1=200000, T2=60000, T3=40000; 250 users)
+
