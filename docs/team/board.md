@@ -28,7 +28,7 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | C-M6A | Ticaret: Ürünler, Teklifler, Satış Siparişleri (kalemli) | Spec→Backend+Web | **Merged** | `m6/commerce` | kart kapısı + teklif→sipariş dönüşümü tek transaction |
 | C-M6B | Servis/Destek: Talepler (case), yorumlar, SLA süresi | Spec→Backend+Web | **Merged** | `m6/service` | kart kapısı |
 | C-M6C | Pazarlama: Kampanyalar, kampanya üyeleri, lead kaynağı ilişkisi | Spec→Backend+Web | **Merged** | `m6/marketing` | kart kapısı |
-| C-M7 | SaaS hazırlığı (planlar/limitler, kiracı yönetimi, faturalama altyapısı) | Spec→Backend+Web | **Backlog** | — | M6 merge sonrası şekillenir |
+| C-M7 | SaaS hazırlığı (planlar/limitler, kiracı yönetimi, faturalama altyapısı) | Spec→Backend+Web | **Merged** | `main` | M6 merge sonrası şekillenir |
 
 ## Yürütme sırası
 1. C-M5 biter → doğrula, commit.
@@ -40,3 +40,5 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 - 2026-09-19: Pano kuruldu. M1–M4 merged; C-M5 running; C-SEC güvenlik raporuna göre blocked.
 - 2026-09-20: C-M5, C-SEC, C-M6A/B/C merged (sıra: M5 → M6C → M6A → M6B → C-SEC); merge sonrası tüm kapılar yeşil (backend + web) ve tarayıcıda uçtan uca doğrulandı. Kök ad alanı `Crm.*` → `Sense.Crm.*` olarak değiştirildi. Sıradaki: C-M7 (SaaS hazırlığı) şekillendirilecek.
 - Çakışma dersleri: (1) `git checkout --merge` + JSON için yapısal birleştirme; (2) `.gitattributes` ile LF zorunlu; (3) izin sayısı testleri sayı sabitlemez; (4) aynı adlı tip/anahtar çakışmaları (MemberStatus, resx `field.*`) merge sonrası taranır.
+- 2026-09-20: C-M7 merged (Platform modülü: planlar/limitler/askıya alma/ölçüm/KVKK silme; web: platform konsolu, Plan ve kullanım, bantlar, ilk kurulum kartı). Kapılar: backend 12 proje 1188 test, web 798 test; tarayıcıda uçtan uca doğrulandı (starter planında kapalı modüller menüden gizli, platform konsolu, askıya alma diyaloğu).
+- Açık: yerel `main` henüz `origin`e push edilmedi (otomatik mod denetleyicisi push komutunu reddetti; kullanıcı elle çalıştırmalı).
