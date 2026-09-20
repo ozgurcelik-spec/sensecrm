@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { isPermissionEffective } from "@/lib/entitlements";
 import { useAuthStore } from "@/store/auth.store";
 
 interface PermissionGuardProps {
@@ -22,12 +23,11 @@ export function PermissionGuard({
   children,
   fallback = null,
 }: PermissionGuardProps) {
-  const permissions = useAuthStore((state) => state.me?.permissions);
-  const granted = permissions ?? [];
+  const me = useAuthStore((state) => state.me);
   const allowed = permission
-    ? granted.includes(permission)
+    ? isPermissionEffective(me, permission)
     : anyOf
-      ? anyOf.some((p) => granted.includes(p))
+      ? anyOf.some((p) => isPermissionEffective(me, p))
       : true;
 
   return allowed ? <>{children}</> : <>{fallback}</>;

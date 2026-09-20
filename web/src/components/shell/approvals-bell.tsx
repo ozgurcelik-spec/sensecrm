@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Indicator } from "@mantine/core";
 import { Bell } from "lucide-react";
 import { usePendingApprovalCount } from "@/hooks/use-approvals";
+import { useModuleEnabled } from "@/hooks/use-module-enabled";
 import { usePermission } from "@/hooks/use-permission";
 import { PERMISSIONS } from "@/types";
 
@@ -13,8 +14,10 @@ import { PERMISSIONS } from "@/types";
 export function ApprovalsBell() {
   const { t } = useTranslation(["workflows"]);
   const canDecide = usePermission(PERMISSIONS.crmApprovalsDecide);
-  const { data: count = 0 } = usePendingApprovalCount();
-  if (!canDecide && count === 0) return null;
+  // Approvals are part of the workflows module: no request (and no bell) while the plan lacks it.
+  const workflowsOn = useModuleEnabled("workflows");
+  const { data: count = 0 } = usePendingApprovalCount(workflowsOn);
+  if (!workflowsOn || (!canDecide && count === 0)) return null;
 
   return (
     <Indicator label={count > 99 ? "99+" : count} size={16} color="red" disabled={count === 0}>

@@ -1,0 +1,86 @@
+{
+  "title": "Plan ve kullanım",
+  "description": "Organizasyonunuzun planı, deneme süresi ve kullanım limitleri.",
+  "modules": {
+    "sales": "Satış",
+    "activities": "Aktiviteler",
+    "workflows": "İş akışları",
+    "commerce": "Ticaret",
+    "service": "Servis",
+    "marketing": "Pazarlama"
+  },
+  "included": "Dahil",
+  "notIncluded": "Plana dahil değil",
+  "modulesTitle": "Modüller",
+  "upgradeHint": "Planınızı yükseltmek için platform yöneticisiyle iletişime geçin.",
+  "plan": {
+    "current": "Geçerli plan",
+    "trialEnds": "Deneme bitişi: {{date}}",
+    "daysLeft": "{{count}} gün kaldı"
+  },
+  "limits": {
+    "title": "Limitler ve kullanım",
+    "users": "Kullanıcı",
+    "records": "Kayıt",
+    "recordsOf": "{{module}} kayıtları"
+  },
+  "usage": {
+    "unlimited": "Sınırsız",
+    "usersDetail": "{{active}} aktif + {{pending}} bekleyen davet",
+    "asOf": "Şu tarihte sayıldı: {{date}}"
+  },
+  "overLimit": {
+    "title": "Plan limiti aşıldı",
+    "hint": "Mevcut kullanımınız planınızın limitinin üstünde. Verileriniz silinmez; ancak limit altına inene kadar yeni kayıt eklenemez."
+  },
+  "reasons": {
+    "suspended": "hesap askıya alındı",
+    "trial_expired": "deneme süresi doldu",
+    "pending_deletion": "hesap silinmek üzere",
+    "deleted": "hesap silindi"
+  },
+  "errors": {
+    "tenant": {
+      "suspended": "İşlem yapılamadı: {{reasonText}}. Kayıtlar salt okunurdur."
+    },
+    "plan": {
+      "module_disabled": "Bu modül planınıza dahil değil: {{moduleLabel}}",
+      "limit_exceeded": "Plan limitine ulaşıldı: {{label}} {{used}}/{{max}}"
+    },
+    "planLink": "Plan ve kullanım"
+  },
+  "banner": {
+    "trialEnding": "Deneme sürenizin bitmesine {{count}} gün kaldı.",
+    "trialLastDay": "Deneme süreniz bugün bitiyor.",
+    "trialExpired": "Deneme süresi doldu; kayıtlar salt okunur.",
+    "suspended": "Hesabınız askıya alındı; kayıtlar salt okunur.",
+    "viewPlan": "Plan ve kullanım"
+  },
+  "blocked": {
+    "title": "{{name}} organizasyonuna erişim kapalı",
+    "reason": {
+      "suspended": "Bu organizasyon askıya alındı. Kayıtlarınıza şu an erişemezsiniz.",
+      "pending_deletion": "Bu organizasyon için silme talebi alındı. Erişim kapatıldı.",
+      "deleted": "Bu organizasyon silindi.",
+      "trial_expired": "Deneme süresi doldu ve erişim kapalı."
+    },
+    "contact": "Ayrıntı için platform yöneticisiyle iletişime geçin. Başka bir organizasyonunuz varsa üst çubuktan geçiş yapabilirsiniz.",
+    "recheck": "Durumu yeniden kontrol et"
+  },
+  "moduleDisabled": {
+    "title": "Bu modül planınıza dahil değil",
+    "description": "Bu sayfayı kullanmak için planınızın bu modülü içermesi gerekir. Planınızı yükseltmek için platform yöneticisiyle iletişime geçin.",
+    "viewPlan": "Plan ve kullanım"
+  },
+  "onboarding": {
+    "title": "İlk kurulum",
+    "progress": "{{done}} / {{total}} adım tamamlandı",
+    "dismiss": "Kapat",
+    "steps": {
+      "profile": "Organizasyon bilgilerini tamamla",
+      "invite_user": "İlk kullanıcıyı davet et",
+      "create_lead": "İlk potansiyel müşteriyi oluştur",
+      "create_workflow_rule": "İlk iş akışı kuralını oluştur"
+    }
+  }
+}

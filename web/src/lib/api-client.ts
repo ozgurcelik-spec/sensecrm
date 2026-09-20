@@ -86,6 +86,26 @@ export function setPasswordChangeRequiredHandler(
   passwordChangeRequiredHandler = handler;
 }
 
+export type PlanStateErrorHandler = (code: string) => void;
+let planStateErrorHandler: PlanStateErrorHandler | null = null;
+
+/**
+ * Called on a 402/403 answer with a plan / tenant-state code (`tenant.suspended`, `plan.module_disabled`,
+ * `plan.limit_exceeded`) so the app can re-read `/me` and the subscription (banners, hidden modules).
+ */
+export function setPlanStateErrorHandler(handler: PlanStateErrorHandler | null): void {
+  planStateErrorHandler = handler;
+}
+
+function planStateCode(error: AxiosError): string | undefined {
+  const status = error.response?.status;
+  if (status !== 402 && status !== 403) return undefined;
+  const code = (error.response?.data as { code?: unknown } | undefined)?.code;
+  return typeof code === "string" && (code === "tenant.suspended" || code.startsWith("plan."))
+    ? code
+    : undefined;
+}
+
 /** Several requests can 401 at once when the access token expires; the refresh token rotates, so refresh only once. */
 let refreshInFlight: Promise<boolean> | null = null;
 
@@ -148,6 +168,8 @@ export async function handleResponseError(error: AxiosError): Promise<AxiosRespo
     passwordChangeRequiredHandler?.();
     return Promise.reject(error);
   }
+  const planCode = planStateCode(error);
+  if (planCode) planStateErrorHandler?.(planCode);
   if (
     error.response?.status !== 401 ||
     !config ||

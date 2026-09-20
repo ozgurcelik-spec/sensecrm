@@ -12,6 +12,7 @@ import {
 } from "@/components/reports/report-tabs";
 import { MarketingReport } from "@/components/reports/marketing-report-tab";
 import { PageHeader } from "@/components/page-header";
+import { useModuleEnabled } from "@/hooks/use-module-enabled";
 import { usePermission } from "@/hooks/use-permission";
 import { ServiceReport } from "@/components/service/service-report";
 import {
@@ -55,9 +56,16 @@ export default function ReportsPage() {
   const customFrom = searchParams.get("from") ?? "";
   const customTo = searchParams.get("to") ?? "";
   const tabParam = searchParams.get("tab");
-  const canMarketing = usePermission(PERMISSIONS.crmReportsRead);
+  // Tabs of a module the plan switches off are not offered and never request their report.
+  const commerceOn = useModuleEnabled("commerce");
+  const serviceOn = useModuleEnabled("service");
+  const marketingOn = useModuleEnabled("marketing");
+  const canMarketing = usePermission(PERMISSIONS.crmReportsRead) && marketingOn;
+  const visibleTabs = REPORT_TABS.filter(
+    (value) => (value !== "commerce" || commerceOn) && (value !== "service" || serviceOn)
+  );
   const tab: ReportTab =
-    REPORT_TABS.find((value) => value === tabParam) ??
+    visibleTabs.find((value) => value === tabParam) ??
     (canMarketing && tabParam === MARKETING_TAB ? MARKETING_TAB : DEFAULT_TAB);
   const groupBy: WonLostGroupBy =
     searchParams.get("groupBy") === "week" ? "week" : DEFAULT_GROUP_BY;
@@ -138,7 +146,7 @@ export default function ReportsPage() {
           keepMounted={false}
         >
           <Tabs.List mb="md">
-            {REPORT_TABS.map((value) => (
+            {visibleTabs.map((value) => (
               <Tabs.Tab key={value} value={value}>
                 {value === "commerce" ? t("commerce:reports.tab") : t(`reports:tabs.${value}`)}
               </Tabs.Tab>
@@ -189,12 +197,16 @@ export default function ReportsPage() {
                   <MarketingReport range={range} />
                 </Tabs.Panel>
               )}
-              <Tabs.Panel value="commerce">
-                <CommerceReport range={range} />
-              </Tabs.Panel>
-              <Tabs.Panel value="service">
-                <ServiceReport range={range} />
-              </Tabs.Panel>
+              {commerceOn && (
+                <Tabs.Panel value="commerce">
+                  <CommerceReport range={range} />
+                </Tabs.Panel>
+              )}
+              {serviceOn && (
+                <Tabs.Panel value="service">
+                  <ServiceReport range={range} />
+                </Tabs.Panel>
+              )}
             </>
           )}
         </Tabs>

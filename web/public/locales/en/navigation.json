@@ -21,5 +21,10 @@
   "quotes": "Quotes",
   "orders": "Orders",
   "cases": "Cases",
-  "sla": "SLA policies"
+  "sla": "SLA policies",
+  "planUsage": "Plan & usage",
+  "platform": "Platform",
+  "platformOrganizations": "Organizations",
+  "platformPlans": "Plans",
+  "platformAudit": "Platform audit"
 }

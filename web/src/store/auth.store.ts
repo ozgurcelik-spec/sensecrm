@@ -6,6 +6,7 @@ import {
   readStorage,
   writeStorage,
 } from "@/lib/api-client";
+import { isPermissionEffective } from "@/lib/entitlements";
 import { queryClient } from "@/lib/query-client";
 import * as authService from "@/services/auth.service";
 import type { SignupRequest } from "@/services/auth.service";
@@ -157,7 +158,7 @@ export const useAuthStore = create<AuthStore>()(
           return !!(token || refreshToken) && !!me;
         },
 
-        hasPermission: (permission) => get().me?.permissions.includes(permission) ?? false,
+        hasPermission: (permission) => isPermissionEffective(get().me, permission),
       };
     },
     {

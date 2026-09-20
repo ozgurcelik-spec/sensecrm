@@ -2,6 +2,8 @@
  * Shared API types. JSON is camelCase (see the backend contract in docs/architecture/kararlar.md, K6-K8).
  */
 
+import type { MeSubscription } from "./platform";
+
 export type Locale = "tr" | "en";
 
 export interface AuthTokens {
@@ -40,6 +42,8 @@ export interface Me {
   organizations: OrganizationSummary[];
   /** True while the API only accepts the password-change flow for this user (C-SEC). */
   mustChangePassword?: boolean;
+  /** Plan, effective status and module flags (M7); absent on servers without the platform module. */
+  subscription?: MeSubscription;
 }
 
 export type PermissionGroup = "org" | "crm";
@@ -156,3 +160,4 @@ export * from "./workflows";
 export * from "./campaigns";
 export * from "./commerce";
 export * from "./service";
+export * from "./platform";

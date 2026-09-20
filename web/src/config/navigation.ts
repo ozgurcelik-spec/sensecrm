@@ -5,9 +5,11 @@ import {
   CalendarCheck,
   ClipboardCheck,
   Contact,
+  Gauge,
   FileText,
   Handshake,
   Home,
+  Layers,
   Megaphone,
   Package,
   LifeBuoy,
@@ -20,7 +22,7 @@ import {
   Workflow,
   Zap,
 } from "lucide-react";
-import { PERMISSIONS } from "@/types";
+import { PERMISSIONS, type GatedModule } from "@/types";
 
 export interface NavItem {
   key: string;
@@ -32,6 +34,10 @@ export interface NavItem {
   permissions?: string[];
   /** Also visible without the permissions while this flag (see `useVisibleItems`) is true. */
   visibleWhen?: string;
+  /** Hidden while the plan switches this module off (`me.subscription.modules`). */
+  module?: GatedModule;
+  /** Only platform admins (`me.user.isPlatformAdmin`) see the item. */
+  platformAdminOnly?: boolean;
   /** Match the path exactly (index routes). */
   end?: boolean;
 }
@@ -70,6 +76,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: "campaigns",
     labelKey: "campaigns",
+    module: "marketing",
     path: "/app/campaigns",
     icon: Megaphone,
     permissions: [PERMISSIONS.crmCampaignsRead],
@@ -77,6 +84,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: "products",
     labelKey: "products",
+    module: "commerce",
     path: "/app/products",
     icon: Package,
     permissions: [PERMISSIONS.crmProductsRead],
@@ -84,6 +92,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: "quotes",
     labelKey: "quotes",
+    module: "commerce",
     path: "/app/quotes",
     icon: FileText,
     permissions: [PERMISSIONS.crmQuotesRead],
@@ -91,6 +100,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: "orders",
     labelKey: "orders",
+    module: "commerce",
     path: "/app/orders",
     icon: ShoppingCart,
     permissions: [PERMISSIONS.crmOrdersRead],
@@ -105,6 +115,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: "cases",
     labelKey: "cases",
+    module: "service",
     path: "/app/cases",
     icon: LifeBuoy,
     permissions: [PERMISSIONS.crmCasesRead],
@@ -112,6 +123,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: "approvals",
     labelKey: "approvals",
+    module: "workflows",
     path: "/app/approvals",
     icon: ClipboardCheck,
     // Visible to approvers and to anyone who has a pending approval (mine=true needs no permission).
@@ -159,6 +171,7 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
   {
     key: "workflows",
     labelKey: "workflows",
+    module: "workflows",
     path: "/app/settings/workflows",
     icon: Zap,
     permissions: [PERMISSIONS.orgWorkflowsManage],
@@ -166,8 +179,16 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
   {
     key: "sla",
     labelKey: "sla",
+    module: "service",
     path: "/app/settings/sla",
     icon: Timer,
+    permissions: [PERMISSIONS.orgSettingsManage],
+  },
+  {
+    key: "plan",
+    labelKey: "planUsage",
+    path: "/app/settings/plan",
+    icon: Gauge,
     permissions: [PERMISSIONS.orgSettingsManage],
   },
   {
@@ -176,6 +197,31 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
     path: "/app/settings/audit",
     icon: ScrollText,
     permissions: [PERMISSIONS.orgAuditRead],
+  },
+];
+
+/** Platform console (platform admins only): a separate "Platform" group in the navigation. */
+export const PLATFORM_ITEMS: readonly NavItem[] = [
+  {
+    key: "platformOrganizations",
+    labelKey: "platformOrganizations",
+    path: "/app/platform/organizations",
+    icon: Building2,
+    platformAdminOnly: true,
+  },
+  {
+    key: "platformPlans",
+    labelKey: "platformPlans",
+    path: "/app/platform/plans",
+    icon: Layers,
+    platformAdminOnly: true,
+  },
+  {
+    key: "platformAudit",
+    labelKey: "platformAudit",
+    path: "/app/platform/audit",
+    icon: ScrollText,
+    platformAdminOnly: true,
   },
 ];
 

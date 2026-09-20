@@ -1,10 +1,16 @@
-import { Link, NavLink as RouterNavLink, Outlet } from "react-router";
+import { useEffect } from "react";
+import { Link, NavLink as RouterNavLink, Outlet, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDisclosure } from "@mantine/hooks";
 import { AppShell, Burger, Divider, Group, NavLink, ScrollArea, Text } from "@mantine/core";
-import { NAV_ITEMS, SETTINGS_ITEMS, type NavItem } from "@/config/navigation";
+import { NAV_ITEMS, PLATFORM_ITEMS, SETTINGS_ITEMS, type NavItem } from "@/config/navigation";
 import { usePendingApprovalCount } from "@/hooks/use-approvals";
+import { useAccessLevel, useModuleEnabled } from "@/hooks/use-module-enabled";
 import { useVisibleItems } from "@/hooks/use-nav-visibility";
+import { useSubscriptionSync } from "@/hooks/use-subscription";
+import { setAppNavigator } from "@/lib/app-navigator";
+import { BlockedScreen } from "@/components/subscription/blocked-screen";
+import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
 import RouteBoundary from "@/components/route-boundary";
 import { ApprovalsBell } from "@/components/shell/approvals-bell";
 import { InvitationsBell } from "@/components/shell/invitations-bell";
@@ -50,9 +56,23 @@ function NavSection({ items, onNavigate }: { items: NavItem[]; onNavigate: () =>
 export default function AppLayout() {
   const { t } = useTranslation(["common", "navigation"]);
   const [mobileOpened, { toggle, close }] = useDisclosure(false);
-  const { data: pendingApprovals = 0 } = usePendingApprovalCount();
+  const navigate = useNavigate();
+  const blocked = useAccessLevel() === "none";
+  const workflowsOn = useModuleEnabled("workflows");
+  // Approvals belong to the workflows module: no request while the plan lacks it or the tenant is blocked.
+  const { data: pendingApprovals = 0 } = usePendingApprovalCount(workflowsOn && !blocked);
   const modules = useVisibleItems(NAV_ITEMS, { pendingApprovals: pendingApprovals > 0 });
   const settings = useVisibleItems(SETTINGS_ITEMS);
+  const platform = useVisibleItems(PLATFORM_ITEMS);
+  useSubscriptionSync();
+  // Toasts (rendered above the router) navigate through this.
+  useEffect(() => {
+    setAppNavigator((to) => void navigate(to));
+    return () => setAppNavigator(null);
+  }, [navigate]);
+
+  // `accessLevel: none` (blocked / deletion pending): nothing but /me is requested until it changes.
+  if (blocked) return <BlockedScreen />;
 
   return (
     <AppShell
@@ -111,10 +131,25 @@ export default function AppLayout() {
               <NavSection items={settings} onNavigate={close} />
             </nav>
           )}
+          {platform.length > 0 && (
+            <nav aria-label={t("navigation:platform")}>
+              <Divider
+                my="sm"
+                labelPosition="left"
+                label={
+                  <Text size="xs" fw={600} tt="uppercase" c="dimmed">
+                    {t("navigation:platform")}
+                  </Text>
+                }
+              />
+              <NavSection items={platform} onNavigate={close} />
+            </nav>
+          )}
         </ScrollArea>
       </AppShell.Navbar>
 
       <AppShell.Main>
+        <SubscriptionBanner />
         <RouteBoundary>
           <Outlet />
         </RouteBoundary>

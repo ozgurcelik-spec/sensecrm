@@ -14,4 +14,5 @@ export const chartMocks = {
   BarChart: stub("bar"),
   DonutChart: stub("donut"),
   FunnelChart: stub("funnel"),
+  LineChart: stub("line"),
 };
