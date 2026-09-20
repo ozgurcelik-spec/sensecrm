@@ -27,5 +27,6 @@
   "platformOrganizations": "Organizasyonlar",
   "platformPlans": "Planlar",
   "platformAudit": "Platform denetimi",
-  "notificationsSettings": "Bildirimler"
+  "notificationsSettings": "Bildirimler",
+  "integrations": "Entegrasyonlar"
 }

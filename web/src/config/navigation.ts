@@ -13,6 +13,7 @@ import {
   Layers,
   Megaphone,
   Package,
+  Plug,
   LifeBuoy,
   ScrollText,
   ShieldCheck,
@@ -198,6 +199,14 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
     path: "/app/settings/notifications",
     icon: Bell,
     permissions: [PERMISSIONS.orgNotificationsManage],
+  },
+  {
+    key: "integrations",
+    labelKey: "integrations",
+    module: "integrations",
+    path: "/app/settings/integrations",
+    icon: Plug,
+    permissions: [PERMISSIONS.orgIntegrationsManage],
   },
   {
     key: "audit",

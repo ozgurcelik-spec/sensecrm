@@ -64,6 +64,9 @@
       },
       "notifications": {
         "manage": "Bildirim ayarlarını ve teslimat günlüğünü yönetme"
+      },
+      "integrations": {
+        "manage": "Webhook'ları ve API anahtarlarını yönetme"
       }
     },
     "crm": {

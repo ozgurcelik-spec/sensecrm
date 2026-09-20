@@ -85,7 +85,13 @@ describe("overrides <-> draft", () => {
     expect(draft.maxRecords.sales).toEqual({ mode: "custom", value: 200000 });
     expect(draft.maxRecords.commerce?.mode).toBe("unlimited");
     expect(draft.maxRecords.activities?.mode).toBe("plan");
-    expect(draft.modules).toEqual({ workflows: "on", commerce: "plan", service: "plan", marketing: "off" });
+    expect(draft.modules).toEqual({
+      workflows: "on",
+      commerce: "plan",
+      service: "plan",
+      marketing: "off",
+      integrations: "plan",
+    });
     expect(toOverridesBody(draft)).toEqual({
       maxUsers: null,
       maxRecords: { sales: 200000, commerce: null },

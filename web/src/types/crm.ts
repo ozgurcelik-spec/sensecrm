@@ -210,6 +210,8 @@ export interface RecordAuditEntry {
   action: "created" | "updated" | "deleted";
   userId?: string | null;
   userDisplayName?: string | null;
+  /** M8B: set when the change was made with an API key. */
+  apiKeyId?: string | null;
   changes?: Record<string, unknown> | null;
   occurredAt: string;
 }
