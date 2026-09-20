@@ -33,6 +33,16 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | C-M8B | Webhooks ve Open API: giden webhook (imzalı, yeniden deneme, SSRF korumalı), API anahtarları, teslimat günlüğü | Spec→Backend+Web | **Ready** | `m8/integrations` | kart kapısı + güvenlik incelemesi |
 | C-M8C | Dosya ekleri: nesne depolama (MinIO/S3), kayıtlara ek, plan depolama limiti, KVKK silme | Spec→Backend+Web | **Ready** | `m8/files` | kart kapısı + yetki/indirme incelemesi |
 | C-M8D | Özel alanlar: kiracı bazlı alan tanımları, doğrulama, dinamik form/detay/liste | Spec→Backend+Web | **Ready** | `m8/custom-fields` | kart kapısı + kiracı izolasyonu |
+| C-M9A | Kabuk ve iş kuyruğu: gruplu menü, genel arama, hızlı oluştur, İş Kuyruğu, Ana Sayfa widget'ları | Spec→Backend+Web | **Ready** | `m9/shell` | kart kapısı |
+| C-M9B | Liste deneyimi: kayıtlı görünümler, gelişmiş filtre, toplu işlem, etiket, içe/dışa aktarma | Spec→Backend+Web | **Backlog** (M8D sonrası) | `m9/lists` | kart kapısı |
+| C-M9C | Satış belgeleri ve envanter: fatura, fiyat listesi, tedarikçi, satın alma emri, belge alan paritesi | Spec→Backend+Web | **Ready** | `m9/inventory` | kart kapısı |
+| C-M9D | Aktivite paritesi: görev tekrarı/anımsatıcı, toplantı, arama, takvim | Spec→Backend+Web | **Backlog** (M8A sonrası) | `m9/activities` | kart kapısı |
+| C-M9E | Alan ve form paritesi: standart alanlar, Kaydet ve Yeni, dönüştürme eşlemesi | Spec→Backend+Web | **Backlog** (M8D sonrası) | `m9/fields` | kart kapısı |
+| C-M9F | Rapor ve analitik: rapor oluşturucu, hazır raporlar, pano oluşturucu, hedefler, öngörü | Spec→Backend+Web | **Backlog** (M9B sonrası) | `m9/analytics` | kart kapısı |
+| C-M9G | Otomasyon ve kanallar: webformları, atama kuralları, genel kural motoru, şema | Spec→Backend+Web | **Backlog** (M8A/B sonrası) | `m9/automation` | kart kapısı + güvenlik incelemesi |
+| C-M9H | Erişim modeli: rol hiyerarşisi, kayıt görünürlüğü, alan izni, giriş geçmişi | Spec→Backend+Web | **Backlog** (M8D sonrası) | `m9/access` | kart kapısı + güvenlik incelemesi |
+| C-M9I | Destek ve belgeler: çözümler (bilgi tabanı), belge klasörleri | Spec→Backend+Web | **Backlog** (M8C sonrası) | `m9/support` | kart kapısı |
+| C-M9J | Şirket ayarları: çalışma saatleri/tatil, çoklu para birimi, şablonlar | Spec→Backend+Web | **Backlog** (M9C sonrası) | `m9/company` | kart kapısı |
 
 ## Yürütme sırası
 1. C-M5 biter → doğrula, commit.
@@ -47,3 +57,4 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 - 2026-09-20: C-M7 merged (Platform modülü: planlar/limitler/askıya alma/ölçüm/KVKK silme; web: platform konsolu, Plan ve kullanım, bantlar, ilk kurulum kartı). Kapılar: backend 12 proje 1188 test, web 798 test; tarayıcıda uçtan uca doğrulandı (starter planında kapalı modüller menüden gizli, platform konsolu, askıya alma diyaloğu).
 - Açık: yerel `main` henüz `origin`e push edilmedi (otomatik mod denetleyicisi push komutunu reddetti; kullanıcı elle çalıştırmalı).
 - 2026-09-20: M8 başladı (A–D). Eşzamanlı en çok 5 ajan; Spec ajanları önce (4 paralel), sonra dalga dalga Backend+Web. Merge sırası: D → C → A → B (ortak varlık ve sıcak dosya çakışmalarını azaltmak için; gerekirse değişir).
+- 2026-09-20: Zoho ekran analizi çıkarıldı (`docs/analysis/zoho-ekran-analizi.md`); M9A–J kartları panoya eklendi. Kural: toplam ajan sayısı hep 8; biten ajanın dalı `main`e merge edilir, worktree'si silinir, hemen yeni görev açılır (sıra: M9A spec, M9C spec, ardından bağımlılığı çözülenler).
