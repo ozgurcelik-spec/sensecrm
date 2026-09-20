@@ -43,6 +43,13 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 | C-M9H | Erişim modeli: rol hiyerarşisi, kayıt görünürlüğü, alan izni, giriş geçmişi | Spec→Backend+Web | **Backlog** (M8D sonrası) | `m9/access` | kart kapısı + güvenlik incelemesi |
 | C-M9I | Destek ve belgeler: çözümler (bilgi tabanı), belge klasörleri | Spec→Backend+Web | **Backlog** (M8C sonrası) | `m9/support` | kart kapısı |
 | C-M9J | Şirket ayarları: çalışma saatleri/tatil, çoklu para birimi, şablonlar | Spec→Backend+Web | **Backlog** (M9C sonrası) | `m9/company` | kart kapısı |
+| C-X1 | Analiz: BPMN süreç tasarım stüdyosu (Conductor üzerinde görsel tasarımcı, sürümleme, simülasyon) | Spec (araştırma) | **Backlog** (boş yuvada sırayla) | `docs/analysis/x1-bpmn.md` | analiz belgesi + karar önerisi |
+| C-X2 | Analiz: AI analiz worker'ı (yerinde model, KVKK, kullanım senaryoları, maliyet) | Spec (araştırma) | **Backlog** (boş yuvada sırayla) | `docs/analysis/x2-ai.md` | analiz belgesi + karar önerisi |
+| C-X3 | Analiz: ERP, dijital imza ve SFTP entegrasyonları (bağlayıcı çerçevesi, güvenlik, yerel sağlayıcılar) | Spec (araştırma) | **Backlog** (boş yuvada sırayla) | `docs/analysis/x3-entegrasyon.md` | analiz belgesi + karar önerisi |
+| C-X4 | Analiz: Müşteri/partner portalı (kimlik, kiracı ayrımı, kapsam, güvenlik) | Spec (araştırma) | **Backlog** (boş yuvada sırayla) | `docs/analysis/x4-portal.md` | analiz belgesi + karar önerisi |
+| C-X5 | Analiz: Kubernetes/Helm dağıtımı (Compose'dan geçiş, HA, gizli yönetimi, veri merkezi) | Spec (araştırma) | **Backlog** (boş yuvada sırayla) | `docs/analysis/x5-k8s.md` | analiz belgesi + karar önerisi |
+| C-X6 | Analiz: SSO (OIDC/SAML, AD/Entra, grup eşleme, JIT hesap, oturum) | Spec (araştırma) | **Backlog** (boş yuvada sırayla) | `docs/analysis/x6-sso.md` | analiz belgesi + karar önerisi |
+| C-X7 | Analiz: Sektör paketleri (paket modeli, şablonlar, alan/iş akışı setleri, dağıtım) | Spec (araştırma) | **Backlog** (boş yuvada sırayla) | `docs/analysis/x7-sektor.md` | analiz belgesi + karar önerisi |
 
 ## Yürütme sırası
 1. C-M5 biter → doğrula, commit.
@@ -59,3 +66,4 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 - 2026-09-20: M8 başladı (A–D). Eşzamanlı en çok 5 ajan; Spec ajanları önce (4 paralel), sonra dalga dalga Backend+Web. Merge sırası: D → C → A → B (ortak varlık ve sıcak dosya çakışmalarını azaltmak için; gerekirse değişir).
 - 2026-09-20: Zoho ekran analizi çıkarıldı (`docs/analysis/zoho-ekran-analizi.md`); M9A–J kartları panoya eklendi. Kural: toplam ajan sayısı hep 8; biten ajanın dalı `main`e merge edilir, worktree'si silinir, hemen yeni görev açılır (sıra: M9A spec, M9C spec, ardından bağımlılığı çözülenler).
 - 2026-09-20: M9A ve M9C plan belgeleri merged (`docs/plan/m9a-kabuk.md`, `m9c-envanter.md`); M9A Backend ve M9C Backend ajanları başladı (Web ajanları backend sonrası). Not: M9A `AddSearchText` migration'ları M8D/M9C snapshot'larıyla çakışır — sonra merge edilen kart migration'ını birleşik dal üzerinde yeniden üretir.
+- 2026-09-20: Kullanıcı isteğiyle yedi kapsam-dışı başlık için analiz kartları (C-X1..X7) açıldı; toplam ajan 8 kuralı gereği boşalan yuvalarda sırayla başlar. Çıktı: `docs/analysis/x*.md`.
