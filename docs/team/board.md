@@ -2,6 +2,8 @@
 
 Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı, durumu, kanıtı ve merge kapısı vardır. Paralel kartlar ayrı git worktree/branch'te çalışır; **tek entegratör** (Lead) sırayla merge eder. Ortak "sıcak dosyalar" yalnız ekleme (append-only) yapılır.
 
+> **Teslim sırası ve dilimler:** [teslimat-plani.md](teslimat-plani.md) — ürün en küçük çalışan parçalar (sürümler/dilimler) hâlinde, öncelik sırasıyla teslim edilir; ajanlar tek dilim yapar.
+
 ## Roller
 | Rol | Sorumluluk |
 |---|---|
@@ -67,3 +69,4 @@ Yöntem: ECC `team-agent-orchestration`. Her kartın tek sahibi, dosya kapsamı,
 - 2026-09-20: Zoho ekran analizi çıkarıldı (`docs/analysis/zoho-ekran-analizi.md`); M9A–J kartları panoya eklendi. Kural: toplam ajan sayısı hep 8; biten ajanın dalı `main`e merge edilir, worktree'si silinir, hemen yeni görev açılır (sıra: M9A spec, M9C spec, ardından bağımlılığı çözülenler).
 - 2026-09-20: M9A ve M9C plan belgeleri merged (`docs/plan/m9a-kabuk.md`, `m9c-envanter.md`); M9A Backend ve M9C Backend ajanları başladı (Web ajanları backend sonrası). Not: M9A `AddSearchText` migration'ları M8D/M9C snapshot'larıyla çakışır — sonra merge edilen kart migration'ını birleşik dal üzerinde yeniden üretir.
 - 2026-09-20: Kullanıcı isteğiyle yedi kapsam-dışı başlık için analiz kartları (C-X1..X7) açıldı; toplam ajan 8 kuralı gereği boşalan yuvalarda sırayla başlar. Çıktı: `docs/analysis/x*.md`.
+- 2026-09-20: Teslimat planı yazıldı (`docs/team/teslimat-plani.md`): v0.1–v0.13 sürümleri, ince dilimler, öncelik sırası. Yeni ajan istemleri kartın tamamını değil tek dilimi ister.
