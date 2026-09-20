@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Anchor, Card, Group, Stack, Text } from "@mantine/core";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { CaseActions } from "@/components/service/case-actions";
 import { CasePriorityBadge, CaseStatusBadge, SlaBadge } from "@/components/service/case-badges";
@@ -83,6 +84,7 @@ export default function CaseDetailPage() {
     }
   }
 
+  const attachmentsTab = useAttachmentsTab("case", id);
   const tabs = item
     ? [
         {
@@ -105,6 +107,7 @@ export default function CaseDetailPage() {
             </Stack>
           ),
         },
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("service:tabs.audit"),

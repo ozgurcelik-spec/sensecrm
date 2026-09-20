@@ -5,6 +5,7 @@ import { Button, Card, Stack, Text } from "@mantine/core";
 import { Pencil, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { CampaignStatusBadge, CampaignTypeBadge } from "@/components/marketing/campaign-badges";
 import { CampaignFormDialog } from "@/components/marketing/campaign-form-dialog";
@@ -42,6 +43,7 @@ export default function CampaignDetailPage() {
     }
   }
 
+  const attachmentsTab = useAttachmentsTab("campaign", id);
   const tabs = campaign
     ? [
         {
@@ -68,6 +70,7 @@ export default function CampaignDetailPage() {
           label: t("campaigns:tabs.members"),
           content: <CampaignMembersTab campaign={campaign} />,
         },
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("campaigns:tabs.audit"),

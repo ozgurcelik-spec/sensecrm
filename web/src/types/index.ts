@@ -161,3 +161,4 @@ export * from "./campaigns";
 export * from "./commerce";
 export * from "./service";
 export * from "./platform";
+export * from "./files";

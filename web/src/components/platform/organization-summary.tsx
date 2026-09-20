@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, Badge, Card, Group, SimpleGrid, Stack, Table, Text } from "@mantine/core";
 import { TriangleAlert } from "lucide-react";
 import { formatDateTime } from "@/lib/dates";
+import { formatBytes, mbToBytes } from "@/lib/files";
 import { formatCalendarDate, formatNumber, orDash } from "@/lib/format";
 import { toOverridesDraft } from "@/lib/platform";
 import {
@@ -19,7 +20,7 @@ export function OverLimitAlert({
   overLimit: PlatformOverLimit[];
   onDismiss: () => void;
 }) {
-  const { t } = useTranslation(["platform", "subscription"]);
+  const { t } = useTranslation(["platform", "subscription", "files"]);
   if (overLimit.length === 0) return null;
   return (
     <Alert
@@ -38,12 +39,16 @@ export function OverLimitAlert({
           <Text size="sm" key={`${entry.limit}-${entry.module ?? ""}`}>
             {entry.limit === "users"
               ? t("subscription:limits.users")
-              : t("subscription:limits.recordsOf", {
-                  module: t(`subscription:modules.${entry.module}`, {
-                    defaultValue: entry.module ?? "",
-                  }),
-                })}
-            {`: ${formatNumber(entry.used)} / ${formatNumber(entry.max)}`}
+              : entry.limit === "storage"
+                ? t("files:plan.storage")
+                : t("subscription:limits.recordsOf", {
+                    module: t(`subscription:modules.${entry.module}`, {
+                      defaultValue: entry.module ?? "",
+                    }),
+                  })}
+            {entry.limit === "storage"
+              ? `: ${formatBytes(entry.used)} / ${formatBytes(entry.max)}`
+              : `: ${formatNumber(entry.used)} / ${formatNumber(entry.max)}`}
           </Text>
         ))}
       </Stack>
@@ -63,7 +68,7 @@ export function OrganizationSummary({
   overLimit,
   onDismissOverLimit,
 }: OrganizationSummaryProps) {
-  const { t } = useTranslation(["platform", "subscription"]);
+  const { t } = useTranslation(["platform", "subscription", "files"]);
   const overrides = toOverridesDraft(org.overrides);
   const exception = (
     <Badge size="xs" color="violet" variant="light">
@@ -111,6 +116,19 @@ export function OrganizationSummary({
                     {org.limits.maxUsers === undefined ? unlimited : formatNumber(org.limits.maxUsers)}
                   </Text>
                   {overrides.maxUsers.mode !== "plan" && exception}
+                </Group>
+              </Table.Td>
+            </Table.Tr>
+            <Table.Tr>
+              <Table.Th>{t("files:platform.storageLimit")}</Table.Th>
+              <Table.Td data-testid="limit-storage">
+                <Group gap="xs">
+                  <Text size="sm">
+                    {org.limits.maxStorageMb === undefined
+                      ? unlimited
+                      : formatBytes(mbToBytes(org.limits.maxStorageMb))}
+                  </Text>
+                  {overrides.maxStorageMb.mode !== "plan" && exception}
                 </Group>
               </Table.Td>
             </Table.Tr>

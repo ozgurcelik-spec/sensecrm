@@ -13,17 +13,19 @@ interface UsageBarProps {
   /** Extra line under the bar (e.g. "3 active + 1 pending"). */
   detail?: string;
   testId: string;
+  /** How the numbers read (default: plain number; storage passes bytes formatting). */
+  format?: (value: number) => string;
 }
 
 /** One limit against its usage: the bar is orange from 80 % and red at 100 %; without a limit it says "Sınırsız". */
-export function UsageBar({ label, used, max, detail, testId }: UsageBarProps) {
+export function UsageBar({ label, used, max, detail, testId, format = formatNumber }: UsageBarProps) {
   const { t } = useTranslation(["subscription"]);
   if (max === undefined) {
     return (
       <Group justify="space-between" wrap="nowrap" data-testid={testId} data-level="unlimited">
         <Text size="sm">{label}</Text>
         <Text size="sm" c="dimmed">
-          {formatNumber(used)} · {t("subscription:usage.unlimited")}
+          {format(used)} · {t("subscription:usage.unlimited")}
         </Text>
       </Group>
     );
@@ -35,7 +37,7 @@ export function UsageBar({ label, used, max, detail, testId }: UsageBarProps) {
       <Group justify="space-between" wrap="nowrap">
         <Text size="sm">{label}</Text>
         <Text size="sm" fw={500}>
-          {formatNumber(used)} / {formatNumber(max)} ({percent}%)
+          {format(used)} / {format(max)} ({percent}%)
         </Text>
       </Group>
       <Progress
@@ -44,7 +46,7 @@ export function UsageBar({ label, used, max, detail, testId }: UsageBarProps) {
         size="md"
         radius="xl"
         aria-label={label}
-        aria-valuetext={`${formatNumber(used)} / ${formatNumber(max)}`}
+        aria-valuetext={`${format(used)} / ${format(max)}`}
       />
       {detail && (
         <Text size="xs" c="dimmed">

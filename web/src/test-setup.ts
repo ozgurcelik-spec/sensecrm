@@ -1,6 +1,11 @@
 // Registers jest-dom's DOM matchers (toBeInTheDocument, ...) for every vitest run, and the browser
 // APIs jsdom lacks but Mantine needs (matchMedia, ResizeObserver).
 import "@testing-library/jest-dom/vitest";
+import { configure } from "@testing-library/react";
+
+// findBy* / waitFor wait up to 1 s by default; lazy route chunks and Mantine forms take longer than
+// that when the whole suite (or other agents' builds) loads the machine. Passing waits return at once.
+configure({ asyncUtilTimeout: 5000 });
 
 if (!window.matchMedia) {
   Object.defineProperty(window, "matchMedia", {
