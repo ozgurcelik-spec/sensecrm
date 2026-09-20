@@ -79,6 +79,27 @@ $DC up -d db-init    # roller/veritabanları yeniden yaratılır
 # 3. ve 4. adım
 ```
 
+## Nesne deposu (dosya ekleri, M8C) — geri yükleme
+
+`backup.sh/ps1` **önce** veritabanlarını, **sonra** nesne kovasını yedekler (`files-<zaman>.tar.gz`, şifreli olmalı). Sıra bilinçlidir: geri yüklemede satırı olmayan nesne
+(yetim; zararsız, uzlaştırma siler) satırı olup nesnesi olmayan (`missing`) durumdan iyidir. Nesne kovası **KMS anahtarı olmadan okunamaz**: `deploy/secrets/minio-kms-key` aynı
+olmalıdır (yeni anahtar üretilirse eski nesneler açılamaz).
+
+1. Senaryo A'nın 1–3. adımlarını yapın (gizliler dâhil `minio-*` dosyaları; **aynı** `minio-kms-key`).
+2. Nesne deposunu başlatın ve kovayı hazırlayın: `$DC up -d minio minio-init` (kova + şifreleme + uygulama hesabı; idempotent).
+3. Arşivi açıp kovaya geri koyun (mc konteyneri, `backend` ağı; arşiv `.gpg`/`.enc` ise önce çözün):
+
+   ```bash
+   tar -xzf files-20260920-023000.tar.gz -C "$RESTORE_TMP"          # -> $RESTORE_TMP/files-20260920-023000/
+   $DC run --rm --no-deps -T -v "$RESTORE_TMP/files-20260920-023000:/backup:ro" --entrypoint /bin/sh minio-init -c \
+     'mc alias set local "$MINIO_ENDPOINT" "$(cat /run/secrets/minio_root_user)" "$(cat /run/secrets/minio_root_password)" >/dev/null && mc mirror --overwrite /backup "local/${MINIO_BUCKET}"'
+   ```
+
+4. Yığını başlatın (`$DC up -d`), sonra **sırayla**: `$DC run --rm migrator erase-deleted-tenants` (geri gelen imha edilmiş kiracının nesnelerini yeniden siler),
+   `$DC run --rm migrator files-reconcile --dry-run` (çıktıyı gözden geçirin: `missing`, `orphans`, `guardTripped`), sonra `$DC run --rm migrator files-reconcile`.
+   **Yetim silme güvenlik supabı** (`Files:Reconcile:MaxOrphanDeletePerRun` 1000 / `MaxOrphanDeleteFraction` %5) yanlış oranda (ör. eski bir nesne yedeği) toplu silmeyi durdurur; `guardTripped=True` görürseniz nedeni inceleyin.
+5. Denetim: `files-reconcile --dry-run` çıktısında `missing = 0` ve `select count(*) from files.attachments where state = 'missing'` = 0 (geri yükleme provası "ek sayısı = nesne sayısı" denetimi).
+
 ## Notlar
 
 - **Süre:** küçük veritabanında (pilot başlangıcı) yedek ve geri yükleme her biri saniyeler sürer; süre veri boyutuyla doğrusal büyür — RTO'yu

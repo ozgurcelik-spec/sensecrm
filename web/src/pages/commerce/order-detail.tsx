@@ -7,6 +7,7 @@ import { ReasonDialog } from "@/components/commerce/action-dialogs";
 import { LinesTable, TermsAndNotes, TotalsCard } from "@/components/commerce/document-parts";
 import { OrderStatusBadge } from "@/components/commerce/status-badges";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useCrmPermissions } from "@/hooks/use-crm-permissions";
@@ -67,6 +68,7 @@ export default function OrderDetailPage() {
     }
   }
 
+  const attachmentsTab = useAttachmentsTab("order", id);
   const tabs = order
     ? [
         {
@@ -85,6 +87,7 @@ export default function OrderDetailPage() {
             </Stack>
           ),
         },
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),

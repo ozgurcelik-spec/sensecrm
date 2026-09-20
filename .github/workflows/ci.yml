@@ -66,6 +66,10 @@ jobs:
           PUBLIC_HOSTNAME: crm.ci.local
       - run: docker compose -f deploy/docker-compose.prod.yml config --quiet
       - run: docker compose -f deploy/docker-compose.prod.yml --profile redis config --quiet
+      # C-OPS1: the observability overlay must stay valid (merged with the production file) and its alert rules / Prometheus config must pass promtool.
+      - run: docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml --profile host-metrics config --quiet
+      - run: docker run --rm --entrypoint promtool -v "$PWD/infra/observability/prometheus:/p:ro" prom/prometheus:v3.5.1 check rules /p/rules/crm-alerts.yml
+      - run: docker run --rm --entrypoint promtool -v "$PWD/infra/observability/prometheus:/p:ro" prom/prometheus:v3.5.1 check config --syntax-only /p/prometheus.yml
       - name: Compose refuses to start without secrets
         run: |
           rm -f deploy/.env
@@ -122,3 +126,33 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  e2e:
+    # Playwright browser tests against the real containerized stack: e2e/run.sh builds the images, starts deploy/docker-compose.prod.yml
+    # as its own compose project (crm-e2e, 127.0.0.1:8181, throw-away secrets), runs the suite and tears everything down. See e2e/README.md.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @sense-crm/e2e exec tsc --noEmit
+      - run: pnpm --filter @sense-crm/e2e exec eslint .
+      - run: pnpm --filter @sense-crm/e2e exec playwright install --with-deps chromium
+      - name: Run the end-to-end suite
+        run: bash e2e/run.sh
+      - name: Upload the Playwright report, traces, videos and stack logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          retention-days: 14
+          if-no-files-found: ignore
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+            e2e/artifacts

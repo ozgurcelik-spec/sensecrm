@@ -63,6 +63,7 @@ public sealed record AuditEntryDto(
     Guid? UserId,
     string? UserDisplayName,
     JsonElement Changes,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt,
+    Guid? ApiKeyId = null);
 
 public sealed record AuditPageDto(IReadOnlyList<AuditEntryDto> Items, long Total);

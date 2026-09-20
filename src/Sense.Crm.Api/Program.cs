@@ -46,6 +46,9 @@ try
     builder.Services.AddCrmAuthentication(builder.Configuration, builder.Environment);
     builder.Services.AddCrmHealthChecks(builder.Configuration);
 
+    // C-OPS1 (K20): Observability:Metrics:Enabled=true ise ayrı portta (varsayılan 9464) Prometheus /metrics; ana porttan ve nginx'ten erişilemez.
+    builder.Services.AddCrmObservability(builder.Configuration, "crm-api");
+
     builder.Services.AddCrmForwardedHeaders(builder.Configuration);
 
     var app = builder.Build();
@@ -83,6 +86,9 @@ try
     app.UseCrmCors();
 
     app.UseAuthentication();
+
+    // M8B: API anahtarı kullanım sayacı — hız sınırlayıcıdan ÖNCE (429 yanıtları da sayılır); yalnız ApiKey kimliğiyle gelen istekleri sayar.
+    app.UseApiKeyUsage();
 
     // Hız sınırlama kimlik doğrulamadan SONRA: anonim auth uçları IP başına ([EnableRateLimiting]), kimliği doğrulanmış tüm istekler
     // ayrıca kullanıcı ve kiracı başına genel sınırdan geçer (M2). Kullanıcı/kiracı anahtarı doğrulanmış JWT claim'lerinden okunur.

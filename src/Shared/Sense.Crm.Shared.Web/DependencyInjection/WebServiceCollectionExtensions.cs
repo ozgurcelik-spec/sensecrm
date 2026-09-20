@@ -177,14 +177,25 @@ public static class WebServiceCollectionExtensions
 
             // M2: kimliği doğrulanmış her istek için kullanıcı başına VE kiracı başına genel sınır (zincirlenmiş; ikisi de geçmeli).
             // Anonim istekler bu sınırlayıcıya takılmaz (auth uçları yukarıdaki IP politikasıyla, health uçları sınırsız).
+            // M8B: API anahtarı trafiği insan kovalarına GİRMEZ: kullanıcı ekseni anahtar başına (apikey:{id}), kiracı ekseni kiracının tüm anahtarları için (tenant-api:{tid}).
             limiter.GlobalLimiter = PartitionedRateLimiter.CreateChained(
-                PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthenticatedPartition(ctx, ClaimNames.Subject, "user", options.User)),
-                PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthenticatedPartition(ctx, ClaimNames.Tenant, "tenant", options.Tenant)));
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => IsApiKey(ctx)
+                    ? AuthenticatedPartition(ctx, ApiKeyClaimNames.ApiKeyId, "apikey", options.ApiKey)
+                    : AuthenticatedPartition(ctx, ClaimNames.Subject, "user", options.User)),
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => IsApiKey(ctx)
+                    ? AuthenticatedPartition(ctx, ClaimNames.Tenant, "tenant-api", options.ApiKeyTenant)
+                    : AuthenticatedPartition(ctx, ClaimNames.Tenant, "tenant", options.Tenant)));
             limiter.OnRejected = WriteRateLimitProblemAsync;
         });
 
         return services;
     }
+
+    /// <summary>API anahtarı ile doğrulanmış istek (sunucu kurulu ApiKey kimliği; istemci claim'i olamaz).</summary>
+    private static bool IsApiKey(HttpContext httpContext) =>
+        httpContext.User.Identity?.IsAuthenticated == true
+        && httpContext.User.Identities.Any(i => i.AuthenticationType == ApiKeyClaimNames.Scheme)
+        && httpContext.User.HasClaim(c => c.Type == ApiKeyClaimNames.ApiKeyId);
 
     /// <summary>JWT claim'i (sub/tid) ile bölümlenmiş sabit pencere; claim yoksa (anonim) sınırsız.</summary>
     private static RateLimitPartition<string> AuthenticatedPartition(HttpContext httpContext, string claimName, string scope, RateLimitPolicyOptions policyOptions)

@@ -11,6 +11,10 @@ public static class CommerceContractServices
     public static IServiceCollection AddCommerceContractServices(this IServiceCollection services)
     {
         services.AddScoped<IUsageReporter, CommerceUsageReporter>();
+
+        // M8C: dosya eki hedefleri (teklif, satış siparişi).
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, QuoteAttachmentTarget>();
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, OrderAttachmentTarget>();
         return services;
     }
 }

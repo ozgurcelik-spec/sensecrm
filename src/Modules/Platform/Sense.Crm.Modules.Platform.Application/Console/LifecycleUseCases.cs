@@ -55,6 +55,15 @@ public sealed class UpdateSubscriptionValidator : AbstractValidator<UpdateSubscr
                     case "maxusers":
                         CheckNonNegativeInteger(context, "Overrides.MaxUsers", property.Value, allowNull: true);
                         break;
+                    case "maxwebhooks":
+                        CheckNonNegativeInteger(context, "Overrides.MaxWebhooks", property.Value, allowNull: true);
+                        break;
+                    case "maxapikeys":
+                        CheckNonNegativeInteger(context, "Overrides.MaxApiKeys", property.Value, allowNull: true);
+                        break;
+                    case "maxstoragemb":
+                        CheckNonNegativeInteger(context, "Overrides.MaxStorageMb", property.Value, allowNull: true, upperBound: PlatformLimits.MaxStorageMbUpperBound);
+                        break;
                     case "maxrecords" when property.Value.ValueKind == JsonValueKind.Object:
                         foreach (var record in property.Value.EnumerateObject())
                         {
@@ -90,14 +99,14 @@ public sealed class UpdateSubscriptionValidator : AbstractValidator<UpdateSubscr
         });
     }
 
-    private static void CheckNonNegativeInteger(ValidationContext<UpdateSubscriptionCommand> context, string property, JsonElement value, bool allowNull)
+    private static void CheckNonNegativeInteger(ValidationContext<UpdateSubscriptionCommand> context, string property, JsonElement value, bool allowNull, int upperBound = int.MaxValue)
     {
         if (value.ValueKind == JsonValueKind.Null && allowNull)
         {
             return;
         }
 
-        if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var number) || number < 0)
+        if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var number) || number < 0 || number > upperBound)
         {
             context.AddFailure(property, PlatformErrors.InvalidOverrides);
         }
@@ -170,7 +179,7 @@ public sealed class UpdateSubscriptionHandler(
         // Mevcut kullanım yeni limitin üstündeyse: plan yine değişir (veri silinmez); aşım bildirilir, yeni tüketim 402 alır.
         var effective = EntitlementMath.Effective(plan, account);
         var usage = await meter.CollectAsync(account.TenantId, cancellationToken).ConfigureAwait(false);
-        return new SubscriptionUpdateResultDto(EntitlementMath.OverLimits(effective.MaxUsers, effective.MaxRecords, effective.Modules, usage));
+        return new SubscriptionUpdateResultDto(EntitlementMath.OverLimits(effective.MaxUsers, effective.MaxRecords, effective.Modules, usage, effective.MaxWebhooks, effective.MaxApiKeys, effective.MaxStorageMb));
     }
 
     private static JsonElement? ParseJson(string? json)

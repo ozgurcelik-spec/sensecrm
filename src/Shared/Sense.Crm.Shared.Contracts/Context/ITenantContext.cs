@@ -1,3 +1,5 @@
+using Sense.Crm.Shared.Contracts.Security;
+
 namespace Sense.Crm.Shared.Contracts.Context;
 
 /// <summary>İstek/iş kapsamındaki kiracı (organizasyon, K1). JWT `tid` claim'inden veya outbox/job argümanından çözülür.</summary>
@@ -36,4 +38,7 @@ public interface ICurrentUser
     string? CorrelationId { get; }
 
     string? IpAddress { get; }
+
+    /// <summary>M8B: istek bir API anahtarıyla yapıldıysa anahtar kimliği (varsayılan <c>null</c>: mevcut uygulamalar/sahteler etkilenmez).</summary>
+    ApiKeyPrincipal? ApiKey => null;
 }

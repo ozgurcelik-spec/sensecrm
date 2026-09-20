@@ -98,6 +98,8 @@ public sealed class CurrentUserAccessor : ICurrentUser
 
     public string? IpAddress => Effective.IpAddress;
 
+    public ApiKeyPrincipal? ApiKey => Effective.ApiKey;
+
     private sealed class Restorer(ICurrentUser? previous) : IDisposable
     {
         public void Dispose() => Override.Value = previous;
@@ -133,7 +135,8 @@ public sealed record AuthenticatedUser(
     IReadOnlySet<string> Roles,
     bool IsPlatformAdmin,
     string? CorrelationId,
-    string? IpAddress) : ICurrentUser
+    string? IpAddress,
+    ApiKeyPrincipal? ApiKey = null) : ICurrentUser
 {
     public bool IsAuthenticated => true;
 

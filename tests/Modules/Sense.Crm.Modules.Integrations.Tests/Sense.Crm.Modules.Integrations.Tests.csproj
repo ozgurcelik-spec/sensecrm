@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Modules/Integrations/Sense.Crm.Modules.Integrations.Domain/Sense.Crm.Modules.Integrations.Domain.csproj" />
+    <ProjectReference Include="../../../src/Modules/Integrations/Sense.Crm.Modules.Integrations.Application/Sense.Crm.Modules.Integrations.Application.csproj" />
+    <ProjectReference Include="../../../src/Modules/Integrations/Sense.Crm.Modules.Integrations.Contracts/Sense.Crm.Modules.Integrations.Contracts.csproj" />
+    <ProjectReference Include="../../../src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/Sense.Crm.Modules.Integrations.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Modules/Integrations/Sense.Crm.Modules.Integrations.Api/Sense.Crm.Modules.Integrations.Api.csproj" />
+    <ProjectReference Include="../../../src/Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/Sense.Crm.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Sense.Crm.Modules.Platform.Infrastructure.csproj" />
+    <ProjectReference Include="../../Sense.Crm.Tests.Shared/Sense.Crm.Tests.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+</Project>

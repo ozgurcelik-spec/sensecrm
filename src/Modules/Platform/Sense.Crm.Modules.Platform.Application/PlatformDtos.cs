@@ -27,7 +27,7 @@ public sealed record OrganizationRowDto(
     OrganizationUsageDto? Usage);
 
 /// <summary>Etkin limitler (plan + istisna): <c>maxUsers</c> yoksa sınırsız; <c>maxRecords</c> yalnız sonlu olanları yazar.</summary>
-public sealed record EffectiveLimitsDto(int? MaxUsers, IReadOnlyDictionary<string, int> MaxRecords, IReadOnlyDictionary<string, bool> Modules);
+public sealed record EffectiveLimitsDto(int? MaxUsers, IReadOnlyDictionary<string, int> MaxRecords, IReadOnlyDictionary<string, bool> Modules, int? MaxWebhooks = null, int? MaxApiKeys = null, int? MaxStorageMb = null);
 
 public sealed record SuspensionDto(string Mode, string? Reason, DateTimeOffset? At);
 
@@ -64,13 +64,13 @@ public sealed record OrganizationDetailDto(
     SuspensionDto? Suspension,
     DeletionDto? Deletion);
 
-public sealed record OverLimitDto(string Limit, string? Module, int Max, long Used);
+public sealed record OverLimitDto(string Limit, string? Module, long Max, long Used);
 
 public sealed record SubscriptionUpdateResultDto(IReadOnlyList<OverLimitDto> OverLimit);
 
 public sealed record DeletionRequestResultDto(Guid RequestId, DateTimeOffset ScheduledFor);
 
-public sealed record PlanLimitsDto(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords);
+public sealed record PlanLimitsDto(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, int? MaxWebhooks = null, int? MaxApiKeys = null, int? MaxStorageMb = null);
 
 public sealed record PlanDto(
     string Code,
@@ -103,9 +103,9 @@ public sealed record UsageExportInfoDto(DateOnly From, DateOnly To, long Rows);
 
 // ---- Kiracı tarafı ----
 
-public sealed record SubscriptionLimitsDto(int? MaxUsers, IReadOnlyDictionary<string, int> MaxRecords);
+public sealed record SubscriptionLimitsDto(int? MaxUsers, IReadOnlyDictionary<string, int> MaxRecords, int? MaxWebhooks = null, int? MaxApiKeys = null, int? MaxStorageMb = null);
 
-public sealed record SubscriptionUsageDto(DateTimeOffset AsOf, int Users, int PendingUsers, IReadOnlyDictionary<string, long> Records);
+public sealed record SubscriptionUsageDto(DateTimeOffset AsOf, int Users, int PendingUsers, IReadOnlyDictionary<string, long> Records, long? Webhooks = null, long? ApiKeys = null, long StorageBytes = 0, long FileCount = 0);
 
 /// <summary><c>GET /subscription</c>: <c>limits</c> yalnız <b>sonlu</b> olanları yazar (sınırsız = anahtar yok).</summary>
 public sealed record SubscriptionDto(

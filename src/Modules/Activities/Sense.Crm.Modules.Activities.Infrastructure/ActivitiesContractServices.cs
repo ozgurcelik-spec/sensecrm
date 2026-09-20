@@ -14,6 +14,9 @@ public static class ActivitiesContractServices
     {
         services.AddScoped<IActivityCreator, ActivityCreator>();
         services.AddScoped<Sense.Crm.Shared.Contracts.Usage.IUsageReporter, ActivitiesUsageReporter>();
+
+        // M8C: dosya eki hedefi (aktivite).
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, ActivityAttachmentTarget>();
         return services;
     }
 }

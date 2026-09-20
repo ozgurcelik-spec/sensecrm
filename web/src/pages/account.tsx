@@ -3,6 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button, Card, Group, Select, Stack, Text, TextInput, Title } from "@mantine/core";
+import { PreferencesLinkCard } from "@/components/notifications/preferences-link-card";
 import { ChangePasswordForm } from "@/components/security/change-password-form";
 import { PageHeader } from "@/components/page-header";
 import { SUPPORTED_LOCALES } from "@/lib/locale";
@@ -97,6 +98,7 @@ export default function AccountPage() {
       {/* Keyed by user so the form re-initializes if the profile changes underneath it. */}
       <Stack gap="lg">
         <ProfileForm key={me.user.id} me={me} />
+        <PreferencesLinkCard />
         <Card
           withBorder
           padding="lg"

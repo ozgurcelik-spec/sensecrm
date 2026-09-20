@@ -780,3 +780,120 @@ describe("Platform organization detail", () => {
     expect(screen.getByTestId("audit-details")).toHaveTextContent('"planCode"');
   });
 });
+
+describe("Platform organization storage limit (M8C)", () => {
+  const putRoute = `PUT /platform/organizations/${ID}/subscription`;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    org = orgDetail(ID, { name: "Acme A.Ş.", slug: "acme", status: "active", trialEndsOn: undefined });
+  });
+  afterEach(clearSession);
+
+  async function openEditor() {
+    await userEvent.click(await screen.findByRole("button", { name: "Planı / denemeyi düzenle" }));
+    return screen.findByRole("dialog");
+  }
+
+  it("the summary shows the effective storage limit in readable units, unlimited without one, and marks an override", async () => {
+    org = orgDetail(ID, {
+      name: "Acme A.Ş.",
+      limits: {
+        maxUsers: 5,
+        maxStorageMb: 25600,
+        maxRecords: {},
+        modules: { workflows: false, commerce: false, service: false, marketing: false },
+      },
+      overrides: { maxStorageMb: 25600 },
+    });
+    const view = renderDetail();
+    await screen.findByRole("heading", { name: "Acme A.Ş." });
+    expect(screen.getByTestId("limit-storage")).toHaveTextContent("25 GB");
+    expect(screen.getByTestId("limit-storage")).toHaveTextContent("İstisna");
+    view.unmount();
+
+    org = orgDetail(ID, { name: "Acme A.Ş." });
+    renderDetail();
+    await screen.findByRole("heading", { name: "Acme A.Ş." });
+    expect(screen.getByTestId("limit-storage")).toHaveTextContent("Sınırsız");
+    expect(screen.getByTestId("limit-storage")).not.toHaveTextContent("İstisna");
+  });
+
+  it("the editor PUTs overrides.maxStorageMb (custom number, or null for unlimited) and nothing when it follows the plan", async () => {
+    renderDetail({ [putRoute]: () => ({ overLimit: [] }) });
+    let dialog = await openEditor();
+
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "Depolama limiti (MB)" }));
+    await userEvent.click(await screen.findByRole("option", { name: "Özel" }));
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Depolama limiti (MB) değeri" }), "2048");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+
+    await waitFor(() => expect(client.put).toHaveBeenCalledTimes(1));
+    expect(client.put).toHaveBeenLastCalledWith(`/platform/organizations/${ID}/subscription`, {
+      planCode: org.planCode,
+      trialEndsOn: undefined,
+      overrides: { maxStorageMb: 2048 },
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    dialog = await openEditor();
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "Depolama limiti (MB)" }));
+    await userEvent.click(await screen.findByRole("option", { name: "Sınırsız" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    await waitFor(() => expect(client.put).toHaveBeenCalledTimes(2));
+    expect(client.put.mock.calls[1]?.[1]).toMatchObject({ overrides: { maxStorageMb: null } });
+  });
+
+  it("starts from a stored override (the server keeps the JSON as sent)", async () => {
+    org = orgDetail(ID, { name: "Acme A.Ş.", overrides: { maxStorageMb: 512 } });
+    renderDetail({ [putRoute]: () => ({ overLimit: [] }) });
+    const dialog = await openEditor();
+
+    expect(within(dialog).getByRole("combobox", { name: "Depolama limiti (MB)" })).toHaveValue("Özel");
+    expect(within(dialog).getByRole("textbox", { name: "Depolama limiti (MB) değeri" })).toHaveValue("512");
+  });
+
+  it("puts a server error of overrides.maxStorageMb on its field", async () => {
+    renderDetail({
+      [putRoute]: () =>
+        problem(400, { code: "validation", errors: { "Overrides.MaxStorageMb": ["Üst sınırı aşıyor"] } }),
+    });
+    const dialog = await openEditor();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    expect(await within(dialog).findByText("Üst sınırı aşıyor")).toBeInTheDocument();
+    expect(toastApiError).not.toHaveBeenCalled();
+  });
+
+  it("an over-limit report after a save words storage in bytes", async () => {
+    renderDetail({
+      [putRoute]: () => ({
+        overLimit: [{ limit: "storage", module: "files", max: 1024 * 1024 * 1024, used: 3 * 1024 * 1024 * 1024 }],
+      }),
+    });
+    const dialog = await openEditor();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    expect(await screen.findByTestId("over-limit")).toHaveTextContent("Depolama: 3 GB / 1 GB");
+  });
+
+  it("the usage tab formats files.storage_bytes as sizes in the table and plots MB in the chart", async () => {
+    const days = [
+      { day: "2026-09-18", usersActive: 2, usersPending: 0, metrics: { "files.storage_bytes": 1048576, "files.files": 3 } },
+      { day: "2026-09-19", usersActive: 3, usersPending: 0, metrics: { "files.storage_bytes": 3145728, "files.files": 5 } },
+    ];
+    renderDetail(
+      { [`GET /platform/organizations/${ID}/usage`]: () => ({ items: days }) },
+      `/app/platform/organizations/${ID}?tab=usage`
+    );
+    const chart = await screen.findByTestId("chart-line");
+    // The first metric alphabetically is files.files; choose the storage one.
+    await userEvent.click(screen.getByRole("combobox", { name: "Metrik" }));
+    await userEvent.click(await screen.findByRole("option", { name: "Dosyalar: Depolama" }));
+    expect(JSON.parse(screen.getByTestId("chart-line").getAttribute("data-points") ?? "[]").map((p: { metric: number }) => p.metric)).toEqual([1, 3]);
+    expect(chart).toBeDefined();
+
+    await userEvent.click(screen.getByRole("radio", { name: "Tablo" }));
+    const rows = screen.getAllByRole("row");
+    expect(within(rows[1] as HTMLElement).getByText("3 MB")).toBeInTheDocument();
+    expect(within(rows[2] as HTMLElement).getByText("1 MB")).toBeInTheDocument();
+  });
+});

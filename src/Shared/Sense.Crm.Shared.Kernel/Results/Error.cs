@@ -28,6 +28,18 @@ public enum ErrorType
 
     /// <summary>İstek hız sınırını aştı → 429.</summary>
     TooManyRequests = 8,
+
+    /// <summary>Yük (dosya/istek gövdesi) sınırı aştı → 413 (M8C).</summary>
+    PayloadTooLarge = 9,
+
+    /// <summary>Desteklenmeyen ortam/dosya türü → 415 (M8C).</summary>
+    UnsupportedMediaType = 10,
+
+    /// <summary>Kaynak kalıcı olarak kullanılamıyor (satır var, içerik yok) → 410 (M8C).</summary>
+    Gone = 11,
+
+    /// <summary>Bağımlı hizmet (nesne deposu, tarayıcı) erişilemez → 503 (M8C).</summary>
+    Unavailable = 12,
 }
 
 /// <summary>
@@ -55,6 +67,14 @@ public sealed record Error(string Code, ErrorType Type = ErrorType.Failure, IRea
     public static Error Payment(string code, params (string Key, object? Value)[] args) => new(code, ErrorType.Payment, ToArgs(args));
 
     public static Error Failure(string code, params (string Key, object? Value)[] args) => new(code, ErrorType.Failure, ToArgs(args));
+
+    public static Error PayloadTooLarge(string code, params (string Key, object? Value)[] args) => new(code, ErrorType.PayloadTooLarge, ToArgs(args));
+
+    public static Error UnsupportedMediaType(string code, params (string Key, object? Value)[] args) => new(code, ErrorType.UnsupportedMediaType, ToArgs(args));
+
+    public static Error Gone(string code, params (string Key, object? Value)[] args) => new(code, ErrorType.Gone, ToArgs(args));
+
+    public static Error Unavailable(string code, params (string Key, object? Value)[] args) => new(code, ErrorType.Unavailable, ToArgs(args));
 
     private static IReadOnlyDictionary<string, object?>? ToArgs((string Key, object? Value)[] args) =>
         args.Length == 0 ? null : args.ToDictionary(a => a.Key, a => a.Value, StringComparer.Ordinal);

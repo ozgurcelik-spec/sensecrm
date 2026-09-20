@@ -102,6 +102,7 @@ public sealed class AuditLogInterceptor(ICurrentUser currentUser, ITenantContext
                 Action = action,
                 UserId = currentUser.UserId,
                 UserDisplayName = currentUser.UserId is null ? null : currentUser.DisplayName ?? currentUser.Email,
+                ApiKeyId = currentUser.ApiKey?.KeyId,
                 Changes = changes.ToJsonString(JsonOptions),
                 OccurredAt = now,
                 CorrelationId = currentUser.CorrelationId,

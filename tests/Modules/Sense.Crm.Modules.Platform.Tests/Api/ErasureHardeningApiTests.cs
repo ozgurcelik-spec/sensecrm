@@ -240,6 +240,7 @@ public sealed class ErasureHardeningApiTests(CrmApiFactory factory)
         {
             ("audit", "audit_log_entries"), // AuditTenantDataEraser (sıra 900)
             ("platform", "usage_snapshots"), // tombstone adımı
+            ("integrations", "delivery_queue"), // IntegrationsQueueEraser (küresel tablo, ITenantEntity değil; sıra 90)
         };
         foreach (var context in contexts)
         {

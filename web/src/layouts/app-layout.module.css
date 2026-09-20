@@ -1,15 +1,46 @@
 .header {
   border-bottom: 1px solid var(--mantine-color-default-border);
+  border-top: 3px solid var(--mantine-color-brand-filled);
+  background-color: light-dark(var(--mantine-color-brand-0), var(--mantine-color-dark-7));
 }
 
 .sidebar {
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  background-color: light-dark(
+    color-mix(in srgb, var(--mantine-color-brand-1) 45%, white),
+    var(--mantine-color-dark-7)
+  );
   display: flex;
   flex-direction: column;
+}
+
+.main {
+  background-color: light-dark(
+    color-mix(in srgb, var(--mantine-color-brand-0) 55%, white),
+    var(--mantine-color-dark-8)
+  );
 }
 
 .navLink {
   border-radius: var(--mantine-radius-md);
   font-weight: 500;
   margin-bottom: 2px;
+}
+
+.navLink svg {
+  color: var(--mantine-color-brand-filled);
+}
+
+.navLink:hover {
+  background-color: var(--mantine-color-brand-light-hover);
+}
+
+.navLink[aria-current="page"],
+.navLink[data-active] {
+  background-color: var(--mantine-color-brand-filled);
+  color: var(--mantine-color-white);
+}
+
+.navLink[aria-current="page"] svg,
+.navLink[data-active] svg {
+  color: var(--mantine-color-white);
 }

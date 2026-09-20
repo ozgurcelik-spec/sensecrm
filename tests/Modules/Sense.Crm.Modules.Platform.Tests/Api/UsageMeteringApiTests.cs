@@ -180,7 +180,8 @@ public sealed class UsageMeteringApiTests(CrmApiFactory factory)
 
         var reported = await ReportAsync(org.TenantId);
 
-        foreach (var (module, metrics) in reported.Where(r => r.Key != "identity"))
+        // "files" (M8C) reports storage metrics (files, storage_bytes), not a record count: no records limit exists for it.
+        foreach (var (module, metrics) in reported.Where(r => r.Key is not ("identity" or "files")))
         {
             var records = metrics[$"{module}.records"];
             var parts = metrics.Where(m => m.Key != $"{module}.records").Sum(m => m.Value);

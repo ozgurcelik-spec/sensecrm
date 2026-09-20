@@ -10,6 +10,7 @@ using Sense.Crm.Modules.Platform.Contracts;
 using Sense.Crm.Modules.Platform.Domain;
 using Sense.Crm.Modules.Platform.Infrastructure.Persistence;
 using Sense.Crm.Shared.Contracts.Events;
+using Sense.Crm.Shared.Contracts.Observability;
 using Sense.Crm.Shared.Contracts.Retention;
 
 namespace Sense.Crm.Modules.Platform.Infrastructure.Jobs;
@@ -70,10 +71,12 @@ public sealed partial class TenantErasureJob(IServiceScopeFactory scopes, IOptio
             if (await ProcessAsync(requestId, ct).ConfigureAwait(false))
             {
                 completed++;
+                CrmMetrics.DeletionRunFinished("completed");
             }
             else
             {
                 failed++;
+                CrmMetrics.DeletionRunFinished("failed");
             }
         }
 
@@ -213,9 +216,11 @@ public sealed partial class TenantErasureJob(IServiceScopeFactory scopes, IOptio
                 var report = await eraser.EraseAsync(tenant, settings.ChunkSize, ct).ConfigureAwait(false);
                 request.StepCompleted(eraser.Name, report.DeletedRows);
                 await db.SaveChangesAsync(ct).ConfigureAwait(false);
+                CrmMetrics.DeletionStepFinished(eraser.Name, "completed", report.Total);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                CrmMetrics.DeletionStepFinished(eraser.Name, "failed");
                 await RecordFailureAsync(db, audit, request, account, eraser.Name, ex, settings, ct).ConfigureAwait(false);
                 return false;
             }

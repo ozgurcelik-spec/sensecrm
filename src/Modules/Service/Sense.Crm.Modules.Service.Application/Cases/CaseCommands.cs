@@ -66,6 +66,7 @@ public sealed class CreateCaseHandler(
     TenantCalendarService calendars,
     ITenantContext tenant,
     ICurrentUser user,
+    IIntegrationEventOutbox outbox,
     TimeProvider clock) : ICommandHandler<CreateCaseCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateCaseCommand command, CancellationToken cancellationToken)
@@ -107,6 +108,18 @@ public sealed class CreateCaseHandler(
 
         cases.Add(created.Case);
         cases.AddEvent(created.Event);
+
+        // M8B: webhook case.created (aynı transaction'da outbox'a yazılır).
+        outbox.Enqueue(new CaseCreated(
+            tenant.TenantId,
+            created.Case.Id,
+            created.Case.Number,
+            created.Case.AccountId,
+            created.Case.ContactId,
+            EnumText.Camel(created.Case.Priority),
+            EnumText.Camel(created.Case.Channel),
+            created.Case.AssignedUserId,
+            user.UserId));
         return created.Case.Id;
     }
 }

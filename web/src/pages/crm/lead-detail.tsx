@@ -10,6 +10,7 @@ import { WorkflowStatusStrip } from "@/components/workflows/workflow-status-stri
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordCampaignsTab } from "@/components/marketing/record-campaigns-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useCrmPermissions } from "@/hooks/use-crm-permissions";
@@ -87,6 +88,7 @@ export default function LeadDetailPage() {
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReadCampaigns = usePermission(PERMISSIONS.crmCampaignsRead);
+  const attachmentsTab = useAttachmentsTab("lead", id);
   const tabs = lead
     ? [
         {
@@ -129,6 +131,7 @@ export default function LeadDetailPage() {
               },
             ]
           : []),
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),

@@ -7,6 +7,7 @@ using Npgsql;
 using Sense.Crm.Modules.Platform.Application;
 using Sense.Crm.Modules.Platform.Infrastructure.Jobs;
 using Sense.Crm.Shared.Contracts.Configuration;
+using Sense.Crm.Shared.Contracts.Observability;
 
 namespace Sense.Crm.Worker.Platform;
 
@@ -48,6 +49,7 @@ public abstract partial class PlatformJobService(IConfiguration configuration, I
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                CrmMetrics.BackgroundFailed(JobName);
                 LogFailed(logger, ex, JobName);
             }
 

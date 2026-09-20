@@ -1,0 +1,10 @@
+# Test-only overlay for deploy/docker-compose.prod.yml (used by e2e/run.sh / run.ps1 as a second -f file).
+#
+# Everything the browser sees stays exactly as in production; the ONLY change is the anonymous-auth rate limit. All Playwright workers
+# share one client address (the docker gateway), so the production limit (20 auth calls per minute per IP and per e-mail) would throttle
+# the suite itself: every test logs in with its own freshly created user. The limits are raised, not removed.
+services:
+  api:
+    environment:
+      RateLimiting__Auth__PermitLimit: "2000"
+      RateLimiting__LoginEmail__PermitLimit: "2000"

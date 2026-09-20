@@ -18,6 +18,12 @@ public static class SalesContractServices
         services.AddScoped<ILeadStatusLookup, LeadStatusLookup>();
         services.AddScoped<IContactAccountLookup, ContactAccountLookup>();
         services.AddScoped<Sense.Crm.Shared.Contracts.Usage.IUsageReporter, SalesUsageReporter>();
+
+        // M8C: dosya eki hedefleri (firma, kişi, potansiyel müşteri, fırsat).
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, AccountAttachmentTarget>();
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, ContactAttachmentTarget>();
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, LeadAttachmentTarget>();
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, DealAttachmentTarget>();
         return services;
     }
 }

@@ -36,6 +36,10 @@ namespace Sense.Crm.Shared.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("action");
 
+                    b.Property<Guid?>("ApiKeyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("api_key_id");
+
                     b.Property<string>("Changes")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -82,6 +86,11 @@ namespace Sense.Crm.Shared.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "OccurredAt")
                         .IsDescending(false, true)
                         .HasDatabaseName("ix_audit_log_entries_tenant_id_occurred_at");
+
+                    b.HasIndex("TenantId", "ApiKeyId", "OccurredAt")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("ix_audit_log_entries_tenant_id_api_key_id_occurred_at")
+                        .HasFilter("api_key_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "EntityType", "EntityId")
                         .HasDatabaseName("ix_audit_log_entries_tenant_id_entity_type_entity_id");

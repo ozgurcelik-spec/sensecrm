@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Bell,
   Building2,
   CalendarCheck,
   ClipboardCheck,
@@ -190,6 +191,13 @@ export const SETTINGS_ITEMS: readonly NavItem[] = [
     path: "/app/settings/plan",
     icon: Gauge,
     permissions: [PERMISSIONS.orgSettingsManage],
+  },
+  {
+    key: "notifications",
+    labelKey: "notificationsSettings",
+    path: "/app/settings/notifications",
+    icon: Bell,
+    permissions: [PERMISSIONS.orgNotificationsManage],
   },
   {
     key: "audit",
