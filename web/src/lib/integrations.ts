@@ -218,8 +218,14 @@ export function cidrListProblem(entries: readonly string[]): { key: "tooMany" | 
 /** Never grantable to a key: approval decisions stay with people. `org.*` (administration) is excluded as a whole. */
 export const API_KEY_EXCLUDED_SCOPES: readonly string[] = ["crm.approvals.decide"];
 
+/**
+ * Mirrors the server's deny-by-default policy (`PublicApiCatalog.Scopes`): only the permissions of the public API catalog can be granted to a key. A new module's
+ * permissions (invoices, price books, vendors, purchase orders, ...) stay ungrantable until the server catalog exposes them; add them here at the same time.
+ */
+const PUBLIC_API_SCOPE = /^crm\.(?:(?:accounts|contacts|leads|deals|activities|products|quotes|orders|cases|campaigns)\.(?:read|write)|reports\.read)$/;
+
 export function isApiKeyScopeAllowed(key: string): boolean {
-  return key.startsWith("crm.") && !API_KEY_EXCLUDED_SCOPES.includes(key);
+  return PUBLIC_API_SCOPE.test(key) && !API_KEY_EXCLUDED_SCOPES.includes(key);
 }
 
 const KNOWN_SCOPES = Object.values(PERMISSIONS).filter(isApiKeyScopeAllowed);
