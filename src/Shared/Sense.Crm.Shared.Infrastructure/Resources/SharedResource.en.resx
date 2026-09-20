@@ -262,4 +262,27 @@
   <data name="field.overrides" xml:space="preserve"><value>Overrides</value></data>
   <data name="field.retention_days" xml:space="preserve"><value>Retention period (days)</value></data>
   <data name="field.mode" xml:space="preserve"><value>Mode</value></data>
+  <data name="problem.title.payload_too_large" xml:space="preserve"><value>File too large</value></data>
+  <data name="problem.title.unsupported_media_type" xml:space="preserve"><value>Unsupported file type</value></data>
+  <data name="problem.title.gone" xml:space="preserve"><value>Resource is gone</value></data>
+  <data name="problem.title.unavailable" xml:space="preserve"><value>Service temporarily unavailable</value></data>
+  <data name="file.upload_invalid" xml:space="preserve"><value>The upload request is invalid: the multipart body could not be read.</value></data>
+  <data name="file.too_many_files" xml:space="preserve"><value>At most {max} files can be uploaded in one request.</value></data>
+  <data name="file.empty" xml:space="preserve"><value>An empty file cannot be uploaded.</value></data>
+  <data name="file.name_invalid" xml:space="preserve"><value>The file name is invalid or became empty after sanitizing.</value></data>
+  <data name="file.extension_change_not_allowed" xml:space="preserve"><value>The file extension cannot be changed when renaming.</value></data>
+  <data name="file.too_large" xml:space="preserve"><value>The file is too large; the maximum allowed size is {maxBytes} bytes.</value></data>
+  <data name="file.type_not_allowed" xml:space="preserve"><value>The "{extension}" file type is not allowed.</value></data>
+  <data name="file.content_mismatch" xml:space="preserve"><value>The file content does not match its extension or contains unsafe content.</value></data>
+  <data name="file.infected" xml:space="preserve"><value>Malicious content was found in the file; the upload was rejected.</value></data>
+  <data name="file.quota_exceeded" xml:space="preserve"><value>Storage quota exceeded (quota {maxBytes} bytes, used {usedBytes} bytes, requested {requestedBytes} bytes). Contact the platform administrator to upgrade your plan.</value></data>
+  <data name="file.quarantined" xml:space="preserve"><value>The file is quarantined and cannot be downloaded.</value></data>
+  <data name="file.content_missing" xml:space="preserve"><value>The file content could not be found in storage.</value></data>
+  <data name="file.scan_unavailable" xml:space="preserve"><value>The file scanning service is currently unavailable; try again later.</value></data>
+  <data name="file.storage_unavailable" xml:space="preserve"><value>The file store is currently unavailable; try again later.</value></data>
+  <data name="file.record_not_found" xml:space="preserve"><value>The record to attach to was not found.</value></data>
+  <data name="validation.file_record_type" xml:space="preserve"><value>The record type is invalid.</value></data>
+  <data name="validation.file_record_id" xml:space="preserve"><value>Enter a valid record id.</value></data>
+  <data name="validation.file_disposition" xml:space="preserve"><value>Disposition must be attachment or inline.</value></data>
+  <data name="validation.file_name" xml:space="preserve"><value>File name is required (at most 2048 characters).</value></data>
 </root>

@@ -18,6 +18,9 @@ public static class MarketingContractServices
         services.AddScoped<ICampaignRepository, CampaignRepository>();
         services.AddScoped<ICampaignMemberRepository, CampaignMemberRepository>();
         services.AddScoped<Sense.Crm.Shared.Contracts.Usage.IUsageReporter, MarketingUsageReporter>();
+
+        // M8C: dosya eki hedefi (kampanya).
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, CampaignAttachmentTarget>();
         return services;
     }
 }

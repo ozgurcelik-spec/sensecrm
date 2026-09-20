@@ -85,10 +85,32 @@ foreach ($db in @('crm', 'conductor')) {
     Write-Host "[$(Get-Date -Format T)] wrote $target ($size KB)"
 }
 
+# Object storage (M8C): mirror the file bucket AFTER the database dumps (a restore may then find an object without a row = a harmless orphan that
+# reconciliation removes, never a row without its object). The mirror is plaintext (SSE-S3 is transparent to readers): it is packed into files-<stamp>.tar.gz and
+# encrypted with -GpgRecipient when given - encrypting it is mandatory. The bucket is encrypted at rest with deploy\secrets\minio-kms-key: back that key up with these archives.
+$filesDir = Join-Path $BackupDir "files-$stamp"
+New-Item -ItemType Directory -Path $filesDir | Out-Null
+Write-Host "[$(Get-Date -Format T)] mirroring the object bucket ..."
+Invoke-Compose -Arguments @('run', '--rm', '--no-deps', '-T', '-v', "${filesDir}:/backup", '--entrypoint', '/bin/sh', 'minio-init', '-c', 'mc alias set local "$MINIO_ENDPOINT" "$(cat /run/secrets/minio_root_user)" "$(cat /run/secrets/minio_root_password)" >/dev/null && mc mirror --overwrite --quiet "local/${MINIO_BUCKET}" /backup')
+$filesArchive = Join-Path $BackupDir "files-$stamp.tar.gz"
+& tar -C $BackupDir -czf $filesArchive "files-$stamp"
+if ($LASTEXITCODE -ne 0) { throw "tar failed with exit code $LASTEXITCODE" }
+Remove-Item -LiteralPath $filesDir -Recurse -Force
+Test-GzipFile -Path $filesArchive
+if ($GpgRecipient) {
+    & gpg --batch --yes --encrypt --recipient $GpgRecipient --output "$filesArchive.gpg" $filesArchive
+    if ($LASTEXITCODE -ne 0) { throw "gpg failed with exit code $LASTEXITCODE" }
+    Remove-Item -LiteralPath $filesArchive -Force
+    $filesArchive = "$filesArchive.gpg"
+} else {
+    Write-Warning "The object backup $filesArchive is NOT encrypted (use -GpgRecipient); it holds every uploaded file in plaintext."
+}
+Write-Host "[$(Get-Date -Format T)] wrote $filesArchive ($([math]::Round((Get-Item -LiteralPath $filesArchive).Length / 1KB, 1)) KB)"
+
 # Retention: only files this script created (name pattern), older than RetentionDays.
 $cutoff = (Get-Date).AddDays(-$RetentionDays)
 Get-ChildItem -LiteralPath $BackupDir -File | Where-Object {
-    ($_.Name -like 'crm-*.sql.gz*' -or $_.Name -like 'conductor-*.sql.gz*') -and $_.LastWriteTime -lt $cutoff
+    ($_.Name -like 'crm-*.sql.gz*' -or $_.Name -like 'conductor-*.sql.gz*' -or $_.Name -like 'files-*.tar.gz*') -and $_.LastWriteTime -lt $cutoff
 } | ForEach-Object {
     Write-Host "pruned $($_.Name)"
     Remove-Item -LiteralPath $_.FullName -Force

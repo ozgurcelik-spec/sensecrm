@@ -36,6 +36,9 @@ public sealed class TenantFilterBypassInventoryTests
     /// </summary>
     private static readonly Dictionary<string, int> ExpectedRawSql = new(StringComparer.Ordinal)
     {
+        // M8C: Files temizlik işi (kiracı listesi: yalnız kimlik döner, tek parametreli SqlQuery; yeni IgnoreQueryFilters yok). Plan +3 öngörmüştü; uzlaştırma kiracı listesini
+        // ITenantDirectory'den alır ve nesne imhası TenantDataEraser<FilesDbContext>'i (mevcut girdi) kullanır, bu yüzden yalnız +1 gerekti.
+        ["src/Modules/Files/Sense.Crm.Modules.Files.Infrastructure/Jobs/FilesJobs.cs"] = 1,
         ["src/Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/PlatformSupport.cs"] = 6,
         ["src/Modules/Marketing/Sense.Crm.Modules.Marketing.Infrastructure/Persistence/Repositories.cs"] = 1,
         ["src/Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Entitlements/EntitlementServices.cs"] = 2,

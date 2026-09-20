@@ -33,8 +33,10 @@ public sealed class GetSubscriptionHandler(ITenantContext tenant, ITenantEntitle
             .Where(r => snapshot.IsModuleEnabled(r.Key))
             .ToDictionary(r => r.Key, r => r.Value, StringComparer.Ordinal);
 
-        var usage = new UsageCollection(users.Active, users.Pending, counts.Records.ToDictionary(r => r.Key + ".records", r => r.Value, StringComparer.Ordinal));
-        var overLimit = EntitlementMath.OverLimits(snapshot.MaxUsers, snapshot.MaxRecords, snapshot.Modules, usage);
+        var metrics = counts.Records.ToDictionary(r => r.Key + ".records", r => r.Value, StringComparer.Ordinal);
+        metrics[EntitlementMath.StorageBytesKey] = counts.StorageBytes;
+        var usage = new UsageCollection(users.Active, users.Pending, metrics);
+        var overLimit = EntitlementMath.OverLimits(snapshot.MaxUsers, snapshot.MaxRecords, snapshot.Modules, usage, snapshot.MaxStorageMb);
 
         var modules = GatedModules.All.ToDictionary(m => m, m => snapshot.IsModuleEnabled(m), StringComparer.Ordinal);
         return new SubscriptionDto(
@@ -45,8 +47,8 @@ public sealed class GetSubscriptionHandler(ITenantContext tenant, ITenantEntitle
             snapshot.TrialEndsOn,
             EntitlementMath.TrialDaysLeft(snapshot, status, now),
             modules,
-            new SubscriptionLimitsDto(snapshot.MaxUsers, EntitlementMath.FiniteRecords(snapshot.MaxRecords)),
-            new SubscriptionUsageDto(counts.AsOf, users.Active, users.Pending, records),
+            new SubscriptionLimitsDto(snapshot.MaxUsers, EntitlementMath.FiniteRecords(snapshot.MaxRecords), snapshot.MaxStorageMb),
+            new SubscriptionUsageDto(counts.AsOf, users.Active, users.Pending, records, counts.StorageBytes, counts.FileCount),
             overLimit);
     }
 }

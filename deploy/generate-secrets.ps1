@@ -8,6 +8,8 @@
                                               CONDUCTOR_DB_PASSWORD, REDIS_PASSWORD (32 random alphanumeric characters each) filled in
       - secrets\jwt-signing-key.pem           2048-bit RSA private key (PEM, "RSA PRIVATE KEY") for signing JWT access tokens
       - secrets\platform-admin-password       one-time password of the first platform admin (create-platform-admin); empty the file afterwards
+      - secrets\minio-*                       object storage (M8C): root account, application account (bucket-limited) and the static KMS key
+                                              (minio-kms-key: BACK IT UP with the object data; losing it = losing the files)
     Existing files are never overwritten unless -Force is given (rotating the JWT key signs every user out; rotating a DB password
     requires "docker compose up -d" afterwards so db-init re-syncs the role passwords).
 
@@ -157,7 +159,25 @@ $wroteKey = Write-SecretFile -Path $keyPath -Content (New-RsaPrivateKeyPem)
 $pwPath = Join-Path $secretsDir 'platform-admin-password'
 $wrotePw = Write-SecretFile -Path $pwPath -Content (New-RandomSecret -Length 24)
 
-foreach ($p in @($envPath, $keyPath, $pwPath)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
+# Object storage (M8C): MinIO root account, application account (limited to the crm-files bucket) and the static KMS key that encrypts objects at rest.
+# BACK UP secrets\minio-kms-key WITH the object data: a data backup without the key is unreadable; the key cannot be rotated in the first release.
+$kmsBytes = New-Object 'byte[]' 32
+$Rng.GetBytes($kmsBytes)
+$minioFiles = [ordered]@{
+    'minio-root-user'       = ('crmroot' + (New-RandomSecret -Length 8))
+    'minio-root-password'   = (New-RandomSecret -Length 32)
+    'minio-app-access-key'  = ('crmfiles' + (New-RandomSecret -Length 12))
+    'minio-app-secret-key'  = (New-RandomSecret -Length 32)
+    'minio-kms-key'         = ('crm-files-key:' + [Convert]::ToBase64String($kmsBytes))
+}
+$minioPaths = @()
+foreach ($name in $minioFiles.Keys) {
+    $path = Join-Path $secretsDir $name
+    [void](Write-SecretFile -Path $path -Content $minioFiles[$name])
+    $minioPaths += $path
+}
+
+foreach ($p in (@($envPath, $keyPath, $pwPath) + $minioPaths)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
 Restrict-Access -Path $secretsDir
 
 Write-Host ''

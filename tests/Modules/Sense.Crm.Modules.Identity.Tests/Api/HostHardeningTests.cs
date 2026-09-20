@@ -82,5 +82,6 @@ public sealed class HostHardeningTests(CrmApiFactory factory)
             b.UseEnvironment("Production");
             b.UseSetting("Auth:SigningKeyPem", rsa.ExportPkcs8PrivateKeyPem());
             b.UseSetting("Docs:Enabled", docsEnabled ? "true" : "false");
+            b.UseSetting("Files:Storage:Endpoint", "http://localhost:9000"); // M8C: Production requires an s3 endpoint (never contacted at startup).
         });
 }

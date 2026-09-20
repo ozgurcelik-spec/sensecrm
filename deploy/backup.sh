@@ -46,6 +46,30 @@ for db in crm conductor; do
   echo "[$(date +%T)] wrote $target ($(du -h "$target" | cut -f1))"
 done
 
+# Object storage (M8C): mirror the file bucket AFTER the database dumps (order matters: a restore may then find an object without a row = a harmless orphan that
+# reconciliation removes, never a row without its object). The mirror is plaintext (SSE-S3 is transparent to readers) -> it is packed into
+# files-<stamp>.tar.gz and ENCRYPTED WITH THE SAME OPTIONS (gpg / openssl) as the database dumps; encrypting this archive is mandatory.
+# The bucket is encrypted at rest with the KMS key in deploy/secrets/minio-kms-key: back that key up together with these archives (restore needs the same key).
+files_dir="$backup_dir/files-$stamp"
+mkdir -p "$files_dir"
+echo "[$(date +%T)] mirroring the object bucket ..."
+"${compose[@]}" run --rm --no-deps -T -v "$files_dir:/backup" --entrypoint /bin/sh minio-init -c 'mc alias set local "$MINIO_ENDPOINT" "$(cat /run/secrets/minio_root_user)" "$(cat /run/secrets/minio_root_password)" >/dev/null && mc mirror --overwrite --quiet "local/${MINIO_BUCKET}" /backup'
+target="$backup_dir/files-$stamp.tar.gz"
+tar -C "$backup_dir" -czf "$target" "files-$stamp"
+rm -rf "$files_dir"
+gzip -t "$target"
+if [ -n "${BACKUP_GPG_RECIPIENT:-}" ]; then
+  gpg --batch --yes --encrypt --recipient "$BACKUP_GPG_RECIPIENT" --output "$target.gpg" "$target" && rm -f "$target"
+  target="$target.gpg"
+elif [ -n "${BACKUP_OPENSSL_PASSFILE:-}" ]; then
+  openssl enc -aes-256-cbc -pbkdf2 -salt -pass "file:$BACKUP_OPENSSL_PASSFILE" -in "$target" -out "$target.enc" && rm -f "$target"
+  target="$target.enc"
+else
+  echo "WARNING: the object backup $target is NOT encrypted (set BACKUP_GPG_RECIPIENT or BACKUP_OPENSSL_PASSFILE); it holds every uploaded file in plaintext." >&2
+fi
+chmod 600 "$target" 2>/dev/null || true
+echo "[$(date +%T)] wrote $target ($(du -h "$target" | cut -f1))"
+
 # Retention: only files this script created (name pattern), older than RETENTION_DAYS.
-find "$backup_dir" -maxdepth 1 -type f \( -name 'crm-*.sql.gz*' -o -name 'conductor-*.sql.gz*' \) -mtime "+$retention_days" -print -delete | sed 's/^/pruned /'
+find "$backup_dir" -maxdepth 1 -type f \( -name 'crm-*.sql.gz*' -o -name 'conductor-*.sql.gz*' -o -name 'files-*.tar.gz*' \) -mtime "+$retention_days" -print -delete | sed 's/^/pruned /'
 echo "[$(date +%T)] backup finished"

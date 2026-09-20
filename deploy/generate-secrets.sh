@@ -64,6 +64,15 @@ fi
 
 secret 24 | write_file "$out/secrets/platform-admin-password" || true
 chmod 644 "$out/secrets/platform-admin-password" 2>/dev/null || true
+
+# Object storage (M8C): MinIO root account, application account (limited to the crm-files bucket) and the static KMS key that encrypts objects at rest.
+# BACK UP secrets/minio-kms-key WITH the object data: a data backup without the key is unreadable; the key cannot be rotated in the first release.
+printf 'crmroot%s' "$(secret 8)" | write_file "$out/secrets/minio-root-user" || true
+secret 32 | write_file "$out/secrets/minio-root-password" || true
+printf 'crmfiles%s' "$(secret 12)" | write_file "$out/secrets/minio-app-access-key" || true
+secret 32 | write_file "$out/secrets/minio-app-secret-key" || true
+printf 'crm-files-key:%s' "$(openssl rand -base64 32)" | write_file "$out/secrets/minio-kms-key" || true
+chmod 644 "$out"/secrets/minio-* 2>/dev/null || true
 chmod 600 "$out/.env" 2>/dev/null || true
 
 cat <<'EOF'

@@ -47,6 +47,8 @@ logs/
 
 # Docker volumes
 infra/.data/
+# Files module: dev filesystem storage (<content root>/.data/files)
+.data/
 
 # Claude local
 .claude/settings.local.json

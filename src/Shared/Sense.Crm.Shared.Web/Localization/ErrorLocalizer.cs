@@ -67,6 +67,10 @@ public static class ProblemTitleKeys
     public const string Failure = "problem.title.failure";
     public const string Cancelled = "problem.title.cancelled";
     public const string TooManyRequests = "problem.title.too_many_requests";
+    public const string PayloadTooLarge = "problem.title.payload_too_large";
+    public const string UnsupportedMediaType = "problem.title.unsupported_media_type";
+    public const string Gone = "problem.title.gone";
+    public const string Unavailable = "problem.title.unavailable";
 
     public static string For(ErrorType type) => type switch
     {
@@ -78,6 +82,10 @@ public static class ProblemTitleKeys
         ErrorType.Rule => Rule,
         ErrorType.Payment => Payment,
         ErrorType.TooManyRequests => TooManyRequests,
+        ErrorType.PayloadTooLarge => PayloadTooLarge,
+        ErrorType.UnsupportedMediaType => UnsupportedMediaType,
+        ErrorType.Gone => Gone,
+        ErrorType.Unavailable => Unavailable,
         _ => Failure,
     };
 }

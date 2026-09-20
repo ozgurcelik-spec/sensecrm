@@ -31,6 +31,9 @@ public static class PlatformErrors
 /// <summary>Sınırlar ve sütun uzunlukları.</summary>
 public static class PlatformLimits
 {
+    /// <summary>Depolama kotası (MiB) üst sınırı: 1 TiB (M8C).</summary>
+    public const int MaxStorageMbUpperBound = 1_048_576;
+
     public const int PlanCodeMaxLength = 32;
     public const int PlanNameMaxLength = 100;
     public const int DescriptionMaxLength = 500;
@@ -101,8 +104,11 @@ public static class PlatformAuditActions
     public const string UsageExported = "usage.exported";
 }
 
-/// <summary>Plan limitleri (<c>null</c> = sınırsız; <c>0</c> = o modülde yeni kayıt açılamaz).</summary>
-public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords)
+/// <summary>
+/// Plan limitleri (<c>null</c> = sınırsız; <c>0</c> = o modülde yeni kayıt açılamaz). <c>MaxStorageMb</c> (M8C): dosya eki depolama kotası (MiB);
+/// <c>null</c> = sınırsız, <c>0</c> = hiç yükleme yok.
+/// </summary>
+public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, int? MaxStorageMb = null)
 {
     public static PlanLimits Unlimited { get; } = new(null, new Dictionary<string, int?>());
 }
@@ -111,7 +117,13 @@ public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?>
 /// Kiracıya özel istisna (kısmi). <c>maxUsers</c> anahtarının <b>varlığı</b> esastır: <see cref="MaxUsersSet"/> ve <c>MaxUsers == null</c> açıkça
 /// "sınırsız" demektir; anahtar yoksa plan geçerlidir. <c>maxRecords</c> içinde <c>null</c> değer de aynı şekilde "sınırsız"dır.
 /// </summary>
-public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules)
+public sealed record TenantOverrides(
+    bool MaxUsersSet,
+    int? MaxUsers,
+    IReadOnlyDictionary<string, int?> MaxRecords,
+    IReadOnlyDictionary<string, bool> Modules,
+    bool MaxStorageMbSet = false,
+    int? MaxStorageMb = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -120,7 +132,7 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
 
     public static TenantOverrides None { get; } = new(false, null, new Dictionary<string, int?>(), new Dictionary<string, bool>());
 
-    public bool IsEmpty => !MaxUsersSet && MaxRecords.Count == 0 && Modules.Count == 0;
+    public bool IsEmpty => !MaxUsersSet && !MaxStorageMbSet && MaxRecords.Count == 0 && Modules.Count == 0;
 
     /// <summary>
     /// Yapısal eşitlik (metin karşılaştırması değil): <c>jsonb</c> sütunu JSON metnini normalize eder (boşluk, anahtar sırası), bu yüzden saklı metin ile yeni
@@ -131,6 +143,8 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
         ArgumentNullException.ThrowIfNull(other);
         return MaxUsersSet == other.MaxUsersSet
             && MaxUsers == other.MaxUsers
+            && MaxStorageMbSet == other.MaxStorageMbSet
+            && MaxStorageMb == other.MaxStorageMb
             && SameMap(MaxRecords, other.MaxRecords)
             && SameMap(Modules, other.Modules);
     }
@@ -145,6 +159,11 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
         if (MaxUsersSet)
         {
             map["maxUsers"] = MaxUsers;
+        }
+
+        if (MaxStorageMbSet)
+        {
+            map["maxStorageMb"] = MaxStorageMb;
         }
 
         if (MaxRecords.Count > 0)
@@ -182,6 +201,8 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
 
         var maxUsersSet = false;
         int? maxUsers = null;
+        var maxStorageSet = false;
+        int? maxStorage = null;
         var records = new Dictionary<string, int?>(StringComparer.Ordinal);
         var modules = new Dictionary<string, bool>(StringComparer.Ordinal);
 
@@ -192,6 +213,10 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
                 case "maxusers":
                     maxUsersSet = true;
                     maxUsers = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var users) ? users : null;
+                    break;
+                case "maxstoragemb":
+                    maxStorageSet = true;
+                    maxStorage = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var storage) ? storage : null;
                     break;
                 case "maxrecords" when property.Value.ValueKind == JsonValueKind.Object:
                     foreach (var record in property.Value.EnumerateObject())
@@ -212,12 +237,12 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
             }
         }
 
-        return new TenantOverrides(maxUsersSet, maxUsers, records, modules);
+        return new TenantOverrides(maxUsersSet, maxUsers, records, modules, maxStorageSet, maxStorage);
     }
 }
 
 /// <summary>Plan + istisna birleşiminin sonucu (etkin haklar).</summary>
-public sealed record EffectiveLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules);
+public sealed record EffectiveLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules, int? MaxStorageMb = null);
 
 /// <summary>
 /// Etkin hak birleştirme (saf fonksiyon, birim testli): <b>etkin değer = istisna varsa o, yoksa plan</b>. <c>maxUsers: null</c> istisnası açıkça sınırsız;
@@ -234,6 +259,7 @@ public static class EffectiveEntitlements
         var over = overrides ?? TenantOverrides.None;
 
         var maxUsers = over.MaxUsersSet ? over.MaxUsers : planLimits.MaxUsers;
+        var maxStorageMb = over.MaxStorageMbSet ? over.MaxStorageMb : planLimits.MaxStorageMb;
 
         var records = new Dictionary<string, int?>(planLimits.MaxRecords, StringComparer.Ordinal);
         foreach (var (module, max) in over.MaxRecords)
@@ -249,6 +275,6 @@ public static class EffectiveEntitlements
                 : planModules.TryGetValue(module, out var included) && included;
         }
 
-        return new EffectiveLimits(maxUsers, records, modules);
+        return new EffectiveLimits(maxUsers, records, modules, maxStorageMb);
     }
 }

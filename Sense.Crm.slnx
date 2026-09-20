@@ -19,6 +19,13 @@
     <Project Path="src/Modules/Commerce/Sense.Crm.Modules.Commerce.Domain/Sense.Crm.Modules.Commerce.Domain.csproj" />
     <Project Path="src/Modules/Commerce/Sense.Crm.Modules.Commerce.Infrastructure/Sense.Crm.Modules.Commerce.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Files/">
+    <Project Path="src/Modules/Files/Sense.Crm.Modules.Files.Api/Sense.Crm.Modules.Files.Api.csproj" />
+    <Project Path="src/Modules/Files/Sense.Crm.Modules.Files.Application/Sense.Crm.Modules.Files.Application.csproj" />
+    <Project Path="src/Modules/Files/Sense.Crm.Modules.Files.Contracts/Sense.Crm.Modules.Files.Contracts.csproj" />
+    <Project Path="src/Modules/Files/Sense.Crm.Modules.Files.Domain/Sense.Crm.Modules.Files.Domain.csproj" />
+    <Project Path="src/Modules/Files/Sense.Crm.Modules.Files.Infrastructure/Sense.Crm.Modules.Files.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Identity/">
     <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Api/Sense.Crm.Modules.Identity.Api.csproj" />
     <Project Path="src/Modules/Identity/Sense.Crm.Modules.Identity.Application/Sense.Crm.Modules.Identity.Application.csproj" />
@@ -75,6 +82,7 @@
   <Folder Name="/tests/Modules/">
     <Project Path="tests/Modules/Sense.Crm.Modules.Activities.Tests/Sense.Crm.Modules.Activities.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Commerce.Tests/Sense.Crm.Modules.Commerce.Tests.csproj" />
+    <Project Path="tests/Modules/Sense.Crm.Modules.Files.Tests/Sense.Crm.Modules.Files.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Identity.Tests/Sense.Crm.Modules.Identity.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Marketing.Tests/Sense.Crm.Modules.Marketing.Tests.csproj" />
     <Project Path="tests/Modules/Sense.Crm.Modules.Platform.Tests/Sense.Crm.Modules.Platform.Tests.csproj" />

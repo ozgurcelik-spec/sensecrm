@@ -82,6 +82,7 @@ public sealed class Plan : Entity<string>
 
     private static bool PlanLimitsEqual(PlanLimits a, PlanLimits b) =>
         a.MaxUsers == b.MaxUsers
+        && a.MaxStorageMb == b.MaxStorageMb
         && a.MaxRecords.Count == b.MaxRecords.Count
         && a.MaxRecords.All(kv => b.MaxRecords.TryGetValue(kv.Key, out var other) && other == kv.Value);
 

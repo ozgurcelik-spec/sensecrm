@@ -191,6 +191,18 @@ public sealed class UsageMeter(
         return ((int)(metrics.FirstOrDefault(m => m.Key == UsersActiveKey)?.Value ?? 0), (int)(metrics.FirstOrDefault(m => m.Key == UsersPendingKey)?.Value ?? 0));
     }
 
+    public async Task<long> GetStorageBytesAsync(CancellationToken ct)
+    {
+        var reporter = reporters.FirstOrDefault(r => string.Equals(r.Module, EntitlementMath.FilesModule, StringComparison.Ordinal));
+        if (reporter is null)
+        {
+            return 0;
+        }
+
+        var metrics = await reporter.ReportAsync(ct).ConfigureAwait(false);
+        return metrics.FirstOrDefault(m => m.Key == EntitlementMath.StorageBytesKey)?.Value ?? 0;
+    }
+
     public async Task<RecordCounts> GetRecordCountsAsync(CancellationToken ct)
     {
         var tenantId = tenant.TenantId;
@@ -211,7 +223,11 @@ public sealed class UsageMeter(
     private async Task<RecordCounts> ComputeAsync(Guid tenantId, CancellationToken ct)
     {
         var usage = await CollectAsync(tenantId, ct).ConfigureAwait(false);
-        return new RecordCounts(clock.GetUtcNow(), new Dictionary<string, long>(usage.Records, StringComparer.Ordinal));
+        return new RecordCounts(
+            clock.GetUtcNow(),
+            new Dictionary<string, long>(usage.Records, StringComparer.Ordinal),
+            usage.Metrics.GetValueOrDefault(EntitlementMath.StorageBytesKey),
+            usage.Metrics.GetValueOrDefault(EntitlementMath.FileCountKey));
     }
 }
 
@@ -244,6 +260,8 @@ public sealed class LimitGuard(
                 return await EnsureUsersAsync(snapshot, demand, ct).ConfigureAwait(false);
             case LimitKeys.Records when demand.Module is { } module:
                 return await EnsureRecordsAsync(snapshot, module, demand.Delta, ct).ConfigureAwait(false);
+            case LimitKeys.Storage:
+                return await EnsureStorageAsync(snapshot, demand, ct).ConfigureAwait(false);
             default:
                 return Result.Success();
         }
@@ -265,6 +283,28 @@ public sealed class LimitGuard(
         var (active, pending) = await meter.CountUsersAsync(ct).ConfigureAwait(false);
         var used = active + pending;
         return used + demand.Delta > max ? EntitlementErrors.Exceeded(LimitKeys.Users, null, max, used) : Result.Success();
+    }
+
+    /// <summary>
+    /// <c>storage</c> (M8C, <b>sert</b>): kesin, önbelleksiz <c>files.storage_bytes</c>; sayımdan önce <b>Files</b> UnitOfWork'ünün açık transaction'ında
+    /// <c>pg_advisory_xact_lock(hashtextextended('limit:storage:'||tenantId, 0))</c> alınır (eşzamanlı yüklemeler kiracı başına sıraya girer; kilit commit'e kadar
+    /// tutulur, sayım aynı bağlantıda yapılır). Sınırsız (<c>null</c>) kotada kilit ve sayım <b>hiç yapılmaz</b>. <c>Delta</c> bayttır.
+    /// </summary>
+    private async Task<Result> EnsureStorageAsync(EntitlementSnapshot snapshot, LimitDemand demand, CancellationToken ct)
+    {
+        if (snapshot.MaxStorageBytes is not { } max)
+        {
+            return Result.Success();
+        }
+
+        var files = services.GetServices<IModuleUnitOfWork>().FirstOrDefault(u => string.Equals(u.ModuleName, EntitlementMath.FilesModule, StringComparison.OrdinalIgnoreCase));
+        if (files is not null)
+        {
+            await files.AcquireAdvisoryLockAsync("limit:storage:" + tenant.TenantId.ToString("D"), ct).ConfigureAwait(false);
+        }
+
+        var used = await meter.GetStorageBytesAsync(ct).ConfigureAwait(false);
+        return used + demand.Delta > max ? EntitlementErrors.Exceeded(LimitKeys.Storage, EntitlementMath.FilesModule, max, used) : Result.Success();
     }
 
     private async Task<Result> EnsureRecordsAsync(EntitlementSnapshot snapshot, string module, int delta, CancellationToken ct)

@@ -97,6 +97,9 @@ public sealed class PlanLimitsDefinition
 {
     public int? MaxUsers { get; set; }
 
+    /// <summary>Dosya eki depolama kotası (MiB, M8C); <c>null</c> = sınırsız, <c>0</c> = hiç yükleme yok.</summary>
+    public int? MaxStorageMb { get; set; }
+
     public Dictionary<string, int?> MaxRecords { get; set; } = new(StringComparer.Ordinal);
 }
 
@@ -143,6 +146,11 @@ public static partial class PlanCatalogValidator
             if (plan.Limits.MaxUsers is < 0)
             {
                 errors.Add($"Plan '{label}': limits.maxUsers must be >= 0.");
+            }
+
+            if (plan.Limits.MaxStorageMb is < 0 or > PlatformLimits.MaxStorageMbUpperBound)
+            {
+                errors.Add($"Plan '{label}': limits.maxStorageMb must be between 0 and {PlatformLimits.MaxStorageMbUpperBound}.");
             }
 
             foreach (var (module, max) in plan.Limits.MaxRecords)

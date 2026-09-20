@@ -16,11 +16,15 @@ public static class GatedModules
     public static bool IsGated(string? module) => module is not null && All.Contains(module, StringComparer.Ordinal);
 }
 
-/// <summary>Limit anahtarları (depolama limiti yoktur; eklenince buraya yeni anahtar + reporter metriği gelir).</summary>
+/// <summary>Limit anahtarları. <c>storage</c> (M8C): dosya eki depolama kotası (sert, kesin; <c>LimitDemand.Delta</c> = bayt).</summary>
 public static class LimitKeys
 {
     public const string Users = "users";
     public const string Records = "records";
+    public const string Storage = "storage";
+
+    /// <summary><c>storage</c> limitinin modülü (M8C): <c>IModule.Name</c> = <c>LimitDemand.Module</c> = <c>OverLimitDto.module</c>.</summary>
+    public const string StorageModule = "files";
 }
 
 public enum AccessLevel
@@ -127,8 +131,12 @@ public sealed record EntitlementSnapshot(
     string TimeZone,
     IReadOnlyDictionary<string, bool> Modules,
     int? MaxUsers,
-    IReadOnlyDictionary<string, int?> MaxRecords)
+    IReadOnlyDictionary<string, int?> MaxRecords,
+    int? MaxStorageMb = null)
 {
+    /// <summary>Depolama kotası bayt olarak; <c>null</c> = sınırsız (M8C).</summary>
+    public long? MaxStorageBytes => MaxStorageMb is { } mb ? mb * 1024L * 1024L : null;
+
     public (string Status, AccessLevel Access) Evaluate(DateTimeOffset now) => TenantLifecycle.Evaluate(RawStatus, SuspensionMode, TrialEndsAt, now);
 
     /// <summary>Kapı modülü planda açık mı (kapı olmayan modüller her zaman açıktır; eksik anahtar = kapalı).</summary>
@@ -159,7 +167,10 @@ public interface ITenantEntitlements
 /// <summary>Bir limit tüketimi talebi (<paramref name="Module"/> = kaydın ait olduğu modül; <c>users</c> için <c>identity</c>).</summary>
 public sealed record LimitDemand(string Key, string? Module, int Delta = 1);
 
-/// <summary>Limit denetimi: aşımda <c>plan.limit_exceeded</c> (402) döner (Platform uygular).</summary>
+/// <summary>
+/// Limit denetimi: aşımda <c>plan.limit_exceeded</c> (402) döner (Platform uygular). <c>storage</c> için <see cref="LimitDemand.Delta"/> bayttır ve aşımın
+/// <c>args</c>'ı <c>limit=storage, module=files, max, used</c> (bayt) taşır; dosya uçları bunu <c>file.quota_exceeded</c>'a çevirir.
+/// </summary>
 public interface ILimitGuard
 {
     Task<Result> EnsureAsync(LimitDemand demand, CancellationToken ct = default);

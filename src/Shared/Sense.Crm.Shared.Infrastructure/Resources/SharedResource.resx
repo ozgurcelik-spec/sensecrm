@@ -262,4 +262,27 @@
   <data name="field.overrides" xml:space="preserve"><value>İstisnalar</value></data>
   <data name="field.retention_days" xml:space="preserve"><value>Saklama süresi (gün)</value></data>
   <data name="field.mode" xml:space="preserve"><value>Kip</value></data>
+  <data name="problem.title.payload_too_large" xml:space="preserve"><value>Dosya çok büyük</value></data>
+  <data name="problem.title.unsupported_media_type" xml:space="preserve"><value>Desteklenmeyen dosya türü</value></data>
+  <data name="problem.title.gone" xml:space="preserve"><value>Kaynak artık yok</value></data>
+  <data name="problem.title.unavailable" xml:space="preserve"><value>Hizmet geçici olarak kullanılamıyor</value></data>
+  <data name="file.upload_invalid" xml:space="preserve"><value>Yükleme isteği geçersiz: çok parçalı (multipart) gövde okunamadı.</value></data>
+  <data name="file.too_many_files" xml:space="preserve"><value>Tek istekte en fazla {max} dosya yüklenebilir.</value></data>
+  <data name="file.empty" xml:space="preserve"><value>Boş dosya yüklenemez.</value></data>
+  <data name="file.name_invalid" xml:space="preserve"><value>Dosya adı geçersiz ya da temizlendikten sonra boş kaldı.</value></data>
+  <data name="file.extension_change_not_allowed" xml:space="preserve"><value>Yeniden adlandırırken dosya uzantısı değiştirilemez.</value></data>
+  <data name="file.too_large" xml:space="preserve"><value>Dosya çok büyük; izin verilen en büyük boyut {maxBytes} bayttır.</value></data>
+  <data name="file.type_not_allowed" xml:space="preserve"><value>"{extension}" dosya türüne izin verilmiyor.</value></data>
+  <data name="file.content_mismatch" xml:space="preserve"><value>Dosya içeriği uzantısıyla uyuşmuyor ya da güvenli olmayan içerik barındırıyor.</value></data>
+  <data name="file.infected" xml:space="preserve"><value>Dosyada zararlı içerik bulundu; yükleme reddedildi.</value></data>
+  <data name="file.quota_exceeded" xml:space="preserve"><value>Depolama kotası aşıldı (kota {maxBytes} bayt, kullanılan {usedBytes} bayt, istenen {requestedBytes} bayt). Planı yükseltmek için platform yöneticisiyle iletişime geçin.</value></data>
+  <data name="file.quarantined" xml:space="preserve"><value>Dosya karantinada olduğu için indirilemez.</value></data>
+  <data name="file.content_missing" xml:space="preserve"><value>Dosyanın içeriği depoda bulunamadı.</value></data>
+  <data name="file.scan_unavailable" xml:space="preserve"><value>Dosya tarama hizmeti şu anda kullanılamıyor; daha sonra yeniden deneyin.</value></data>
+  <data name="file.storage_unavailable" xml:space="preserve"><value>Dosya deposu şu anda kullanılamıyor; daha sonra yeniden deneyin.</value></data>
+  <data name="file.record_not_found" xml:space="preserve"><value>Ekin bağlanacağı kayıt bulunamadı.</value></data>
+  <data name="validation.file_record_type" xml:space="preserve"><value>Kayıt türü geçersiz.</value></data>
+  <data name="validation.file_record_id" xml:space="preserve"><value>Geçerli bir kayıt kimliği girin.</value></data>
+  <data name="validation.file_disposition" xml:space="preserve"><value>Sunum biçimi attachment veya inline olmalıdır.</value></data>
+  <data name="validation.file_name" xml:space="preserve"><value>Dosya adı zorunludur (en çok 2048 karakter).</value></data>
 </root>
