@@ -43,7 +43,7 @@ v0.13'ün J3 (şablon + PDF) dilimi, PDF denemesi geçtikten ve ihtiyaç doğduk
 | Sürüm | Dilimler (her biri ayrı merge) | Durum |
 |---|---|---|
 | **v0.1** | R1a: C-SEC2 birleştir · R1b: E2E bulguları F-1, F-2, F-4, erişilebilirlik · R1c: Prometheus'a `Sense.Crm.Files`/`Integrations` metrik adları + prod `.env` yükseltme notu (`TRUSTED_PROXY_CIDR`, `EDGE_SUBNET`) · R1d: sürüm provası (yedek/geri yükleme, smoke, E2E) + etiket | M8B/M8C `main`'de; C-SEC2 birleştiriliyor |
-| **v0.2** | N1: bildirim çekirdeği + zil/tercihler · N2: e-posta relay + kiracı ayarları · N3: hatırlatma/SLA zamanlayıcıları | Backend hazır, birleşme sırada |
+| **v0.2** | N1: bildirim çekirdeği + zil/tercihler · N2: e-posta relay + kiracı ayarları · N3: hatırlatma/SLA zamanlayıcıları · N4: parolamı unuttum (e-postalı sıfırlama; [ekran-eksik-analizi.md](../analysis/ekran-eksik-analizi.md) P0-4) | Backend hazır, birleşme sırada |
 | **v0.3** | C1: alan tanımı yönetimi + firma/kişi · C2: diğer varlıklar · C3: liste kolonu + `cf.` filtre/sıralama | Backend hazır, web çalışıyor |
 | **v0.4** | S1: teklif/sipariş alan paritesi + Kaydet ve Yeni · S2: fatura + tahsilat · S3: fiyat listeleri · S4: tedarikçi + satın alma · S5: `LookupDialog` hızlı oluşturma | Backend `main`'de, web çalışıyor |
 | **v0.5** | A1: gruplu menü + hızlı oluştur + rozetler · A2: genel arama (`pg_trgm`) · A3: İş Kuyruğu + Ana Sayfa widget'ları | Backend bitiyor |
@@ -55,6 +55,10 @@ v0.13'ün J3 (şablon + PDF) dilimi, PDF denemesi geçtikten ve ihtiyaç doğduk
 | **v0.11** | G1: atama kuralları + M4 kural göçü · G2: web formları · G3: kural motoru | Plan hazır |
 | **v0.12** | I1: klasörler + ACL · I2: çözümler · I3: talep–çözüm bağı · I4: arama entegrasyonu | Plan hazır |
 | **v0.13** | J1: profil + para birimleri + kurlar · J2: iş takvimi + SLA + tatil paketi · J3: şablonlar + PDF | Backend çalışıyor |
+
+## Ek girdi: ekran eksik analizi
+
+[docs/analysis/ekran-eksik-analizi.md](../analysis/ekran-eksik-analizi.md) (salt-okunur kod incelemesi, P0–P3): web tarafında backend'in gerisinde kalan ticari ekranlar v0.4 (M9C Web) dilimlerine, alan/lookup/telefon/VKN/yinelenen-kayıt maddeleri v0.9 (E1–E3) ve M9C `LookupDialog` (S5) dilimlerine, kayıp nedeni ve liste seçimi/toplu işlem maddeleri v0.6 ve v0.9'a girdi olarak verilir; yeni dilim açmadan önce ilgili ajan istemine bu belgenin ilgili bölümü eklenir.
 
 ## Analiz kartları (karar bekleyen, sürüm planının dışında)
 
