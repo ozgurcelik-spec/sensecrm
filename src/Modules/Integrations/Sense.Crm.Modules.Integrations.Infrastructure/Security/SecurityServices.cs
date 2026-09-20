@@ -171,7 +171,7 @@ public sealed class ApiKeyScopeCatalog : IApiKeyScopeCatalog
     {
         _all = new Lazy<IReadOnlyList<Permission>>(() => [.. modules.SelectMany(m => m.Permissions)]);
         _known = new Lazy<HashSet<string>>(() => _all.Value.Select(p => p.Key).ToHashSet(StringComparer.Ordinal));
-        _allowed = new Lazy<IReadOnlyList<string>>(() => ApiKeyScopePolicy.Allowed(_all.Value));
+        _allowed = new Lazy<IReadOnlyList<string>>(() => [.. ApiKeyScopePolicy.Allowed(_all.Value).Where(Application.OpenApi.PublicApiCatalog.Scopes.Contains)]);
     }
 
     public IReadOnlySet<string> AllKnown => _known.Value;

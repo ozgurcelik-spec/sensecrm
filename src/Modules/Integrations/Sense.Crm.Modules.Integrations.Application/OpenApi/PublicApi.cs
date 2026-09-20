@@ -51,7 +51,19 @@ public static class PublicApiCatalog
         new("get", "/accounts/{id}/deals", ["crm.accounts.read", "crm.deals.read"]),
         new("post", "/leads/{id}/convert", ["crm.leads.write", "crm.accounts.write", "crm.contacts.write"]),
         new("post", "/quotes/{id}/convert", ["crm.quotes.read", "crm.orders.write"]),
+
+        // Boş kapsam = kamuya açık DEĞİL (belgede yok): fatura izinleri (M9C) anahtarlara verilemez; sipariş → fatura dönüşümü yalnız oturumla çağrılır.
+        new("post", "/orders/{id}/invoice", []),
     ];
+
+    /// <summary>
+    /// Anahtara verilebilen kapsamlar (varsayılan kapalı): yalnız katalogdaki okuma/yazma kapsamları ve işlem istisnalarındaki kapsamlar. Yeni bir modül izni, kataloğa bilinçli eklenene
+    /// kadar hiçbir anahtarda bulunamaz (yeni uçlar yanlışlıkla açılmaz).
+    /// </summary>
+    public static IReadOnlySet<string> Scopes { get; } = Entries
+        .SelectMany(e => e.WriteScope is null ? new[] { e.ReadScope } : [e.ReadScope, e.WriteScope])
+        .Concat(Overrides.SelectMany(o => o.Scopes))
+        .ToHashSet(StringComparer.Ordinal);
 
     /// <summary><paramref name="fullPath"/> (<c>/api/v1/accounts/{id}</c>) kataloğa aitse girişi ve göreli yolu döner.</summary>
     public static (PublicApiEntry Entry, string Relative)? Match(string fullPath)
@@ -185,7 +197,7 @@ public static class OpenApiDocumentFilter
         var over = PublicApiCatalog.Overrides.FirstOrDefault(o => o.Method == lower && string.Equals(o.PathSuffix, relativePath, StringComparison.Ordinal));
         if (over is not null)
         {
-            return over.Scopes;
+            return over.Scopes.Count == 0 ? null : over.Scopes;
         }
 
         if (lower == "get")
