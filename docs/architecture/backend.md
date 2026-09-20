@@ -586,7 +586,7 @@ Konsol (yalnız platform yöneticisi): `GET /platform/organizations` (`q`, `stat
 
 ## 23. Gözlemlenebilirlik: metrikler (C-OPS1, K20)
 
-**Kapsam:** yalnız OpenTelemetry **metrikleri** + Prometheus `/metrics`; iz ve dış ihracat yoktur. İşletim tarafı (overlay, panolar, alarmlar): [runbook §15](../operations/runbook.md).
+**Kapsam:** yalnız OpenTelemetry **metrikleri** + Prometheus `/metrics`; iz ve dış ihracat yoktur. İşletim tarafı (overlay, panolar, alarmlar): [runbook §16](../operations/runbook.md).
 
 ### 23.1 Kod yerleşimi
 - `Sense.Crm.Shared.Contracts/Observability/CrmMetrics.cs`: tek `Meter("Sense.Crm")` (BCL; paket gerektirmez, Application katmanları da kullanabilir). Kaydediciler serbest etiket **almaz** (yalnız sabit değer kümeleri: `outcome`, `reason`, `status`, `module`, `plan`, `step`, `task_type`, `background_job`); `ForbiddenLabelNames` test kapısı için yasak etiket adlarını tutar. Örneklenen gauge'lar (`CrmMetrics.Gauges`): worker yazar, `ObservableGauge` okur.
