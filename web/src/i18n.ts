@@ -26,6 +26,8 @@ export const NAMESPACES = [
   "files",
   "notifications",
   "integrations",
+  "invoices",
+  "inventory",
 ] as const;
 
 i18n

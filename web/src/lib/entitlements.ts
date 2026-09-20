@@ -11,7 +11,11 @@ export function permissionModule(permission: string): GatedModule | undefined {
   if (
     permission.startsWith("crm.products.") ||
     permission.startsWith("crm.quotes.") ||
-    permission.startsWith("crm.orders.")
+    permission.startsWith("crm.orders.") ||
+    permission.startsWith("crm.invoices.") ||
+    permission.startsWith("crm.pricebooks.") ||
+    permission.startsWith("crm.vendors.") ||
+    permission.startsWith("crm.purchaseorders.")
   ) {
     return "commerce";
   }

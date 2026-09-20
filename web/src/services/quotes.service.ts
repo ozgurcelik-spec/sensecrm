@@ -23,7 +23,7 @@ export const quoteKeys = {
 };
 
 /** State changes; only `reject` (reason) and `extend` (validUntil) carry a body. */
-export type QuoteAction = "send" | "accept" | "revert" | "reject" | "extend";
+export type QuoteAction = "send" | "negotiate" | "accept" | "revert" | "reject" | "extend";
 
 export const listQuotes = (query: QuoteListQuery): Promise<ListResult<QuoteSummary>> =>
   getList<QuoteSummary>("/quotes", query);

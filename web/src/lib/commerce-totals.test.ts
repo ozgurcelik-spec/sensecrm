@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { computeLineTotals, computeTotals, roundHalfUpDiv, toScaledInt } from "./commerce-totals";
+import {
+  checkAdjustment,
+  computeLineTotals,
+  computeTotals,
+  roundHalfUpDiv,
+  roundingAdjustment,
+  toScaledInt,
+  toSignedMinor,
+} from "./commerce-totals";
 
 /** Reference vectors of docs/plan/m6a-ticaret.md (shared with the backend `DocumentTotals` tests). */
 const VECTORS = [
@@ -45,6 +53,7 @@ describe("computeTotals", () => {
       subtotal: 0,
       discountTotal: 0,
       taxTotal: 0,
+      adjustment: 0,
       grandTotal: 0,
     });
   });
@@ -120,5 +129,112 @@ describe("scaled integer helpers", () => {
     expect(roundHalfUpDiv(25n, 10n)).toBe(3n);
     expect(roundHalfUpDiv(24n, 10n)).toBe(2n);
     expect(roundHalfUpDiv(0n, 10n)).toBe(0n);
+  });
+});
+
+
+/** Plan D3 vectors A1-A8 (shared with the backend `DocumentTotals` tests); document {1, 3} = 94.56. */
+describe("adjustment (rounding line) vectors A1-A8", () => {
+  const doc = [VECTORS[0]!.line, VECTORS[2]!.line];
+  const single = [VECTORS[0]!.line];
+
+  it("A1: -0.56 -> 94.00", () => {
+    const totals = computeTotals(doc, -0.56);
+    expect(totals.grandTotal).toBe(94.0);
+    expect(totals.adjustment).toBe(-0.56);
+    expect(checkAdjustment(-0.56, doc)).toBeUndefined();
+  });
+
+  it("A2: +0.44 -> 95.00", () => {
+    expect(computeTotals(doc, 0.44).grandTotal).toBe(95.0);
+    expect(checkAdjustment(0.44, doc)).toBeUndefined();
+  });
+
+  it("A3: -94.56 -> 0.00 is valid", () => {
+    expect(computeTotals(doc, -94.56).grandTotal).toBe(0);
+    expect(checkAdjustment(-94.56, doc)).toBeUndefined();
+  });
+
+  it("A4: -94.57 is refused (negative total)", () => {
+    expect(checkAdjustment(-94.57, doc)).toBe("negativeTotal");
+  });
+
+  it("A5: 0.005 is refused (3 decimals, never rounded)", () => {
+    expect(checkAdjustment(0.005, doc)).toBe("decimals");
+    expect(checkAdjustment("0.005", doc)).toBe("decimals");
+    // The preview ignores an invalid value instead of guessing.
+    expect(computeTotals(doc, 0.005).grandTotal).toBe(94.56);
+  });
+
+  it("A6: a single line (64.76) with -0.76 -> 64.00; tax and discount are not recalculated", () => {
+    const totals = computeTotals(single, -0.76);
+    expect(totals.grandTotal).toBe(64.0);
+    expect(totals.taxTotal).toBe(10.79);
+    expect(totals.discountTotal).toBe(6.0);
+    expect(totals.subtotal).toBe(59.97);
+  });
+
+  it("A7: a document without lines refuses 0.01 and stays 0 with adjustment 0", () => {
+    expect(checkAdjustment(0.01, [])).toBe("requiresLines");
+    expect(checkAdjustment(0, [])).toBeUndefined();
+    expect(computeTotals([], 0).grandTotal).toBe(0);
+    expect(computeTotals([], 0.01).grandTotal).toBe(0);
+  });
+
+  it("A8: 1.000.000.000,01 is refused, 1.000.000.000 is the largest magnitude", () => {
+    expect(checkAdjustment(1_000_000_000.01, doc)).toBe("max");
+    expect(checkAdjustment(-1_000_000_000.01, doc)).toBe("max");
+    expect(checkAdjustment(1_000_000_000, doc)).toBeUndefined();
+  });
+
+  it("keeps the invariant grandTotal == sum of line totals + adjustment", () => {
+    for (const adjustment of [-0.56, 0, 0.44, 12.34, "-1.5"]) {
+      const totals = computeTotals(doc, adjustment);
+      const sum = totals.lines.reduce((acc, line) => acc + line.lineTotal * 100, 0);
+      expect(Math.round(totals.grandTotal * 100)).toBe(Math.round(sum) + Math.round(totals.adjustment * 100));
+    }
+  });
+});
+
+describe("toSignedMinor", () => {
+  it.each([
+    [-0.56, -56n],
+    [0.44, 44n],
+    ["-0.56", -56n],
+    ["+1.5", 150n],
+    ["  2 ", 200n],
+    ["", 0n],
+    [0, 0n],
+    [1_000_000_000, 100_000_000_000n],
+  ])("%s -> %s", (input, expected) => {
+    expect(toSignedMinor(input)).toBe(expected);
+  });
+
+  it.each([[0.005], ["1.234"], ["abc"], ["-"], [1e-7], [Number.NaN]])("%s is not a valid amount", (input) => {
+    expect(toSignedMinor(input)).toBeNull();
+  });
+
+  it("has no floating point drift on signed values (-0.07 is exactly -7 minor units)", () => {
+    expect(toSignedMinor(-0.07)).toBe(-7n);
+    expect(toSignedMinor(1.15)).toBe(115n);
+  });
+});
+
+describe("roundingAdjustment (the Yuvarla button)", () => {
+  it.each([
+    [94.56, 0.44],
+    [94.5, 0.5],
+    [94.49, -0.49],
+    [94, 0],
+    [0.4, -0.4],
+    [0, 0],
+  ])("%s -> %s", (total, expected) => {
+    expect(roundingAdjustment(total)).toBe(expected);
+  });
+
+  it("brings the document {1, 3} to 95.00", () => {
+    const doc = [VECTORS[0]!.line, VECTORS[2]!.line];
+    const before = computeTotals(doc).grandTotal;
+    expect(computeTotals(doc, roundingAdjustment(before)).grandTotal).toBe(95);
   });
 });

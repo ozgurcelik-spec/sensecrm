@@ -46,7 +46,7 @@ describe("commerce translations", () => {
   it("has every status label", () => {
     for (const dictionary of [tr, en]) {
       expect(Object.keys(dictionary.quoteStatuses).sort()).toEqual(
-        ["accepted", "draft", "expired", "rejected", "sent"]
+        ["accepted", "draft", "expired", "negotiation", "rejected", "sent"]
       );
       expect(Object.keys(dictionary.orderStatuses).sort()).toEqual(
         ["cancelled", "confirmed", "draft", "fulfilled"]

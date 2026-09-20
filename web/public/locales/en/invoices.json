@@ -1,0 +1,122 @@
+{
+  "invoices": {
+    "title": "Invoices",
+    "description": "Invoices created from confirmed orders or directly, with their payments.",
+    "new": "New invoice",
+    "search": "Search by invoice number, subject or customer PO number",
+    "newTitle": "New invoice",
+    "editTitle": "Edit invoice: {{number}}",
+    "created": "Invoice created",
+    "updated": "Invoice updated",
+    "deleted": "Invoice deleted",
+    "deleteTitle": "Delete invoice",
+    "deleteMessage": "Draft invoice {{number}} will be deleted. Are you sure?",
+    "overdueOnly": "Overdue only"
+  },
+  "statuses": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "partiallyPaid": "Partially paid",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "cancelled": "Cancelled"
+  },
+  "fields": {
+    "invoiceDate": "Invoice date",
+    "dueDate": "Due date",
+    "balance": "Balance",
+    "paidAmount": "Paid"
+  },
+  "actions": {
+    "send": "Send",
+    "revert": "Back to draft",
+    "cancel": "Cancel",
+    "pay": "Record payment",
+    "createInvoice": "Create invoice"
+  },
+  "done": {
+    "send": "Invoice marked as sent",
+    "revert": "Invoice moved back to draft",
+    "cancel": "Invoice cancelled"
+  },
+  "dialogs": {
+    "cancelTitle": "Cancel invoice",
+    "cancelReason": "Reason for cancelling"
+  },
+  "payment": {
+    "title": "Record payment",
+    "submit": "Save",
+    "ledger": "Payments",
+    "summary": "Paid {{paid}} - Balance {{balance}}",
+    "empty": "No payments yet",
+    "amount": "Amount",
+    "balanceHint": "Remaining balance: {{balance}}",
+    "paidOn": "Payment date",
+    "method": "Method",
+    "methods": {
+      "cash": "Cash",
+      "bankTransfer": "Bank transfer",
+      "card": "Card",
+      "cheque": "Cheque",
+      "other": "Other"
+    },
+    "reference": "Reference",
+    "notes": "Notes",
+    "recorded": "Payment recorded",
+    "delete": "Delete payment",
+    "deleteFor": "Delete the payment of {{amount}}",
+    "deleteTitle": "Delete payment",
+    "deleteMessage": "The payment of {{amount}} will be deleted and the invoice balance grows accordingly. Are you sure?",
+    "deleted": "Payment deleted",
+    "validation": {
+      "decimals": "The amount can have at most 2 decimal places",
+      "amountPositive": "The amount must be greater than zero",
+      "exceedsBalance": "The amount cannot exceed the remaining balance ({{balance}})",
+      "dateRequired": "The payment date is required",
+      "future": "The payment date cannot be in the future",
+      "beforeInvoice": "The payment date cannot be before the invoice date",
+      "referenceMax": "Reference can be at most 100 characters",
+      "notesMax": "Notes can be at most 500 characters"
+    }
+  },
+  "convert": {
+    "title": "Create invoice",
+    "submit": "Create invoice",
+    "invoiceDateHint": "Today is used when left empty",
+    "dueBefore": "The due date cannot be before the invoice date",
+    "created": "Invoice {{number}} created"
+  },
+  "orderLink": "Invoice: {{number}}",
+  "hasActiveInvoice": "An order with an active invoice cannot be cancelled; cancel the invoice first",
+  "related": {
+    "noInvoices": "No invoices for this record"
+  },
+  "tabs": {
+    "invoices": "Invoices"
+  },
+  "report": {
+    "section": "Invoices",
+    "total": "Total invoiced",
+    "paid": "Collected",
+    "outstanding": "Outstanding balance",
+    "overdue": "Overdue",
+    "overdueValue": "{{count}} invoices - {{amount}}",
+    "byStatus": "Invoices by status",
+    "cancelledNote": "The invoice total excludes cancelled invoices; they only show in the status table."
+  },
+  "errors": {
+    "order": {
+      "not_invoiceable": "Only confirmed or fulfilled orders can be converted to an invoice",
+      "already_invoiced": "This order already has a non-cancelled invoice",
+      "has_active_invoice": "An order with an active invoice cannot be cancelled; cancel the invoice first"
+    },
+    "invoice": {
+      "not_editable": "Only draft invoices can be edited or deleted",
+      "invalid_transition": "This action is not possible in the invoice's current status",
+      "no_lines": "Add at least one line before sending the invoice",
+      "has_payments": "An invoice with payments cannot go back to draft or be cancelled; delete the payments first",
+      "not_payable": "No payment can be recorded on this invoice",
+      "payment_exceeds_balance": "The amount exceeds the remaining balance ({{balance}})"
+    }
+  }
+}

@@ -252,7 +252,7 @@ describe("OrderEditorPage", () => {
       "POST /orders": () => order({ id: "o-new" }),
     });
     renderEditor("/app/orders/new?accountId=a1");
-    await screen.findByRole("combobox", { name: /Müşteri/ });
+    await screen.findByRole("textbox", { name: "Müşteri" });
     expect(screen.queryByLabelText("Geçerlilik tarihi")).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("combobox", { name: "Sahip" })).not.toBeDisabled());
 
@@ -267,6 +267,7 @@ describe("OrderEditorPage", () => {
       subject: "Doğrudan sipariş",
       accountId: "a1",
       currency: "TRY",
+      adjustment: 0,
       lines: [{ description: "Kalem", quantity: 1, unitPrice: 0, discountPercent: 0, taxRate: 0 }],
     });
     expect(body).not.toHaveProperty("validUntil");

@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@mantine/core";
-import type { OrderStatus, QuoteStatus } from "@/types";
+import type { InvoiceStatus, OrderStatus, PurchaseOrderStatus, QuoteStatus } from "@/types";
 
 const QUOTE_COLOR: Record<QuoteStatus, string> = {
   draft: "gray",
   sent: "blue",
+  // M9C: "Müzakere" - in talks, still open.
+  negotiation: "violet",
   accepted: "green",
   rejected: "red",
   // Own colour: an expired quote needs attention, it is neither open nor lost.
@@ -32,6 +34,41 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   return (
     <Badge variant="light" color={ORDER_COLOR[status] ?? "gray"}>
       {t(`commerce:orderStatuses.${status}`, { defaultValue: status })}
+    </Badge>
+  );
+}
+
+/** Invoice colours: overdue red, partially paid orange, paid green (docs/plan/m9c-envanter.md). */
+const INVOICE_COLOR: Record<InvoiceStatus, string> = {
+  draft: "gray",
+  sent: "blue",
+  partiallyPaid: "orange",
+  paid: "green",
+  overdue: "red",
+  cancelled: "dark",
+};
+
+const PURCHASE_ORDER_COLOR: Record<PurchaseOrderStatus, string> = {
+  draft: "gray",
+  confirmed: "blue",
+  received: "green",
+  cancelled: "red",
+};
+
+export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
+  const { t } = useTranslation(["invoices"]);
+  return (
+    <Badge variant="light" color={INVOICE_COLOR[status] ?? "gray"} data-status={status}>
+      {t(`invoices:statuses.${status}`, { defaultValue: status })}
+    </Badge>
+  );
+}
+
+export function PurchaseOrderStatusBadge({ status }: { status: PurchaseOrderStatus }) {
+  const { t } = useTranslation(["inventory"]);
+  return (
+    <Badge variant="light" color={PURCHASE_ORDER_COLOR[status] ?? "gray"} data-status={status}>
+      {t(`inventory:purchaseOrders.statuses.${status}`, { defaultValue: status })}
     </Badge>
   );
 }

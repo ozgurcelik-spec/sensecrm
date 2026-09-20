@@ -141,9 +141,9 @@ describe("QuoteEditorPage", () => {
 
     const subject = await screen.findByLabelText(/^Konu/);
     expect(subject).toHaveValue("Acme yıllık lisans");
-    expect(screen.getByRole("combobox", { name: /Müşteri/ })).toHaveValue("Acme Ltd");
-    expect(await screen.findByRole("combobox", { name: "Kişi" })).toHaveValue("Ayşe Yılmaz");
-    expect(screen.getByRole("combobox", { name: "Fırsat" })).toHaveValue("Acme yıllık lisans");
+    expect(screen.getByRole("textbox", { name: "Müşteri" })).toHaveValue("Acme Ltd");
+    expect(await screen.findByRole("textbox", { name: "Kişi" })).toHaveValue("Ayşe Yılmaz");
+    expect(screen.getByRole("textbox", { name: "Fırsat" })).toHaveValue("Acme yıllık lisans");
     expect(screen.getByRole("combobox", { name: "Para birimi" })).toHaveValue("USD");
     // Only ids travel in the URL; the deal lookup fills the rest.
     expect(client.get).toHaveBeenCalledWith("/deals/d1");
@@ -153,7 +153,7 @@ describe("QuoteEditorPage", () => {
     installApi(client, baseRoutes());
     renderEditor("/app/quotes/new?accountId=a1");
 
-    expect(await screen.findByRole("combobox", { name: /Müşteri/ })).toHaveValue("Acme Ltd");
+    expect(await screen.findByRole("textbox", { name: "Müşteri" })).toHaveValue("Acme Ltd");
     expect(screen.getByLabelText(/^Konu/)).toHaveValue("");
     expect(client.get).not.toHaveBeenCalledWith("/deals/d1");
   });
@@ -164,7 +164,7 @@ describe("QuoteEditorPage", () => {
       baseRoutes({ "POST /quotes": () => quote({ id: "q-new", number: "Q-2026-0002" }) })
     );
     renderEditor("/app/quotes/new?accountId=a1");
-    await screen.findByRole("combobox", { name: /Müşteri/ });
+    await screen.findByRole("textbox", { name: "Müşteri" });
     await waitFor(() => expect(screen.getByRole("combobox", { name: "Sahip" })).not.toBeDisabled());
 
     await userEvent.type(screen.getByLabelText(/^Konu/), "  Yeni teklif ");
@@ -190,6 +190,8 @@ describe("QuoteEditorPage", () => {
       ownerUserId: "user-1",
       currency: "TRY",
       notes: "Not",
+      // Always sent (0 when unused): PUT replaces the document.
+      adjustment: 0,
       lines: [
         {
           description: "Danışmanlık",
@@ -235,7 +237,7 @@ describe("QuoteEditorPage", () => {
       })
     );
     renderEditor("/app/quotes/new?accountId=a1");
-    await screen.findByRole("combobox", { name: /Müşteri/ });
+    await screen.findByRole("textbox", { name: "Müşteri" });
 
     await userEvent.type(screen.getByLabelText(/^Konu/), "Konu");
     await userEvent.type(screen.getByLabelText("Açıklama 1"), "A");
@@ -257,7 +259,7 @@ describe("QuoteEditorPage", () => {
     const error = problem(404, { code: "commerce.related_not_found" });
     installApi(client, baseRoutes({ "POST /quotes": () => error }));
     renderEditor("/app/quotes/new?accountId=a1");
-    await screen.findByRole("combobox", { name: /Müşteri/ });
+    await screen.findByRole("textbox", { name: "Müşteri" });
     await userEvent.type(screen.getByLabelText(/^Konu/), "Konu");
     await userEvent.type(screen.getByLabelText("Açıklama 1"), "A");
     await userEvent.click(screen.getByRole("button", { name: "Kaydet" }));
@@ -268,7 +270,7 @@ describe("QuoteEditorPage", () => {
   it("does not send an invalid form: required subject and line checks show first", async () => {
     installApi(client, baseRoutes());
     renderEditor("/app/quotes/new?accountId=a1");
-    await screen.findByRole("combobox", { name: /Müşteri/ });
+    await screen.findByRole("textbox", { name: "Müşteri" });
 
     const quantity = screen.getByLabelText("Adet 1");
     await userEvent.clear(quantity);
@@ -323,13 +325,14 @@ describe("QuoteEditorPage", () => {
     );
     renderEditor("/app/quotes/new?accountId=a1");
 
-    // A plain disabled text box instead of the searchable account picker.
-    const account = await screen.findByRole("textbox", { name: /Müşteri/ });
-    expect(account).toBeDisabled();
+    // A read-only lookup field (no search window) instead of a searchable account picker.
+    const account = await screen.findByRole("textbox", { name: "Müşteri" });
+    expect(account).toHaveAttribute("readonly");
+    expect(screen.queryByRole("button", { name: "Müşteri seç" })).not.toBeInTheDocument();
     expect(account).toHaveValue("a1");
     // No product picker, no contact / deal selects without their read permissions.
     expect(screen.queryByRole("combobox", { name: "Ürün 1" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("combobox", { name: "Kişi" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Kişi" })).not.toBeInTheDocument();
     expect(client.get).not.toHaveBeenCalledWith("/accounts/a1");
 
     await userEvent.type(screen.getByLabelText(/^Konu/), "Konu");

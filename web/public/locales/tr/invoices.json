@@ -1,0 +1,122 @@
+{
+  "invoices": {
+    "title": "Faturalar",
+    "description": "Onaylanmış siparişlerden veya doğrudan hazırlanan faturalar ve tahsilatlar.",
+    "new": "Yeni fatura",
+    "search": "Fatura numarası, konu veya müşteri satın alma emri no ara",
+    "newTitle": "Yeni fatura",
+    "editTitle": "Faturayı düzenle: {{number}}",
+    "created": "Fatura oluşturuldu",
+    "updated": "Fatura güncellendi",
+    "deleted": "Fatura silindi",
+    "deleteTitle": "Faturayı sil",
+    "deleteMessage": "{{number}} numaralı taslak fatura silinecek. Emin misiniz?",
+    "overdueOnly": "Vadesi geçenler"
+  },
+  "statuses": {
+    "draft": "Taslak",
+    "sent": "Gönderildi",
+    "partiallyPaid": "Kısmen ödendi",
+    "paid": "Ödendi",
+    "overdue": "Vadesi geçti",
+    "cancelled": "İptal"
+  },
+  "fields": {
+    "invoiceDate": "Fatura tarihi",
+    "dueDate": "Son tarih",
+    "balance": "Bakiye",
+    "paidAmount": "Ödenen"
+  },
+  "actions": {
+    "send": "Gönder",
+    "revert": "Taslağa al",
+    "cancel": "İptal et",
+    "pay": "Ödeme kaydet",
+    "createInvoice": "Fatura oluştur"
+  },
+  "done": {
+    "send": "Fatura gönderildi olarak işaretlendi",
+    "revert": "Fatura taslağa alındı",
+    "cancel": "Fatura iptal edildi"
+  },
+  "dialogs": {
+    "cancelTitle": "Faturayı iptal et",
+    "cancelReason": "İptal nedeni"
+  },
+  "payment": {
+    "title": "Ödeme kaydet",
+    "submit": "Kaydet",
+    "ledger": "Tahsilatlar",
+    "summary": "Ödenen {{paid}} - Bakiye {{balance}}",
+    "empty": "Henüz tahsilat yok",
+    "amount": "Tutar",
+    "balanceHint": "Kalan bakiye: {{balance}}",
+    "paidOn": "Ödeme tarihi",
+    "method": "Yöntem",
+    "methods": {
+      "cash": "Nakit",
+      "bankTransfer": "Havale / EFT",
+      "card": "Kart",
+      "cheque": "Çek",
+      "other": "Diğer"
+    },
+    "reference": "Referans",
+    "notes": "Notlar",
+    "recorded": "Ödeme kaydedildi",
+    "delete": "Tahsilatı sil",
+    "deleteFor": "{{amount}} tutarlı tahsilatı sil",
+    "deleteTitle": "Tahsilatı sil",
+    "deleteMessage": "{{amount}} tutarlı tahsilat silinecek; fatura bakiyesi buna göre artar. Emin misiniz?",
+    "deleted": "Tahsilat silindi",
+    "validation": {
+      "decimals": "Tutar en fazla 2 ondalık basamak içerebilir",
+      "amountPositive": "Tutar sıfırdan büyük olmalıdır",
+      "exceedsBalance": "Tutar kalan bakiyeyi aşamaz ({{balance}})",
+      "dateRequired": "Ödeme tarihi zorunludur",
+      "future": "Ödeme tarihi bugünden sonra olamaz",
+      "beforeInvoice": "Ödeme tarihi fatura tarihinden önce olamaz",
+      "referenceMax": "Referans en fazla 100 karakter olabilir",
+      "notesMax": "Notlar en fazla 500 karakter olabilir"
+    }
+  },
+  "convert": {
+    "title": "Fatura oluştur",
+    "submit": "Fatura oluştur",
+    "invoiceDateHint": "Boş bırakılırsa bugün kullanılır",
+    "dueBefore": "Son tarih, fatura tarihinden önce olamaz",
+    "created": "{{number}} numaralı fatura oluşturuldu"
+  },
+  "orderLink": "Fatura: {{number}}",
+  "hasActiveInvoice": "Aktif faturası olan sipariş iptal edilemez; önce faturayı iptal edin",
+  "related": {
+    "noInvoices": "Bu kayda ait fatura yok"
+  },
+  "tabs": {
+    "invoices": "Faturalar"
+  },
+  "report": {
+    "section": "Faturalar",
+    "total": "Faturaların toplam tutarı",
+    "paid": "Tahsil edilen",
+    "outstanding": "Bekleyen bakiye",
+    "overdue": "Vadesi geçen",
+    "overdueValue": "{{count}} fatura - {{amount}}",
+    "byStatus": "Faturaların duruma göre dağılımı",
+    "cancelledNote": "Fatura toplamı iptal edilenleri içermez; iptaller yalnızca durum tablosunda görünür."
+  },
+  "errors": {
+    "order": {
+      "not_invoiceable": "Yalnızca onaylanmış veya teslim edilmiş siparişler faturaya dönüştürülebilir",
+      "already_invoiced": "Bu siparişin iptal edilmemiş bir faturası zaten var",
+      "has_active_invoice": "Aktif faturası olan sipariş iptal edilemez; önce faturayı iptal edin"
+    },
+    "invoice": {
+      "not_editable": "Yalnızca taslak faturalar düzenlenebilir veya silinebilir",
+      "invalid_transition": "Faturanın mevcut durumunda bu işlem yapılamaz",
+      "no_lines": "Faturayı göndermek için en az bir kalem ekleyin",
+      "has_payments": "Tahsilatı olan fatura taslağa alınamaz veya iptal edilemez; önce tahsilatları silin",
+      "not_payable": "Bu faturaya tahsilat girilemez",
+      "payment_exceeds_balance": "Tutar kalan bakiyeyi aşıyor ({{balance}})"
+    }
+  }
+}
