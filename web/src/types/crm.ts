@@ -225,4 +225,5 @@ export type AuditEntityType =
   | "Product"
   | "Quote"
   | "SalesOrder"
-  | "Case";
+  | "Case"
+  | "file";

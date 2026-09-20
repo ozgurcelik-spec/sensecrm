@@ -11,6 +11,7 @@ import { ContactFormDialog } from "@/components/crm/contact-form-dialog";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordCampaignsTab } from "@/components/marketing/record-campaigns-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { LoadError } from "@/components/load-error";
@@ -113,6 +114,7 @@ export default function ContactDetailPage() {
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReadCampaigns = usePermission(PERMISSIONS.crmCampaignsRead);
+  const attachmentsTab = useAttachmentsTab("contact", id);
   const tabs = contact
     ? [
         {
@@ -177,6 +179,7 @@ export default function ContactDetailPage() {
               },
             ]
           : []),
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),

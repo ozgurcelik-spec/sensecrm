@@ -11,6 +11,7 @@ import { LostReasonDialog } from "@/components/crm/lost-reason-dialog";
 import { WorkflowStatusStrip } from "@/components/workflows/workflow-status-strip";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useCrmPermissions } from "@/hooks/use-crm-permissions";
@@ -92,6 +93,7 @@ export default function DealDetailPage() {
 
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReadQuotes = usePermission(PERMISSIONS.crmQuotesRead);
+  const attachmentsTab = useAttachmentsTab("deal", id);
   const tabs = deal
     ? [
         {
@@ -142,6 +144,7 @@ export default function DealDetailPage() {
               },
             ]
           : []),
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),

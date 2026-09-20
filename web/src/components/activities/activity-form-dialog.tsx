@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Select, SimpleGrid, TextInput, Textarea } from "@mantine/core";
 import { FormDialog } from "@/components/crm/form-dialog";
+import { AttachmentsTab } from "@/components/files/attachments-tab";
 import { OwnerSelect } from "@/components/crm/owner-select";
 import { useSaveActivity } from "@/hooks/use-activities";
 import { useDefaultOwnerId } from "@/hooks/use-default-owner";
@@ -94,7 +95,7 @@ export function ActivityFormDialog({
   onClose,
   onSaved,
 }: ActivityFormDialogProps) {
-  const { t } = useTranslation(["activities", "common", "auth"]);
+  const { t } = useTranslation(["activities", "common", "auth", "files"]);
   const save = useSaveActivity();
   const defaultOwnerId = useDefaultOwnerId();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
@@ -308,6 +309,16 @@ export function ActivityFormDialog({
           />
         )}
       />
+
+      {/* Attachments need a saved activity (their record id): edit mode only. */}
+      {isEdit && activity && (
+        <AttachmentsTab
+          recordType="activity"
+          recordId={activity.id}
+          compact
+          heading={t("files:tab.title")}
+        />
+      )}
     </FormDialog>
   );
 }

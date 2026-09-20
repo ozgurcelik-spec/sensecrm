@@ -8,7 +8,7 @@ import { formatNumber } from "@/lib/format";
 import { GATED_MODULES, type PlatformPlan } from "@/types";
 
 function LimitsCell({ plan }: { plan: PlatformPlan }) {
-  const { t } = useTranslation(["platform", "subscription"]);
+  const { t } = useTranslation(["platform", "subscription", "files"]);
   const value = (limit: number | null | undefined) =>
     limit === null || limit === undefined ? t("platform:plans.unlimited") : formatNumber(limit);
   const records = Object.entries(plan.limits.maxRecords ?? {});
@@ -17,6 +17,12 @@ function LimitsCell({ plan }: { plan: PlatformPlan }) {
       <Text size="sm">
         {t("platform:plans.usersLimit")}: {value(plan.limits.maxUsers)}
       </Text>
+      {plan.limits.maxStorageMb !== undefined && (
+        <Text size="xs" c="dimmed">
+          {t("files:plan.storage")}:{" "}
+          {plan.limits.maxStorageMb === null ? value(null) : `${value(plan.limits.maxStorageMb)} MB`}
+        </Text>
+      )}
       {records.map(([module, limit]) => (
         <Text size="xs" c="dimmed" key={module}>
           {t(`subscription:modules.${module}`, { defaultValue: module })}: {value(limit)}
