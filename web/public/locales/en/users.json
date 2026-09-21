@@ -61,6 +61,12 @@
       },
       "workflows": {
         "manage": "Manage workflow rules and executions"
+      },
+      "notifications": {
+        "manage": "Manage notification settings and the delivery log"
+      },
+      "integrations": {
+        "manage": "Manage webhooks and API keys"
       }
     },
     "crm": {
@@ -109,6 +115,22 @@
       "cases": {
         "read": "View cases",
         "write": "Create, edit and reply to cases"
+      },
+      "invoices": {
+        "read": "View invoices",
+        "write": "Create and edit invoices and payments"
+      },
+      "pricebooks": {
+        "read": "View price books",
+        "write": "Create and edit price books"
+      },
+      "vendors": {
+        "read": "View vendors",
+        "write": "Create and edit vendors"
+      },
+      "purchaseorders": {
+        "read": "View purchase orders",
+        "write": "Create and edit purchase orders"
       }
     }
   }

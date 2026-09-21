@@ -64,6 +64,8 @@ public sealed class CommerceTransaction(CommerceDbContext db) : ICommerceTransac
 
     public Task<Result<T>> ExecuteAsync<T>(Func<CancellationToken, Task<Result<T>>> work, CancellationToken ct) => ExecuteCoreAsync(work, ct);
 
+    public Task LockAsync(string key, CancellationToken ct) => db.AcquireAdvisoryLockAsync(key, ct);
+
     private async Task<Result<T>> ExecuteCoreAsync<T>(Func<CancellationToken, Task<Result<T>>> work, CancellationToken ct)
     {
         var transaction = db.Database.CurrentTransaction ?? throw new InvalidOperationException(NoTransaction);
@@ -97,9 +99,15 @@ public sealed class CommerceTransaction(CommerceDbContext db) : ICommerceTransac
     {
         CommerceTables.ProductCodeIndex => Error.Conflict(CommerceErrors.ProductCodeTaken),
         CommerceTables.OrderQuoteIndex => Error.Conflict(CommerceErrors.QuoteAlreadyConverted),
+        CommerceTables.InvoiceOrderIndex => Error.Conflict(CommerceErrors.OrderAlreadyInvoiced),
+        CommerceTables.PriceBookNameIndex => Error.Conflict(CommerceErrors.PriceBookNameTaken),
 
         // Numara yedek güvencesi: sayaç serileştirdiği için yalnız beklenmeyen yarışta oluşur; istemci yeniden dener.
-        CommerceTables.QuoteNumberIndex or CommerceTables.OrderNumberIndex => Error.Conflict(CommerceErrors.ConcurrentUpdate),
+        CommerceTables.QuoteNumberIndex or CommerceTables.OrderNumberIndex or CommerceTables.InvoiceNumberIndex or CommerceTables.PurchaseOrderNumberIndex
+            => Error.Conflict(CommerceErrors.ConcurrentUpdate),
+
+        // Aynı girdi/firma varsayılanı için eşzamanlı ilk yazımlar: ikincisi yeniden dener (idempotent uçlar).
+        CommerceTables.PriceBookEntryIndex or CommerceTables.AccountPriceBookIndex => Error.Conflict(CommerceErrors.ConcurrentUpdate),
         _ => null,
     };
 }

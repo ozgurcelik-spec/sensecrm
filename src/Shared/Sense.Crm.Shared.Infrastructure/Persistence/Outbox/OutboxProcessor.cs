@@ -7,7 +7,9 @@ using Microsoft.Extensions.Options;
 using Sense.Crm.Shared.Contracts.Configuration;
 using Sense.Crm.Shared.Contracts.Context;
 using Sense.Crm.Shared.Contracts.Events;
+using Sense.Crm.Shared.Contracts.Observability;
 using Sense.Crm.Shared.Infrastructure.Context;
+using Sense.Crm.Shared.Infrastructure.Observability;
 using Sense.Crm.Shared.Kernel.Domain;
 
 namespace Sense.Crm.Shared.Infrastructure.Persistence.Outbox;
@@ -57,13 +59,21 @@ public sealed partial class OutboxProcessor<TContext>(
         }
 
         var processed = 0;
+        int retried = 0, dead = 0;
+        var lags = new List<TimeSpan>(messages.Count);
         foreach (var message in messages)
         {
+            // Worker günlüklerinde/AsyncLocal bağlamında, olayı üreten isteğin correlation id'si (kişisel veri değil; sınırlı uzunluk, başlıkta doğrulanmış).
+            using var correlation = message.CorrelationId is { Length: > 0 } correlationId
+                ? services.GetService<ICorrelationIdContextSetter>()?.BeginScope(correlationId)
+                : null;
+            using var logScope = logger.BeginScope(new[] { KeyValuePair.Create<string, object>(CorrelationIdEnricher.PropertyName, message.CorrelationId ?? string.Empty) });
             try
             {
                 await DispatchAsync(services, message, cancellationToken).ConfigureAwait(false);
                 message.ProcessedAt = clock.GetUtcNow().UtcDateTime;
                 message.Error = null;
+                lags.Add(message.ProcessedAt.Value - message.OccurredAt);
                 processed++;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -74,18 +84,39 @@ public sealed partial class OutboxProcessor<TContext>(
                 if (message.Attempts >= cfg.MaxAttempts)
                 {
                     message.IsDead = true;
+                    dead++;
                     Log.DeadLettered(logger, ex, message.Id, message.Type, message.Attempts);
                 }
                 else
                 {
                     var seconds = Math.Min(Math.Pow(2, message.Attempts) * cfg.BaseBackoffSeconds, cfg.MaxBackoffSeconds);
                     message.NextAttemptAt = clock.GetUtcNow().UtcDateTime.AddSeconds(seconds);
+                    retried++;
                     Log.Retry(logger, ex, message.Id, message.Type, seconds);
                 }
             }
         }
 
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Metrikler SaveChanges başarılı olduktan SONRA yazılır (kayıt hatasında sayılmaz); etiketler yalnız modül + sonuç (düşük kardinalite).
+        var module = db.ModuleName;
+        CrmMetrics.OutboxHandled(module, "dispatched", processed);
+        if (retried > 0)
+        {
+            CrmMetrics.OutboxHandled(module, "retry", retried);
+        }
+
+        if (dead > 0)
+        {
+            CrmMetrics.OutboxHandled(module, "dead", dead);
+        }
+
+        foreach (var lag in lags)
+        {
+            CrmMetrics.OutboxDispatchLag(module, lag);
+        }
+
         return processed;
     }
 

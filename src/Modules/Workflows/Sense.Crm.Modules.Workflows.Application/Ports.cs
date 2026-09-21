@@ -42,6 +42,14 @@ public interface IWorkflowEngine
     Task RemoveAsync(string workflowId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Verilen ilişkilendirme kimliğiyle (CRM yürütme kimliği) başlatılmış motor workflow kimlikleri (C-SEC2 L2): motor çağrısı başarılı olduktan sonra CRM'nin
+    /// <c>engine_workflow_id</c> yazamadığı "yetim" yürütmeleri KVKK imhasında bulmak içindir (Conductor <c>GET workflow/{name}/correlated/{correlationId}</c>).
+    /// Varsayılan: yok (motor desteklemiyor).
+    /// </summary>
+    Task<IReadOnlyList<string>> FindIdsByCorrelationAsync(string workflowName, string correlationId, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<string>>([]);
+
+    /// <summary>
     /// Workflow'un beklediği insan/bekleme (HUMAN/WAIT) görevini <paramref name="output"/> ile tamamlar (onay kararı). Görev
     /// zaten tamamlanmışsa hata vermez (idempotent).
     /// </summary>

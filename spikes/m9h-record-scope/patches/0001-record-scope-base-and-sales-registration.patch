@@ -1,0 +1,186 @@
+diff --git a/src/Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Persistence/SalesDbContext.cs b/src/Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Persistence/SalesDbContext.cs
+index ac0f90b..f5864bf 100644
+--- a/src/Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Persistence/SalesDbContext.cs
++++ b/src/Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Persistence/SalesDbContext.cs
+@@ -8,6 +8,7 @@ using Sense.Crm.Modules.Sales.Domain.Leads;
+ using Sense.Crm.Modules.Sales.Domain.Pipelines;
+ using Sense.Crm.Shared.Contracts.Context;
+ using Sense.Crm.Shared.Infrastructure.Persistence;
++using Sense.Crm.Shared.Infrastructure.Persistence.RecordScope;
+ 
+ namespace Sense.Crm.Modules.Sales.Infrastructure.Persistence;
+ 
+@@ -68,6 +69,7 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
+     public void Configure(EntityTypeBuilder<Account> b)
+     {
+         b.ToTable(SalesTables.Accounts);
++        b.HasRecordScope("account", x => x.OwnerUserId);
+         b.HasKey(x => x.Id);
+         b.Property(x => x.Id).ValueGeneratedNever();
+         b.Property(x => x.Name).HasMaxLength(SalesLimits.NameMaxLength).IsRequired();
+@@ -94,6 +96,7 @@ public sealed class ContactConfiguration : IEntityTypeConfiguration<Contact>
+     public void Configure(EntityTypeBuilder<Contact> b)
+     {
+         b.ToTable(SalesTables.Contacts);
++        b.HasRecordScope("contact", x => x.OwnerUserId);
+         b.HasKey(x => x.Id);
+         b.Property(x => x.Id).ValueGeneratedNever();
+         b.Property(x => x.FirstName).HasMaxLength(SalesLimits.PersonNameMaxLength);
+@@ -123,6 +126,7 @@ public sealed class LeadConfiguration : IEntityTypeConfiguration<Lead>
+     public void Configure(EntityTypeBuilder<Lead> b)
+     {
+         b.ToTable(SalesTables.Leads);
++        b.HasRecordScope("lead", x => x.OwnerUserId);
+         b.HasKey(x => x.Id);
+         b.Property(x => x.Id).ValueGeneratedNever();
+         b.Property(x => x.FirstName).HasMaxLength(SalesLimits.PersonNameMaxLength);
+@@ -177,6 +181,7 @@ public sealed class DealConfiguration : IEntityTypeConfiguration<Deal>
+     public void Configure(EntityTypeBuilder<Deal> b)
+     {
+         b.ToTable(SalesTables.Deals);
++        b.HasRecordScope("deal", x => x.OwnerUserId);
+         b.HasKey(x => x.Id);
+         b.Property(x => x.Id).ValueGeneratedNever();
+         b.Property(x => x.Name).HasMaxLength(SalesLimits.NameMaxLength).IsRequired();
+diff --git a/src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/ModuleDbContext.cs b/src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/ModuleDbContext.cs
+index a38780b..ee0ac38 100644
+--- a/src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/ModuleDbContext.cs
++++ b/src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/ModuleDbContext.cs
+@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage;
+ using Sense.Crm.Shared.Contracts.Context;
+ using Sense.Crm.Shared.Contracts.Persistence;
+ using Sense.Crm.Shared.Infrastructure.Persistence.Outbox;
++using Sense.Crm.Shared.Infrastructure.Persistence.RecordScope;
+ using Sense.Crm.Shared.Kernel.Domain;
+ 
+ namespace Sense.Crm.Shared.Infrastructure.Persistence;
+@@ -64,6 +65,12 @@ public abstract class ModuleDbContext(DbContextOptions options, ITenantContext t
+                 modelBuilder.Entity(clr).HasQueryFilter(SoftDeleteFilter, BuildSoftDeleteFilter(clr));
+             }
+ 
++            // M9H: üçüncü adlı filtre. Kaynak yapılandırması b.HasRecordScope(...) ile annotation bırakır (ApplyConfigurationsFromAssembly yukarıda çalıştı).
++            if (entityType.FindAnnotation(RecordScopeModelExtensions.FactoryAnnotation)?.Value is RecordScopeModelExtensions.FilterFactory recordScope)
++            {
++                modelBuilder.Entity(clr).HasQueryFilter(RecordScopeModelExtensions.FilterName, recordScope(Expression.Constant(this)));
++            }
++
+             if (typeof(IAuditable).IsAssignableFrom(clr))
+             {
+                 modelBuilder.Entity(clr).Property(nameof(IAuditable.CreatedAt)).IsRequired();
+diff --git a/src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/RecordScope/RecordScope.cs b/src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/RecordScope/RecordScope.cs
+new file mode 100644
+index 0000000..d990efd
+--- /dev/null
++++ b/src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/RecordScope/RecordScope.cs
+@@ -0,0 +1,97 @@
++using System.Collections.Frozen;
++using System.Linq.Expressions;
++using System.Reflection;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Metadata.Builders;
++
++namespace Sense.Crm.Shared.Infrastructure.Persistence.RecordScope;
++
++/// <summary>Bir kaynak için okuma/yazma kümesi. Diziler kullanıcı başına bir kez üretilir ve paylaşılır.</summary>
++public sealed record ResourceScope(bool ReadAll, Guid[] ReadOwners, bool WriteAll, Guid[] WriteOwners, bool IncludeUnowned)
++{
++    public static readonly ResourceScope None = new(false, [], false, [], false);
++
++    public static readonly ResourceScope All = new(true, [], true, [], true);
++}
++
++/// <summary>(kullanıcı, kiracı) kapsam anlık görüntüsü. Bilinmeyen kaynak = hiçbir şey (kapalı-başarısız).</summary>
++public sealed class RecordScopeSnapshot(Guid userId, bool unrestricted, IDictionary<string, ResourceScope> resources)
++{
++    private readonly FrozenDictionary<string, ResourceScope> _resources = resources.ToFrozenDictionary(StringComparer.Ordinal);
++
++    public Guid UserId { get; } = userId;
++
++    public bool Unrestricted { get; } = unrestricted;
++
++    public ResourceScope Get(string resource) => Unrestricted ? ResourceScope.All : _resources.GetValueOrDefault(resource, ResourceScope.None);
++
++    public static readonly RecordScopeSnapshot System = new(Guid.Empty, true, new Dictionary<string, ResourceScope>());
++
++    public static readonly RecordScopeSnapshot Deny = new(Guid.Empty, false, new Dictionary<string, ResourceScope>());
++}
++
++/// <summary>
++/// <c>TenantContext</c> deseninde AsyncLocal bağlam. Filtre ifadesi <b>DbContext örneğini ilk argüman olarak</b> geçirir; EF bu çağrıyı sorgu derlenirken değil
++/// HER YÜRÜTMEDE değerlendirir (H0 spike: statik çağrı, bağlam argümanı olmadan, ilk kullanıcının kapsamını önbelleğe gömer — kullanıcılar arası sızıntı).
++/// </summary>
++public static class RecordScopeContext
++{
++    private static readonly AsyncLocal<RecordScopeSnapshot?> Current = new();
++
++    /// <summary>true: kurulmamış bağlam = hiçbir şey (API sürecinde önerilen); false: sınırsız (Worker/Migrator/test).</summary>
++    public static bool FailClosedWhenUnset { get; set; }
++
++    private static RecordScopeSnapshot Effective => Current.Value ?? (FailClosedWhenUnset ? RecordScopeSnapshot.Deny : RecordScopeSnapshot.System);
++
++    public static RecordScopeSnapshot Snapshot => Effective;
++
++    public static IDisposable Use(RecordScopeSnapshot snapshot)
++    {
++        var previous = Current.Value;
++        Current.Value = snapshot;
++        return new Restorer(previous);
++    }
++
++    public static IDisposable UseSystem() => Use(RecordScopeSnapshot.System);
++
++    // Filtre giriş noktaları: ilk argüman (DbContext) yalnız EF'e "bu çağrı bağlama bağlı, her yürütmede değerlendir" der.
++    public static bool ReadAll(DbContext context, string resource) => Effective.Get(resource).ReadAll;
++
++    public static Guid[] ReadOwners(DbContext context, string resource) => Effective.Get(resource).ReadOwners;
++
++    public static bool IncludeUnowned(DbContext context, string resource) => Effective.Get(resource).IncludeUnowned;
++
++    private sealed class Restorer(RecordScopeSnapshot? previous) : IDisposable
++    {
++        public void Dispose() => Current.Value = previous;
++    }
++}
++
++/// <summary>Kaynak yapılandırmasında tek satır: <c>b.HasRecordScope("lead", x =&gt; x.OwnerUserId)</c>. Filtreyi <see cref="ModuleDbContext"/> taban döngüsü kurar.</summary>
++public static class RecordScopeModelExtensions
++{
++    public const string FilterName = "RecordScope";
++    public const string FactoryAnnotation = "Sense:RecordScopeFilterFactory";
++
++    private static readonly MethodInfo Contains = typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static)
++        .Single(m => m.Name == nameof(Enumerable.Contains) && m.GetParameters().Length == 2).MakeGenericMethod(typeof(Guid));
++
++    /// <summary>Bağlam ifadesi (<c>Expression.Constant(this)</c>) verilince filtre lambda'sını üretir.</summary>
++    public delegate LambdaExpression FilterFactory(Expression context);
++
++    public static EntityTypeBuilder<T> HasRecordScope<T>(this EntityTypeBuilder<T> builder, string resource, Expression<Func<T, Guid>> owner)
++        where T : class
++    {
++        builder.HasAnnotation(FactoryAnnotation, (FilterFactory)(ctx => Expression.Lambda<Func<T, bool>>(
++            Expression.OrElse(Call(ctx, nameof(RecordScopeContext.ReadAll), resource), Expression.Call(Contains, Call(ctx, nameof(RecordScopeContext.ReadOwners), resource), owner.Body)),
++            owner.Parameters[0])));
++        return builder;
++    }
++
++    /// <summary><c>IgnoreQueryFilters([RecordScope])</c> sarmalı: kiracı + silinmiş filtreleri kalır. Yalnız onaylı envanterde çağrılır.</summary>
++    public static IQueryable<T> IgnoreRecordScope<T>(this IQueryable<T> query)
++        where T : class => query.IgnoreQueryFilters([FilterName]);
++
++    private static MethodCallExpression Call(Expression ctx, string method, string resource) =>
++        Expression.Call(typeof(RecordScopeContext).GetMethod(method, [typeof(DbContext), typeof(string)])!, ctx, Expression.Constant(resource));
++}
+diff --git a/tests/Sense.Crm.Tests.TenantIsolation/TenantFilterBypassInventoryTests.cs b/tests/Sense.Crm.Tests.TenantIsolation/TenantFilterBypassInventoryTests.cs
+index 7bb2355..d795acf 100644
+--- a/tests/Sense.Crm.Tests.TenantIsolation/TenantFilterBypassInventoryTests.cs
++++ b/tests/Sense.Crm.Tests.TenantIsolation/TenantFilterBypassInventoryTests.cs
+@@ -27,6 +27,9 @@ public sealed class TenantFilterBypassInventoryTests
+ 
+         // Durum senkronu için dar projeksiyon (TenantId, ExecutionId); her yürütme sonra kendi kiracı kapsamında işlenir.
+         ["src/Modules/Workflows/Sense.Crm.Modules.Workflows.Infrastructure/Persistence/Repositories.cs"] = 1,
++
++        // M9H: IgnoreRecordScope() sarmalayıcısı (yalnız RecordScope adlı filtreyi atlar; asıl çağrı yerleri ayrı RecordScopeBypassInventoryTests envanterinde).
++        ["src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/RecordScope/RecordScope.cs"] = 1,
+     };
+ 
+     /// <summary>

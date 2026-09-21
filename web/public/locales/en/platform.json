@@ -162,6 +162,11 @@
     "erased": "This organization's data was permanently erased.",
     "failedTitle": "Destruction could not be completed",
     "attempts": "Attempts: {{count}}",
+    "lastError": "Last error",
+    "retry": "Retry erasure",
+    "retryTitle": "Retry erasure",
+    "retryMessage": "The failed erasure of {{name}} will be retried. Enter your own password to continue.",
+    "retried": "Erasure restarted",
     "retentionSummary": "Retention period {{days}} days; scheduled destruction: {{date}}",
     "details": "Request details",
     "requestedAt": "Requested at",
@@ -253,8 +258,36 @@
       "deletion.completed": "Destruction completed",
       "deletion.failed": "Destruction failed",
       "usage.refreshed": "Usage refreshed",
-      "usage.exported": "Usage exported"
+      "usage.exported": "Usage exported",
+      "deletion.retried": "Erasure retried",
+      "platform_admin.revoked": "Platform admin revoked"
     }
+  },
+  "reasonHint": "Do not put personal data (names, e-mail addresses, phone numbers) in the reason; it is kept in the audit log.",
+  "stepUp": {
+    "label": "Your password",
+    "description": "This destructive action requires the signed-in platform administrator's own password."
+  },
+  "admins": {
+    "title": "Platform administrators",
+    "description": "Accounts with access to the platform console.",
+    "columns": {
+      "name": "Name",
+      "email": "E-mail",
+      "status": "Status",
+      "lastLogin": "Last sign-in"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "never": "Never signed in",
+    "empty": "No platform administrators found",
+    "revoke": "Revoke access",
+    "revokeOf": "Revoke access of {{email}}",
+    "revokeTitle": "Revoke platform administrator",
+    "revokeMessage": "{{name}} will no longer be able to use the platform console. Enter your own password to continue.",
+    "deactivate": "Also deactivate the account",
+    "deactivateHint": "If checked, the account is deactivated entirely, not just stripped of platform access.",
+    "revoked": "Platform access revoked for {{email}}"
   },
   "export": {
     "title": "Export usage",
@@ -275,7 +308,13 @@
       "plan_not_found": "Plan not found or inactive",
       "invalid_transition": "This action is not possible in the current state ({{from}} → {{to}})",
       "deletion_not_cancellable": "The deletion request can no longer be cancelled",
-      "system_tenant_protected": "This action is not allowed for the system organization"
+      "system_tenant_protected": "This action is not allowed for the system organization",
+      "step_up_required": "Your own password is required for this action",
+      "step_up_failed": "Incorrect password",
+      "step_up_rate_limited": "Too many incorrect password attempts; please try again later",
+      "confirmation_mismatch": "The typed organization name does not match",
+      "last_platform_admin": "The last active platform administrator cannot be revoked",
+      "deletion_not_retryable": "A deletion request can only be retried while it is in the failed state"
     }
   }
 }

@@ -110,7 +110,7 @@ export function SubscriptionEditorDialog({
   onClose,
   onSaved,
 }: SubscriptionEditorDialogProps) {
-  const { t } = useTranslation(["platform", "subscription", "common"]);
+  const { t } = useTranslation(["platform", "subscription", "common", "files"]);
   const update = useUpdatePlatformSubscription(org.tenantId);
   const [planCode, setPlanCode] = useState(org.planCode);
   const [trialEndsOn, setTrialEndsOn] = useState(org.trialEndsOn ?? "");
@@ -130,13 +130,17 @@ export function SubscriptionEditorDialog({
   };
 
   const hasInvalidLimit =
-    isInvalidLimit(draft.maxUsers) || Object.values(draft.maxRecords).some(isInvalidLimit);
+    isInvalidLimit(draft.maxUsers) ||
+    isInvalidLimit(draft.maxStorageMb) ||
+    Object.values(draft.maxRecords).some(isInvalidLimit);
 
-  function setLimit(key: "maxUsers" | string, next: LimitDraft) {
+  function setLimit(key: "maxUsers" | "maxStorageMb" | string, next: LimitDraft) {
     setDraft((current) =>
       key === "maxUsers"
         ? { ...current, maxUsers: next }
-        : { ...current, maxRecords: { ...current.maxRecords, [key]: next } }
+        : key === "maxStorageMb"
+          ? { ...current, maxStorageMb: next }
+          : { ...current, maxRecords: { ...current.maxRecords, [key]: next } }
     );
   }
 
@@ -219,6 +223,13 @@ export function SubscriptionEditorDialog({
           planHint={planLimitText(plan?.limits.maxUsers)}
           error={errors["overrides.maxUsers"]}
           onChange={(next) => setLimit("maxUsers", next)}
+        />
+        <LimitField
+          label={t("files:platform.maxStorageMb")}
+          draft={draft.maxStorageMb}
+          planHint={planLimitText(plan?.limits.maxStorageMb)}
+          error={errors["overrides.maxStorageMb"]}
+          onChange={(next) => setLimit("maxStorageMb", next)}
         />
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
           {RECORD_MODULES.map((module) => (

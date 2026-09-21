@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using Sense.Crm.Modules.Identity.Application;
 using Sense.Crm.Modules.Identity.Application.Provisioning;
 using Sense.Crm.Modules.Platform.Application;
 using Sense.Crm.Shared.Infrastructure.Persistence;
@@ -49,7 +50,18 @@ internal static class PlatformKit
         }
 
         var client = host.CreateClient();
-        return client.WithToken((await client.LoginAsync(email, PlatformPassword)).AccessToken);
+        var auth = await client.LoginAsync(email, PlatformPassword);
+
+        // C-SEC2 M6: bootstrap hesabı MustChangePassword ile açılır; ilk girişte parola (aynı değere) değiştirilir ve güncel jetonla devam edilir.
+        if (auth.MustChangePassword)
+        {
+            client.WithToken(auth.AccessToken);
+            var changed = await client.PostAsJsonAsync($"{Base}/me/password", new { currentPassword = PlatformPassword, newPassword = PlatformPassword }, Ct);
+            changed.EnsureSuccessStatusCode();
+            auth = (await changed.Content.ReadFromJsonAsync<AuthResponse>(Ct))!;
+        }
+
+        return client.WithToken(auth.AccessToken);
     }
 
     /// <summary>Kendi kendine kayıt (test ortamında açık) ile yeni organizasyon ve yöneticisi.</summary>

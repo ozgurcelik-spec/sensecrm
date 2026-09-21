@@ -4,6 +4,7 @@ using Sense.Crm.Modules.Sales.Domain;
 using Sense.Crm.Modules.Sales.Domain.Accounts;
 using Sense.Crm.Shared.Contracts.Context;
 using Sense.Crm.Shared.Contracts.Entitlements;
+using Sense.Crm.Shared.Contracts.Events;
 using Sense.Crm.Shared.Contracts.Messaging;
 using Sense.Crm.Shared.Contracts.Paging;
 using Sense.Crm.Shared.Contracts.Security;
@@ -122,7 +123,8 @@ public sealed record CreateAccountCommand(
 
 public sealed class CreateAccountValidator : AccountFieldsValidator<CreateAccountCommand>;
 
-public sealed class CreateAccountHandler(IAccountRepository accounts, OwnerResolver owners, ITenantContext tenant) : ICommandHandler<CreateAccountCommand, Guid>
+public sealed class CreateAccountHandler(IAccountRepository accounts, OwnerResolver owners, ITenantContext tenant, IIntegrationEventOutbox outbox, ICurrentUser user)
+    : ICommandHandler<CreateAccountCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateAccountCommand command, CancellationToken cancellationToken)
     {
@@ -143,6 +145,9 @@ public sealed class CreateAccountHandler(IAccountRepository accounts, OwnerResol
             command.BillingAddress.ToDomain(),
             command.Description);
         accounts.Add(account);
+
+        // M8B: webhook account.created (aynı transaction'da outbox'a yazılır; komut başarısız olursa yayınlanmaz).
+        outbox.Enqueue(new AccountCreated(tenant.TenantId, account.Id, account.OwnerUserId, user.UserId));
         return account.Id;
     }
 }

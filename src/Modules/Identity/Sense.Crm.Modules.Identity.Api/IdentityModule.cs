@@ -66,6 +66,7 @@ public sealed class IdentityModule : IModule
         services.AddScoped<SessionIssuer>();
         services.AddScoped<Application.Members.DelegationGuard>();
         services.AddSingleton<ILoginThrottle, LoginThrottle>();
+        services.AddScoped<IStepUpAuthenticator, StepUpAuthenticator>();
 
         services.AddScoped<PermissionService>();
         services.AddScoped<IPermissionService>(sp => sp.GetRequiredService<PermissionService>());

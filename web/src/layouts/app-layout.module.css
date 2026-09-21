@@ -1,15 +1,16 @@
 .header {
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  border-top: 3px solid var(--mantine-color-brand-filled);
+  background-color: light-dark(var(--mantine-color-brand-0), var(--mantine-color-dark-7));
   box-shadow: 0 1px 3px rgba(20, 30, 80, 0.06);
 }
 
-.main {
-  background-color: light-dark(#eef0f8, var(--mantine-color-dark-8));
-}
-
-/* Zoho-style deep navy rail; the scoped variables recolor every Mantine child (text, dimmed labels, dividers). */
+/* Deep rail derived from the selected palette; the scoped variables recolor every Mantine child (text, dimmed labels, dividers). */
 .sidebar {
-  --sidebar-bg: light-dark(#1b2a5c, #131b3a);
+  --sidebar-bg: light-dark(
+    color-mix(in srgb, var(--mantine-color-brand-9) 55%, var(--mantine-color-navy-8)),
+    var(--mantine-color-dark-8)
+  );
   --mantine-color-text: #ffffff;
   --mantine-color-dimmed: rgba(255, 255, 255, 0.55);
   --mantine-color-default-border: rgba(255, 255, 255, 0.14);
@@ -20,6 +21,13 @@
   flex-direction: column;
 }
 
+.main {
+  background-color: light-dark(
+    color-mix(in srgb, var(--mantine-color-brand-0) 55%, white),
+    var(--mantine-color-dark-8)
+  );
+}
+
 .navLink {
   border-radius: var(--mantine-radius-md);
   color: rgba(255, 255, 255, 0.85);
@@ -27,13 +35,13 @@
   margin-bottom: 2px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   &[data-active],
   &[aria-current="page"] {
-    background-color: rgba(255, 255, 255, 0.16);
-    color: #ffffff;
+    background-color: var(--mantine-color-brand-filled);
+    color: var(--mantine-color-white);
   }
 }
 

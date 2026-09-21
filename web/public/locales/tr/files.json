@@ -1,0 +1,127 @@
+{
+  "tab": {
+    "title": "Ekler"
+  },
+  "search": "Ek adında ara",
+  "total": "Toplam {{count}} ek",
+  "empty": "Bu kayıtta ek yok.",
+  "emptyWritable": "Henüz ek yok. Dosyaları yukarıdaki alana sürükleyip bırakın.",
+  "emptySearch": "Aramanızla eşleşen ek yok.",
+  "dropzone": {
+    "prompt": "Dosyaları buraya sürükleyip bırakın",
+    "release": "Yüklemek için bırakın",
+    "select": "Dosya seç",
+    "limits": "Dosya başına en çok {{maxSize}}. İzin verilen türler: {{types}}.",
+    "limitsUnknown": "Sınırlar sunucuda denetlenir."
+  },
+  "queue": {
+    "title": "Yükleniyor",
+    "progressOf": "{{name}} yükleme ilerlemesi",
+    "waiting": "Sırada bekliyor",
+    "percent": "%{{percent}}",
+    "retry": "Tekrar dene",
+    "retryOf": "Tekrar dene: {{name}}",
+    "cancel": "İptal et",
+    "cancelOf": "Yüklemeyi iptal et: {{name}}",
+    "dismiss": "Kapat",
+    "dismissOf": "Satırı kapat: {{name}}"
+  },
+  "columns": {
+    "name": "Ad",
+    "size": "Boyut",
+    "uploadedBy": "Yükleyen",
+    "uploadedAt": "Yüklenme tarihi"
+  },
+  "state": {
+    "quarantined": "Karantinada",
+    "quarantinedHint": "Dosya zararlı bulundu; indirilemez, yalnızca silinebilir.",
+    "missing": "Kullanılamıyor",
+    "missingHint": "Dosyanın içeriğine ulaşılamıyor. Dosyayı silebilir ve yeniden yükleyebilirsiniz."
+  },
+  "actions": {
+    "of": "{{action}}: {{name}}",
+    "download": "İndir",
+    "preview": "Önizle",
+    "rename": "Yeniden adlandır",
+    "delete": "Sil"
+  },
+  "rename": {
+    "title": "Dosyayı yeniden adlandır",
+    "label": "Dosya adı",
+    "hint": "Uzantı değiştirilemez.",
+    "required": "Bir ad girin",
+    "done": "Dosya yeniden adlandırıldı"
+  },
+  "delete": {
+    "title": "Eki sil",
+    "message": "\"{{name}}\" silinsin mi? Kullanılan depolama alanı hemen serbest kalır.",
+    "done": "Ek silindi"
+  },
+  "preview": {
+    "unavailable": "Önizleme yapılamıyor",
+    "unavailableHint": "Bu dosya türü tarayıcıda önizlenemez. Dosyayı indirerek açabilirsiniz.",
+    "loading": "Önizleme yükleniyor"
+  },
+  "quota": {
+    "title": "Depolama kotası doldu"
+  },
+  "errors": {
+    "tooLargeUnknown": "Dosya çok büyük. Sunucunun kabul ettiği boyutu aşıyor.",
+    "general": {
+      "rate_limit_exceeded": "Çok fazla istek gönderildi. Biraz bekleyip tekrar deneyin."
+    },
+    "file": {
+      "upload_invalid": "Yükleme isteği geçersiz. Dosyayı yeniden seçin.",
+      "too_many_files": "Tek seferde en çok {{max}} dosya yüklenebilir.",
+      "empty": "Dosya boş.",
+      "name_invalid": "Dosya adı geçersiz.",
+      "extension_change_not_allowed": "Dosya uzantısı değiştirilemez.",
+      "too_large": "Dosya çok büyük. En çok {{maxSize}} yüklenebilir.",
+      "type_not_allowed": "Bu dosya türüne izin verilmiyor (.{{extension}}).",
+      "content_mismatch": "Dosya içeriği uzantısıyla uyuşmuyor ya da güvenli olmayan içerik barındırıyor.",
+      "infected": "Dosyada zararlı içerik bulundu; yüklenmedi.",
+      "quota_exceeded": "Depolama kotası dolu. Kullanılan {{usedSize}}, sınır {{maxSize}}; bu dosya {{requestedSize}}.",
+      "quarantined": "Dosya karantinada olduğu için indirilemez.",
+      "content_missing": "Dosyanın içeriğine ulaşılamıyor. Dosyayı silip yeniden yükleyin.",
+      "scan_unavailable": "Virüs taraması şu an yapılamıyor. Biraz sonra tekrar deneyin.",
+      "storage_unavailable": "Dosya depolama şu an kullanılamıyor. Biraz sonra tekrar deneyin.",
+      "record_not_found": "Kayıt bulunamadı; ekleri görüntülenemez."
+    }
+  },
+  "recordTypes": {
+    "account": "Firma",
+    "contact": "Kişi",
+    "lead": "Potansiyel müşteri",
+    "deal": "Fırsat",
+    "activity": "Aktivite",
+    "case": "Talep",
+    "quote": "Teklif",
+    "order": "Sipariş",
+    "campaign": "Kampanya"
+  },
+  "plan": {
+    "storage": "Depolama",
+    "storageDetail": "{{count}} dosya",
+    "storageQuarantined": "{{count}} karantinada",
+    "storageMissing": "{{count}} kullanılamıyor",
+    "byType": "Depolama kullanımı (kayıt türüne göre)",
+    "byTypeEmpty": "Henüz dosya yüklenmemiş.",
+    "columns": {
+      "type": "Kayıt türü",
+      "files": "Dosya",
+      "size": "Boyut"
+    },
+    "total": "Toplam"
+  },
+  "platform": {
+    "modules": {
+      "files": "Dosyalar"
+    },
+    "maxStorageMb": "Depolama limiti (MB)",
+    "storageLimit": "Depolama",
+    "metrics": {
+      "storage_bytes": "Depolama",
+      "files": "Dosya"
+    }
+  }
+}

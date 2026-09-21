@@ -34,16 +34,51 @@ public static class EntitlementMath
             timeZone,
             effective.Modules,
             effective.MaxUsers,
-            effective.MaxRecords);
+            effective.MaxRecords,
+            effective.MaxWebhooks,
+            effective.MaxApiKeys,
+            effective.MaxStorageMb);
     }
 
+    /// <summary>Dosya eki metrik anahtarları (Files modülünün <c>IUsageReporter</c>'ı; <c>UsageKeys</c> biçimi <c>{modül}.{varlık}</c>).</summary>
+    public const string StorageBytesKey = "files.storage_bytes";
+
+    public const string FileCountKey = "files.files";
+
+    public const string FilesModule = LimitKeys.StorageModule;
+
     /// <summary>Mevcut kullanım (kullanıcı = etkin + bekleyen; kayıtlar yalnız açık modüller) sonlu limitin üstündeyse aşım listesi.</summary>
-    public static IReadOnlyList<OverLimitDto> OverLimits(int? maxUsers, IReadOnlyDictionary<string, int?> maxRecords, IReadOnlyDictionary<string, bool> modules, UsageCollection usage)
+    public static IReadOnlyList<OverLimitDto> OverLimits(
+        int? maxUsers,
+        IReadOnlyDictionary<string, int?> maxRecords,
+        IReadOnlyDictionary<string, bool> modules,
+        UsageCollection usage,
+        int? maxWebhooks = null,
+        int? maxApiKeys = null,
+        int? maxStorageMb = null)
     {
         var result = new List<OverLimitDto>();
         if (maxUsers is { } users && usage.UsersUsed > users)
         {
             result.Add(new OverLimitDto(LimitKeys.Users, null, users, usage.UsersUsed));
+        }
+
+        // M8B: webhook/API anahtari limitleri (kullanim: integrations.webhooks, integrations.api_keys; modul kapaliysa raporlanmaz).
+        var integrationsOn = modules.TryGetValue(GatedModules.Integrations, out var integrations) && integrations;
+        if (integrationsOn && maxWebhooks is { } webhooks && usage.Metrics.GetValueOrDefault("integrations.webhooks") > webhooks)
+        {
+            result.Add(new OverLimitDto(LimitKeys.Webhooks, null, webhooks, usage.Metrics["integrations.webhooks"]));
+        }
+
+        if (integrationsOn && maxApiKeys is { } apiKeys && usage.Metrics.GetValueOrDefault("integrations.api_keys") > apiKeys)
+        {
+            result.Add(new OverLimitDto(LimitKeys.ApiKeys, null, apiKeys, usage.Metrics["integrations.api_keys"]));
+        }
+
+        // M8C: depolama aşımı bayt cinsindendir (max = maxStorageMb × 1 MiB, used = files.storage_bytes).
+        if (maxStorageMb is { } storageMb && usage.Metrics.TryGetValue(StorageBytesKey, out var storageUsed) && storageUsed > storageMb * 1024L * 1024L)
+        {
+            result.Add(new OverLimitDto(LimitKeys.Storage, FilesModule, storageMb * 1024L * 1024L, storageUsed));
         }
 
         var records = usage.Records;

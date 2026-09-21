@@ -23,6 +23,11 @@ export const NAMESPACES = [
   "service",
   "platform",
   "subscription",
+  "files",
+  "notifications",
+  "integrations",
+  "invoices",
+  "inventory",
 ] as const;
 
 i18n

@@ -138,6 +138,10 @@ public sealed class RequestAuthorizationTests
         {
             "AddMemberCommand", "CreateAccountCommand", "CreateContactCommand", "CreateLeadCommand", "CreateDealCommand", "CreateActivityCommand", "CreateRuleCommand",
             "CreateProductCommand", "CreateQuoteCommand", "CreateOrderCommand", "ConvertQuoteCommand", "CreateCaseCommand", "CreateCampaignCommand",
+            "CreateWebhookSubscriptionCommand", "CreateApiKeyCommand",
+
+            // M9C (Commerce): fatura, satın alma emri, tedarikçi, fiyat listesi + sipariş → fatura dönüşümü.
+            "CreateInvoiceCommand", "CreatePurchaseOrderCommand", "CreateVendorCommand", "CreatePriceBookCommand", "ConvertOrderToInvoiceCommand",
         };
 
         RequestTypes().Where(t => t.IsDefined(typeof(ConsumesLimitAttribute), inherit: true)).Select(t => t.Name).Order(StringComparer.Ordinal)

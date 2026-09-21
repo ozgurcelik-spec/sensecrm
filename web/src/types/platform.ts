@@ -5,7 +5,7 @@
  */
 
 /** Modules a plan can switch off (`identity`, `sales` and `activities` are core and always on). */
-export const GATED_MODULES = ["workflows", "commerce", "service", "marketing"] as const;
+export const GATED_MODULES = ["workflows", "commerce", "service", "marketing", "integrations"] as const;
 export type GatedModule = (typeof GATED_MODULES)[number];
 
 /** Modules that count records against `maxRecords.<module>`. */
@@ -77,6 +77,8 @@ export interface PlatformOrganization {
 /** Effective limits (plan + overrides): only finite limits are present (absent = unlimited). */
 export interface PlanLimits {
   maxUsers?: number;
+  /** Storage quota in MB (M8C); absent = unlimited. */
+  maxStorageMb?: number;
   maxRecords: Record<string, number>;
   modules: Partial<Record<GatedModule, boolean>>;
 }
@@ -113,6 +115,8 @@ export interface PlatformDeletion {
 /** Tenant specific exceptions; every key is optional. `maxUsers: null` means explicitly unlimited. */
 export interface PlatformOverrides {
   maxUsers?: number | null;
+  /** Storage quota in MB (M8C): absent key = plan, `null` = unlimited. */
+  maxStorageMb?: number | null;
   maxRecords?: Record<string, number | null>;
   modules?: Partial<Record<GatedModule, boolean>>;
 }
@@ -126,7 +130,7 @@ export interface PlatformOrganizationDetail extends PlatformOrganization {
 }
 
 export interface PlatformOverLimit {
-  limit: "users" | "records";
+  limit: "users" | "records" | "storage" | "webhooks" | "api_keys";
   module?: string;
   max: number;
   used: number;
@@ -171,19 +175,51 @@ export interface PlatformPlan {
   isActive: boolean;
   sortOrder: number;
   trialDays?: number;
-  limits: { maxUsers?: number | null; maxRecords: Record<string, number | null> };
+  limits: {
+    maxUsers?: number | null;
+    maxStorageMb?: number | null;
+    /** M8A: `null` = platform default, `0` = no e-mail. */
+    maxEmailsPerDay?: number | null;
+    maxRecords: Record<string, number | null>;
+  };
   modules: Partial<Record<GatedModule, boolean>>;
+  /** M8A plan flags (`notifications.email`, `notifications.sms`); a missing key means off. */
+  features?: Record<string, boolean>;
   assignedCount: number;
 }
 
 export interface PlatformSuspendInput {
   reason: string;
   mode: PlatformSuspensionMode;
+  /** The calling platform admin's own password; required by the server only when `mode === "blocked"`. */
+  currentPassword?: string;
 }
 
 export interface PlatformDeletionInput {
   reason: string;
   retentionDays?: number;
+  /** The typed organization name (the server compares it with its own copy). */
+  confirmTenantName: string;
+  /** The calling platform admin's own password (step-up re-authentication). */
+  currentPassword: string;
+}
+
+/** Body of every destructive platform command that only needs the step-up password. */
+export interface PlatformStepUpInput {
+  currentPassword: string;
+}
+
+export interface PlatformAdmin {
+  userId: string;
+  email: string;
+  displayName: string;
+  isActive: boolean;
+  lastLoginAt?: string;
+}
+
+export interface PlatformAdminRevokeInput extends PlatformStepUpInput {
+  /** Also deactivate the account, not just remove the platform-admin flag. */
+  deactivate?: boolean;
 }
 
 export interface PlatformDeletionResult {
@@ -221,12 +257,25 @@ export interface SubscriptionInfo {
   trialDaysLeft?: number;
   modules: Partial<Record<GatedModule, boolean>>;
   /** Only finite limits are present. */
-  limits: { maxUsers?: number; maxRecords: Record<string, number> };
+  limits: {
+    maxUsers?: number;
+    maxStorageMb?: number;
+    /** M8B: only finite limits are present. */
+    maxWebhooks?: number;
+    maxApiKeys?: number;
+    maxRecords: Record<string, number>;
+  };
   usage: {
     asOf: string;
     users: number;
     pendingUsers: number;
     records: Record<string, number>;
+    /** M8B (live counts); absent on servers without the integrations module. */
+    webhooks?: number;
+    apiKeys?: number;
+    /** M8C; absent on servers without the files module. */
+    storageBytes?: number;
+    fileCount?: number;
   };
   overLimit: PlatformOverLimit[];
 }

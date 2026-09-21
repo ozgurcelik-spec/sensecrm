@@ -18,6 +18,33 @@ public static class PlatformErrors
     /// <summary>Sistem kiracısına askı/silme/plan değişikliği → 422.</summary>
     public const string SystemTenantProtected = "platform.system_tenant_protected";
 
+    /// <summary>Yazılan kiracı adı sunucudaki adla eşleşmiyor → 422 (yıkıcı komutlar; C-SEC2 H2).</summary>
+    public const string ConfirmationMismatch = "platform.confirmation_mismatch";
+
+    /// <summary>Step-up: çağıranın parolası verilmedi → 422 (401 DEĞİL: oturum düşmesin).</summary>
+    public const string StepUpRequired = "platform.step_up_required";
+
+    /// <summary>Step-up: parola yanlış → 422.</summary>
+    public const string StepUpFailed = "platform.step_up_failed";
+
+    /// <summary>Step-up: hatalı deneme sınırı aşıldı ya da hesap kilitli → 429.</summary>
+    public const string StepUpRateLimited = "platform.step_up_rate_limited";
+
+    /// <summary>Son aktif platform yöneticisi geri alınamaz/pasifleştirilemez → 409.</summary>
+    public const string LastPlatformAdmin = "platform.last_platform_admin";
+
+    /// <summary>Hedef hesap platform yöneticisi değil → 409 (geri alınacak bir şey yok).</summary>
+    public const string NotAPlatformAdmin = "platform.not_a_platform_admin";
+
+    /// <summary>Yeniden deneme yalnız <c>failed</c> talepte → 409.</summary>
+    public const string DeletionNotRetryable = "platform.deletion_not_retryable";
+
+    /// <summary>İmha sonrası doğrulama: kiracı kimlikli tabloda hâlâ satır var (<c>DeletionRequest.LastError</c> kodu; tombstone yazılmaz).</summary>
+    public const string ErasureVerificationFailed = "erasure.verification_failed";
+
+    /// <summary>İmha ön koşulu (yeniden doğrulama) sağlanmadı: talep artık koşmaya uygun değil (<c>DeletionRequest.LastError</c> kodu).</summary>
+    public const string ErasurePreconditionFailed = "erasure.precondition_failed";
+
     // Doğrulama mesajı anahtarları
     public const string InvalidTrialDate = "validation.platform_trial_date";
     public const string InvalidReason = "validation.platform_reason";
@@ -31,6 +58,9 @@ public static class PlatformErrors
 /// <summary>Sınırlar ve sütun uzunlukları.</summary>
 public static class PlatformLimits
 {
+    /// <summary>Depolama kotası (MiB) üst sınırı: 1 TiB (M8C).</summary>
+    public const int MaxStorageMbUpperBound = 1_048_576;
+
     public const int PlanCodeMaxLength = 32;
     public const int PlanNameMaxLength = 100;
     public const int DescriptionMaxLength = 500;
@@ -46,6 +76,12 @@ public static class PlatformLimits
     public const int CorrelationIdMaxLength = 128;
     public const int LastErrorMaxLength = 2000;
     public const string DeletedNamePlaceholder = "[deleted]";
+
+    /// <summary>Serbest metin gerekçenin imhada yerine yazılan yer tutucu (<c>deletion_requests.reason</c>, <c>platform_audit_entries.details.reason</c>; L1).</summary>
+    public const string RedactedReasonPlaceholder = "[redacted]";
+
+    /// <summary>Platform denetiminin (retention işi) silebileceği en genç satır yaşı (gün): veritabanı tetikleyicisi bunun altını hiçbir işaretle silmez (M3).</summary>
+    public const int MinAuditRetentionDays = 30;
     public const string DeletedSlugPrefix = "deleted-";
     public const int MinRetentionDays = 7;
     public const int MaxRetentionDays = 90;
@@ -99,10 +135,19 @@ public static class PlatformAuditActions
     public const string DeletionFailed = "deletion.failed";
     public const string UsageRefreshed = "usage.refreshed";
     public const string UsageExported = "usage.exported";
+
+    /// <summary>Başarısız imha talebi yeniden denemeye alındı (C-SEC2 L3).</summary>
+    public const string DeletionRetried = "deletion.retried";
+
+    /// <summary>Platform yöneticisi yetkisi geri alındı (C-SEC2 M6).</summary>
+    public const string PlatformAdminRevoked = "platform_admin.revoked";
 }
 
-/// <summary>Plan limitleri (<c>null</c> = sınırsız; <c>0</c> = o modülde yeni kayıt açılamaz).</summary>
-public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords)
+/// <summary>
+/// Plan limitleri (<c>null</c> = sınırsız; <c>0</c> = o modülde yeni kayıt açılamaz). <c>MaxStorageMb</c> (M8C): dosya eki depolama kotası (MiB);
+/// <c>null</c> = sınırsız, <c>0</c> = hiç yükleme yok.
+/// </summary>
+public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, int? MaxWebhooks = null, int? MaxApiKeys = null, int? MaxStorageMb = null)
 {
     public static PlanLimits Unlimited { get; } = new(null, new Dictionary<string, int?>());
 }
@@ -111,7 +156,17 @@ public sealed record PlanLimits(int? MaxUsers, IReadOnlyDictionary<string, int?>
 /// Kiracıya özel istisna (kısmi). <c>maxUsers</c> anahtarının <b>varlığı</b> esastır: <see cref="MaxUsersSet"/> ve <c>MaxUsers == null</c> açıkça
 /// "sınırsız" demektir; anahtar yoksa plan geçerlidir. <c>maxRecords</c> içinde <c>null</c> değer de aynı şekilde "sınırsız"dır.
 /// </summary>
-public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules)
+public sealed record TenantOverrides(
+    bool MaxUsersSet,
+    int? MaxUsers,
+    IReadOnlyDictionary<string, int?> MaxRecords,
+    IReadOnlyDictionary<string, bool> Modules,
+    bool MaxWebhooksSet = false,
+    int? MaxWebhooks = null,
+    bool MaxApiKeysSet = false,
+    int? MaxApiKeys = null,
+    bool MaxStorageMbSet = false,
+    int? MaxStorageMb = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -120,7 +175,7 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
 
     public static TenantOverrides None { get; } = new(false, null, new Dictionary<string, int?>(), new Dictionary<string, bool>());
 
-    public bool IsEmpty => !MaxUsersSet && MaxRecords.Count == 0 && Modules.Count == 0;
+    public bool IsEmpty => !MaxUsersSet && !MaxWebhooksSet && !MaxApiKeysSet && !MaxStorageMbSet && MaxRecords.Count == 0 && Modules.Count == 0;
 
     /// <summary>
     /// Yapısal eşitlik (metin karşılaştırması değil): <c>jsonb</c> sütunu JSON metnini normalize eder (boşluk, anahtar sırası), bu yüzden saklı metin ile yeni
@@ -131,6 +186,12 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
         ArgumentNullException.ThrowIfNull(other);
         return MaxUsersSet == other.MaxUsersSet
             && MaxUsers == other.MaxUsers
+            && MaxWebhooksSet == other.MaxWebhooksSet
+            && MaxWebhooks == other.MaxWebhooks
+            && MaxApiKeysSet == other.MaxApiKeysSet
+            && MaxApiKeys == other.MaxApiKeys
+            && MaxStorageMbSet == other.MaxStorageMbSet
+            && MaxStorageMb == other.MaxStorageMb
             && SameMap(MaxRecords, other.MaxRecords)
             && SameMap(Modules, other.Modules);
     }
@@ -145,6 +206,21 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
         if (MaxUsersSet)
         {
             map["maxUsers"] = MaxUsers;
+        }
+
+        if (MaxWebhooksSet)
+        {
+            map["maxWebhooks"] = MaxWebhooks;
+        }
+
+        if (MaxApiKeysSet)
+        {
+            map["maxApiKeys"] = MaxApiKeys;
+        }
+
+        if (MaxStorageMbSet)
+        {
+            map["maxStorageMb"] = MaxStorageMb;
         }
 
         if (MaxRecords.Count > 0)
@@ -182,6 +258,12 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
 
         var maxUsersSet = false;
         int? maxUsers = null;
+        var maxWebhooksSet = false;
+        int? maxWebhooks = null;
+        var maxApiKeysSet = false;
+        int? maxApiKeys = null;
+        var maxStorageSet = false;
+        int? maxStorage = null;
         var records = new Dictionary<string, int?>(StringComparer.Ordinal);
         var modules = new Dictionary<string, bool>(StringComparer.Ordinal);
 
@@ -192,6 +274,18 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
                 case "maxusers":
                     maxUsersSet = true;
                     maxUsers = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var users) ? users : null;
+                    break;
+                case "maxwebhooks":
+                    maxWebhooksSet = true;
+                    maxWebhooks = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var webhooks) ? webhooks : null;
+                    break;
+                case "maxapikeys":
+                    maxApiKeysSet = true;
+                    maxApiKeys = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var apiKeys) ? apiKeys : null;
+                    break;
+                case "maxstoragemb":
+                    maxStorageSet = true;
+                    maxStorage = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var storage) ? storage : null;
                     break;
                 case "maxrecords" when property.Value.ValueKind == JsonValueKind.Object:
                     foreach (var record in property.Value.EnumerateObject())
@@ -212,12 +306,12 @@ public sealed record TenantOverrides(bool MaxUsersSet, int? MaxUsers, IReadOnlyD
             }
         }
 
-        return new TenantOverrides(maxUsersSet, maxUsers, records, modules);
+        return new TenantOverrides(maxUsersSet, maxUsers, records, modules, maxWebhooksSet, maxWebhooks, maxApiKeysSet, maxApiKeys, maxStorageSet, maxStorage);
     }
 }
 
 /// <summary>Plan + istisna birleşiminin sonucu (etkin haklar).</summary>
-public sealed record EffectiveLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules);
+public sealed record EffectiveLimits(int? MaxUsers, IReadOnlyDictionary<string, int?> MaxRecords, IReadOnlyDictionary<string, bool> Modules, int? MaxWebhooks = null, int? MaxApiKeys = null, int? MaxStorageMb = null);
 
 /// <summary>
 /// Etkin hak birleştirme (saf fonksiyon, birim testli): <b>etkin değer = istisna varsa o, yoksa plan</b>. <c>maxUsers: null</c> istisnası açıkça sınırsız;
@@ -234,6 +328,7 @@ public static class EffectiveEntitlements
         var over = overrides ?? TenantOverrides.None;
 
         var maxUsers = over.MaxUsersSet ? over.MaxUsers : planLimits.MaxUsers;
+        var maxStorageMb = over.MaxStorageMbSet ? over.MaxStorageMb : planLimits.MaxStorageMb;
 
         var records = new Dictionary<string, int?>(planLimits.MaxRecords, StringComparer.Ordinal);
         foreach (var (module, max) in over.MaxRecords)
@@ -249,6 +344,8 @@ public static class EffectiveEntitlements
                 : planModules.TryGetValue(module, out var included) && included;
         }
 
-        return new EffectiveLimits(maxUsers, records, modules);
+        var maxWebhooks = over.MaxWebhooksSet ? over.MaxWebhooks : planLimits.MaxWebhooks;
+        var maxApiKeys = over.MaxApiKeysSet ? over.MaxApiKeys : planLimits.MaxApiKeys;
+        return new EffectiveLimits(maxUsers, records, modules, maxWebhooks, maxApiKeys, maxStorageMb);
     }
 }

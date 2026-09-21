@@ -27,5 +27,12 @@
   "platformOrganizations": "Organizasyonlar",
   "platformPlans": "Planlar",
   "platformAudit": "Platform denetimi",
-  "backToApp": "Uygulamaya dön"
+  "backToApp": "Uygulamaya dön",
+  "platformAdmins": "Platform yöneticileri",
+  "notificationsSettings": "Bildirimler",
+  "integrations": "Entegrasyonlar",
+  "pricebooks": "Fiyat Listeleri",
+  "purchaseOrders": "Satın Alma Emirleri",
+  "invoices": "Faturalar",
+  "vendors": "Tedarikçiler"
 }

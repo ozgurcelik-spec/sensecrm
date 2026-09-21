@@ -24,7 +24,7 @@ public sealed class EntitlementModelTests
 
         effective.MaxUsers.ShouldBe(5);
         effective.MaxRecords["sales"].ShouldBe(5000);
-        effective.Modules.ShouldBe(new Dictionary<string, bool> { ["workflows"] = false, ["commerce"] = false, ["service"] = false, ["marketing"] = true });
+        effective.Modules.ShouldBe(new Dictionary<string, bool> { ["workflows"] = false, ["commerce"] = false, ["service"] = false, ["marketing"] = true, ["integrations"] = false });
     }
 
     [Fact]

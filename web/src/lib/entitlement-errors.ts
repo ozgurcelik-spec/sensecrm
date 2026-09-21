@@ -5,6 +5,7 @@
  */
 import i18n from "@/i18n";
 import type { ApiProblem } from "@/lib/api-error";
+import { formatBytes } from "@/lib/files";
 
 export const TENANT_SUSPENDED = "tenant.suspended";
 export const PLAN_MODULE_DISABLED = "plan.module_disabled";
@@ -21,6 +22,8 @@ const str = (value: unknown): string | undefined =>
 /** "kullanıcı" for the user limit, the module name for a record limit, "kayıt" otherwise. */
 export function limitLabel(limit: string | undefined, module: string | undefined): string {
   if (limit === "users") return i18n.t("subscription:limits.users");
+  if (limit === "webhooks") return i18n.t("subscription:limits.webhooks");
+  if (limit === "api_keys") return i18n.t("subscription:limits.apiKeys");
   if (module) {
     return i18n.t("subscription:limits.recordsOf", {
       module: i18n.t(`subscription:modules.${module}`, { defaultValue: module }),
@@ -47,6 +50,14 @@ export function problemArgs(problem: ApiProblem): Record<string, unknown> {
     }
     case PLAN_LIMIT_EXCEEDED:
       args.label = limitLabel(str(args.limit), str(args.module));
+      break;
+    case "file.too_large":
+    case "file.quota_exceeded":
+      // Byte counts of the file errors (M8C) as people read them: `maxBytes` -> `maxSize`, ...
+      for (const key of ["maxBytes", "usedBytes", "requestedBytes"] as const) {
+        const value = args[key];
+        if (typeof value === "number") args[key.replace("Bytes", "Size")] = formatBytes(value);
+      }
       break;
     case "platform.invalid_transition":
       for (const key of ["from", "to"] as const) {

@@ -138,6 +138,95 @@ describe("Platform organization detail", () => {
       expect(await screen.findByText(/işletim organizasyonudur/)).toBeInTheDocument();
     });
 
+    it("shows the technical last error in monospace and offers 'retry erasure' only for a failed request", async () => {
+      org = orgDetail(ID, {
+        name: "Acme A.Ş.",
+        status: "pending_deletion",
+        accessLevel: "none",
+        deletion: {
+          ...DELETION,
+          status: "failed",
+          attempts: 2,
+          lastError: "platform-tombstone: erasure.verification_failed: 3 rows left",
+        },
+      });
+      renderDetail({}, `/app/platform/organizations/${ID}?tab=deletion`);
+      await screen.findByRole("heading", { name: "Acme A.Ş." });
+      const error = await screen.findByTestId("deletion-last-error");
+      expect(error).toHaveTextContent("platform-tombstone: erasure.verification_failed: 3 rows left");
+      expect(error.tagName).toBe("PRE");
+      expect(button("İmhayı yeniden dene")).toBeInTheDocument();
+    });
+
+    it("has no retry button while the request is scheduled, running or completed", async () => {
+      for (const status of ["scheduled", "running", "completed", "cancelled"] as const) {
+        org = orgDetail(ID, {
+          name: "Acme A.Ş.",
+          status: "pending_deletion",
+          accessLevel: "none",
+          deletion: { ...DELETION, status },
+        });
+        const { unmount } = renderDetail({}, `/app/platform/organizations/${ID}?tab=deletion`);
+        await screen.findByTestId("deletion-panel");
+        expect(button("İmhayı yeniden dene"), status).not.toBeInTheDocument();
+        unmount();
+      }
+    });
+
+    describe("retry erasure", () => {
+      beforeEach(() => {
+        org = orgDetail(ID, {
+          name: "Acme A.Ş.",
+          status: "pending_deletion",
+          accessLevel: "none",
+          deletion: { ...DELETION, status: "failed", attempts: 1, lastError: "platform-tombstone: x" },
+        });
+      });
+
+      async function openRetry(extra: Record<string, () => unknown>) {
+        renderDetail(extra, `/app/platform/organizations/${ID}?tab=deletion`);
+        await userEvent.click(await screen.findByRole("button", { name: "İmhayı yeniden dene" }));
+        return screen.findByRole("dialog");
+      }
+
+      it("needs the caller's own password and posts it to /deletion-request/retry", async () => {
+        const dialog = await openRetry({
+          [`POST /platform/organizations/${ID}/deletion-request/retry`]: () => undefined,
+        });
+        const confirm = within(dialog).getByRole("button", { name: "İmhayı yeniden dene" });
+        expect(confirm).toBeDisabled();
+        expect(within(dialog).getByLabelText(/Parolanız/)).toHaveAttribute("autocomplete", "current-password");
+        await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "Op3rator!pw");
+        await userEvent.click(confirm);
+
+        await waitFor(() =>
+          expect(client.post).toHaveBeenCalledWith(`/platform/organizations/${ID}/deletion-request/retry`, {
+            currentPassword: "Op3rator!pw",
+          })
+        );
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+        expect(toast).toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
+      });
+
+      it("shows a wrong password inline and toasts 'not retryable'", async () => {
+        let code = "platform.step_up_failed";
+        const dialog = await openRetry({
+          [`POST /platform/organizations/${ID}/deletion-request/retry`]: () =>
+            problem(code === "platform.step_up_failed" ? 422 : 409, { code }),
+        });
+        await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "yanlis");
+        const confirm = within(dialog).getByRole("button", { name: "İmhayı yeniden dene" });
+        await userEvent.click(confirm);
+        expect(await within(dialog).findByText("Parola hatalı")).toBeInTheDocument();
+        expect(toastApiError).not.toHaveBeenCalled();
+
+        code = "platform.deletion_not_retryable";
+        await userEvent.click(confirm);
+        await waitFor(() => expect(toastApiError).toHaveBeenCalledTimes(1));
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+    });
+
     it("shows a not-found page for an unknown organization", async () => {
       renderDetail({ [`GET /platform/organizations/${ID}`]: () => problem(404, { code: "not_found" }) });
       expect(await screen.findByText("Kayıt bulunamadı")).toBeInTheDocument();
@@ -185,15 +274,76 @@ describe("Platform organization detail", () => {
 
       await userEvent.type(within(dialog).getByLabelText(/Gerekçe/), "  Güvenlik olayı ");
       await userEvent.click(within(dialog).getByRole("radio", { name: /Tam engel/ }));
-      await userEvent.click(within(dialog).getByRole("button", { name: "Askıya al" }));
+      // A full block asks for the calling admin's own password; the button stays off without it.
+      const confirm = within(dialog).getByRole("button", { name: "Askıya al" });
+      expect(confirm).toBeDisabled();
+      await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "Op3rator!pw");
+      await userEvent.click(confirm);
 
       await waitFor(() => expect(client.post).toHaveBeenCalledTimes(1));
       expect(client.post).toHaveBeenCalledWith(`/platform/organizations/${ID}/suspend`, {
         reason: "Güvenlik olayı",
         mode: "blocked",
+        currentPassword: "Op3rator!pw",
       });
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       expect(toast).toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
+    });
+
+    it("does not ask for a password for a read-only suspension and sends none", async () => {
+      renderDetail({ [`POST /platform/organizations/${ID}/suspend`]: () => undefined });
+      await userEvent.click(await screen.findByRole("button", { name: "Askıya al" }));
+      const dialog = await screen.findByRole("dialog");
+
+      expect(within(dialog).queryByLabelText(/Parolanız/)).not.toBeInTheDocument();
+      await userEvent.type(within(dialog).getByLabelText(/Gerekçe/), "Ödeme gecikmesi");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Askıya al" }));
+
+      await waitFor(() => expect(client.post).toHaveBeenCalledTimes(1));
+      expect(client.post).toHaveBeenCalledWith(`/platform/organizations/${ID}/suspend`, {
+        reason: "Ödeme gecikmesi",
+        mode: "readOnly",
+      });
+    });
+
+    it("warns not to put personal data in the reason", async () => {
+      renderDetail();
+      await userEvent.click(await screen.findByRole("button", { name: "Askıya al" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText(/Gerekçeye kişisel veri \(ad, e-posta, telefon vb\.\) yazmayın/)).toBeInTheDocument();
+    });
+
+    it("shows a wrong step-up password inline on the password field, not as a toast", async () => {
+      renderDetail({
+        [`POST /platform/organizations/${ID}/suspend`]: () =>
+          problem(422, { code: "platform.step_up_failed" }),
+      });
+      await userEvent.click(await screen.findByRole("button", { name: "Askıya al" }));
+      const dialog = await screen.findByRole("dialog");
+      await userEvent.type(within(dialog).getByLabelText(/Gerekçe/), "x");
+      await userEvent.click(within(dialog).getByRole("radio", { name: /Tam engel/ }));
+      await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "yanlis");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Askıya al" }));
+
+      expect(await within(dialog).findByText("Parola hatalı")).toBeInTheDocument();
+      expect(toastApiError).not.toHaveBeenCalled();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("toasts a step-up rate limit (429) and keeps the dialog", async () => {
+      renderDetail({
+        [`POST /platform/organizations/${ID}/suspend`]: () =>
+          problem(429, { code: "platform.step_up_rate_limited" }),
+      });
+      await userEvent.click(await screen.findByRole("button", { name: "Askıya al" }));
+      const dialog = await screen.findByRole("dialog");
+      await userEvent.type(within(dialog).getByLabelText(/Gerekçe/), "x");
+      await userEvent.click(within(dialog).getByRole("radio", { name: /Tam engel/ }));
+      await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "yanlis");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Askıya al" }));
+
+      await waitFor(() => expect(toastApiError).toHaveBeenCalled());
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
 
     it("toasts a 409 invalid transition and keeps the dialog", async () => {
@@ -251,6 +401,9 @@ describe("Platform organization detail", () => {
       expect(confirm).toBeDisabled();
       await userEvent.clear(nameField);
       await userEvent.type(nameField, "Acme A.Ş.");
+      // The password is required too.
+      expect(confirm).toBeDisabled();
+      await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "Op3rator!pw");
       expect(confirm).toBeEnabled();
 
       await userEvent.click(confirm);
@@ -258,7 +411,40 @@ describe("Platform organization detail", () => {
       expect(client.post).toHaveBeenCalledWith(`/platform/organizations/${ID}/deletion-request`, {
         reason: "KVKK silme talebi",
         retentionDays: 30,
+        confirmTenantName: "Acme A.Ş.",
+        currentPassword: "Op3rator!pw",
       });
+    });
+
+    it("warns not to put personal data in the reason", async () => {
+      renderDetail();
+      const dialog = await openDialog();
+      expect(within(dialog).getByText(/Gerekçeye kişisel veri \(ad, e-posta, telefon vb\.\) yazmayın/)).toBeInTheDocument();
+    });
+
+    it("maps step-up and confirmation errors onto their fields and toasts the rest", async () => {
+      let code = "platform.step_up_failed";
+      renderDetail({
+        [`POST /platform/organizations/${ID}/deletion-request`]: () => problem(422, { code }),
+      });
+      const dialog = await openDialog();
+      await userEvent.type(within(dialog).getByLabelText(/Gerekçe/), "neden");
+      await userEvent.type(within(dialog).getByLabelText(/Onaylamak için/), "Acme A.Ş.");
+      await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "yanlis");
+      const confirm = within(dialog).getByRole("button", { name: "Silme talebini başlat" });
+
+      await userEvent.click(confirm);
+      expect(await within(dialog).findByText("Parola hatalı")).toBeInTheDocument();
+
+      code = "platform.confirmation_mismatch";
+      await userEvent.click(confirm);
+      expect(await within(dialog).findByText("Yazılan organizasyon adı eşleşmiyor")).toBeInTheDocument();
+      expect(within(dialog).queryByText("Parola hatalı")).not.toBeInTheDocument();
+
+      expect(toastApiError).not.toHaveBeenCalled();
+      code = "platform.step_up_rate_limited";
+      await userEvent.click(confirm);
+      await waitFor(() => expect(toastApiError).toHaveBeenCalledTimes(1));
     });
 
     it("keeps the retention period within 7 and 90 days", async () => {
@@ -271,6 +457,7 @@ describe("Platform organization detail", () => {
       const dialog = await openDialog();
       await userEvent.type(within(dialog).getByLabelText(/Gerekçe/), "neden");
       await userEvent.type(within(dialog).getByLabelText(/Onaylamak için/), "Acme A.Ş.");
+      await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "pw");
       const days = within(dialog).getByLabelText(/Bekleme süresi/);
       const confirm = within(dialog).getByRole("button", { name: "Silme talebini başlat" });
 
@@ -287,7 +474,12 @@ describe("Platform organization detail", () => {
       }
       await userEvent.click(confirm);
       await waitFor(() => expect(client.post).toHaveBeenCalledTimes(1));
-      expect(client.post.mock.calls[0]?.[1]).toEqual({ reason: "neden", retentionDays: 90 });
+      expect(client.post.mock.calls[0]?.[1]).toEqual({
+        reason: "neden",
+        retentionDays: 90,
+        confirmTenantName: "Acme A.Ş.",
+        currentPassword: "pw",
+      });
     });
 
     it("puts a server retentionDays error on the field", async () => {
@@ -298,6 +490,7 @@ describe("Platform organization detail", () => {
       const dialog = await openDialog();
       await userEvent.type(within(dialog).getByLabelText(/Gerekçe/), "neden");
       await userEvent.type(within(dialog).getByLabelText(/Onaylamak için/), "Acme A.Ş.");
+      await userEvent.type(within(dialog).getByLabelText(/Parolanız/), "pw");
       await userEvent.click(within(dialog).getByRole("button", { name: "Silme talebini başlat" }));
       expect(await within(dialog).findByText("Saklama süresi 7-90 olmalı")).toBeInTheDocument();
     });
@@ -585,5 +778,122 @@ describe("Platform organization detail", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Göster" }));
     expect(screen.getByTestId("audit-details")).toHaveTextContent('"planCode"');
+  });
+});
+
+describe("Platform organization storage limit (M8C)", () => {
+  const putRoute = `PUT /platform/organizations/${ID}/subscription`;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    org = orgDetail(ID, { name: "Acme A.Ş.", slug: "acme", status: "active", trialEndsOn: undefined });
+  });
+  afterEach(clearSession);
+
+  async function openEditor() {
+    await userEvent.click(await screen.findByRole("button", { name: "Planı / denemeyi düzenle" }));
+    return screen.findByRole("dialog");
+  }
+
+  it("the summary shows the effective storage limit in readable units, unlimited without one, and marks an override", async () => {
+    org = orgDetail(ID, {
+      name: "Acme A.Ş.",
+      limits: {
+        maxUsers: 5,
+        maxStorageMb: 25600,
+        maxRecords: {},
+        modules: { workflows: false, commerce: false, service: false, marketing: false },
+      },
+      overrides: { maxStorageMb: 25600 },
+    });
+    const view = renderDetail();
+    await screen.findByRole("heading", { name: "Acme A.Ş." });
+    expect(screen.getByTestId("limit-storage")).toHaveTextContent("25 GB");
+    expect(screen.getByTestId("limit-storage")).toHaveTextContent("İstisna");
+    view.unmount();
+
+    org = orgDetail(ID, { name: "Acme A.Ş." });
+    renderDetail();
+    await screen.findByRole("heading", { name: "Acme A.Ş." });
+    expect(screen.getByTestId("limit-storage")).toHaveTextContent("Sınırsız");
+    expect(screen.getByTestId("limit-storage")).not.toHaveTextContent("İstisna");
+  });
+
+  it("the editor PUTs overrides.maxStorageMb (custom number, or null for unlimited) and nothing when it follows the plan", async () => {
+    renderDetail({ [putRoute]: () => ({ overLimit: [] }) });
+    let dialog = await openEditor();
+
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "Depolama limiti (MB)" }));
+    await userEvent.click(await screen.findByRole("option", { name: "Özel" }));
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Depolama limiti (MB) değeri" }), "2048");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+
+    await waitFor(() => expect(client.put).toHaveBeenCalledTimes(1));
+    expect(client.put).toHaveBeenLastCalledWith(`/platform/organizations/${ID}/subscription`, {
+      planCode: org.planCode,
+      trialEndsOn: undefined,
+      overrides: { maxStorageMb: 2048 },
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    dialog = await openEditor();
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "Depolama limiti (MB)" }));
+    await userEvent.click(await screen.findByRole("option", { name: "Sınırsız" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    await waitFor(() => expect(client.put).toHaveBeenCalledTimes(2));
+    expect(client.put.mock.calls[1]?.[1]).toMatchObject({ overrides: { maxStorageMb: null } });
+  });
+
+  it("starts from a stored override (the server keeps the JSON as sent)", async () => {
+    org = orgDetail(ID, { name: "Acme A.Ş.", overrides: { maxStorageMb: 512 } });
+    renderDetail({ [putRoute]: () => ({ overLimit: [] }) });
+    const dialog = await openEditor();
+
+    expect(within(dialog).getByRole("combobox", { name: "Depolama limiti (MB)" })).toHaveValue("Özel");
+    expect(within(dialog).getByRole("textbox", { name: "Depolama limiti (MB) değeri" })).toHaveValue("512");
+  });
+
+  it("puts a server error of overrides.maxStorageMb on its field", async () => {
+    renderDetail({
+      [putRoute]: () =>
+        problem(400, { code: "validation", errors: { "Overrides.MaxStorageMb": ["Üst sınırı aşıyor"] } }),
+    });
+    const dialog = await openEditor();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    expect(await within(dialog).findByText("Üst sınırı aşıyor")).toBeInTheDocument();
+    expect(toastApiError).not.toHaveBeenCalled();
+  });
+
+  it("an over-limit report after a save words storage in bytes", async () => {
+    renderDetail({
+      [putRoute]: () => ({
+        overLimit: [{ limit: "storage", module: "files", max: 1024 * 1024 * 1024, used: 3 * 1024 * 1024 * 1024 }],
+      }),
+    });
+    const dialog = await openEditor();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    expect(await screen.findByTestId("over-limit")).toHaveTextContent("Depolama: 3 GB / 1 GB");
+  });
+
+  it("the usage tab formats files.storage_bytes as sizes in the table and plots MB in the chart", async () => {
+    const days = [
+      { day: "2026-09-18", usersActive: 2, usersPending: 0, metrics: { "files.storage_bytes": 1048576, "files.files": 3 } },
+      { day: "2026-09-19", usersActive: 3, usersPending: 0, metrics: { "files.storage_bytes": 3145728, "files.files": 5 } },
+    ];
+    renderDetail(
+      { [`GET /platform/organizations/${ID}/usage`]: () => ({ items: days }) },
+      `/app/platform/organizations/${ID}?tab=usage`
+    );
+    const chart = await screen.findByTestId("chart-line");
+    // The first metric alphabetically is files.files; choose the storage one.
+    await userEvent.click(screen.getByRole("combobox", { name: "Metrik" }));
+    await userEvent.click(await screen.findByRole("option", { name: "Dosyalar: Depolama" }));
+    expect(JSON.parse(screen.getByTestId("chart-line").getAttribute("data-points") ?? "[]").map((p: { metric: number }) => p.metric)).toEqual([1, 3]);
+    expect(chart).toBeDefined();
+
+    await userEvent.click(screen.getByRole("radio", { name: "Tablo" }));
+    const rows = screen.getAllByRole("row");
+    expect(within(rows[1] as HTMLElement).getByText("3 MB")).toBeInTheDocument();
+    expect(within(rows[2] as HTMLElement).getByText("1 MB")).toBeInTheDocument();
   });
 });

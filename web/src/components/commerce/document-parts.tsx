@@ -1,13 +1,16 @@
 /** Read-only building blocks shared by the quote and order detail pages and the editor. */
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, Group, Stack, Table, Text } from "@mantine/core";
+import { Card, Group, SimpleGrid, Stack, Table, Text } from "@mantine/core";
 import { formatMoney, formatNumber, orDash } from "@/lib/format";
-import type { DocumentLine } from "@/types";
+import type { DocumentAddress, DocumentLine } from "@/types";
 
 export interface TotalsValues {
   subtotal: number;
   discountTotal: number;
   taxTotal: number;
+  /** M9C rounding line; when present the card shows it between tax and grand total. */
+  adjustment?: number;
   grandTotal: number;
 }
 
@@ -16,32 +19,48 @@ interface TotalsCardProps {
   currency: string;
   /** Marks the card as the live preview computed in the browser (before saving). */
   preview?: boolean;
+  /** Editor of the rounding line (input + "Yuvarla"); replaces the static "Yuvarlama" value. */
+  adjustmentEditor?: ReactNode;
 }
 
-/** Subtotal / discount / tax / grand total. */
-export function TotalsCard({ totals, currency, preview = false }: TotalsCardProps) {
+/** Subtotal / discount / tax / rounding / grand total. */
+export function TotalsCard({ totals, currency, preview = false, adjustmentEditor }: TotalsCardProps) {
   const { t } = useTranslation(["commerce"]);
-  const rows: { key: string; label: string; value: number; strong?: boolean }[] = [
+  const rows: { key: string; label: string; value?: number; strong?: boolean; editor?: ReactNode }[] = [
     { key: "subtotal", label: t("commerce:totals.subtotal"), value: totals.subtotal },
     { key: "discount", label: t("commerce:totals.discount"), value: -totals.discountTotal },
     { key: "tax", label: t("commerce:totals.tax"), value: totals.taxTotal },
+    ...(adjustmentEditor || totals.adjustment !== undefined
+      ? [
+          {
+            key: "adjustment",
+            label: t("commerce:totals.adjustment"),
+            value: totals.adjustment ?? 0,
+            editor: adjustmentEditor,
+          },
+        ]
+      : []),
     { key: "grand", label: t("commerce:totals.grandTotal"), value: totals.grandTotal, strong: true },
   ];
   return (
-    <Card withBorder padding="md" maw={360} ml="auto" data-testid="totals-card" aria-live="polite">
+    <Card withBorder padding="md" maw={adjustmentEditor ? 420 : 360} ml="auto" data-testid="totals-card" aria-live="polite">
       <Stack gap={6}>
         {rows.map((row) => (
-          <Group key={row.key} justify="space-between" wrap="nowrap">
-            <Text size={row.strong ? "md" : "sm"} fw={row.strong ? 700 : 400}>
+          <Group key={row.key} justify="space-between" wrap="nowrap" align="flex-start">
+            <Text size={row.strong ? "md" : "sm"} fw={row.strong ? 700 : 400} pt={row.editor ? 6 : 0}>
               {row.label}
             </Text>
-            <Text
-              size={row.strong ? "md" : "sm"}
-              fw={row.strong ? 700 : 400}
-              data-testid={`total-${row.key}`}
-            >
-              {formatMoney(row.value, currency)}
-            </Text>
+            {row.editor ? (
+              row.editor
+            ) : (
+              <Text
+                size={row.strong ? "md" : "sm"}
+                fw={row.strong ? 700 : 400}
+                data-testid={`total-${row.key}`}
+              >
+                {formatMoney(row.value, currency)}
+              </Text>
+            )}
           </Group>
         ))}
         {preview && (
@@ -122,5 +141,59 @@ export function TermsAndNotes({ terms, notes }: { terms?: string; notes?: string
         </Text>
       </Card>
     </>
+  );
+}
+
+function addressLines(address?: DocumentAddress): string[] {
+  if (!address) return [];
+  const cityLine = [address.postalCode, address.city, address.state].map((p) => p?.trim()).filter(Boolean).join(" ");
+  return [address.street, address.building, cityLine, address.country]
+    .map((line) => line?.trim() ?? "")
+    .filter(Boolean);
+}
+
+/** Read-only billing and shipping address blocks of a saved document, plus the carrier label. */
+export function DocumentAddresses({
+  billingAddress,
+  shippingAddress,
+  carrier,
+  singleTitle,
+}: {
+  billingAddress?: DocumentAddress;
+  shippingAddress?: DocumentAddress;
+  carrier?: string;
+  /** A record with one address (a vendor): only the billing block shows, under this title. */
+  singleTitle?: string;
+}) {
+  const { t } = useTranslation(["commerce"]);
+  const block = (title: string, address: DocumentAddress | undefined, testId: string) => (
+    <Card withBorder padding="md" data-testid={testId}>
+      <Text fw={600} mb="sm">
+        {title}
+      </Text>
+      {addressLines(address).length === 0 ? (
+        <Text size="sm">-</Text>
+      ) : (
+        addressLines(address).map((line) => (
+          <Text key={line} size="sm">
+            {line}
+          </Text>
+        ))
+      )}
+    </Card>
+  );
+  if (singleTitle) return block(singleTitle, billingAddress, "view-address");
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+        {block(t("commerce:address.billing"), billingAddress, "view-billing-address")}
+        {block(t("commerce:address.shipping"), shippingAddress, "view-shipping-address")}
+      </SimpleGrid>
+      {carrier && (
+        <Text size="sm" c="dimmed">
+          {t("commerce:fields.carrier")}: {carrier}
+        </Text>
+      )}
+    </Stack>
   );
 }

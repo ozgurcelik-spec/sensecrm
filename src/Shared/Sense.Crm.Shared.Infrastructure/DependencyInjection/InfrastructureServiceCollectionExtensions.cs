@@ -78,6 +78,10 @@ public static class InfrastructureServiceCollectionExtensions
         services.TryAddScoped<IPlatformAdminVerifier, DenyPlatformAdminVerifier>();
         services.TryAddScoped<IPlatformAuditSink, NoOpPlatformAuditSink>();
 
+        // M8B: Integrations yüklü değilse API anahtarı her zaman reddedilir, kullanım kaydı yapılmaz.
+        services.TryAddScoped<IApiKeyAuthenticator, DenyApiKeyAuthenticator>();
+        services.TryAddSingleton<IApiKeyUsageSink, NoOpApiKeyUsageSink>();
+
         services.TryAddSingleton<IEventBus, InProcessEventBus>();
         services.TryAddScoped<IIntegrationEventOutbox, IntegrationEventOutbox>();
         services.TryAddScoped<AuditTenantInterceptor>();

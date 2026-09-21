@@ -1,12 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Anchor, Button, Card, Stack, Text } from "@mantine/core";
+import { Anchor, Button, Card, Stack, Text, Tooltip } from "@mantine/core";
 import { Check, PackageCheck, Pencil, Trash2, X } from "lucide-react";
 import { ReasonDialog } from "@/components/commerce/action-dialogs";
-import { LinesTable, TermsAndNotes, TotalsCard } from "@/components/commerce/document-parts";
+import { CreateInvoiceButton } from "@/components/commerce/create-invoice-button";
+import {
+  DocumentAddresses,
+  LinesTable,
+  TermsAndNotes,
+  TotalsCard,
+} from "@/components/commerce/document-parts";
 import { OrderStatusBadge } from "@/components/commerce/status-badges";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useCrmPermissions } from "@/hooks/use-crm-permissions";
@@ -23,7 +30,7 @@ type Dialog = "cancel" | "delete" | null;
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation(["commerce", "common", "crm"]);
+  const { t } = useTranslation(["commerce", "common", "crm", "invoices"]);
   const navigate = useNavigate();
   const timeZone = useAuthStore((state) => state.me?.organization.timeZone);
   const { canWriteOrders } = useCrmPermissions();
@@ -67,6 +74,7 @@ export default function OrderDetailPage() {
     }
   }
 
+  const attachmentsTab = useAttachmentsTab("order", id);
   const tabs = order
     ? [
         {
@@ -81,10 +89,16 @@ export default function OrderDetailPage() {
                 <LinesTable lines={order.lines} currency={order.currency} />
               </Card>
               <TotalsCard totals={order} currency={order.currency} />
+              <DocumentAddresses
+                billingAddress={order.billingAddress}
+                shippingAddress={order.shippingAddress}
+                carrier={order.carrier}
+              />
               <TermsAndNotes terms={order.terms} notes={order.notes} />
             </Stack>
           ),
         },
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),
@@ -124,6 +138,8 @@ export default function OrderDetailPage() {
                   {t("commerce:actions.fulfill")}
                 </Button>
               )}
+              {/* M9C: "Fatura oluştur" (confirmed / fulfilled, crm.invoices.write) or the active invoice's link. */}
+              <CreateInvoiceButton order={order} />
               {actions.includes("edit") && (
                 <Button
                   variant="default"
@@ -134,15 +150,20 @@ export default function OrderDetailPage() {
                 </Button>
               )}
               {actions.includes("cancel") && (
-                <Button
-                  variant="default"
-                  color="red"
-                  leftSection={<X size={16} />}
-                  disabled={action.isPending}
-                  onClick={() => setDialog("cancel")}
-                >
-                  {t("commerce:actions.cancel")}
-                </Button>
+                <Tooltip label={t("invoices:hasActiveInvoice")} disabled={!order.invoiceId}>
+                  {/* An order with an active invoice cannot be cancelled (order.has_active_invoice): cancel the invoice first. */}
+                  <span title={order.invoiceId ? t("invoices:hasActiveInvoice") : undefined}>
+                    <Button
+                      variant="default"
+                      color="red"
+                      leftSection={<X size={16} />}
+                      disabled={action.isPending || !!order.invoiceId}
+                      onClick={() => setDialog("cancel")}
+                    >
+                      {t("commerce:actions.cancel")}
+                    </Button>
+                  </span>
+                </Tooltip>
               )}
               {actions.includes("delete") && (
                 <Button
@@ -212,6 +233,19 @@ export default function OrderDetailPage() {
                     ]
                   : []),
                 { label: t("commerce:fields.orderDate"), value: formatCalendarDate(order.orderDate) },
+                { label: t("commerce:fields.dueDate"), value: formatCalendarDate(order.dueDate) },
+                { label: t("commerce:fields.customerPoNumber"), value: orDash(order.customerPoNumber) },
+                {
+                  label: t("commerce:fields.exciseTax"),
+                  value: order.exciseTax === undefined ? "-" : formatMoney(order.exciseTax, order.currency),
+                },
+                {
+                  label: t("commerce:fields.salesCommission"),
+                  value:
+                    order.salesCommission === undefined ? "-" : formatMoney(order.salesCommission, order.currency),
+                },
+                { label: t("commerce:fields.pending"), value: orDash(order.pending) },
+                { label: t("commerce:fields.priceBook"), value: orDash(order.priceBookName) },
                 { label: t("commerce:fields.currency"), value: order.currency },
                 {
                   label: t("commerce:totals.grandTotal"),

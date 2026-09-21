@@ -1,4 +1,5 @@
 using FluentValidation;
+using Sense.Crm.Modules.Commerce.Application.Invoices;
 using Sense.Crm.Modules.Commerce.Contracts;
 using Sense.Crm.Modules.Commerce.Domain;
 using Sense.Crm.Modules.Commerce.Domain.Documents;
@@ -54,17 +55,56 @@ public sealed record CreateOrderCommand(
     string? Currency,
     string? Terms,
     string? Notes,
-    IReadOnlyList<LineRequest>? Lines) : ICommand<OrderDto>, IDocumentFields;
+    string? Carrier,
+    decimal Adjustment,
+    DocumentAddressDto? BillingAddress,
+    DocumentAddressDto? ShippingAddress,
+    Guid? PriceBookId,
+    DateOnly? DueDate,
+    string? CustomerPoNumber,
+    decimal? ExciseTax,
+    decimal? SalesCommission,
+    string? Pending,
+    IReadOnlyList<LineRequest>? Lines) : ICommand<OrderDto>, IDocumentFields, IOrderExtraFields;
 
-public sealed class CreateOrderValidator : DocumentFieldsValidator<CreateOrderCommand>;
+/// <summary>Siparişe özgü M9C alanları: müşteri satın alma emri no, gider vergisi, satış komisyonu (bilgi amaçlı), bekliyor, son tarih.</summary>
+public interface IOrderExtraFields
+{
+    DateOnly? DueDate { get; }
+
+    string? CustomerPoNumber { get; }
+
+    decimal? ExciseTax { get; }
+
+    decimal? SalesCommission { get; }
+
+    string? Pending { get; }
+}
+
+public static class OrderExtraRules
+{
+    public static void AddTo<T>(AbstractValidator<T> validator)
+        where T : IOrderExtraFields
+    {
+        validator.RuleFor(x => x.CustomerPoNumber).MaximumLength(CommerceLimits.CustomerPoNumberMaxLength);
+        validator.RuleFor(x => x.ExciseTax).OptionalAmount(CommerceLimits.MaxAdjustment, CommerceLimits.AmountScale);
+        validator.RuleFor(x => x.SalesCommission).OptionalAmount(CommerceLimits.MaxAdjustment, CommerceLimits.AmountScale);
+        validator.RuleFor(x => x.Pending).MaximumLength(CommerceLimits.PendingMaxLength);
+    }
+
+    public static OrderExtras ToExtras(this IOrderExtraFields f) => new(f.CustomerPoNumber, f.DueDate, f.ExciseTax, f.SalesCommission, f.Pending);
+}
+
+public sealed class CreateOrderValidator : DocumentFieldsValidator<CreateOrderCommand>
+{
+    public CreateOrderValidator() => OrderExtraRules.AddTo(this);
+}
 
 /// <summary>Yanıt sipariş detayıdır (yazma izni yeterli; <c>crm.orders.read</c> gerekmez).</summary>
 public sealed class CreateOrderHandler(
     ISalesOrderRepository orders,
     IOrderReadStore store,
-    OwnerResolver owners,
-    RelatedRecordVerifier related,
-    LineProductVerifier products,
+    SalesDocumentPreparer preparer,
     DocumentNumbers numbers,
     ICommerceTransaction transaction,
     IIntegrationEventOutbox outbox,
@@ -87,30 +127,22 @@ public sealed class CreateOrderHandler(
         transaction.ExecuteAsync<Guid>(
             async ct =>
             {
-                var owner = await owners.ResolveAsync(command.OwnerUserId, current: null, ct).ConfigureAwait(false);
-                if (owner.IsFailure)
+                var prepared = await preparer.PrepareAsync(command, existing: null, new HashSet<Guid>(), ct).ConfigureAwait(false);
+                if (prepared.IsFailure)
                 {
-                    return owner.Error;
-                }
-
-                var relatedCheck = await related.VerifyAsync(command.AccountId, command.ContactId, command.DealId, ct).ConfigureAwait(false);
-                if (relatedCheck.IsFailure)
-                {
-                    return relatedCheck.Error;
-                }
-
-                var lines = LineMapping.ToInputs(command.Lines);
-                await products.VerifyAsync(command.Currency, lines, new HashSet<Guid>(), ct).ConfigureAwait(false);
-                var fits = SalesDocument.EnsureTotalsFit(lines);
-                if (fits.IsFailure)
-                {
-                    return fits.Error;
+                    return prepared.Error;
                 }
 
                 var orderDate = command.OrderDate ?? await clock.TodayAsync(ct).ConfigureAwait(false);
+                if (command.DueDate is { } due && due < orderDate)
+                {
+                    // Numara ayrılmadan önce (domain aynı kuralı yeniden uygular).
+                    throw new ValidationException([new FluentValidation.Results.ValidationFailure("DueDate", CommerceErrors.DueBeforeOrder)]);
+                }
+
                 var number = await numbers.NextAsync(DocumentKinds.Order, ct).ConfigureAwait(false);
-                var header = new DocumentHeader(command.Subject, command.AccountId, command.ContactId, command.DealId, owner.Value, command.Currency, command.Terms, command.Notes);
-                var created = SalesOrder.Create(tenant.TenantId, number, header, orderDate, quoteId: null, lines);
+                var header = SalesDocumentPreparer.HeaderFor(command, prepared.Value.OwnerUserId);
+                var created = SalesOrder.Create(tenant.TenantId, number, header, orderDate, quoteId: null, prepared.Value.Lines, command.ToExtras()).ThrowIfFieldError();
                 if (created.IsFailure)
                 {
                     return created.Error;
@@ -141,18 +173,30 @@ public sealed record UpdateOrderCommand(
     string? Currency,
     string? Terms,
     string? Notes,
-    IReadOnlyList<LineRequest>? Lines) : ICommand, IDocumentFields;
+    string? Carrier,
+    decimal Adjustment,
+    DocumentAddressDto? BillingAddress,
+    DocumentAddressDto? ShippingAddress,
+    Guid? PriceBookId,
+    DateOnly? DueDate,
+    string? CustomerPoNumber,
+    decimal? ExciseTax,
+    decimal? SalesCommission,
+    string? Pending,
+    IReadOnlyList<LineRequest>? Lines) : ICommand, IDocumentFields, IOrderExtraFields;
 
 public sealed class UpdateOrderValidator : DocumentFieldsValidator<UpdateOrderCommand>
 {
-    public UpdateOrderValidator() => RuleFor(x => x.Id).NotEmpty();
+    public UpdateOrderValidator()
+    {
+        RuleFor(x => x.Id).NotEmpty();
+        OrderExtraRules.AddTo(this);
+    }
 }
 
 public sealed class UpdateOrderHandler(
     ISalesOrderRepository orders,
-    OwnerResolver owners,
-    RelatedRecordVerifier related,
-    LineProductVerifier products,
+    SalesDocumentPreparer preparer,
     ICommerceTransaction transaction) : ICommandHandler<UpdateOrderCommand>
 {
     public Task<Result> Handle(UpdateOrderCommand command, CancellationToken cancellationToken) =>
@@ -171,27 +215,15 @@ public sealed class UpdateOrderHandler(
                     return editable;
                 }
 
-                var owner = await owners.ResolveAsync(command.OwnerUserId, order.OwnerUserId, ct).ConfigureAwait(false);
-                if (owner.IsFailure)
-                {
-                    return owner.Error;
-                }
-
-                if (command.AccountId != order.AccountId || command.ContactId != order.ContactId || command.DealId != order.DealId)
-                {
-                    var relatedCheck = await related.VerifyAsync(command.AccountId, command.ContactId, command.DealId, ct).ConfigureAwait(false);
-                    if (relatedCheck.IsFailure)
-                    {
-                        return relatedCheck;
-                    }
-                }
-
-                var lines = LineMapping.ToInputs(command.Lines);
                 var existing = order.Lines.Where(l => l.ProductId is not null).Select(l => l.ProductId!.Value).ToHashSet();
-                await products.VerifyAsync(command.Currency, lines, existing, ct).ConfigureAwait(false);
+                var prepared = await preparer.PrepareAsync(command, order, existing, ct).ConfigureAwait(false);
+                if (prepared.IsFailure)
+                {
+                    return prepared.Error;
+                }
 
-                var header = new DocumentHeader(command.Subject, command.AccountId, command.ContactId, command.DealId, owner.Value, command.Currency, command.Terms, command.Notes);
-                var updated = order.Update(header, command.OrderDate ?? order.OrderDate, lines);
+                var header = SalesDocumentPreparer.HeaderFor(command, prepared.Value.OwnerUserId);
+                var updated = order.Update(header, command.OrderDate ?? order.OrderDate, prepared.Value.Lines, command.ToExtras()).ThrowIfFieldError();
                 if (updated.IsFailure)
                 {
                     return updated;
@@ -273,8 +305,23 @@ public sealed class CancelOrderValidator : AbstractValidator<CancelOrderCommand>
     public CancelOrderValidator() => RuleFor(x => x.Reason).MaximumLength(CommerceLimits.ReasonMaxLength);
 }
 
-public sealed class CancelOrderHandler(OrderTransitions transitions) : ICommandHandler<CancelOrderCommand>
+/// <summary>Aktif (iptal edilmemiş, silinmemiş) faturası olan sipariş iptal edilemez: <c>order.has_active_invoice</c> 409 (önce fatura iptal edilir).</summary>
+public sealed class CancelOrderHandler(ISalesOrderRepository orders, IInvoiceRepository invoices, ICommerceTransaction transaction, CommerceClock clock) : ICommandHandler<CancelOrderCommand>
 {
     public Task<Result> Handle(CancelOrderCommand command, CancellationToken cancellationToken) =>
-        transitions.RunAsync(command.Id, (order, now) => order.Cancel(command.Reason, now), cancellationToken);
+        transaction.ExecuteAsync(
+            async ct =>
+            {
+                // Sipariş → fatura dönüşümüyle aynı kilit: iptal ile eşzamanlı dönüşüm birbirini görür (fatura yalnız iptal edilmemiş sipariş için).
+                await transaction.LockAsync(OrderInvoiceLock.KeyFor(command.Id), ct).ConfigureAwait(false);
+                var order = await orders.GetByIdAsync(command.Id, ct).ConfigureAwait(false);
+                if (order is null)
+                {
+                    return Error.NotFound(ErrorCodes.NotFound);
+                }
+
+                var hasActiveInvoice = await invoices.ExistsActiveForOrderAsync(order.Id, ct).ConfigureAwait(false);
+                return order.Cancel(command.Reason, clock.NowUtc, hasActiveInvoice);
+            },
+            cancellationToken);
 }

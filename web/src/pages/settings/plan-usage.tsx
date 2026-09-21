@@ -3,15 +3,18 @@ import { Alert, Badge, Card, Group, Skeleton, Stack, Text } from "@mantine/core"
 import { Info, TriangleAlert } from "lucide-react";
 import { LoadError } from "@/components/load-error";
 import { PageHeader } from "@/components/page-header";
+import { StorageBreakdownCard, StorageUsageBar } from "@/components/files/storage-usage";
+import { IntegrationsUsageBars } from "@/components/integrations/integrations-usage";
 import { TenantStatusBadge } from "@/components/platform/status-badge";
 import { UsageBar } from "@/components/subscription/usage-bars";
 import { useSubscription } from "@/hooks/use-subscription";
 import { formatDateTime } from "@/lib/dates";
+import { formatBytes } from "@/lib/files";
 import { formatCalendarDate } from "@/lib/format";
 import { GATED_MODULES, RECORD_MODULES, type SubscriptionInfo } from "@/types";
 
 function PlanUsage({ info }: { info: SubscriptionInfo }) {
-  const { t } = useTranslation(["subscription"]);
+  const { t } = useTranslation(["subscription", "files"]);
   const moduleName = (module: string) => t(`subscription:modules.${module}`, { defaultValue: module });
   const isOff = (module: string) =>
     (GATED_MODULES as readonly string[]).includes(module) &&
@@ -60,8 +63,16 @@ function PlanUsage({ info }: { info: SubscriptionInfo }) {
               <Text size="sm" key={`${entry.limit}-${entry.module ?? ""}`}>
                 {entry.limit === "users"
                   ? t("subscription:limits.users")
-                  : t("subscription:limits.recordsOf", { module: moduleName(entry.module ?? "") })}
-                {`: ${entry.used} / ${entry.max}`}
+                  : entry.limit === "storage"
+                    ? t("files:plan.storage")
+                    : entry.limit === "webhooks"
+                      ? t("subscription:limits.webhooks")
+                      : entry.limit === "api_keys"
+                        ? t("subscription:limits.apiKeys")
+                        : t("subscription:limits.recordsOf", { module: moduleName(entry.module ?? "") })}
+                {entry.limit === "storage"
+                  ? `: ${formatBytes(entry.used)} / ${formatBytes(entry.max)}`
+                  : `: ${entry.used} / ${entry.max}`}
               </Text>
             ))}
           </Stack>
@@ -92,11 +103,15 @@ function PlanUsage({ info }: { info: SubscriptionInfo }) {
               max={info.limits.maxRecords[module]}
             />
           ))}
+          <StorageUsageBar info={info} />
+          <IntegrationsUsageBars info={info} />
         </Stack>
         <Text size="xs" c="dimmed" mt="md" data-testid="as-of">
           {t("subscription:usage.asOf", { date: formatDateTime(info.usage.asOf) })}
         </Text>
       </Card>
+
+      <StorageBreakdownCard />
 
       <Card withBorder padding="lg">
         <Text fw={600} mb="md">

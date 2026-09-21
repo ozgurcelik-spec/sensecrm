@@ -1,0 +1,73 @@
+# Prometheus for the CRM observability overlay (deploy/docker-compose.observability.yml). C-OPS1 / K20.
+#
+# - Scrapes stay INSIDE the docker networks: api/worker/postgres-exporter over the internal `backend`/`observability` networks.
+#   Nothing here is published to the host and Prometheus has no route to the outside (both its networks are `internal: true`).
+# - The app metric listeners (api :9464, worker :9465) are separate from the app ports and are NOT proxied by nginx.
+# - Discovery is DNS-based (compose service names resolve to every replica), so scaling `api`/`worker` needs no config change.
+# - Retention is a command-line flag of the service (PROM_RETENTION_TIME / PROM_RETENTION_SIZE), not a config-file setting.
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    installation: crm
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: crm-api
+    metrics_path: /metrics
+    # Docker secret mounted at /run/secrets (same file the app reads via Observability:Metrics:BearerTokenFile).
+    authorization:
+      type: Bearer
+      credentials_file: /run/secrets/metrics_bearer_token
+    dns_sd_configs:
+      - names: [api]
+        type: A
+        port: 9464
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__meta_dns_name]
+        target_label: service
+
+  - job_name: crm-worker
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials_file: /run/secrets/metrics_bearer_token
+    dns_sd_configs:
+      - names: [worker]
+        type: A
+        port: 9465
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__meta_dns_name]
+        target_label: service
+
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+        labels:
+          service: postgres
+
+  # Optional host metrics (compose profile `host-metrics`). DNS discovery yields no targets while the containers do not exist,
+  # so nothing is reported DOWN when the profile is off.
+  - job_name: node
+    dns_sd_configs:
+      - names: [node-exporter]
+        type: A
+        port: 9100
+        refresh_interval: 30s
+
+  - job_name: cadvisor
+    dns_sd_configs:
+      - names: [cadvisor]
+        type: A
+        port: 8080
+        refresh_interval: 30s
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

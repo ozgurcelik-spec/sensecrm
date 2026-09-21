@@ -7,11 +7,12 @@ using Npgsql;
 using Sense.Crm.Modules.Platform.Application;
 using Sense.Crm.Modules.Platform.Infrastructure.Jobs;
 using Sense.Crm.Shared.Contracts.Configuration;
+using Sense.Crm.Shared.Contracts.Observability;
 
 namespace Sense.Crm.Worker.Platform;
 
 /// <summary>
-/// Platform işleri için ortak iskelet (M7): her turda <c>pg_try_advisory_lock</c> ile <b>tek örnek</b> çalışır (çok Worker kopyasında yalnız biri iş yapar; oturum düzeyi
+/// Platform işleri için ortak iskelet (M7): her turda <c>pg_try_advisory_xact_lock</c> ile <b>tek örnek</b> çalışır (çok Worker kopyasında yalnız biri iş yapar; C-SEC2 M1: işlem düzeyi
 /// kilit, iş bitince ya da bağlantı kopunca düşer), hata süreci düşürmez, sonraki turda yeniden denenir.
 /// </summary>
 public abstract partial class PlatformJobService(IConfiguration configuration, ILogger logger) : BackgroundService
@@ -32,17 +33,23 @@ public abstract partial class PlatformJobService(IConfiguration configuration, I
         {
             try
             {
+                // C-SEC2 M1: işlem düzeyi (transaction-level) istişari kilit: kilit işlemin ömrüne bağlıdır (commit/rollback/bağlantı kopması → düşer); oturum düzeyi kilit gibi havuzlanan bağlantıda
+                // (PgBouncer vb.) sızma/yanlış sahiplik riski taşımaz. İş, kilidi tutan işlemin içinde çalışır (işlem boşta bekler; iş kendi bağlantılarını kullanır).
                 await using var connection = new NpgsqlConnection(connectionString);
                 await connection.OpenAsync(stoppingToken).ConfigureAwait(false);
-                await using var acquire = new NpgsqlCommand("SELECT pg_try_advisory_lock(@key)", connection);
+                await using var transaction = await connection.BeginTransactionAsync(stoppingToken).ConfigureAwait(false);
+                await using var acquire = new NpgsqlCommand("SELECT pg_try_advisory_xact_lock(@key)", connection, transaction);
                 acquire.Parameters.AddWithValue("key", LockKey);
                 if (await acquire.ExecuteScalarAsync(stoppingToken).ConfigureAwait(false) is true)
                 {
                     await RunOnceAsync(stoppingToken).ConfigureAwait(false);
                 }
+
+                await transaction.CommitAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                CrmMetrics.BackgroundFailed(JobName);
                 LogFailed(logger, ex, JobName);
             }
 

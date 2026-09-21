@@ -1,0 +1,108 @@
+[Q2 ThroughParent/ContextMember] SELECT c.body
+FROM spike.case_comments AS c
+WHERE c.tenant_id = @ef_filter__CurrentTenantId AND EXISTS (
+    SELECT 1
+    FROM spike.cases AS c0
+    WHERE c0.tenant_id = @ef_filter__CurrentTenantId AND NOT (c0.is_deleted) AND (@ef_filter__p7 OR (c0.assigned_user_id IS NULL AND @ef_filter__p4) OR c0.assigned_user_id = ANY (@ef_filter__p5) OR (c0.assigned_user_id IS NULL AND array_position(@ef_filter__p5, NULL) IS NOT NULL) OR c0.created_user_id = ANY (@ef_filter__p5)) AND c0.id = c.case_id)
+
+[Q2 ThroughParent/StaticWithContextArg] SELECT c.body
+FROM spike.case_comments AS c
+WHERE c.tenant_id = @ef_filter__CurrentTenantId AND EXISTS (
+    SELECT 1
+    FROM spike.cases AS c0
+    WHERE c0.tenant_id = @ef_filter__CurrentTenantId AND NOT (c0.is_deleted) AND (@ef_filter__p7 OR (c0.assigned_user_id IS NULL AND @ef_filter__p4) OR c0.assigned_user_id = ANY (@ef_filter__p5) OR (c0.assigned_user_id IS NULL AND array_position(@ef_filter__p5, NULL) IS NOT NULL) OR c0.created_user_id = ANY (@ef_filter__p5)) AND c0.id = c.case_id)
+
+[Q2 FromSql/ContextMember] SELECT s.id, s.amount, s.created_at, s.deleted_at, s.deleted_user_id, s.is_deleted, s.name, s.owner_user_id, s.tenant_id
+FROM (
+    SELECT * FROM spike.deals
+) AS s
+WHERE s.tenant_id = @ef_filter__CurrentTenantId AND NOT (s.is_deleted) AND (@ef_filter__p3 OR s.owner_user_id = ANY (@ef_filter__p2))
+
+[Q2 FromSql/StaticWithContextArg] SELECT s.id, s.amount, s.created_at, s.deleted_at, s.deleted_user_id, s.is_deleted, s.name, s.owner_user_id, s.tenant_id
+FROM (
+    SELECT * FROM spike.deals
+) AS s
+WHERE s.tenant_id = @ef_filter__CurrentTenantId AND NOT (s.is_deleted) AND (@ef_filter__p3 OR s.owner_user_id = ANY (@ef_filter__p2))
+
+[Q2 member-style SQL] SELECT d.name || @tag
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.name LIKE 'poison-probe%'
+
+[Q2 static-style SQL#1] SELECT d.name || @tag
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND d.owner_user_id = '55a9c8d3-c9bc-456d-91c4-95c614b0ec84' AND d.name LIKE 'poison-probe%'
+
+[Q2 static-style SQL#2] SELECT d.name || @tag
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND d.owner_user_id = '55a9c8d3-c9bc-456d-91c4-95c614b0ec84' AND d.name LIKE 'poison-probe%'
+
+[Q2 cache/ContextMember] EF IMemoryCache.Count after sizes 0,1,5,200,20000,1: 140,140,140,140,140,140
+
+[Q2 cache/StaticWithContextArg] EF IMemoryCache.Count after sizes 0,1,5,200,20000,1: 140,140,140,140,140,140
+
+[Q2 SQL/ContextMember] SELECT d.id, d.amount, d.created_at, d.deleted_at, d.deleted_user_id, d.is_deleted, d.name, d.owner_user_id, d.tenant_id
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC
+LIMIT @p
+
+[Q2 SQL/StaticWithContextArg] SELECT d.id, d.amount, d.created_at, d.deleted_at, d.deleted_user_id, d.is_deleted, d.name, d.owner_user_id, d.tenant_id
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC
+LIMIT @p
+
+[Q2 ThroughParent/ContextMember] SELECT c.body
+FROM spike.case_comments AS c
+WHERE c.tenant_id = @ef_filter__CurrentTenantId AND EXISTS (
+    SELECT 1
+    FROM spike.cases AS c0
+    WHERE c0.tenant_id = @ef_filter__CurrentTenantId AND NOT (c0.is_deleted) AND (@ef_filter__p7 OR (c0.assigned_user_id IS NULL AND @ef_filter__p4) OR c0.assigned_user_id = ANY (@ef_filter__p5) OR (c0.assigned_user_id IS NULL AND array_position(@ef_filter__p5, NULL) IS NOT NULL) OR c0.created_user_id = ANY (@ef_filter__p5)) AND c0.id = c.case_id)
+
+[Q2 ThroughParent/StaticWithContextArg] SELECT c.body
+FROM spike.case_comments AS c
+WHERE c.tenant_id = @ef_filter__CurrentTenantId AND EXISTS (
+    SELECT 1
+    FROM spike.cases AS c0
+    WHERE c0.tenant_id = @ef_filter__CurrentTenantId AND NOT (c0.is_deleted) AND (@ef_filter__p7 OR (c0.assigned_user_id IS NULL AND @ef_filter__p4) OR c0.assigned_user_id = ANY (@ef_filter__p5) OR (c0.assigned_user_id IS NULL AND array_position(@ef_filter__p5, NULL) IS NOT NULL) OR c0.created_user_id = ANY (@ef_filter__p5)) AND c0.id = c.case_id)
+
+[Q2 FromSql/ContextMember] SELECT s.id, s.amount, s.created_at, s.deleted_at, s.deleted_user_id, s.is_deleted, s.name, s.owner_user_id, s.tenant_id
+FROM (
+    SELECT * FROM spike.deals
+) AS s
+WHERE s.tenant_id = @ef_filter__CurrentTenantId AND NOT (s.is_deleted) AND (@ef_filter__p3 OR s.owner_user_id = ANY (@ef_filter__p2))
+
+[Q2 FromSql/StaticWithContextArg] SELECT s.id, s.amount, s.created_at, s.deleted_at, s.deleted_user_id, s.is_deleted, s.name, s.owner_user_id, s.tenant_id
+FROM (
+    SELECT * FROM spike.deals
+) AS s
+WHERE s.tenant_id = @ef_filter__CurrentTenantId AND NOT (s.is_deleted) AND (@ef_filter__p3 OR s.owner_user_id = ANY (@ef_filter__p2))
+
+[Q2 member-style SQL] SELECT d.name || @tag
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2)) AND d.name LIKE 'poison-probe%'
+
+[Q2 static-style SQL#1] SELECT d.name || @tag
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND d.owner_user_id = 'e625e1c1-040f-4cc0-82fa-65a0de828279' AND d.name LIKE 'poison-probe%'
+
+[Q2 static-style SQL#2] SELECT d.name || @tag
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND d.owner_user_id = 'e625e1c1-040f-4cc0-82fa-65a0de828279' AND d.name LIKE 'poison-probe%'
+
+[Q2 cache/ContextMember] EF IMemoryCache.Count after sizes 0,1,5,200,20000,1: 140,140,140,140,140,140
+
+[Q2 cache/StaticWithContextArg] EF IMemoryCache.Count after sizes 0,1,5,200,20000,1: 140,140,140,140,140,140
+
+[Q2 SQL/ContextMember] SELECT d.id, d.amount, d.created_at, d.deleted_at, d.deleted_user_id, d.is_deleted, d.name, d.owner_user_id, d.tenant_id
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC
+LIMIT @p
+
+[Q2 SQL/StaticWithContextArg] SELECT d.id, d.amount, d.created_at, d.deleted_at, d.deleted_user_id, d.is_deleted, d.name, d.owner_user_id, d.tenant_id
+FROM spike.deals AS d
+WHERE d.tenant_id = @ef_filter__CurrentTenantId AND NOT (d.is_deleted) AND (@ef_filter__p3 OR d.owner_user_id = ANY (@ef_filter__p2))
+ORDER BY d.created_at DESC
+LIMIT @p
+

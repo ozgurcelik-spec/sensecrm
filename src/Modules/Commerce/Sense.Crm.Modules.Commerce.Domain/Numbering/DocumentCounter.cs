@@ -7,6 +7,8 @@ public static class DocumentKinds
 {
     public const string Quote = "quote";
     public const string Order = "order";
+    public const string Invoice = "invoice";
+    public const string PurchaseOrder = "purchaseOrder";
 }
 
 /// <summary>
@@ -30,11 +32,15 @@ public static class DocumentNumberFormat
 {
     public const string QuotePrefix = "Q";
     public const string OrderPrefix = "SO";
+    public const string InvoicePrefix = "INV";
+    public const string PurchasePrefix = "PO";
 
     public static string PrefixOf(string kind) => kind switch
     {
         DocumentKinds.Quote => QuotePrefix,
         DocumentKinds.Order => OrderPrefix,
+        DocumentKinds.Invoice => InvoicePrefix,
+        DocumentKinds.PurchaseOrder => PurchasePrefix,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
     };
 

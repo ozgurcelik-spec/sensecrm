@@ -207,6 +207,74 @@
   <data name="permission.crm.quotes.write" xml:space="preserve"><value>Create, edit, delete and change the status of quotes</value></data>
   <data name="permission.crm.orders.read" xml:space="preserve"><value>View sales orders</value></data>
   <data name="permission.crm.orders.write" xml:space="preserve"><value>Create, edit, delete and change the status of sales orders</value></data>
+  <!-- Sales documents and inventory (Milestone 9C) -->
+  <data name="order.not_invoiceable" xml:space="preserve"><value>Only confirmed or fulfilled orders can be converted to an invoice.</value></data>
+  <data name="order.already_invoiced" xml:space="preserve"><value>This order already has a non-cancelled invoice.</value></data>
+  <data name="order.has_active_invoice" xml:space="preserve"><value>An order with an active invoice cannot be cancelled; cancel the invoice first.</value></data>
+  <data name="invoice.not_editable" xml:space="preserve"><value>Only draft invoices can be edited or deleted.</value></data>
+  <data name="invoice.invalid_transition" xml:space="preserve"><value>The invoice cannot move from "{from}" to "{to}".</value></data>
+  <data name="invoice.no_lines" xml:space="preserve"><value>An invoice must have at least one line.</value></data>
+  <data name="invoice.has_payments" xml:space="preserve"><value>The invoice has payments; delete the payments first.</value></data>
+  <data name="invoice.not_payable" xml:space="preserve"><value>A payment cannot be recorded on this invoice (only sent invoices with a balance accept payments).</value></data>
+  <data name="invoice.payment_exceeds_balance" xml:space="preserve"><value>The payment amount exceeds the invoice balance ({balance}).</value></data>
+  <data name="purchase_order.not_editable" xml:space="preserve"><value>Only draft purchase orders can be edited or deleted.</value></data>
+  <data name="purchase_order.invalid_transition" xml:space="preserve"><value>The purchase order cannot move from "{from}" to "{to}".</value></data>
+  <data name="purchase_order.no_lines" xml:space="preserve"><value>A purchase order must have at least one line.</value></data>
+  <data name="vendor.in_use" xml:space="preserve"><value>Purchase orders are linked to this vendor; it cannot be deleted.</value></data>
+  <data name="pricebook.name_taken" xml:space="preserve"><value>A price book with this name already exists.</value></data>
+  <data name="pricebook.model_immutable" xml:space="preserve"><value>The pricing model and currency of a price book cannot be changed after creation ({property}).</value></data>
+  <data name="pricebook.model_mismatch" xml:space="preserve"><value>Product entries are only available on per-product price books.</value></data>
+  <data name="pricebook.not_effective" xml:space="preserve"><value>The price book is not effective right now (inactive or outside its validity dates).</value></data>
+  <data name="pricebook.entry_limit" xml:space="preserve"><value>A price book can hold at most {max} product entries.</value></data>
+  <data name="validation.adjustment_negative_total" xml:space="preserve"><value>The adjustment cannot make the document total negative.</value></data>
+  <data name="validation.adjustment_requires_lines" xml:space="preserve"><value>A document without lines cannot carry an adjustment.</value></data>
+  <data name="validation.due_before_order" xml:space="preserve"><value>The due date cannot be earlier than the order date.</value></data>
+  <data name="validation.due_before_invoice" xml:space="preserve"><value>The due date cannot be earlier than the invoice date.</value></data>
+  <data name="validation.due_before_po" xml:space="preserve"><value>The due date cannot be earlier than the purchase order date.</value></data>
+  <data name="validation.price_book_inactive" xml:space="preserve"><value>The selected price book is not effective right now.</value></data>
+  <data name="validation.price_book_currency" xml:space="preserve"><value>The price book currency must match the document currency.</value></data>
+  <data name="validation.line_unit_price_required" xml:space="preserve"><value>A unit price is required for a line without a product.</value></data>
+  <data name="validation.line_price_unresolvable" xml:space="preserve"><value>The line price could not be determined; enter a unit price.</value></data>
+  <data name="validation.entry_currency_mismatch" xml:space="preserve"><value>The product currency must match the price book currency.</value></data>
+  <data name="validation.paid_in_future" xml:space="preserve"><value>The payment date cannot be in the future.</value></data>
+  <data name="validation.paid_before_invoice" xml:space="preserve"><value>The payment date cannot be earlier than the invoice date.</value></data>
+  <data name="validation.flat_percent_required" xml:space="preserve"><value>The percentage is only used by, and required for, the flat pricing model (between -99.99 and 1000).</value></data>
+  <data name="validation.valid_range" xml:space="preserve"><value>The end date cannot be earlier than the start date.</value></data>
+  <data name="validation.product_ids" xml:space="preserve"><value>Send between 1 and 100 unique product ids.</value></data>
+  <data name="field.adjustment" xml:space="preserve"><value>Adjustment</value></data>
+  <data name="field.carrier" xml:space="preserve"><value>Carrier</value></data>
+  <data name="field.billing_address" xml:space="preserve"><value>Billing address</value></data>
+  <data name="field.shipping_address" xml:space="preserve"><value>Shipping address</value></data>
+  <data name="field.building" xml:space="preserve"><value>Unit / building</value></data>
+  <data name="field.customer_po_number" xml:space="preserve"><value>Customer PO number</value></data>
+  <data name="field.excise_tax" xml:space="preserve"><value>Excise tax</value></data>
+  <data name="field.sales_commission" xml:space="preserve"><value>Sales commission</value></data>
+  <data name="field.pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="field.due_date" xml:space="preserve"><value>Due date</value></data>
+  <data name="field.invoice_date" xml:space="preserve"><value>Invoice date</value></data>
+  <data name="field.po_date" xml:space="preserve"><value>Purchase order date</value></data>
+  <data name="field.paid_on" xml:space="preserve"><value>Payment date</value></data>
+  <data name="field.method" xml:space="preserve"><value>Method</value></data>
+  <data name="field.reference" xml:space="preserve"><value>Reference</value></data>
+  <data name="field.category" xml:space="preserve"><value>Category</value></data>
+  <data name="field.gl_account" xml:space="preserve"><value>GL account</value></data>
+  <data name="field.email_opt_out" xml:space="preserve"><value>Email opt out</value></data>
+  <data name="field.price_book_id" xml:space="preserve"><value>Price book</value></data>
+  <data name="field.vendor_id" xml:space="preserve"><value>Vendor</value></data>
+  <data name="field.pricing_model" xml:space="preserve"><value>Pricing model</value></data>
+  <data name="field.adjustment_percent" xml:space="preserve"><value>Percentage</value></data>
+  <data name="field.valid_from" xml:space="preserve"><value>Valid from</value></data>
+  <data name="field.valid_to" xml:space="preserve"><value>Valid to</value></data>
+  <data name="field.purchase_price" xml:space="preserve"><value>Purchase price</value></data>
+  <data name="field.product_ids" xml:space="preserve"><value>Products</value></data>
+  <data name="permission.crm.invoices.read" xml:space="preserve"><value>View invoices</value></data>
+  <data name="permission.crm.invoices.write" xml:space="preserve"><value>Create, edit, delete, change the status of invoices and record payments</value></data>
+  <data name="permission.crm.pricebooks.read" xml:space="preserve"><value>View price books</value></data>
+  <data name="permission.crm.pricebooks.write" xml:space="preserve"><value>Create, edit and delete price books and their entries</value></data>
+  <data name="permission.crm.vendors.read" xml:space="preserve"><value>View vendors</value></data>
+  <data name="permission.crm.vendors.write" xml:space="preserve"><value>Create, edit and delete vendors</value></data>
+  <data name="permission.crm.purchaseorders.read" xml:space="preserve"><value>View purchase orders</value></data>
+  <data name="permission.crm.purchaseorders.write" xml:space="preserve"><value>Create, edit, delete and change the status of purchase orders</value></data>
   <!-- Service/Support: cases, comments, SLA (Milestone 6B) -->
   <data name="case.account_not_found" xml:space="preserve"><value>The account to link to the case was not found.</value></data>
   <data name="case.contact_not_found" xml:space="preserve"><value>The contact to link to the case was not found.</value></data>
@@ -262,4 +330,56 @@
   <data name="field.overrides" xml:space="preserve"><value>Overrides</value></data>
   <data name="field.retention_days" xml:space="preserve"><value>Retention period (days)</value></data>
   <data name="field.mode" xml:space="preserve"><value>Mode</value></data>
+  <!-- C-SEC2: destructive platform commands (step-up, confirmation name), platform admin lifecycle, erasure retry -->
+  <data name="platform.confirmation_mismatch" xml:space="preserve"><value>The typed organization name does not match the name on the server.</value></data>
+  <data name="platform.step_up_required" xml:space="preserve"><value>You must re-enter your own password for this action.</value></data>
+  <data name="platform.step_up_failed" xml:space="preserve"><value>The password could not be verified.</value></data>
+  <data name="platform.step_up_rate_limited" xml:space="preserve"><value>Too many wrong password attempts. Try again later.</value></data>
+  <data name="platform.last_platform_admin" xml:space="preserve"><value>The last active platform admin cannot be revoked.</value></data>
+  <data name="platform.not_a_platform_admin" xml:space="preserve"><value>The account is not a platform admin.</value></data>
+  <data name="platform.deletion_not_retryable" xml:space="preserve"><value>The deletion request cannot be retried: it is not in the failed state.</value></data>
+  <!-- M8C: file attachments -->
+  <data name="problem.title.payload_too_large" xml:space="preserve"><value>File too large</value></data>
+  <data name="problem.title.unsupported_media_type" xml:space="preserve"><value>Unsupported file type</value></data>
+  <data name="problem.title.gone" xml:space="preserve"><value>Resource is gone</value></data>
+  <data name="problem.title.unavailable" xml:space="preserve"><value>Service temporarily unavailable</value></data>
+  <data name="file.upload_invalid" xml:space="preserve"><value>The upload request is invalid: the multipart body could not be read.</value></data>
+  <data name="file.too_many_files" xml:space="preserve"><value>At most {max} files can be uploaded in one request.</value></data>
+  <data name="file.empty" xml:space="preserve"><value>An empty file cannot be uploaded.</value></data>
+  <data name="file.name_invalid" xml:space="preserve"><value>The file name is invalid or became empty after sanitizing.</value></data>
+  <data name="file.extension_change_not_allowed" xml:space="preserve"><value>The file extension cannot be changed when renaming.</value></data>
+  <data name="file.too_large" xml:space="preserve"><value>The file is too large; the maximum allowed size is {maxBytes} bytes.</value></data>
+  <data name="file.type_not_allowed" xml:space="preserve"><value>The "{extension}" file type is not allowed.</value></data>
+  <data name="file.content_mismatch" xml:space="preserve"><value>The file content does not match its extension or contains unsafe content.</value></data>
+  <data name="file.infected" xml:space="preserve"><value>Malicious content was found in the file; the upload was rejected.</value></data>
+  <data name="file.quota_exceeded" xml:space="preserve"><value>Storage quota exceeded (quota {maxBytes} bytes, used {usedBytes} bytes, requested {requestedBytes} bytes). Contact the platform administrator to upgrade your plan.</value></data>
+  <data name="file.quarantined" xml:space="preserve"><value>The file is quarantined and cannot be downloaded.</value></data>
+  <data name="file.content_missing" xml:space="preserve"><value>The file content could not be found in storage.</value></data>
+  <data name="file.scan_unavailable" xml:space="preserve"><value>The file scanning service is currently unavailable; try again later.</value></data>
+  <data name="file.storage_unavailable" xml:space="preserve"><value>The file store is currently unavailable; try again later.</value></data>
+  <data name="file.record_not_found" xml:space="preserve"><value>The record to attach to was not found.</value></data>
+  <data name="validation.file_record_type" xml:space="preserve"><value>The record type is invalid.</value></data>
+  <data name="validation.file_record_id" xml:space="preserve"><value>Enter a valid record id.</value></data>
+  <data name="validation.file_disposition" xml:space="preserve"><value>Disposition must be attachment or inline.</value></data>
+  <data name="validation.file_name" xml:space="preserve"><value>File name is required (at most 2048 characters).</value></data>
+  <!-- M8B: integrations (webhooks, API keys, deliveries) -->
+  <data name="webhook.url_invalid" xml:space="preserve"><value>The webhook URL is invalid: it must be HTTPS without user info, IP addresses or local names, on an allowed port and host ({reason}).</value></data>
+  <data name="webhook.name_taken" xml:space="preserve"><value>A webhook subscription with this name already exists.</value></data>
+  <data name="webhook.delivery_unavailable" xml:space="preserve"><value>Webhook delivery is disabled in this deployment; test and redelivery are unavailable.</value></data>
+  <data name="webhook.disabled" xml:space="preserve"><value>The subscription is disabled; enable it first.</value></data>
+  <data name="delivery.not_redeliverable" xml:space="preserve"><value>The delivery is still in progress; only completed (succeeded or failed) deliveries can be redelivered.</value></data>
+  <data name="api_key.scope_not_allowed" xml:space="preserve"><value>An API key cannot carry this scope: only crm.* permissions can be granted ('{scope}').</value></data>
+  <data name="api_key.expired" xml:space="preserve"><value>The API key has expired.</value></data>
+  <data name="api_key.revoked" xml:space="preserve"><value>The API key has been revoked.</value></data>
+  <data name="api_key.owner_inactive" xml:space="preserve"><value>The user who created the API key is no longer active in this organization.</value></data>
+  <data name="api_key.ip_not_allowed" xml:space="preserve"><value>The API key cannot be used from this IP address.</value></data>
+  <data name="api_key.not_allowed" xml:space="preserve"><value>This endpoint is not available to API keys.</value></data>
+  <data name="api_key.active" xml:space="preserve"><value>An active API key cannot be deleted; revoke it first.</value></data>
+  <data name="api_key.name_taken" xml:space="preserve"><value>An API key with this name already exists.</value></data>
+  <data name="field.url" xml:space="preserve"><value>URL</value></data>
+  <data name="field.event_types" xml:space="preserve"><value>Event types</value></data>
+  <data name="field.scopes" xml:space="preserve"><value>Scopes</value></data>
+  <data name="field.expires_at" xml:space="preserve"><value>Expiry</value></data>
+  <data name="field.allowed_cidrs" xml:space="preserve"><value>Allowed IP ranges</value></data>
+  <data name="field.grace_hours" xml:space="preserve"><value>Grace period (hours)</value></data>
 </root>

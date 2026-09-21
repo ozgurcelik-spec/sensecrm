@@ -31,6 +31,9 @@ public sealed class TenantQueryFilterConventionTests
         "DeletionRequest",
         "UsageSnapshot",
         "PlatformAuditEntry",
+
+        // M8B Integrations: kuresel teknik teslimat kuyrugu (outbox gibi; dispatcher tum kiracilarin isini tek taramayla alir, sonra kiraci kapsamina girer; ITenantEntity DEGIL).
+        "DeliveryQueueItem",
     };
 
     public static IEnumerable<object[]> ModuleContexts() => ProductAssemblies()

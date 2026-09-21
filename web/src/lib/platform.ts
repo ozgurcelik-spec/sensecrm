@@ -1,5 +1,5 @@
 /** Pure helpers of the platform console: statuses, allowed actions, overrides, dates, server errors. */
-import { getApiProblem } from "@/lib/api-error";
+import { getApiErrorMessage, getApiProblem } from "@/lib/api-error";
 import {
   GATED_MODULES,
   RECORD_MODULES,
@@ -31,6 +31,8 @@ export const PLATFORM_AUDIT_ACTIONS = [
   "deletion.failed",
   "usage.refreshed",
   "usage.exported",
+  "deletion.retried",
+  "platform_admin.revoked",
 ] as const;
 
 export const SUSPEND_REASON_MAX = 500;
@@ -91,6 +93,8 @@ export interface LimitDraft {
 
 export interface OverridesDraft {
   maxUsers: LimitDraft;
+  /** Storage quota in MB (M8C). */
+  maxStorageMb: LimitDraft;
   maxRecords: Record<string, LimitDraft>;
   modules: Record<GatedModule, ModuleMode>;
 }
@@ -113,10 +117,15 @@ function pick(source: object | undefined, name: string): { present: boolean; val
 
 export function toOverridesDraft(overrides: PlatformOverrides | undefined): OverridesDraft {
   const maxUsers = pick(overrides, "maxUsers");
+  const maxStorageMb = pick(overrides, "maxStorageMb");
   const records = pick(overrides, "maxRecords").value as Record<string, number | null> | undefined;
   const modules = pick(overrides, "modules").value as Record<string, boolean> | undefined;
   return {
     maxUsers: limitDraft(maxUsers.present, maxUsers.value as number | null | undefined),
+    maxStorageMb: limitDraft(
+      maxStorageMb.present,
+      maxStorageMb.value as number | null | undefined
+    ),
     maxRecords: Object.fromEntries(
       RECORD_MODULES.map((module) => {
         const entry = pick(records, module);
@@ -144,6 +153,8 @@ export function toOverridesBody(draft: OverridesDraft): PlatformOverrides | unde
   const body: PlatformOverrides = {};
   const users = limitValue(draft.maxUsers);
   if (users.set) body.maxUsers = users.value;
+  const storage = limitValue(draft.maxStorageMb);
+  if (storage.set) body.maxStorageMb = storage.value;
 
   const maxRecords: Record<string, number | null> = {};
   for (const [module, limit] of Object.entries(draft.maxRecords)) {
@@ -184,6 +195,31 @@ export function serverFieldErrors(error: unknown): Record<string, string> {
     if (messages[0]) result[path] = messages[0];
   }
   return result;
+}
+
+// ---- Step-up re-authentication errors ----------------------------------------------------------------
+
+/** Form field a step-up error belongs to. */
+export type StepUpField = "password" | "confirmTenantName";
+
+/** Codes shown inline on the password field (never 401, so the session stays). */
+const STEP_UP_PASSWORD_CODES: readonly string[] = ["platform.step_up_required", "platform.step_up_failed"];
+/** Codes shown inline on the typed-organization-name field. */
+const STEP_UP_CONFIRM_CODES: readonly string[] = ["platform.confirmation_mismatch"];
+
+/**
+ * Inline error of a destructive platform command: wrong / missing password on the password field, a
+ * mismatching typed name on the confirmation field. Everything else (rate limit, last platform admin,
+ * not retryable, system tenant ...) returns undefined and goes through `toastApiError`.
+ */
+export function stepUpFieldError(error: unknown): { field: StepUpField; message: string } | undefined {
+  const code = getApiProblem(error)?.code;
+  if (!code) return undefined;
+  if (STEP_UP_PASSWORD_CODES.includes(code)) return { field: "password", message: getApiErrorMessage(error) };
+  if (STEP_UP_CONFIRM_CODES.includes(code)) {
+    return { field: "confirmTenantName", message: getApiErrorMessage(error) };
+  }
+  return undefined;
 }
 
 // ---- Dates ---------------------------------------------------------------------------------------------

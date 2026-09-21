@@ -121,13 +121,28 @@ public sealed class AccountProvisioner(
 /// Olay Worker'da (ve testlerde outbox boşaltıldığında) işlenir; hesap yoksa <c>ITenantEntitlements</c> tembel satır açar (bkz. Infrastructure).
 /// </summary>
 [EntitlementExempt("Platform hesap açılışı kiracı durumundan bağımsızdır")]
-public sealed class OrganizationCreatedAccountHandler(AccountProvisioner provisioner, ITenantDirectory directory, IPlatformUnitOfWork unitOfWork, IEntitlementCache cache)
+public sealed class OrganizationCreatedAccountHandler(AccountProvisioner provisioner, ITenantDirectory directory, IPlatformUnitOfWork unitOfWork, IEntitlementCache cache, IPlatformAuditReconciler auditReconciler)
     : IIntegrationEventHandler<OrganizationCreated>
 {
     public async Task Handle(OrganizationCreated integrationEvent, CancellationToken cancellationToken)
     {
         var info = await directory.FindAsync(integrationEvent.TenantId, cancellationToken).ConfigureAwait(false);
-        await provisioner.ProvisionAsync(integrationEvent, info, cancellationToken).ConfigureAwait(false);
+        var account = await provisioner.ProvisionAsync(integrationEvent, info, cancellationToken).ConfigureAwait(false);
+
+        // C-SEC2 L4: platform yolunda açılan organizasyonun `organization.created` denetim satırı iki DbContext arasında aynı işlemde yazılamaz (doğrudan yol Identity işleminden SONRA çalışır);
+        // olay ise Identity işlemiyle birlikte outbox'a yazıldığı için burada satır yoksa tamamlanır (idempotent).
+        if (integrationEvent is { Origin: OrganizationOrigin.Platform, ActorUserId: { } actor })
+        {
+            await auditReconciler.EnsureAsync(
+                PlatformAuditActions.OrganizationCreated,
+                integrationEvent.TenantId,
+                account?.Name ?? info?.Name,
+                actor,
+                integrationEvent.OccurredAt.UtcDateTime,
+                new Dictionary<string, object?> { ["planCode"] = account?.PlanCode ?? integrationEvent.PlanCode, ["trialEndsOn"] = integrationEvent.TrialEndsOn?.ToString("yyyy-MM-dd"), ["reconciled"] = true },
+                cancellationToken).ConfigureAwait(false);
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await cache.InvalidateAsync(integrationEvent.TenantId, cancellationToken).ConfigureAwait(false);
     }

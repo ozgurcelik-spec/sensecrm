@@ -55,6 +55,11 @@ public sealed record CreateQuoteCommand(
     string? Currency,
     string? Terms,
     string? Notes,
+    string? Carrier,
+    decimal Adjustment,
+    DocumentAddressDto? BillingAddress,
+    DocumentAddressDto? ShippingAddress,
+    Guid? PriceBookId,
     IReadOnlyList<LineRequest>? Lines) : ICommand<QuoteDto>, IDocumentFields;
 
 public sealed class CreateQuoteValidator : DocumentFieldsValidator<CreateQuoteCommand>;
@@ -63,9 +68,7 @@ public sealed class CreateQuoteValidator : DocumentFieldsValidator<CreateQuoteCo
 public sealed class CreateQuoteHandler(
     IQuoteRepository quotes,
     IQuoteReadStore store,
-    OwnerResolver owners,
-    RelatedRecordVerifier related,
-    LineProductVerifier products,
+    SalesDocumentPreparer preparer,
     DocumentNumbers numbers,
     ICommerceTransaction transaction,
     ITenantContext tenant,
@@ -87,30 +90,16 @@ public sealed class CreateQuoteHandler(
         transaction.ExecuteAsync<Guid>(
             async ct =>
             {
-                var owner = await owners.ResolveAsync(command.OwnerUserId, current: null, ct).ConfigureAwait(false);
-                if (owner.IsFailure)
+                var prepared = await preparer.PrepareAsync(command, existing: null, new HashSet<Guid>(), ct).ConfigureAwait(false);
+                if (prepared.IsFailure)
                 {
-                    return owner.Error;
-                }
-
-                var relatedCheck = await related.VerifyAsync(command.AccountId, command.ContactId, command.DealId, ct).ConfigureAwait(false);
-                if (relatedCheck.IsFailure)
-                {
-                    return relatedCheck.Error;
-                }
-
-                var lines = LineMapping.ToInputs(command.Lines);
-                await products.VerifyAsync(command.Currency, lines, new HashSet<Guid>(), ct).ConfigureAwait(false);
-                var fits = SalesDocument.EnsureTotalsFit(lines);
-                if (fits.IsFailure)
-                {
-                    return fits.Error;
+                    return prepared.Error;
                 }
 
                 // Numara en son ayrılır: sonrasında yalnız kayıt kalır (sayaç satır kilidi transaction sonuna dek tutulur).
                 var number = await numbers.NextAsync(DocumentKinds.Quote, ct).ConfigureAwait(false);
-                var header = new DocumentHeader(command.Subject, command.AccountId, command.ContactId, command.DealId, owner.Value, command.Currency, command.Terms, command.Notes);
-                var created = Quote.Create(tenant.TenantId, number, header, command.ValidUntil, lines);
+                var header = SalesDocumentPreparer.HeaderFor(command, prepared.Value.OwnerUserId);
+                var created = Quote.Create(tenant.TenantId, number, header, command.ValidUntil, prepared.Value.Lines).ThrowIfFieldError();
                 if (created.IsFailure)
                 {
                     return created.Error;
@@ -138,6 +127,11 @@ public sealed record UpdateQuoteCommand(
     string? Currency,
     string? Terms,
     string? Notes,
+    string? Carrier,
+    decimal Adjustment,
+    DocumentAddressDto? BillingAddress,
+    DocumentAddressDto? ShippingAddress,
+    Guid? PriceBookId,
     IReadOnlyList<LineRequest>? Lines) : ICommand, IDocumentFields;
 
 public sealed class UpdateQuoteValidator : DocumentFieldsValidator<UpdateQuoteCommand>
@@ -147,9 +141,7 @@ public sealed class UpdateQuoteValidator : DocumentFieldsValidator<UpdateQuoteCo
 
 public sealed class UpdateQuoteHandler(
     IQuoteRepository quotes,
-    OwnerResolver owners,
-    RelatedRecordVerifier related,
-    LineProductVerifier products,
+    SalesDocumentPreparer preparer,
     ICommerceTransaction transaction) : ICommandHandler<UpdateQuoteCommand>
 {
     public Task<Result> Handle(UpdateQuoteCommand command, CancellationToken cancellationToken) =>
@@ -168,27 +160,15 @@ public sealed class UpdateQuoteHandler(
                     return editable;
                 }
 
-                var owner = await owners.ResolveAsync(command.OwnerUserId, quote.OwnerUserId, ct).ConfigureAwait(false);
-                if (owner.IsFailure)
-                {
-                    return owner.Error;
-                }
-
-                if (command.AccountId != quote.AccountId || command.ContactId != quote.ContactId || command.DealId != quote.DealId)
-                {
-                    var relatedCheck = await related.VerifyAsync(command.AccountId, command.ContactId, command.DealId, ct).ConfigureAwait(false);
-                    if (relatedCheck.IsFailure)
-                    {
-                        return relatedCheck;
-                    }
-                }
-
-                var lines = LineMapping.ToInputs(command.Lines);
                 var existing = quote.Lines.Where(l => l.ProductId is not null).Select(l => l.ProductId!.Value).ToHashSet();
-                await products.VerifyAsync(command.Currency, lines, existing, ct).ConfigureAwait(false);
+                var prepared = await preparer.PrepareAsync(command, quote, existing, ct).ConfigureAwait(false);
+                if (prepared.IsFailure)
+                {
+                    return prepared.Error;
+                }
 
-                var header = new DocumentHeader(command.Subject, command.AccountId, command.ContactId, command.DealId, owner.Value, command.Currency, command.Terms, command.Notes);
-                var updated = quote.Update(header, command.ValidUntil, lines);
+                var header = SalesDocumentPreparer.HeaderFor(command, prepared.Value.OwnerUserId);
+                var updated = quote.Update(header, command.ValidUntil, prepared.Value.Lines).ThrowIfFieldError();
                 if (updated.IsFailure)
                 {
                     return updated;
@@ -266,7 +246,17 @@ public sealed class SendQuoteHandler(QuoteTransitions transitions) : ICommandHan
         transitions.RunAsync(command.Id, (quote, today, now) => quote.Send(today, now).ThrowIfValidUntilPast(), cancellationToken);
 }
 
-/// <summary><c>sent → accepted</c> (süresi dolmamış; dolmuşsa <c>quote.expired</c> 409). <c>QuoteAccepted</c> olayı aynı transaction'da outbox'a yazılır.</summary>
+/// <summary><c>sent → negotiation</c> (yalnız süresi dolmamış gönderilmiş teklif; aksi <c>quote.invalid_transition</c> 409). Zoho "Müzakere".</summary>
+[RequiresPermission(CommercePermissions.QuotesWrite)]
+public sealed record NegotiateQuoteCommand(Guid Id) : ICommand;
+
+public sealed class NegotiateQuoteHandler(QuoteTransitions transitions) : ICommandHandler<NegotiateQuoteCommand>
+{
+    public Task<Result> Handle(NegotiateQuoteCommand command, CancellationToken cancellationToken) =>
+        transitions.RunAsync(command.Id, (quote, today, _) => quote.Negotiate(today), cancellationToken);
+}
+
+/// <summary><c>sent | negotiation → accepted</c> (süresi dolmamış; dolmuşsa <c>quote.expired</c> 409). <c>QuoteAccepted</c> olayı aynı transaction'da outbox'a yazılır.</summary>
 [RequiresPermission(CommercePermissions.QuotesWrite)]
 public sealed record AcceptQuoteCommand(Guid Id) : ICommand;
 
@@ -374,7 +364,24 @@ public sealed class ConvertQuoteHandler(
 
                 var today = await clock.TodayAsync(ct).ConfigureAwait(false);
                 var number = await numbers.NextAsync(DocumentKinds.Order, ct).ConfigureAwait(false);
-                var header = new DocumentHeader(quote.Subject, quote.AccountId, quote.ContactId, quote.DealId, quote.OwnerUserId, quote.Currency, quote.Terms, quote.Notes);
+
+                // Kopyalanır: nakliye, iki adres bloğu, yuvarlama, fiyat listesi (+ M6A alanları ve kalemler). Siparişe özgü alanlar
+                // (müşteri satın alma emri no, son tarih, gider vergisi, satış komisyonu, bekliyor) kopyalanmaz → null. Toplamlar aynı
+                // DocumentTotals ile (yuvarlama dahil) yeniden hesaplanır → grandTotal tekliften birebir.
+                var header = new DocumentHeader(
+                    quote.Subject,
+                    quote.AccountId,
+                    quote.ContactId,
+                    quote.DealId,
+                    quote.OwnerUserId,
+                    quote.Currency,
+                    quote.Terms,
+                    quote.Notes,
+                    quote.Carrier,
+                    quote.Adjustment,
+                    quote.BillingAddress,
+                    quote.ShippingAddress,
+                    quote.PriceBookId);
                 var created = SalesOrder.Create(tenant.TenantId, number, header, today, quote.Id, quote.Lines.OrderBy(l => l.Position).Select(l => l.ToInput()).ToList());
                 if (created.IsFailure)
                 {

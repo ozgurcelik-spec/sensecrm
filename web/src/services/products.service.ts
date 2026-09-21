@@ -7,6 +7,8 @@ export interface ProductListQuery extends ListQuery {
   /** "true" / "false" (comes straight from the URL). */
   isActive?: string | boolean;
   currency?: string;
+  /** M9C: products whose primary vendor is this one. */
+  vendorId?: string;
 }
 
 export const productKeys = {

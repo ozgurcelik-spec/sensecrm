@@ -16,6 +16,7 @@ import RouteBoundary from "@/components/route-boundary";
 import { BackButton } from "@/components/shell/back-button";
 import { GlobalSearch } from "@/components/shell/global-search";
 import { ApprovalsBell } from "@/components/shell/approvals-bell";
+import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { InvitationsBell } from "@/components/shell/invitations-bell";
 import { LanguageMenu } from "@/components/shell/language-menu";
 import { SettingsLink } from "@/components/shell/settings-link";
@@ -113,6 +114,7 @@ export default function AppLayout() {
             <GlobalSearch />
           </div>
           <Group gap="xs" wrap="nowrap">
+            <NotificationsBell />
             <ApprovalsBell />
             <InvitationsBell />
             <OrganizationSwitcher />

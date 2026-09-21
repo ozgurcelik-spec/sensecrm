@@ -11,6 +11,9 @@ public static class ServiceContractServices
     public static IServiceCollection AddServiceContractServices(this IServiceCollection services)
     {
         services.AddScoped<IUsageReporter, ServiceUsageReporter>();
+
+        // M8C: dosya eki hedefi (talep).
+        services.AddScoped<Sense.Crm.Shared.Contracts.Files.IAttachmentTarget, CaseAttachmentTarget>();
         return services;
     }
 }

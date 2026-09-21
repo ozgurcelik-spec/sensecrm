@@ -1,14 +1,19 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { NumberInput, Select, SimpleGrid, Switch, Textarea, TextInput } from "@mantine/core";
 import { FormDialog } from "@/components/crm/form-dialog";
+import { LookupField } from "@/components/lookup/lookup-field";
+import { useVendorSource } from "@/components/lookup/lookup-sources";
+import { useVendorLookupCreate } from "@/components/lookup/lookup-creates";
+import { usePermission } from "@/hooks/use-permission";
 import { useSaveProduct } from "@/hooks/use-products";
 import { toast, toastApiError } from "@/hooks/use-toast";
 import { applyValidationErrors, getApiProblem } from "@/lib/api-error";
 import { blankToUndefined } from "@/lib/format";
-import { CURRENCIES, type Product } from "@/types";
+import { CURRENCIES, PERMISSIONS, type Product } from "@/types";
 
 /** Suggested VAT rate of a new product (the API default is 0). */
 const DEFAULT_PRODUCT_TAX_RATE = 20;
@@ -39,6 +44,7 @@ const schema = z
     taxRate: numberish,
     unit: z.string().trim().max(32, "commerce:validation.unitMax"),
     isActive: z.boolean(),
+    purchasePrice: numberish,
   })
   .superRefine((values, ctx) => {
     const price = toNumber(values.unitPrice);
@@ -48,6 +54,18 @@ const schema = z
       ctx.addIssue({ code: "custom", path: ["unitPrice"], message: "commerce:validation.priceMax" });
     } else if (decimalPlaces(price) > 4) {
       ctx.addIssue({ code: "custom", path: ["unitPrice"], message: "commerce:validation.decimals4" });
+    }
+    // Purchase price (M9C, optional): blank means none.
+    const purchaseBlank = typeof values.purchasePrice === "string" && values.purchasePrice.trim() === "";
+    const purchase = toNumber(values.purchasePrice);
+    if (!purchaseBlank) {
+      if (!Number.isFinite(purchase) || purchase < 0) {
+        ctx.addIssue({ code: "custom", path: ["purchasePrice"], message: "commerce:validation.priceMin" });
+      } else if (purchase > 1_000_000_000) {
+        ctx.addIssue({ code: "custom", path: ["purchasePrice"], message: "commerce:validation.priceMax" });
+      } else if (decimalPlaces(purchase) > 4) {
+        ctx.addIssue({ code: "custom", path: ["purchasePrice"], message: "commerce:validation.decimals4" });
+      }
     }
     const tax = toNumber(values.taxRate);
     if (!Number.isFinite(tax) || tax < 0 || tax > 100) {
@@ -68,16 +86,27 @@ const FIELDS = [
   "taxRate",
   "unit",
   "isActive",
+  "purchasePrice",
 ] as const;
 
 interface ProductFormDialogProps {
   product?: Product;
+  /** A starting name (what was typed in a lookup window's search box). */
+  initialName?: string;
   onClose: () => void;
   onSaved?: (id: string) => void;
 }
 
-export function ProductFormDialog({ product, onClose, onSaved }: ProductFormDialogProps) {
-  const { t } = useTranslation(["commerce", "common", "auth"]);
+export function ProductFormDialog({ product, initialName, onClose, onSaved }: ProductFormDialogProps) {
+  const { t } = useTranslation(["commerce", "common", "auth", "inventory"]);
+  const canReadVendors = usePermission(PERMISSIONS.crmVendorsRead);
+  const vendorSource = useVendorSource();
+  const vendorCreate = useVendorLookupCreate();
+  // The primary vendor: id + label of the pick (kept as sent when the user may not search vendors).
+  const [vendor, setVendor] = useState<{ id: string; label: string } | null>(
+    product?.vendorId ? { id: product.vendorId, label: product.vendorName ?? product.vendorId } : null
+  );
+  const [vendorError, setVendorError] = useState<string | undefined>();
   const save = useSaveProduct();
   const {
     register,
@@ -88,7 +117,7 @@ export function ProductFormDialog({ product, onClose, onSaved }: ProductFormDial
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: product?.name ?? "",
+      name: product?.name ?? initialName ?? "",
       code: product?.code ?? "",
       description: product?.description ?? "",
       unitPrice: product?.unitPrice ?? 0,
@@ -96,6 +125,7 @@ export function ProductFormDialog({ product, onClose, onSaved }: ProductFormDial
       taxRate: product?.taxRate ?? DEFAULT_PRODUCT_TAX_RATE,
       unit: product?.unit ?? "",
       isActive: product?.isActive ?? true,
+      purchasePrice: product?.purchasePrice ?? "",
     },
   });
 
@@ -113,6 +143,11 @@ export function ProductFormDialog({ product, onClose, onSaved }: ProductFormDial
         taxRate: toNumber(values.taxRate),
         unit: blankToUndefined(values.unit),
         isActive: values.isActive,
+        vendorId: vendor?.id,
+        purchasePrice:
+          typeof values.purchasePrice === "string" && values.purchasePrice.trim() === ""
+            ? undefined
+            : toNumber(values.purchasePrice),
       });
       toast({
         variant: "success",
@@ -124,6 +159,11 @@ export function ProductFormDialog({ product, onClose, onSaved }: ProductFormDial
       if (getApiProblem(error)?.code === "product.code_taken") {
         // The SKU is unique per organization (case-insensitive): show it on the field.
         setError("code", { type: "server", message: t("common:errors.product.code_taken") });
+        return;
+      }
+      const problem = getApiProblem(error);
+      if (problem?.code === "commerce.related_not_found" || problem?.errors?.vendorId) {
+        setVendorError(problem.errors?.vendorId?.[0] ?? t("common:errors.commerce.related_not_found"));
         return;
       }
       if (!applyValidationErrors(error, setError, FIELDS)) toastApiError(error);
@@ -203,6 +243,37 @@ export function ProductFormDialog({ product, onClose, onSaved }: ProductFormDial
             />
           )}
         />
+        <Controller
+          control={control}
+          name="purchasePrice"
+          render={({ field }) => (
+            <NumberInput
+              label={t("inventory:products.purchasePrice")}
+              description={t("inventory:products.purchasePriceHint")}
+              value={field.value}
+              onChange={field.onChange}
+              min={0}
+              decimalScale={4}
+              hideControls
+              error={message(errors.purchasePrice?.message)}
+            />
+          )}
+        />
+        {canReadVendors && (
+          <LookupField
+            label={t("inventory:products.vendor")}
+            title={t("inventory:vendors.select")}
+            source={vendorSource}
+            create={vendorCreate}
+            value={vendor}
+            clearable
+            error={vendorError}
+            onChange={(_row, picked) => {
+              setVendor(picked);
+              setVendorError(undefined);
+            }}
+          />
+        )}
         <Controller
           control={control}
           name="isActive"

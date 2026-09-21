@@ -5,6 +5,7 @@ import {
   exportPlatformUsage,
   getPlatformOrganization,
   getPlatformUsage,
+  listPlatformAdmins,
   listPlatformAudit,
   listPlatformOrganizations,
   listPlatformPlans,
@@ -12,6 +13,8 @@ import {
   reactivatePlatformOrganization,
   refreshPlatformUsage,
   requestPlatformDeletion,
+  retryPlatformDeletion,
+  revokePlatformAdmin,
   suspendPlatformOrganization,
   updatePlatformSubscription,
   type PlatformAuditQuery,
@@ -20,7 +23,9 @@ import {
 } from "@/services/platform.service";
 import type {
   CreatePlatformOrganizationInput,
+  PlatformAdminRevokeInput,
   PlatformDeletionInput,
+  PlatformStepUpInput,
   PlatformSubscriptionInput,
   PlatformSuspendInput,
 } from "@/types";
@@ -130,4 +135,25 @@ export function useRefreshPlatformUsage(id: string) {
 
 export function useExportPlatformUsage() {
   return useMutation({ mutationFn: (range: UsageRangeQuery) => exportPlatformUsage(range) });
+}
+
+export function useRetryPlatformDeletion(id: string) {
+  const invalidate = useInvalidatePlatform();
+  return useMutation({
+    mutationFn: (input: PlatformStepUpInput) => retryPlatformDeletion(id, input),
+    onSuccess: invalidate,
+  });
+}
+
+export function usePlatformAdmins() {
+  return useQuery({ queryKey: platformKeys.admins, queryFn: listPlatformAdmins });
+}
+
+export function useRevokePlatformAdmin() {
+  const invalidate = useInvalidatePlatform();
+  return useMutation({
+    mutationFn: ({ userId, ...input }: PlatformAdminRevokeInput & { userId: string }) =>
+      revokePlatformAdmin(userId, input),
+    onSuccess: invalidate,
+  });
 }

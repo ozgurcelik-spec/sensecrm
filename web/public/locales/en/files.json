@@ -1,0 +1,127 @@
+{
+  "tab": {
+    "title": "Attachments"
+  },
+  "search": "Search attachment names",
+  "total": "{{count}} attachments in total",
+  "empty": "This record has no attachments.",
+  "emptyWritable": "No attachments yet. Drag and drop files onto the area above.",
+  "emptySearch": "No attachment matches your search.",
+  "dropzone": {
+    "prompt": "Drag and drop files here",
+    "release": "Drop to upload",
+    "select": "Select files",
+    "limits": "Up to {{maxSize}} per file. Allowed types: {{types}}.",
+    "limitsUnknown": "Limits are checked on the server."
+  },
+  "queue": {
+    "title": "Uploading",
+    "progressOf": "Upload progress of {{name}}",
+    "waiting": "Waiting in the queue",
+    "percent": "{{percent}}%",
+    "retry": "Retry",
+    "retryOf": "Retry: {{name}}",
+    "cancel": "Cancel",
+    "cancelOf": "Cancel upload: {{name}}",
+    "dismiss": "Dismiss",
+    "dismissOf": "Dismiss row: {{name}}"
+  },
+  "columns": {
+    "name": "Name",
+    "size": "Size",
+    "uploadedBy": "Uploaded by",
+    "uploadedAt": "Uploaded"
+  },
+  "state": {
+    "quarantined": "Quarantined",
+    "quarantinedHint": "The file was found to be infected; it cannot be downloaded, only deleted.",
+    "missing": "Unavailable",
+    "missingHint": "The file's content cannot be reached. You can delete the file and upload it again."
+  },
+  "actions": {
+    "of": "{{action}}: {{name}}",
+    "download": "Download",
+    "preview": "Preview",
+    "rename": "Rename",
+    "delete": "Delete"
+  },
+  "rename": {
+    "title": "Rename file",
+    "label": "File name",
+    "hint": "The extension cannot be changed.",
+    "required": "Enter a name",
+    "done": "File renamed"
+  },
+  "delete": {
+    "title": "Delete attachment",
+    "message": "Delete \"{{name}}\"? The storage it uses is released immediately.",
+    "done": "Attachment deleted"
+  },
+  "preview": {
+    "unavailable": "Preview not available",
+    "unavailableHint": "This file type cannot be previewed in the browser. Download the file to open it.",
+    "loading": "Loading preview"
+  },
+  "quota": {
+    "title": "Storage quota reached"
+  },
+  "errors": {
+    "tooLargeUnknown": "The file is too large. It exceeds the size the server accepts.",
+    "general": {
+      "rate_limit_exceeded": "Too many requests. Wait a moment and try again."
+    },
+    "file": {
+      "upload_invalid": "The upload request is invalid. Select the file again.",
+      "too_many_files": "At most {{max}} files can be uploaded at once.",
+      "empty": "The file is empty.",
+      "name_invalid": "The file name is not valid.",
+      "extension_change_not_allowed": "The file extension cannot be changed.",
+      "too_large": "The file is too large. At most {{maxSize}} can be uploaded.",
+      "type_not_allowed": "This file type is not allowed (.{{extension}}).",
+      "content_mismatch": "The file content does not match its extension or contains unsafe content.",
+      "infected": "Malicious content was found in the file; it was not uploaded.",
+      "quota_exceeded": "The storage quota is full. Used {{usedSize}}, limit {{maxSize}}; this file is {{requestedSize}}.",
+      "quarantined": "The file is quarantined and cannot be downloaded.",
+      "content_missing": "The file's content cannot be reached. Delete the file and upload it again.",
+      "scan_unavailable": "Virus scanning is not available right now. Try again shortly.",
+      "storage_unavailable": "File storage is not available right now. Try again shortly.",
+      "record_not_found": "The record was not found; its attachments cannot be shown."
+    }
+  },
+  "recordTypes": {
+    "account": "Account",
+    "contact": "Contact",
+    "lead": "Lead",
+    "deal": "Deal",
+    "activity": "Activity",
+    "case": "Case",
+    "quote": "Quote",
+    "order": "Order",
+    "campaign": "Campaign"
+  },
+  "plan": {
+    "storage": "Storage",
+    "storageDetail": "{{count}} files",
+    "storageQuarantined": "{{count}} quarantined",
+    "storageMissing": "{{count}} unavailable",
+    "byType": "Storage usage (by record type)",
+    "byTypeEmpty": "No files uploaded yet.",
+    "columns": {
+      "type": "Record type",
+      "files": "Files",
+      "size": "Size"
+    },
+    "total": "Total"
+  },
+  "platform": {
+    "modules": {
+      "files": "Files"
+    },
+    "maxStorageMb": "Storage limit (MB)",
+    "storageLimit": "Storage",
+    "metrics": {
+      "storage_bytes": "Storage",
+      "files": "Files"
+    }
+  }
+}

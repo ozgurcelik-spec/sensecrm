@@ -115,6 +115,21 @@ public sealed class ConductorClient(HttpClient http)
         await EnsureSuccessAsync(response, ct).ConfigureAwait(false);
     }
 
+    /// <summary>İlişkilendirme kimliğiyle başlatılmış workflow kimlikleri (GET workflow/{name}/correlated/{correlationId}; kapanmış olanlar dahil); bulunamazsa boş.</summary>
+    public async Task<IReadOnlyList<string>> FindWorkflowIdsByCorrelationAsync(string name, string correlationId, CancellationToken ct)
+    {
+        var url = string.Create(CultureInfo.InvariantCulture, $"workflow/{Uri.EscapeDataString(name)}/correlated/{Uri.EscapeDataString(correlationId)}?includeClosed=true&includeTasks=false");
+        using var response = await http.GetAsync(url, ct).ConfigureAwait(false);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return [];
+        }
+
+        await EnsureSuccessAsync(response, ct).ConfigureAwait(false);
+        var list = await response.Content.ReadFromJsonAsync<JsonArray>(Json, ct).ConfigureAwait(false);
+        return list?.OfType<JsonObject>().Select(w => (string?)w["workflowId"]).OfType<string>().Where(id => id.Length > 0).ToList() ?? [];
+    }
+
     /// <summary>Yürütme kaydını kalıcı siler (DELETE workflow/{id}/remove); bulunamazsa idempotent.</summary>
     public async Task RemoveWorkflowAsync(string workflowId, CancellationToken ct)
     {

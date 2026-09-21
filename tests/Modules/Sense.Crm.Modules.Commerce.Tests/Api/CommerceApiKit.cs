@@ -25,10 +25,16 @@ internal static class CommerceApiKit
     public const string ProductsPath = $"{Base}/products";
     public const string QuotesPath = $"{Base}/quotes";
     public const string OrdersPath = $"{Base}/orders";
+    public const string InvoicesPath = $"{Base}/invoices";
+    public const string PurchaseOrdersPath = $"{Base}/purchase-orders";
+    public const string VendorsPath = $"{Base}/vendors";
+    public const string PriceBooksPath = $"{Base}/pricebooks";
 
     public static readonly string[] AllCommercePermissions =
     [
         "crm.products.read", "crm.products.write", "crm.quotes.read", "crm.quotes.write", "crm.orders.read", "crm.orders.write",
+        "crm.invoices.read", "crm.invoices.write", "crm.pricebooks.read", "crm.pricebooks.write", "crm.vendors.read", "crm.vendors.write",
+        "crm.purchaseorders.read", "crm.purchaseorders.write",
     ];
 
     public static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -145,6 +151,58 @@ internal static class CommerceApiKit
             extra);
         return client.PostJsonAsync(OrdersPath, body);
     }
+
+    /// <summary>Doğrudan fatura (varsayılan: tek kalem 2 × 100, KDV %20 → 240.00). <paramref name="extra"/> alanları gövdeyi geçersiz kılar.</summary>
+    public static Task<JsonElement> CreateInvoiceAsync(this HttpClient client, Guid accountId, object? extra = null, params object[] lines)
+    {
+        var body = Merge(
+            new Dictionary<string, object?> { ["subject"] = "Yıllık lisans faturası", ["accountId"] = accountId, ["lines"] = lines.Length == 0 ? new[] { Line() } : lines },
+            extra);
+        return client.PostJsonAsync(InvoicesPath, body);
+    }
+
+    /// <summary>Gönderilmiş (sent) doğrudan fatura.</summary>
+    public static async Task<JsonElement> SentInvoiceAsync(this HttpClient client, Guid accountId, object? extra = null, params object[] lines)
+    {
+        var invoice = await client.CreateInvoiceAsync(accountId, extra, lines);
+        await client.ActAsync($"{InvoicesPath}/{invoice.Id()}/send").ShouldBeNoContentAsync();
+        return invoice;
+    }
+
+    public static Task<JsonElement> CreateVendorAsync(this HttpClient client, string name, object? extra = null) =>
+        client.PostJsonAsync(VendorsPath, Merge(new Dictionary<string, object?> { ["name"] = name }, extra));
+
+    public static Task<JsonElement> CreatePriceBookAsync(this HttpClient client, string name, string model = "perProduct", object? extra = null)
+    {
+        var body = new Dictionary<string, object?> { ["name"] = name, ["pricingModel"] = model };
+        if (model == "flat")
+        {
+            body["adjustmentPercent"] = -10m;
+        }
+
+        return client.PostJsonAsync(PriceBooksPath, Merge(body, extra));
+    }
+
+    public static Task<JsonElement> CreatePurchaseOrderAsync(this HttpClient client, Guid vendorId, object? extra = null, params object[] lines) =>
+        client.PostJsonAsync(
+            PurchaseOrdersPath,
+            Merge(new Dictionary<string, object?> { ["subject"] = "Yedek parça siparişi", ["vendorId"] = vendorId, ["lines"] = lines.Length == 0 ? new[] { Line() } : lines }, extra));
+
+    /// <summary>Onaylanmış (confirmed) doğrudan sipariş.</summary>
+    public static async Task<JsonElement> ConfirmedOrderAsync(this HttpClient client, Guid accountId, object? extra = null, params object[] lines)
+    {
+        var order = await client.CreateOrderAsync(accountId, extra, lines);
+        await client.ActAsync($"{OrdersPath}/{order.Id()}/confirm").ShouldBeNoContentAsync();
+        return order;
+    }
+
+    /// <summary>Kalem: birim fiyatsız (sunucu çözer).</summary>
+    public static object UnpricedLine(Guid? productId, decimal quantity = 1m, decimal discountPercent = 0m, decimal taxRate = 0m, string description = "Ürün kalemi") =>
+        new { productId, description, quantity, discountPercent, taxRate };
+
+    /// <summary>Tahsilat kaydı (201 beklenir).</summary>
+    public static Task<JsonElement> PayAsync(this HttpClient client, Guid invoiceId, decimal amount, object? extra = null) =>
+        client.PostJsonAsync($"{InvoicesPath}/{invoiceId}/payments", Merge(new Dictionary<string, object?> { ["amount"] = amount }, extra));
 
     /// <summary>Taslak teklifi gönderip kabul eder.</summary>
     public static async Task<Guid> AcceptedQuoteAsync(this HttpClient client, Guid accountId, object? extra = null, params object[] lines)

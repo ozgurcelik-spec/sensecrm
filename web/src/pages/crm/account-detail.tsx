@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 import { Anchor, Badge, Button, Card, Group, Skeleton, Stack, Table, Text } from "@mantine/core";
 import { LifeBuoy, Pencil, Plus, Trash2 } from "lucide-react";
 import { CreateQuoteButton } from "@/components/commerce/create-quote-button";
-import { RelatedOrdersTab, RelatedQuotesTab } from "@/components/commerce/related-tabs";
+import { AccountPriceBook } from "@/components/commerce/account-price-book";
+import {
+  RelatedInvoicesTab,
+  RelatedOrdersTab,
+  RelatedQuotesTab,
+} from "@/components/commerce/related-tabs";
 import { CaseFormDialog } from "@/components/service/case-form-dialog";
 import { RecordCasesTab } from "@/components/service/record-cases-tab";
 import { useRecordCases } from "@/hooks/use-cases";
@@ -15,6 +20,7 @@ import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { RecordActivitiesTab } from "@/components/activities/record-activities-tab";
 import { WebsiteValue } from "@/components/crm/website-link";
 import { RecordAuditTab } from "@/components/crm/record-audit-tab";
+import { useAttachmentsTab } from "@/hooks/use-attachments-tab";
 import { InfoPanel, RecordDetailShell } from "@/components/crm/record-detail-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { LoadError } from "@/components/load-error";
@@ -208,6 +214,9 @@ export default function AccountDetailPage() {
   const canReadActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReadQuotes = usePermission(PERMISSIONS.crmQuotesRead);
   const canReadOrders = usePermission(PERMISSIONS.crmOrdersRead);
+  const canReadInvoices = usePermission(PERMISSIONS.crmInvoicesRead);
+  const canReadPriceBooks = usePermission(PERMISSIONS.crmPriceBooksRead);
+  const attachmentsTab = useAttachmentsTab("account", id);
   const tabs = account
     ? [
         {
@@ -221,6 +230,7 @@ export default function AccountDetailPage() {
                 </Text>
                 <Text size="sm">{formatAddress(account.billingAddress)}</Text>
               </Card>
+              {canReadPriceBooks && <AccountPriceBook accountId={account.id} />}
               <Card withBorder padding="md">
                 <Text fw={600} mb="sm">
                   {t("crm:accounts.fields.description")}
@@ -273,6 +283,15 @@ export default function AccountDetailPage() {
               },
             ]
           : []),
+        ...(canReadInvoices
+          ? [
+              {
+                value: "invoices",
+                label: t("invoices:tabs.invoices"),
+                content: <RelatedInvoicesTab accountId={account.id} />,
+              },
+            ]
+          : []),
         ...(canReadCases
           ? [
               {
@@ -285,6 +304,7 @@ export default function AccountDetailPage() {
               },
             ]
           : []),
+        ...attachmentsTab,
         {
           value: "audit",
           label: t("crm:tabs.audit"),

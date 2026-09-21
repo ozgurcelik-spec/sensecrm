@@ -106,6 +106,8 @@ export interface AuditEntry {
   action: AuditAction;
   userId?: string | null;
   userDisplayName?: string | null;
+  /** M8B: set when the change was made with an API key (shown as a badge). */
+  apiKeyId?: string | null;
   changes?: Record<string, unknown> | null;
   occurredAt: string;
 }
@@ -145,6 +147,16 @@ export const PERMISSIONS = {
   crmOrdersWrite: "crm.orders.write",
   crmCasesRead: "crm.cases.read",
   crmCasesWrite: "crm.cases.write",
+  orgNotificationsManage: "org.notifications.manage",
+  orgIntegrationsManage: "org.integrations.manage",
+  crmInvoicesRead: "crm.invoices.read",
+  crmInvoicesWrite: "crm.invoices.write",
+  crmPriceBooksRead: "crm.pricebooks.read",
+  crmPriceBooksWrite: "crm.pricebooks.write",
+  crmVendorsRead: "crm.vendors.read",
+  crmVendorsWrite: "crm.vendors.write",
+  crmPurchaseOrdersRead: "crm.purchaseorders.read",
+  crmPurchaseOrdersWrite: "crm.purchaseorders.write",
 } as const;
 
 /** Milestone 2 list envelope (`GET /accounts`, `/contacts`, `/leads`, `/deals`). */
@@ -161,3 +173,7 @@ export * from "./campaigns";
 export * from "./commerce";
 export * from "./service";
 export * from "./platform";
+export * from "./files";
+export * from "./notifications";
+export * from "./integrations";
+export * from "./inventory";

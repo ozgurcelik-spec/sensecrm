@@ -61,13 +61,15 @@ const FIELDS = [
 interface AccountFormDialogProps {
   /** Account to edit; undefined creates a new one. */
   account?: Account;
+  /** A starting name (what was typed in a lookup window's search box). */
+  initialName?: string;
   onClose: () => void;
   /** Called with the saved account's id after a successful save. */
   onSaved?: (id: string) => void;
 }
 
 /** Create/edit account dialog. Mount it only while it is open (it resets its form on mount). */
-export function AccountFormDialog({ account, onClose, onSaved }: AccountFormDialogProps) {
+export function AccountFormDialog({ account, initialName, onClose, onSaved }: AccountFormDialogProps) {
   const { t } = useTranslation(["crm", "common", "auth", "security"]);
   const save = useSaveAccount();
   const defaultOwnerId = useDefaultOwnerId();
@@ -80,7 +82,7 @@ export function AccountFormDialog({ account, onClose, onSaved }: AccountFormDial
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: account?.name ?? "",
+      name: account?.name ?? initialName ?? "",
       industry: account?.industry ?? "",
       website: account?.website ?? "",
       phone: account?.phone ?? "",

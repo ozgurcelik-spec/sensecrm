@@ -86,11 +86,71 @@ public sealed class DeletionRequest : Entity<Guid>
         (Status == DeletionStatuses.Scheduled && ScheduledFor <= nowUtc)
         || (Status is DeletionStatuses.Running or DeletionStatuses.Failed && Attempts < maxAttempts);
 
-    public void Start(DateTime nowUtc)
+    /// <summary>PostgreSQL <c>xmin</c> eşzamanlılık belirteci (EF doldurur): iptal ↔ başlatma ↔ yeniden deneme yarışında kaybeden yazma <c>DbUpdateConcurrencyException</c> alır (M1).</summary>
+    public uint Version { get; private set; }
+
+    /// <summary>
+    /// İşi başlatır (<c>running</c>). İptal edilmiş (<c>cancelled</c>) ya da tamamlanmış (<c>completed</c>) talep asla yeniden başlatılmaz
+    /// (<c>platform.invalid_transition</c>, 409). Zaman kontrolü (<c>scheduled_for</c>) işin yeniden doğrulamasındadır.
+    /// </summary>
+    public Result Start(DateTime nowUtc)
     {
+        if (Status is DeletionStatuses.Cancelled or DeletionStatuses.Completed)
+        {
+            return Error.Conflict(PlatformErrors.InvalidTransition, ("from", Status), ("to", DeletionStatuses.Running));
+        }
+
         Status = DeletionStatuses.Running;
         StartedAt ??= nowUtc;
+        return Result.Success();
     }
+
+    /// <summary>
+    /// Başarısız (<c>failed</c>) talebi elle yeniden denemeye alır (C-SEC2 L3): deneme sayacı sıfırlanır (işin <c>MaxAttempts</c> sınırı yeniden açılır), tamamlanan adımlar
+    /// korunur, <c>last_error</c> bir sonraki başarıya kadar kalır. Yalnız <c>failed</c>; aksi <c>platform.deletion_not_retryable</c> (409).
+    /// </summary>
+    public Result Retry()
+    {
+        if (Status != DeletionStatuses.Failed)
+        {
+            return Error.Conflict(PlatformErrors.DeletionNotRetryable);
+        }
+
+        // Bekleme süresi <c>modified_date</c>'ten başlar (kayıt değiştiği için otomatik güncellenir).
+        Attempts = 0;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Sistem iptali (M1): imha işi ön koşulu (ör. kiracı sonradan korunan/işletim organizasyonu oldu) bozulduğunda talebi <c>cancelled</c> yapar (kullanıcı yok).
+    /// Etkin (<c>scheduled | running | failed</c>) talep için geçerlidir; aksi <c>platform.invalid_transition</c> (409).
+    /// </summary>
+    public Result CancelBySystem(DateTime nowUtc, string reasonCode)
+    {
+        if (Status is not (DeletionStatuses.Scheduled or DeletionStatuses.Running or DeletionStatuses.Failed))
+        {
+            return Error.Conflict(PlatformErrors.InvalidTransition, ("from", Status), ("to", DeletionStatuses.Cancelled));
+        }
+
+        Status = DeletionStatuses.Cancelled;
+        CancelledAt = nowUtc;
+        CancelledByUserId = null;
+        LastError = reasonCode.Length > PlatformLimits.LastErrorMaxLength ? reasonCode[..PlatformLimits.LastErrorMaxLength] : reasonCode;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Kalıcı başarısızlık (M1): işin otomatik yeniden denemesini durdurur (<c>attempts = maxAttempts</c>, <c>failed</c>); yalnız operatörün <see cref="Retry"/> çağrısı yeniden açar.
+    /// Ön koşulun kendiliğinden düzelmeyeceği durumlar içindir (kod <c>erasure.precondition_failed</c>).
+    /// </summary>
+    public void FailPermanently(string error, int maxAttempts)
+    {
+        Fail(error);
+        Attempts = Math.Max(Attempts, maxAttempts);
+    }
+
+    /// <summary>Serbest metin gerekçeyi imhada yer tutucuyla değiştirir (L1; kişisel veri kalmaz). İdempotenttir.</summary>
+    public void RedactReason() => Reason = PlatformLimits.RedactedReasonPlaceholder;
 
     public bool HasCompleted(string step) => ErasedSteps.Contains(step, StringComparer.Ordinal);
 

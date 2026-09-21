@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { LoadError } from "@/components/load-error";
 import { usePlatformUsage, useRefreshPlatformUsage } from "@/hooks/use-platform";
 import { toast, toastApiError } from "@/hooks/use-toast";
+import { formatBytes, isBytesMetric } from "@/lib/files";
 import { formatCalendarDate, formatNumber } from "@/lib/format";
 import { daysAgo, metricKeys } from "@/lib/platform";
 
@@ -16,7 +17,7 @@ const CHART_HEIGHT = 300;
 
 /** Loaded lazily (recharts stays out of the rest of the console). */
 export default function UsageChart({ tenantId }: { tenantId: string }) {
-  const { t } = useTranslation(["platform", "subscription"]);
+  const { t } = useTranslation(["platform", "subscription", "files"]);
   const [range, setRange] = useState<RangeDays>(DEFAULT_RANGE);
   const [view, setView] = useState<"chart" | "table">("chart");
   const [metricChoice, setMetricChoice] = useState<string | null>(null);
@@ -34,13 +35,20 @@ export default function UsageChart({ tenantId }: { tenantId: string }) {
 
   const metricLabel = (key: string) => {
     const [module = "", name = ""] = key.split(/\.(.+)/);
-    const moduleText = t(`subscription:modules.${module}`, { defaultValue: module });
+    const moduleText = t(`subscription:modules.${module}`, {
+      defaultValue: t(`files:platform.modules.${module}`, { defaultValue: module }),
+    });
     const nameText =
       name === "records"
         ? t("platform:usage.total")
-        : t(`platform:usage.metrics.${name}`, { defaultValue: name });
+        : t(`platform:usage.metrics.${name}`, {
+            defaultValue: t(`files:platform.metrics.${name}`, { defaultValue: name }),
+          });
     return `${moduleText}: ${nameText}`;
   };
+  // `files.storage_bytes` is in bytes: the chart plots MB (the axis is shared with the user count),
+  // the table shows the readable size.
+  const bytesMetric = metric !== null && isBytesMetric(metric);
 
   async function doRefresh() {
     try {
@@ -54,7 +62,11 @@ export default function UsageChart({ tenantId }: { tenantId: string }) {
   const chartData = days.map((d) => ({
     day: formatCalendarDate(d.day),
     users: d.usersActive,
-    metric: metric ? (d.metrics[metric] ?? null) : null,
+    metric: metric
+      ? bytesMetric && d.metrics[metric] !== undefined
+        ? Math.round((d.metrics[metric] / (1024 * 1024)) * 100) / 100
+        : (d.metrics[metric] ?? null)
+      : null,
   }));
 
   return (
@@ -115,7 +127,15 @@ export default function UsageChart({ tenantId }: { tenantId: string }) {
           dataKey="day"
           series={[
             { name: "users", label: t("platform:usage.activeUsers"), color: "blue.6" },
-            ...(metric ? [{ name: "metric", label: metricLabel(metric), color: "teal.6" }] : []),
+            ...(metric
+              ? [
+                  {
+                    name: "metric",
+                    label: bytesMetric ? `${metricLabel(metric)} (MB)` : metricLabel(metric),
+                    color: "teal.6",
+                  },
+                ]
+              : []),
           ]}
           curveType="linear"
           withLegend
@@ -141,7 +161,11 @@ export default function UsageChart({ tenantId }: { tenantId: string }) {
                   <Table.Td ta="right">{formatNumber(d.usersPending)}</Table.Td>
                   {metric && (
                     <Table.Td ta="right">
-                      {d.metrics[metric] === undefined ? "-" : formatNumber(d.metrics[metric])}
+                      {d.metrics[metric] === undefined
+                        ? "-"
+                        : bytesMetric
+                          ? formatBytes(d.metrics[metric])
+                          : formatNumber(d.metrics[metric])}
                     </Table.Td>
                   )}
                 </Table.Tr>

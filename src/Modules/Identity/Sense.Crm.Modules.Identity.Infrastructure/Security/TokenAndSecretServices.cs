@@ -32,6 +32,18 @@ public sealed class JwtTokenService(RsaSecurityKey key, IOptions<JwtIssuerOption
 
     public TimeSpan RefreshFamilyLifetime => TimeSpan.FromDays(identity.Value.RefreshFamilyDays);
 
+    public TimeSpan RefreshTokenLifetimeFor(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        return user.IsPlatformAdmin ? TimeSpan.FromMinutes(Math.Max(identity.Value.PlatformAdminRefreshIdleMinutes, 1)) : RefreshTokenLifetime;
+    }
+
+    public TimeSpan RefreshFamilyLifetimeFor(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        return user.IsPlatformAdmin ? TimeSpan.FromHours(Math.Max(identity.Value.PlatformAdminRefreshFamilyHours, 1)) : RefreshFamilyLifetime;
+    }
+
     public AccessToken IssueAccessToken(User user, Tenant tenant, Role role)
     {
         var now = clock.GetUtcNow().UtcDateTime;

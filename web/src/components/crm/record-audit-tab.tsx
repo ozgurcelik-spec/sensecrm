@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge, Card, Code, Group, Pagination, Skeleton, Stack, Table, Text } from "@mantine/core";
+import { ApiKeyAuditBadge } from "@/components/integrations/badges";
 import { LoadError } from "@/components/load-error";
 import { useRecordAudit } from "@/hooks/use-record-audit";
 import { displayValue, parseChanges } from "@/lib/audit";
@@ -60,6 +61,7 @@ export function RecordAuditTab({ entityType, entityId }: RecordAuditTabProps) {
                 <Text size="sm" fw={500}>
                   {entry.userDisplayName ?? t("audit:system")}
                 </Text>
+                <ApiKeyAuditBadge apiKeyId={entry.apiKeyId} />
               </Group>
               <Text size="xs" c="dimmed">
                 {formatDateTime(entry.occurredAt, timeZone)}

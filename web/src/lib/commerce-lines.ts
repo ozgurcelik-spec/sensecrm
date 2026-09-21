@@ -19,6 +19,12 @@ export type LineErrors = Record<number, Partial<Record<LineField, string>>>;
 
 export const MAX_LINES = 100;
 
+/**
+ * Where the unit price of a row came from (M9C): a price book (`entry`, `flat`), the catalog, a vendor
+ * purchase price. Editing the price by hand is an override and clears it.
+ */
+export type LinePriceSource = "entry" | "flat" | "catalog" | "purchase";
+
 /** A grid row. Numeric fields keep what the number input holds (a number, or text while typing). */
 export interface LineDraft {
   /** Client-only React key. */
@@ -31,6 +37,8 @@ export interface LineDraft {
   unitPrice: number | string;
   discountPercent: number | string;
   taxRate: number | string;
+  /** Set right after a product pick / price resolution; cleared when the user types a price. */
+  priceSource?: LinePriceSource;
 }
 
 let sequence = 0;

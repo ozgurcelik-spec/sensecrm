@@ -113,10 +113,14 @@ internal static class ErasureKit
     public static readonly string[] ExpectedSteps =
     [
         "identity-accounts",
+        "module:integrations:delivery_queue",
         "workflows-conductor",
+        "files-objects",
         "module:activities",
         "module:commerce",
+        "module:files",
         "module:identity",
+        "module:integrations",
         "module:marketing",
         "module:platform",
         "module:sales",
@@ -127,7 +131,7 @@ internal static class ErasureKit
         TenantErasureJob.TombstoneStep,
     ];
 
-    public static readonly string[] BusinessSchemas = ["sales", "activities", "workflows", "marketing", "commerce", "service"];
+    public static readonly string[] BusinessSchemas = ["sales", "activities", "workflows", "marketing", "commerce", "service", "integrations", "files"];
 
     public static string ErStr(this JsonElement element, string property) => element.GetProperty(property).GetString()!;
 
@@ -170,6 +174,9 @@ internal static class ErasureKit
         }
 
         tables[$"{AuditLogTables.Schema}.{AuditLogTables.TableName}"] = new ErasureTable(AuditLogTables.Schema, AuditLogTables.TableName, "tenant_id", IsOutbox: false);
+
+        // M8B: küresel (ITenantEntity olmayan) teslimat kuyruğu; IntegrationsQueueEraser siler.
+        tables["integrations.delivery_queue"] = new ErasureTable("integrations", "delivery_queue", "tenant_id", IsOutbox: false);
         return tables.Values.OrderBy(t => t.Name, StringComparer.Ordinal).ToList();
     }
 
@@ -354,6 +361,10 @@ internal sealed class ErasureScenario : IDisposable
         await ErasureKit.InviteAndAcceptAsync(B.Admin, Shared.Email, roleB, Shared.Client, B.TenantId);
         await ErasureKit.InviteAndAcceptAsync(A.Admin, PlatformAdminEmail, roleA, Platform, A.TenantId);
 
+        // C-SEC2 H1: aktif platform yöneticisi üyesi olan kiracı askıya alınamaz/silinemez/imha edilemez. Senaryonun platform yöneticisi A'ya üye olur (hesap/üyelik imhası
+        // testleri için) ama üyeliği hemen pasifleştirilir (satır kalır, imhada kaldırılır; hesap kalır). Koruma kuralının kendisi StepUpAndProtectionApiTests'te sınanır.
+        await Factory.SqlAsync("UPDATE identity.memberships SET is_active = FALSE WHERE tenant_id = @t AND user_id = @u", ("t", A.TenantId), ("u", PlatformAdminUserId));
+
         await SeedAsync(A, seed);
         await SeedAsync(B, seed);
         await SettleAsync();
@@ -382,6 +393,13 @@ internal sealed class ErasureScenario : IDisposable
             await ErasureKit.ErasureAddMemberAsync(Host, admin, $"Satisci {tag}", salesRole);
             await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/workflows/rules", new { name = $"Buyuk firsat onayi {tag}", kind = "dealApproval", @params = new { minAmount = 1000, approverRoleId = approverRole } }, created);
             await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/workflows/rules", new { name = $"Lead atama {tag}", kind = "leadAssignment", @params = new { assigneeRoleId = salesRole } }, created);
+        }
+
+        // Integrations (M8B): webhook aboneliği + API anahtarı; abonelik verilerden ÖNCE açılır ki olaylar (lead/fırsat) teslimat + kuyruk satırı üretsin (imhada `delivery_queue` adımı siler).
+        if (level == SeedLevel.Full)
+        {
+            await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/integrations/webhooks", new { name = $"Hook {tag}", url = "https://hooks.example.com/crm", eventTypes = new[] { "lead.created", "deal.won" }, description = $"Aciklama {tag}" }, created);
+            await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/integrations/api-keys", new { name = $"Anahtar {tag}", scopes = new[] { "crm.leads.read" } }, created);
         }
 
         // Sales: hesap/kişi/lead/fırsat + yumuşak silinenler.
@@ -424,12 +442,41 @@ internal sealed class ErasureScenario : IDisposable
         await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/quotes/{draftQuote.ErGuid("id")}", null, noContent);
         await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/products/{doomedProduct.ErGuid("id")}", null, noContent);
 
+        // Commerce (M9C): tedarikçi, satın alma emri (+kalem), fiyat listesi (+girdi, firma varsayılanı), fatura (+kalem, tahsilat), siparişten dönüşüm, yumuşak silinenler.
+        var vendor = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/vendors", new { name = $"Tedarikci {tag}", email = "tedarik@example.com", phone = "5550001111", address = new { city = $"Sehir {tag}" } }, created);
+        var doomedVendor = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/vendors", new { name = $"Tedarikci {tag} Silinecek" }, created);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/purchase-orders", new { subject = $"Satin alma {tag}", vendorId = vendor.ErGuid("id"), lines = new[] { line } }, created);
+        var book = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/pricebooks", new { name = $"Liste {tag}", pricingModel = "perProduct" }, created);
+        var doomedBook = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/pricebooks", new { name = $"Liste {tag} Silinecek", pricingModel = "flat", adjustmentPercent = -5m }, created);
+        await admin.SendJsonAsync(HttpMethod.Put, $"{Base}/pricebooks/{book.ErGuid("id")}/entries/{product.ErGuid("id")}", new { unitPrice = 90m }, noContent);
+        await admin.SendJsonAsync(HttpMethod.Put, $"{Base}/pricebooks/accounts/{account.ErGuid("id")}/default", new { priceBookId = book.ErGuid("id") }, noContent);
+        var invoice = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices", new { subject = $"Fatura {tag}", accountId = account.ErGuid("id"), lines = new[] { line } }, created);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices/{invoice.ErGuid("id")}/send", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices/{invoice.ErGuid("id")}/payments", new { amount = 25m, reference = $"Ref {tag}" }, created);
+        var doomedInvoice = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices", new { subject = $"Fatura {tag} Silinecek", accountId = account.ErGuid("id"), lines = new[] { line } }, created);
+        var convertible = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/orders", new { subject = $"Faturalanacak {tag}", accountId = account.ErGuid("id"), lines = new[] { line } }, created);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/orders/{convertible.ErGuid("id")}/confirm", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/orders/{convertible.ErGuid("id")}/invoice", null, created);
+        await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/invoices/{doomedInvoice.ErGuid("id")}", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/vendors/{doomedVendor.ErGuid("id")}", null, noContent);
+        await admin.SendJsonAsync(HttpMethod.Delete, $"{Base}/pricebooks/{doomedBook.ErGuid("id")}", null, noContent);
+
         // Service: talep + yorumlar + olay satırları.
         var supportCase = await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/cases", new { subject = $"Destek {tag}" }, created);
         var caseId = supportCase.ErGuid("id");
         await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/cases/{caseId}/comments", new { visibility = "internal", body = $"Dahili not {tag}" }, created);
         await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/cases/{caseId}/comments", new { visibility = "public", body = $"Musteri yaniti {tag}" }, created);
         await admin.SendJsonAsync(HttpMethod.Post, $"{Base}/cases/{caseId}/status", new { status = "resolved", resolutionNote = $"Cozuldu {tag}" }, noContent);
+
+        // Files (M8C): kayda bağlı bir dosya (nesne deposunda {tenantId}/ öneki altında; imhada `files-objects` adımı siler ve doğrular).
+        using (var upload = new MultipartFormDataContent("crm-erasure-" + Guid.NewGuid().ToString("N")))
+        {
+            var part = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes($"Gizli icerik {tag}"));
+            part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+            upload.Add(part, "file", $"dosya-{tag}.txt");
+            var uploaded = await admin.PostAsync($"{Base}/files?recordType=lead&recordId={lead1.ErGuid("id")}", upload, Ct);
+            uploaded.StatusCode.ShouldBe(created, await uploaded.Content.ReadAsStringAsync(Ct));
+        }
     }
 
     /// <summary>Outbox'ları ve sahte motoru (Worker taklidi) boşaltır: olay zincirleri (Workflows yürütmeleri, Platform hesapları) tamamlanır.</summary>
@@ -446,7 +493,7 @@ internal sealed class ErasureScenario : IDisposable
 
     public async Task<ErasureRequestInfo> RequestDeletionAsync(int? retentionDays = 7, string reason = "KVKK silme talebi")
     {
-        var body = await Platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{A.TenantId}/deletion-request", new { reason, retentionDays }, HttpStatusCode.OK);
+        var body = await Platform.SendJsonAsync(HttpMethod.Post, $"{PlatformBase}/organizations/{A.TenantId}/deletion-request", new { reason, retentionDays, confirmTenantName = A.Name, currentPassword = PlatformPassword }, HttpStatusCode.OK);
         Request = new ErasureRequestInfo(body.ErGuid("requestId"), body.GetProperty("scheduledFor").GetDateTimeOffset());
         return Request;
     }

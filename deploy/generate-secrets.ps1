@@ -7,7 +7,9 @@
       - .env                                  copy of .env.example with POSTGRES_PASSWORD, CRM_OWNER_PASSWORD, CRM_APP_PASSWORD,
                                               CONDUCTOR_DB_PASSWORD, REDIS_PASSWORD (32 random alphanumeric characters each) filled in
       - secrets\jwt-signing-key.pem           2048-bit RSA private key (PEM, "RSA PRIVATE KEY") for signing JWT access tokens
-      - secrets\platform-admin-password       one-time password of the first platform admin (create-platform-admin); empty the file afterwards
+      - secrets\platform-admin-password       one-time password of the first platform admin (create-platform-admin); the Migrator empties it after success (owner-only ACL, see Restrict-Access)
+      - secrets\minio-*                       object storage (M8C): root account, application account (bucket-limited) and the static KMS key
+                                              (minio-kms-key: BACK IT UP with the object data; losing it = losing the files)
     Existing files are never overwritten unless -Force is given (rotating the JWT key signs every user out; rotating a DB password
     requires "docker compose up -d" afterwards so db-init re-syncs the role passwords).
 
@@ -154,10 +156,49 @@ $wroteEnv = Write-SecretFile -Path $envPath -Content (($envLines -join "`n") + "
 $keyPath = Join-Path $secretsDir 'jwt-signing-key.pem'
 $wroteKey = Write-SecretFile -Path $keyPath -Content (New-RsaPrivateKeyPem)
 
+# AES-256 key (base64, 32 bytes) for webhook secrets at rest (M8B). Never replaced by -Force: regenerating it would make every stored webhook secret unreadable.
+$intKeyPath = Join-Path $secretsDir 'integrations-encryption-key'
+if (-not (Test-Path -LiteralPath $intKeyPath)) {
+    $keyBytes = New-Object byte[] 32
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($keyBytes) } finally { $rng.Dispose() }
+    [System.IO.File]::WriteAllText($intKeyPath, [Convert]::ToBase64String($keyBytes), (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "Wrote $intKeyPath"
+} else {
+    Write-Host "Exists, kept: $intKeyPath"
+}
+
 $pwPath = Join-Path $secretsDir 'platform-admin-password'
 $wrotePw = Write-SecretFile -Path $pwPath -Content (New-RandomSecret -Length 24)
 
-foreach ($p in @($envPath, $keyPath, $pwPath)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
+# Object storage (M8C): MinIO root account, application account (limited to the crm-files bucket) and the static KMS key that encrypts objects at rest.
+# BACK UP secrets\minio-kms-key WITH the object data: a data backup without the key is unreadable; the key cannot be rotated in the first release.
+$kmsBytes = New-Object 'byte[]' 32
+$kmsRng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+try { $kmsRng.GetBytes($kmsBytes) } finally { $kmsRng.Dispose() }
+$minioFiles = [ordered]@{
+    'minio-root-user'       = ('crmroot' + (New-RandomSecret -Length 8))
+    'minio-root-password'   = (New-RandomSecret -Length 32)
+    'minio-app-access-key'  = ('crmfiles' + (New-RandomSecret -Length 12))
+    'minio-app-secret-key'  = (New-RandomSecret -Length 32)
+    'minio-kms-key'         = ('crm-files-key:' + [Convert]::ToBase64String($kmsBytes))
+}
+$minioPaths = @()
+foreach ($name in $minioFiles.Keys) {
+    $path = Join-Path $secretsDir $name
+    [void](Write-SecretFile -Path $path -Content $minioFiles[$name])
+    $minioPaths += $path
+}
+
+# Observability overlay (docker-compose.observability.yml, C-OPS1): scrape bearer token, Grafana admin password, postgres-exporter role password.
+$obsPaths = @()
+foreach ($name in @('metrics-bearer-token', 'grafana-admin-password', 'pg-monitor-password')) {
+    $p = Join-Path $secretsDir $name
+    [void](Write-SecretFile -Path $p -Content (New-RandomSecret -Length 40))
+    $obsPaths += $p
+}
+
+foreach ($p in (@($envPath, $keyPath, $pwPath) + $minioPaths + $obsPaths)) { if (Test-Path -LiteralPath $p) { Restrict-Access -Path $p } }
 Restrict-Access -Path $secretsDir
 
 Write-Host ''
@@ -165,6 +206,8 @@ Write-Host 'Done. Next steps:'
 Write-Host '  1. Review .env (ALLOWED_HOSTS, WEB_BIND/WEB_PORT, PLATFORM_ADMIN_EMAIL, resource limits).'
 Write-Host '  2. Store .env and secrets\ in your secret vault / encrypted backup. The JWT key and DB passwords are needed to restore.'
 Write-Host '  3. docker compose -f deploy/docker-compose.prod.yml up -d ; then create the first platform admin:'
-Write-Host '       docker compose -f deploy/docker-compose.prod.yml run --rm migrator create-platform-admin'
-Write-Host '     The password is in secrets\platform-admin-password (read it once, then empty the file).'
+Write-Host '       docker compose -f deploy/docker-compose.prod.yml run --rm --user root migrator create-platform-admin'
+Write-Host '     The password is in secrets\platform-admin-password (owner-only ACL; read it once). The migrator empties the file after a'
+Write-Host '     successful create (if it warns that it could not, empty it by hand); the admin must change the password at first login.'
+Write-Host '  4. TRUSTED_PROXY_CIDR defaults to 127.0.0.1/32 (X-Forwarded-For is NOT trusted). Set it when a reverse proxy/LB is in front (see .env.example).'
 if (-not $wroteEnv) { Write-Warning '.env was NOT regenerated; existing passwords are unchanged.' }

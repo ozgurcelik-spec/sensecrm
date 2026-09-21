@@ -78,6 +78,19 @@ public sealed class UsageMeteringApiTests(CrmApiFactory factory)
         await CreateAsync(a.Admin, "orders", new { subject = "Siparis 1", accountId = accountIds[0], lines = new[] { line } });
         await CreateAsync(a.Admin, "orders", new { subject = "Siparis 2", accountId = accountIds[1], lines = new[] { line } });
 
+        // M9C: 2 tedarikci (1 silinen), 1 satin alma emri, 1 fiyat listesi (+ 1 girdi: sayilmaz), 2 fatura (1 silinen; kalemler ve tahsilat sayilmaz).
+        var vendorOne = await CreateAsync(a.Admin, "vendors", new { name = "Tedarikci 1" });
+        var vendorTwo = await CreateAsync(a.Admin, "vendors", new { name = "Tedarikci 2" });
+        await RemoveAsync(a.Admin, $"vendors/{vendorTwo.GuidProp("id")}");
+        await CreateAsync(a.Admin, "purchase-orders", new { subject = "PO", vendorId = vendorOne.GuidProp("id"), lines = new[] { line } });
+        var book = await CreateAsync(a.Admin, "pricebooks", new { name = "Liste", pricingModel = "perProduct" });
+        await a.Admin.SendJsonAsync(HttpMethod.Put, $"{Base}/pricebooks/{book.GuidProp("id")}/entries/{productIds[0]}", new { unitPrice = 90m }, HttpStatusCode.NoContent);
+        var invoiceOne = await CreateAsync(a.Admin, "invoices", new { subject = "Fatura 1", accountId = accountIds[0], lines = new[] { line } });
+        var invoiceTwo = await CreateAsync(a.Admin, "invoices", new { subject = "Fatura 2", accountId = accountIds[0], lines = new[] { line } });
+        await a.Admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices/{invoiceOne.GuidProp("id")}/send", null, HttpStatusCode.NoContent);
+        await a.Admin.SendJsonAsync(HttpMethod.Post, $"{Base}/invoices/{invoiceOne.GuidProp("id")}/payments", new { amount = 10m }, HttpStatusCode.Created);
+        await RemoveAsync(a.Admin, $"invoices/{invoiceTwo.GuidProp("id")}");
+
         // ---- A: Service (4 talep - 1 silinen) ----
         var caseIds = new List<Guid>();
         for (var i = 0; i < 4; i++)
@@ -140,7 +153,19 @@ public sealed class UsageMeteringApiTests(CrmApiFactory factory)
         reported["sales"].ShouldBe(new Dictionary<string, long> { ["sales.accounts"] = 3, ["sales.contacts"] = 2, ["sales.leads"] = 4, ["sales.deals"] = 1, ["sales.records"] = 10 }, ignoreOrder: true);
         reported["activities"].ShouldBe(new Dictionary<string, long> { ["activities.activities"] = 2, ["activities.records"] = 2 }, ignoreOrder: true);
         reported["workflows"].ShouldBe(new Dictionary<string, long> { ["workflows.workflow_rules"] = 1, ["workflows.records"] = 1 }, ignoreOrder: true);
-        reported["commerce"].ShouldBe(new Dictionary<string, long> { ["commerce.products"] = 2, ["commerce.quotes"] = 1, ["commerce.orders"] = 2, ["commerce.records"] = 5 }, ignoreOrder: true);
+        reported["commerce"].ShouldBe(
+            new Dictionary<string, long>
+            {
+                ["commerce.products"] = 2,
+                ["commerce.quotes"] = 1,
+                ["commerce.orders"] = 2,
+                ["commerce.invoices"] = 1,
+                ["commerce.purchase_orders"] = 1,
+                ["commerce.vendors"] = 1,
+                ["commerce.price_books"] = 1,
+                ["commerce.records"] = 9,
+            },
+            ignoreOrder: true);
         reported["service"].ShouldBe(new Dictionary<string, long> { ["service.cases"] = 3, ["service.records"] = 3 }, ignoreOrder: true);
         reported["marketing"].ShouldBe(new Dictionary<string, long> { ["marketing.campaigns"] = 2, ["marketing.records"] = 2 }, ignoreOrder: true);
 
@@ -180,7 +205,8 @@ public sealed class UsageMeteringApiTests(CrmApiFactory factory)
 
         var reported = await ReportAsync(org.TenantId);
 
-        foreach (var (module, metrics) in reported.Where(r => r.Key != "identity"))
+        // "files" (M8C) reports storage metrics (files, storage_bytes), not a record count: no records limit exists for it.
+        foreach (var (module, metrics) in reported.Where(r => r.Key is not ("identity" or "files")))
         {
             var records = metrics[$"{module}.records"];
             var parts = metrics.Where(m => m.Key != $"{module}.records").Sum(m => m.Value);

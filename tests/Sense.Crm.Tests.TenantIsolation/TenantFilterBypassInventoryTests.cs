@@ -27,6 +27,10 @@ public sealed class TenantFilterBypassInventoryTests
 
         // Durum senkronu için dar projeksiyon (TenantId, ExecutionId); her yürütme sonra kendi kiracı kapsamında işlenir.
         ["src/Modules/Workflows/Sense.Crm.Modules.Workflows.Infrastructure/Persistence/Repositories.cs"] = 1,
+
+        // C-SEC2 (H1/M6): platform yöneticisi dizini — "kiracıda aktif platform yöneticisi üyesi var mı" ve "yönetici hesabının üyelikleri" salt okunur sorguları (yalnız aktif hesap +
+        // bayrak + aktif üyelik; kişisel veri döndürmez, kiracı iş verisi okumaz). Kiracı filtresi bilinçli atlanır: kural kiracılar arası çalışır.
+        ["src/Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/PlatformSupport.cs"] = 3,
     };
 
     /// <summary>
@@ -36,10 +40,20 @@ public sealed class TenantFilterBypassInventoryTests
     /// </summary>
     private static readonly Dictionary<string, int> ExpectedRawSql = new(StringComparer.Ordinal)
     {
+        // M8C: Files temizlik işi (kiracı listesi: yalnız kimlik döner, tek parametreli SqlQuery; yeni IgnoreQueryFilters yok). Plan +3 öngörmüştü; uzlaştırma kiracı listesini
+        // ITenantDirectory'den alır ve nesne imhası TenantDataEraser<FilesDbContext>'i (mevcut girdi) kullanır, bu yüzden yalnız +1 gerekti.
+        ["src/Modules/Files/Sense.Crm.Modules.Files.Infrastructure/Jobs/FilesJobs.cs"] = 1,
+        // M8B: kuyruk talep sorgusu (kuresel delivery_queue), KVKK kuyruk imhasi, gunluk kullanim upsert'i (kiraci kimligi her zaman parametre).
+        ["src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/Delivery/WebhookDispatcher.cs"] = 1,
+        ["src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/IntegrationsContractServices.cs"] = 1,
+        ["src/Modules/Integrations/Sense.Crm.Modules.Integrations.Infrastructure/Security/ApiKeyUsage.cs"] = 1,
         ["src/Modules/Identity/Sense.Crm.Modules.Identity.Infrastructure/PlatformSupport.cs"] = 6,
         ["src/Modules/Marketing/Sense.Crm.Modules.Marketing.Infrastructure/Persistence/Repositories.cs"] = 1,
         ["src/Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Entitlements/EntitlementServices.cs"] = 2,
-        ["src/Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Jobs/PlatformJobs.cs"] = 1,
+        // C-SEC2: imha işi (`TenantErasureJob`: redaksiyon UPDATE'leri + `AuditTenantDataEraser` parçalı DELETE; kiracı kimliği parametre) ve doğrulama/işaret yardımcıları
+        // (`ErasureSupport`: `set_config` bakım işareti + `information_schema` taraması + kiracı başına `count(*)`; tablo adları `information_schema`'dan gelir ve tırnaklanır).
+        ["src/Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Jobs/ErasureSupport.cs"] = 3,
+        ["src/Modules/Platform/Sense.Crm.Modules.Platform.Infrastructure/Jobs/TenantErasureJob.cs"] = 3,
         ["src/Modules/Sales/Sense.Crm.Modules.Sales.Infrastructure/Provisioning/DefaultPipelineSeeder.cs"] = 1,
         ["src/Modules/Service/Sense.Crm.Modules.Service.Infrastructure/Provisioning/DefaultSlaPolicySeeder.cs"] = 1,
         ["src/Shared/Sense.Crm.Shared.Infrastructure/Persistence/ModuleDbContext.cs"] = 1,

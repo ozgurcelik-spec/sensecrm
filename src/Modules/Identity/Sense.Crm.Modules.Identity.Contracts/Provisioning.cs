@@ -5,7 +5,8 @@ namespace Sense.Crm.Modules.Identity.Contracts;
 /// <summary>
 /// Yeni organizasyon açıldığında (kayıt) yayınlanan integration event; iş modülleri kendi varsayılan verilerini
 /// (ör. Sales: varsayılan satış hunisi) bununla tohumlar. Kayıt transaction'ıyla aynı anda outbox'a yazılır. M7: <c>Slug</c>, <c>Origin</c>,
-/// <c>PlanCode</c>, <c>TrialEndsOn</c> Platform hesabını açmak içindir (hepsi varsayılanlıdır: eski outbox satırları çözülebilir).
+/// <c>PlanCode</c>, <c>TrialEndsOn</c> Platform hesabını açmak içindir (hepsi varsayılanlıdır: eski outbox satırları çözülebilir). C-SEC2 L4: <c>ActorUserId</c> (platform yolunda
+/// organizasyonu açan platform yöneticisi) — aynı transaction'da outbox'a yazıldığı için Platform, <c>organization.created</c> denetim satırı eksikse bu olaydan tamamlar.
 /// </summary>
 public sealed record OrganizationCreated(
     Guid TenantId,
@@ -14,7 +15,8 @@ public sealed record OrganizationCreated(
     string? Slug = null,
     OrganizationOrigin Origin = OrganizationOrigin.Signup,
     string? PlanCode = null,
-    DateOnly? TrialEndsOn = null) : IntegrationEvent(TenantId);
+    DateOnly? TrialEndsOn = null,
+    Guid? ActorUserId = null) : IntegrationEvent(TenantId, ActorUserId);
 
 /// <summary>Organizasyonun açılış yolu (Platform hesabının varsayılan planı/kaynağı buradan seçilir).</summary>
 public enum OrganizationOrigin

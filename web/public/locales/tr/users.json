@@ -61,6 +61,12 @@
       },
       "workflows": {
         "manage": "İş akışı kurallarını ve yürütmelerini yönetme"
+      },
+      "notifications": {
+        "manage": "Bildirim ayarlarını ve teslimat günlüğünü yönetme"
+      },
+      "integrations": {
+        "manage": "Webhook'ları ve API anahtarlarını yönetme"
       }
     },
     "crm": {
@@ -109,6 +115,22 @@
       "cases": {
         "read": "Talepleri görüntüleme",
         "write": "Talep oluşturma/düzenleme/yanıtlama"
+      },
+      "invoices": {
+        "read": "Faturaları görüntüleme",
+        "write": "Fatura ve tahsilat oluşturma/düzenleme"
+      },
+      "pricebooks": {
+        "read": "Fiyat listelerini görüntüleme",
+        "write": "Fiyat listesi oluşturma/düzenleme"
+      },
+      "vendors": {
+        "read": "Tedarikçileri görüntüleme",
+        "write": "Tedarikçi oluşturma/düzenleme"
+      },
+      "purchaseorders": {
+        "read": "Satın alma emirlerini görüntüleme",
+        "write": "Satın alma emri oluşturma/düzenleme"
       }
     }
   }

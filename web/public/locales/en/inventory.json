@@ -1,0 +1,239 @@
+{
+  "lookup": {
+    "search": "Search",
+    "results": "Search results",
+    "loading": "Loading...",
+    "empty": "No records found",
+    "error": "The list could not be loaded; close the window and try again",
+    "total": "{{count}} records",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} / {{pages}}",
+    "sortBy": "Sort by {{column}}",
+    "placeholder": "Click to select",
+    "clear": "Clear {{label}}",
+    "open": "Select {{label}}",
+    "selectAccount": "Select account",
+    "selectContact": "Select contact",
+    "selectDeal": "Select deal",
+    "newAccount": "+ New account",
+    "newContact": "+ New contact",
+    "newDeal": "+ New deal",
+    "newVendor": "+ New vendor",
+    "newPriceBook": "+ New price book",
+    "newProduct": "+ New product",
+    "columns": {
+      "name": "Name",
+      "industry": "Industry",
+      "phone": "Phone",
+      "owner": "Owner",
+      "email": "Email",
+      "account": "Account",
+      "contact": "Contact",
+      "amount": "Amount",
+      "stage": "Stage",
+      "closingDate": "Closing date",
+      "code": "Code",
+      "unitPrice": "Unit price",
+      "taxRate": "VAT",
+      "unit": "Unit",
+      "category": "Category",
+      "model": "Model",
+      "currency": "Currency",
+      "validity": "Validity",
+      "number": "Number",
+      "subject": "Subject",
+      "status": "Status",
+      "total": "Total"
+    }
+  },
+  "products": {
+    "vendor": "Vendor",
+    "purchasePrice": "Purchase price",
+    "purchasePriceHint": "In the product currency; suggested as the unit price on purchase orders"
+  },
+  "vendors": {
+    "title": "Vendors",
+    "description": "The vendors of the products and services you buy.",
+    "new": "New vendor",
+    "search": "Search by name, email, phone or category",
+    "createTitle": "New vendor",
+    "editTitle": "Edit vendor",
+    "created": "Vendor created",
+    "updated": "Vendor updated",
+    "deleted": "Vendor deleted",
+    "deleteTitle": "Delete vendor",
+    "deleteMessage": "Vendor \"{{name}}\" will be deleted; the vendor link on products is removed. Are you sure?",
+    "select": "Select vendor",
+    "noProducts": "No products are linked to this vendor",
+    "noPurchaseOrders": "This vendor has no purchase orders",
+    "emailOptOutBadge": "Email opt-out",
+    "glAccountHint": "Free text; there is no accounting mapping",
+    "tabs": {
+      "products": "Products ({{count}})",
+      "purchaseOrders": "Purchase orders ({{count}})"
+    },
+    "fields": {
+      "name": "Vendor name",
+      "phone": "Phone",
+      "email": "Email",
+      "website": "Website",
+      "category": "Category",
+      "glAccount": "GL account",
+      "emailOptOut": "Email opt-out",
+      "address": "Address",
+      "description": "Description"
+    },
+    "validation": {
+      "phoneMax": "Phone can be at most 32 characters",
+      "emailMax": "Email can be at most 254 characters",
+      "websiteMax": "Website can be at most 200 characters",
+      "categoryMax": "Category can be at most 100 characters",
+      "glAccountMax": "GL account can be at most 100 characters"
+    }
+  },
+  "priceBooks": {
+    "title": "Price books",
+    "description": "Set product prices by list: a price per product, or a percentage on the catalog price.",
+    "new": "New price book",
+    "search": "Search by name or description",
+    "createTitle": "New price book",
+    "editTitle": "Edit price book",
+    "created": "Price book created",
+    "updated": "Price book updated",
+    "deleted": "Price book deleted",
+    "deleteTitle": "Delete price book",
+    "deleteMessage": "Price book \"{{name}}\" will be deleted; prices on documents do not change. Are you sure?",
+    "select": "Select price book",
+    "models": {
+      "perProduct": "Per product",
+      "flat": "Percentage (flat)"
+    },
+    "noValidity": "No expiry",
+    "lockedHint": "Cannot be changed after creation",
+    "percentHint": "A negative value is a discount, a positive one a markup (-99.99 to 1000)",
+    "makeDefault": "Make default for an account",
+    "makeDefaultTitle": "Pick the account that gets \"{{name}}\" as its default price book",
+    "defaultSet": "The default price book of \"{{account}}\" was set",
+    "flatNote": "This book applies {{percent}}% to the catalog price; it keeps no product entries.",
+    "state": {
+      "effective": "Effective",
+      "outOfRange": "Outside its dates",
+      "inactive": "Inactive",
+      "activeOption": "Active"
+    },
+    "tabs": {
+      "prices": "Prices"
+    },
+    "fields": {
+      "name": "Price book name",
+      "pricingModel": "Pricing model",
+      "adjustmentPercent": "Adjustment %",
+      "currency": "Currency",
+      "validFrom": "Valid from",
+      "validTo": "Valid to",
+      "isActive": "Active",
+      "description": "Description",
+      "validity": "Validity",
+      "entryCount": "Products"
+    },
+    "validation": {
+      "percentRequired": "The percentage is required",
+      "percentRange": "The percentage must be between -99.99 and 1000",
+      "validRange": "The end date cannot be before the start date"
+    },
+    "entries": {
+      "search": "Search by product name or code",
+      "add": "Add product",
+      "addTitle": "Add a product to the price book",
+      "product": "Product",
+      "catalogPrice": "Catalog price",
+      "listPrice": "List price",
+      "empty": "This book has no product prices yet",
+      "saved": "Price saved",
+      "added": "Product added to the book",
+      "removed": "Product removed from the book",
+      "remove": "Remove from book",
+      "removeFor": "Remove {{name}} from the book",
+      "removeTitle": "Remove product from the book",
+      "removeMessage": "The list price of \"{{name}}\" will be deleted; the product sells at its catalog price. Are you sure?",
+      "priceFor": "List price of {{name}}",
+      "priceInvalid": "The price must be between 0 and 1,000,000,000 with at most 4 decimals"
+    },
+    "preview": {
+      "title": "Example",
+      "hint": "{{percent}}% is applied to the catalog price (preview only; the server decides the real price).",
+      "catalogPrice": "Catalog price",
+      "result": "List price"
+    }
+  },
+  "accountDefault": {
+    "label": "Default price book",
+    "none": "None",
+    "change": "Change",
+    "clear": "Remove",
+    "saved": "Default price book updated",
+    "notEffective": "Not effective now"
+  },
+  "purchaseOrders": {
+    "title": "Purchase orders",
+    "description": "Purchase orders with lines that you place with your vendors.",
+    "new": "New purchase order",
+    "search": "Search by number or subject",
+    "newTitle": "New purchase order",
+    "editTitle": "Edit purchase order: {{number}}",
+    "created": "Purchase order created",
+    "updated": "Purchase order updated",
+    "deleted": "Purchase order deleted",
+    "deleteTitle": "Delete purchase order",
+    "deleteMessage": "Draft purchase order {{number}} will be deleted. Are you sure?",
+    "statuses": {
+      "draft": "Draft",
+      "confirmed": "Confirmed",
+      "received": "Received",
+      "cancelled": "Cancelled"
+    },
+    "fields": {
+      "vendor": "Vendor",
+      "poDate": "PO date",
+      "confirmedAt": "Confirmed",
+      "receivedAt": "Received"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "receive": "Mark received",
+      "cancel": "Cancel"
+    },
+    "done": {
+      "confirm": "Purchase order confirmed",
+      "receive": "Purchase order marked as received",
+      "cancel": "Purchase order cancelled"
+    },
+    "dialogs": {
+      "cancelTitle": "Cancel purchase order",
+      "cancelReason": "Reason for cancelling"
+    },
+    "report": {
+      "section": "Purchase orders",
+      "total": "Total of purchase orders",
+      "byStatus": "Purchase orders by status"
+    }
+  },
+  "errors": {
+    "vendor": {
+      "in_use": "A purchase order still points to this vendor; delete or cancel it first"
+    },
+    "pricebook": {
+      "name_taken": "A price book with this name already exists",
+      "model_immutable": "The pricing model and currency cannot be changed after creation",
+      "model_mismatch": "Percentage (flat) books keep no product entries",
+      "not_effective": "The price book is not effective right now",
+      "entry_limit": "A price book can hold at most 2000 product entries"
+    },
+    "purchase_order": {
+      "not_editable": "Only draft purchase orders can be edited or deleted",
+      "invalid_transition": "This action is not possible in the purchase order's current status",
+      "no_lines": "Add at least one line before confirming the purchase order"
+    }
+  }
+}

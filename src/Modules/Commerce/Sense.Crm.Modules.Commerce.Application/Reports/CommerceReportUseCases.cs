@@ -1,5 +1,7 @@
 using FluentValidation;
+using Sense.Crm.Modules.Commerce.Domain.Invoices;
 using Sense.Crm.Modules.Commerce.Domain.Orders;
+using Sense.Crm.Modules.Commerce.Domain.PurchaseOrders;
 using Sense.Crm.Modules.Commerce.Domain.Quotes;
 using Sense.Crm.Modules.Identity.Contracts;
 using Sense.Crm.Shared.Contracts.Messaging;
@@ -40,7 +42,13 @@ public sealed class GetCommerceSummaryHandler(ICommerceReportStore store, Tenant
     private const int RateDigits = 4;
 
     private static readonly QuoteStatus[] QuoteOrder =
-        [QuoteStatus.Draft, QuoteStatus.Sent, QuoteStatus.Accepted, QuoteStatus.Rejected, QuoteStatus.Expired];
+        [QuoteStatus.Draft, QuoteStatus.Sent, QuoteStatus.Negotiation, QuoteStatus.Accepted, QuoteStatus.Rejected, QuoteStatus.Expired];
+
+    private static readonly InvoiceStatus[] InvoiceOrder =
+        [InvoiceStatus.Draft, InvoiceStatus.Sent, InvoiceStatus.PartiallyPaid, InvoiceStatus.Paid, InvoiceStatus.Overdue, InvoiceStatus.Cancelled];
+
+    private static readonly PurchaseOrderStatus[] PurchaseOrderOrder =
+        [PurchaseOrderStatus.Draft, PurchaseOrderStatus.Confirmed, PurchaseOrderStatus.Received, PurchaseOrderStatus.Cancelled];
 
     private static readonly SalesOrderStatus[] OrderOrder =
         [SalesOrderStatus.Draft, SalesOrderStatus.Confirmed, SalesOrderStatus.Fulfilled, SalesOrderStatus.Cancelled];
@@ -58,12 +66,22 @@ public sealed class GetCommerceSummaryHandler(ICommerceReportStore store, Tenant
         var quoteTotals = await store.GetQuoteTotalsAsync(resolved.FromUtc, resolved.ToExclusiveUtc, today, cancellationToken).ConfigureAwait(false);
         var orderTotals = await store.GetOrderTotalsAsync(resolved.From, resolved.To, cancellationToken).ConfigureAwait(false);
         var currencies = await store.GetCurrenciesAsync(resolved.FromUtc, resolved.ToExclusiveUtc, resolved.From, resolved.To, cancellationToken).ConfigureAwait(false);
+        var invoiceTotals = await store.GetInvoiceTotalsAsync(resolved.From, resolved.To, today, cancellationToken).ConfigureAwait(false);
+        var invoiceSums = await store.GetInvoiceSumsAsync(resolved.From, resolved.To, today, cancellationToken).ConfigureAwait(false);
+        var purchaseTotals = await store.GetPurchaseOrderTotalsAsync(resolved.From, resolved.To, cancellationToken).ConfigureAwait(false);
 
         var quoteRows = QuoteOrder.Select(s => Fill(s, quoteTotals)).ToList();
         var orderRows = OrderOrder.Select(s => Fill(s, orderTotals)).ToList();
         var activeOrders = orderRows.Where(r => r.Status != SalesOrderStatus.Cancelled).ToList();
 
+        // Faturalar/PO'lar: byStatus sabit sırada (etkin durum bugüne göre); totalCount/totalAmount iptaller hariç, taslaklar dahil.
+        var invoiceRows = InvoiceOrder.Select(s => Fill(s, invoiceTotals)).ToList();
+        var activeInvoices = invoiceRows.Where(r => r.Status != InvoiceStatus.Cancelled).ToList();
+        var purchaseRows = PurchaseOrderOrder.Select(s => Fill(s, purchaseTotals)).ToList();
+        var activePurchases = purchaseRows.Where(r => r.Status != PurchaseOrderStatus.Cancelled).ToList();
+
         var accepted = quoteRows.Single(r => r.Status == QuoteStatus.Accepted).Count;
+        // Payda: taslak olmayan tümü (sent + negotiation + accepted + rejected + expired).
         var submitted = quoteRows.Where(r => r.Status != QuoteStatus.Draft).Sum(r => r.Count);
         decimal? rate = submitted == 0 ? null : decimal.Round(accepted / (decimal)submitted, RateDigits, MidpointRounding.AwayFromZero);
 
@@ -71,7 +89,16 @@ public sealed class GetCommerceSummaryHandler(ICommerceReportStore store, Tenant
             currencies,
             new QuoteReportDto(quoteRows.Sum(r => r.Count), quoteRows.Sum(r => r.Amount), quoteRows),
             new OrderReportDto(activeOrders.Sum(r => r.Count), activeOrders.Sum(r => r.Amount), orderRows),
-            rate);
+            rate,
+            new InvoiceReportDto(
+                activeInvoices.Sum(r => r.Count),
+                activeInvoices.Sum(r => r.Amount),
+                invoiceSums.PaidAmount,
+                invoiceSums.OutstandingAmount,
+                invoiceSums.OverdueCount,
+                invoiceSums.OverdueAmount,
+                invoiceRows),
+            new PurchaseOrderReportDto(activePurchases.Sum(r => r.Count), activePurchases.Sum(r => r.Amount), purchaseRows));
     }
 
     private static StatusTotalDto<TStatus> Fill<TStatus>(TStatus status, IReadOnlyList<StatusTotal<TStatus>> totals)

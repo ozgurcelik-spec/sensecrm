@@ -35,7 +35,15 @@ export function getApiErrorMessage(error: unknown): string {
       if (i18n.exists(key)) return i18n.t(key);
     }
     // M7 plan / tenant-state / platform codes carry `args` (limit, used, reason, ...) in their texts.
-    for (const key of [`subscription:errors.${problem.code}`, `platform:errors.${problem.code}`]) {
+    for (const key of [
+      `subscription:errors.${problem.code}`,
+      `platform:errors.${problem.code}`,
+      `files:errors.${problem.code}`,
+      `notifications:errors.${problem.code}`,
+      `integrations:errors.${problem.code}`,
+      `invoices:errors.${problem.code}`,
+      `inventory:errors.${problem.code}`,
+    ]) {
       if (i18n.exists(key)) return i18n.t(key, problemArgs(problem));
     }
   }

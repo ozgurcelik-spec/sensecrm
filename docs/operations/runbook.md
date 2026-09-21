@@ -10,10 +10,11 @@ Dosyalar: [`deploy/`](../../deploy) (compose, `.env.example`, sır üreticiler, 
 kullanıcı ──HTTPS──▶ [TLS sonlandırıcı: Caddy/nginx/LB]  (sizin; deploy/tls/*.example)
                           │ HTTP, X-Forwarded-For/-Proto
                           ▼
-   frontend ağı ─────▶ web  (nginx-unprivileged :8080; tek yayınlanan port, varsayılan 127.0.0.1:8080)
+   frontend ağı ─────▶ web  (nginx-unprivileged :8080; tek yayınlanan port, varsayılan 127.0.0.1:8080; yalnız web bu ağdadır)
                           │ /api/*  (yalnız bu yol)
-   backend ağı (internal: dışarıya çıkışı YOK)
+   edge ağı (internal: web ↔ api; dışarıya çıkışı YOK)
                           ▼
+   backend ağı (internal: dışarıya çıkışı YOK; web bu ağda DEĞİL)
                     api ──▶ postgres (crm, conductor veritabanları) ◀── conductor (workflow motoru)
                     worker ──▶ postgres, conductor            migrator, db-init (tek seferlik işler)
                     redis (isteğe bağlı, profil "redis")
@@ -29,9 +30,13 @@ kullanıcı ──HTTPS──▶ [TLS sonlandırıcı: Caddy/nginx/LB]  (sizin; 
 | `worker` | `crm-worker` | Outbox işleyici, Conductor görev işleyicileri, yürütme durumu senkronu | 768 MB / 1 CPU |
 | `web` | `crm-web` | SPA + `/api` ters vekil | 128 MB / 0,5 CPU |
 | `redis` | `redis:7.4.11-alpine` | Yalnız birden çok `api` kopyasında (önbellek L2) | 384 MB |
+| `minio` | `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z` | **M8C:** dosya ekleri nesne deposu (S3 uyumlu). **Yalnız `backend` ağı, port yayınlamaz**, konsol kapalı, KMS anahtarıyla SSE-S3; bkz. §18 | 1 GB |
+| `minio-init` | `quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z` | Tek seferlik/idempotent: kova + varsayılan şifreleme + **yalnız bu kovaya** izinli uygulama hesabı (`deploy/minio/init.sh`) — **her `up`'ta** | — |
 
-Güvenlik duruşu (varsayılan): yalnız `web` portu yayınlanır; `backend` ağı `internal: true` olduğundan API/Worker/Postgres/Conductor dışarıya bağlantı
-başlatamaz; parola yok — sırlar `.env`/`secrets/` içindedir ve `:?` ile zorunludur; API ve Worker veritabanına yalnız DML yetkili `crm_app` rolüyle
+Güvenlik duruşu (varsayılan): yalnız `web` portu yayınlanır; `backend` ve `edge` ağları `internal: true` olduğundan API/Worker/Postgres/Conductor dışarıya bağlantı
+başlatamaz. Ağ ayrımı (M5): `web` yalnız `frontend` (yayınlanan port; Docker internal bir ağdan port yayınlayamaz) ve `edge` (yalnız `api` ile paylaşılır) ağlarındadır;
+`postgres`/`conductor`/`redis`/`worker` ile aynı ağda **değildir**, yani ele geçirilmiş bir `web` konteyneri veritabanına, Conductor'a, Redis'e ya da worker'a ulaşamaz (adları çözülmez, IP'ye TCP açılmaz).
+`api` `edge` + `backend` ağlarındadır (ikisi de internal): dışarıya yolu yoktur. `api` nginx'i `edge` alt ağından görür; bu yüzden `ForwardedHeaders__KnownNetworks__0` = `EDGE_SUBNET`'tir (`.env`; varsayılan `10.213.80.0/24`; egress bindirmesinin `EGRESS_SUBNET` (10.213.79.0/24) ağıyla çakışmaması için 79 değildir); parola yok — sırlar `.env`/`secrets/` içindedir ve `:?` ile zorunludur; API ve Worker veritabanına yalnız DML yetkili `crm_app` rolüyle
 bağlanır (DDL yalnız migrator'ın `crm_owner` rolündedir); Conductor kendi rolüyle yalnız `conductor` veritabanına erişir; API dokümantasyonu (Scalar/OpenAPI)
 kapalıdır; herkese açık kayıt kapalıdır; tüm süreçler root olmayan kullanıcıyla çalışır.
 
@@ -60,8 +65,18 @@ PUBLIC_HOSTNAME=crm.sirket.local PLATFORM_ADMIN_EMAIL=platform@sirket.local ./de
 Elle kurulum: `cp deploy/.env.example deploy/.env` ve boş bırakılan sırları doldurun — boş sır varsa compose başlamaz (bilinen bir parolayla çalışamaz).
 `.env` içinde `;`, tırnak ve boşluk kullanmayın (bağlantı dizelerine gömülüyor).
 
-`.env`'de gözden geçirin: `ALLOWED_HOSTS` (kullanıcıların yazdığı ad; API başka `Host` başlıklarını 400 ile reddeder), `WEB_BIND`/`WEB_PORT`,
-`TRUSTED_PROXY_CIDR` (TLS vekilinin adresi/ağı), kaynak sınırları, `CRM_VERSION`.
+`.env`'de gözden geçirin: `ALLOWED_HOSTS`, `WEB_BIND`/`WEB_PORT`, `TRUSTED_PROXY_CIDR`, kaynak sınırları, `CRM_VERSION`.
+- **`ALLOWED_HOSTS`** = kullanıcıların tarayıcıya yazdığı **herkese açık ad(lar)** (`;` ile ayrılır; ör. `crm.sirket.local;crm.sirket.com`). API başka `Host` başlıklarını `400 Invalid Hostname` ile
+  reddeder (Host başlığı sahteciliği/önbellek zehirlemesi savunması). `*` ya da joker (`*.sirket.com`) **kullanmayın**, IP adresi ve sahibi olmadığınız adı eklemeyin.
+  `localhost` compose tarafından yalnız konteyner sağlık denetimi için eklenir; `.env`'ye yazmanıza gerek yok (yerel duman testi için `BASE_URL=http://localhost:...` kullanıyorsanız `localhost` zaten geçerlidir).
+- **`TRUSTED_PROXY_CIDR`** (nginx'in `X-Forwarded-For` başlığına güvendiği vekil adresi/ağı). **Varsayılan `127.0.0.1/32` = hiçbir şeye güvenilmez**: nginx `X-Forwarded-For`'u yok sayar, istemci adresi sahtelenemez.
+  Sonuç: güvenilir vekil tanımlı değilken istemci adresi, yayınlanan porta bağlanan adrestir (aynı makinedeki vekil ya da Docker Desktop'ta `frontend` ağının ağ geçidi, ör. `10.213.78.1`),
+  yani IP başına hız sınırları (giriş azaltma dâhil) o **tek adrese** göre sayılır. Vekil varsa açıkça ayarlayın:
+  aynı makinedeki Caddy/nginx (`WEB_BIND=127.0.0.1`) → `TRUSTED_PROXY_CIDR=<FRONTEND_SUBNET'in ilk adresi>/32` (varsayılan alt ağla `10.213.78.1/32`; `docker compose logs web` vekilin bağlandığı adresi gösterir);
+  başka makinedeki LB (`WEB_BIND=<özel IP>`, güvenlik duvarıyla yalnız LB'ye açık) → `TRUSTED_PROXY_CIDR=<LB adresi>/32`.
+  `WEB_BIND` `0.0.0.0`/yönlendirilebilir bir IP iken **geniş aralık** (`FRONTEND_SUBNET`, `0.0.0.0/0`) vermeyin: her istemci `X-Forwarded-For` ile adresini sahteleyebilir.
+  **Yükseltme notu:** eski bir `.env` `TRUSTED_PROXY_CIDR=10.213.78.0/24` içerir (eski varsayılan; ağ geçidi bu aralıktadır → Docker Desktop'ta ya da `WEB_BIND=0.0.0.0` iken herkes sahteleyebilir). Değeri yukarıdaki gibi düzeltin;
+  ayrıca yeni `EDGE_SUBNET` satırını ekleyin (`.env.example`).
 **`.env` ve `secrets/` git'e girmez (`.gitignore`), kasada/şifreli yedekte saklanır; JWT anahtarı ve parolalar geri yükleme için gereklidir.**
 
 ### 3.2 İmajlar
@@ -88,13 +103,19 @@ Herkese açık kayıt kapalı olduğundan (§5) ilk hesap operasyon aracıyla a�
 dosyasından okunur ve hiçbir yerde loglanmaz):
 
 ```bash
-docker compose -f deploy/docker-compose.prod.yml run --rm migrator create-platform-admin
+docker compose -f deploy/docker-compose.prod.yml run --rm --user root migrator create-platform-admin
 ```
+
+**Neden `--user root`:** parola dosyası ana makinede `0600`'dür (yalnız sahibi okur; `generate-secrets.sh`; Windows'ta yalnız kullanıcı ACL'si) ve konteynerde `/run/secrets/platform_admin_password` olarak **yazılabilir** bağlanır
+(`docker-compose.prod.yml` › `migrator` › `volumes`; `secrets:` girdileri her zaman salt okunur bağlandığından dosya boşaltılamazdı). Migrator'ın normal kullanıcısı (`app`, uid 1654) `0600` dosyayı okuyamaz;
+bu yüzden yalnız bu tek seferlik, `--rm` ile biten, dışarıya çıkışı olmayan (`backend`) komut root olarak çalışır. Her `up`'ta çalışan `migrate` uid 1654 ile kalır ve dosyayı okuyamaz.
+**Başarıdan sonra Migrator parola dosyasını boşaltır.** Boşaltamazsa (uyarı yazar) dosyayı elle boşaltın: `: > deploy/secrets/platform-admin-password`.
+Bootstrap yöneticisi **ilk girişte parolasını değiştirmek zorundadır** (`mustChangePassword`; değişene kadar yalnız parola değiştirme uçları çalışır): dosyadaki parola tek seferliktir, girişten sonra geçersizdir.
 
 - Hesap yoksa: hesap + "Platform" adlı işletim organizasyonu (yalnız bu yönetici hesabı; müşteri verisi yok) + Administrator üyeliği oluşur.
 - Hesap varsa: parolasına dokunulmadan platform yöneticisi yapılır (yükseltme); zaten yöneticiyse hiçbir şey değişmez (çıkış kodu 0).
 - Geçersiz girdi (e-posta yok/parola < 12 karakter ya da yaygın/e-posta adını içeren parola) → çıkış kodu 2 ve neden günlükte.
-- Bittikten sonra parola dosyasını **boşaltın** (`: > deploy/secrets/platform-admin-password`). Parola **sıfırlama** (unutulan parola) e-posta altyapısıyla birlikte sonraki aşamadadır
+- Bittikten sonra parola dosyasının **boş** olduğunu doğrulayın (Migrator boşaltır; boşaltamadıysa `: > deploy/secrets/platform-admin-password`). Parola **sıfırlama** (unutulan parola) e-posta altyapısıyla birlikte sonraki aşamadadır
   (parola değiştirme uçtan mevcuttur: `POST /me/password`, mevcut parolayı bilen kullanıcı için; unutulan parolayı yalnız sistem yöneticisi DB/`create-platform-admin` ile kurtarır) — bu yüzden platform yöneticisi için güçlü bir parola (≥ 12 karakter, yaygın parola/e-posta adı yasak) kullanın ve önce kasaya kaydedin.
 
 ### 3.5 İlk organizasyon (pilot şirket) ve yöneticisi
@@ -103,7 +124,7 @@ Platform yöneticisi olarak giriş yapıp API ile açın (`adminPassword: null` 
 
 ```bash
 BASE=https://crm.sirket.local
-PLATFORM_PW="$(cat deploy/secrets/platform-admin-password)"
+read -rsp 'Platform yöneticisi parolası (bootstrap parolası ilk girişte değiştirilmiştir; dosya boşaltıldı): ' PLATFORM_PW; echo
 TOKEN=$(curl -s -X POST $BASE/api/v1/auth/login -H 'Content-Type: application/json' \
   -d "{\"email\":\"platform@sirket.local\",\"password\":\"$PLATFORM_PW\"}" | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
 curl -s -X POST $BASE/api/v1/platform/organizations -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
@@ -127,15 +148,18 @@ Sonraki kullanıcılar organizasyonun kendi yöneticisi tarafından Ayarlar > Ku
 BASE_URL=https://crm.sirket.local ADMIN_EMAIL=ayse@sirket.local ADMIN_PASSWORD='...' ./deploy/smoke.sh
 ```
 
-healthz → güvenlik başlıkları → API → giriş → `/me` → lead oluştur/oku. (Yerelde `localhost` adını kullanın; IP adresi `AllowedHosts` nedeniyle reddedilir.)
+healthz → güvenlik başlıkları → API → giriş → `/me` → lead oluştur/oku. İsteğe bağlı: `PLATFORM_ADMIN_EMAIL` **ve** `PLATFORM_ADMIN_PASSWORD` ortam değişkenleri de verilirse platform yöneticisiyle girip
+`GET /api/v1/platform/organizations?pageSize=100` çağrılır ve en az bir organizasyonun `"isSystem":true` olması (platform işletim kiracısı `is_system` işaretli) **zorunlu** tutulur; yoksa betik hata verir (bootstrap parolası değiştirilmemişse de hata verir). Parolalar/token süreç listesinde (`ps`) görünmez:
+gövde `--data-binary @-` ile stdin'den, `Authorization` başlığı `0600` geçici dosyadan (`-H @dosya`) gider. (Yerelde `localhost` adını kullanın; IP adresi `AllowedHosts` nedeniyle reddedilir.)
 Ardından tarayıcıdan giriş yapın, bir lead açın; İş akışları > Yürütmeler'de kuralın tetiklendiğini görün.
 
 ### 3.7 TLS
 
 TLS **konteynerde sonlandırılmaz**; kurum CA'sından sertifikalı bir vekil/LB kullanın: [`deploy/tls/Caddyfile.example`](../../deploy/tls/Caddyfile.example),
 [`deploy/tls/nginx-tls.conf.example`](../../deploy/tls/nginx-tls.conf.example) (HAProxy/F5 için eşdeğer: `X-Forwarded-For` ve `X-Forwarded-Proto` gönderin, arka uç `WEB_BIND:WEB_PORT`).
-Vekil başka bir makinedeyse: `WEB_BIND`'i sunucunun özel IP'sine ayarlayın (güvenlik duvarı ile yalnız vekile açın) ve `TRUSTED_PROXY_CIDR`'ı vekilin adresine çekin —
-yoksa istemci IP'si (hız sınırı, denetim) yanlış görünür. `web` konteyneri `X-Forwarded-Proto: https` gördüğünde HSTS başlığını kendisi ekler.
+Vekil başka bir makinedeyse: `WEB_BIND`'i sunucunun özel IP'sine ayarlayın (güvenlik duvarı ile yalnız vekile açın) ve `TRUSTED_PROXY_CIDR`'ı vekilin adresine (`/32`) çekin.
+Vekil aynı makinedeyse (`WEB_BIND=127.0.0.1`): `TRUSTED_PROXY_CIDR=<FRONTEND_SUBNET'in ilk adresi>/32` (ör. `10.213.78.1/32`, bkz. §3.1). Ayar yapılmazsa varsayılan (`127.0.0.1/32`) `X-Forwarded-For`'a hiç güvenmez:
+uygulama güvenli kalır ama tüm kullanıcılar vekilin adresi olarak görünür (IP başına hız sınırı ve denetim IP'si tek adrese düşer). `web` konteyneri `X-Forwarded-Proto: https` gördüğünde HSTS başlığını kendisi ekler.
 
 ## 4. Sırlar ve anahtarlar
 
@@ -144,8 +168,12 @@ yoksa istemci IP'si (hız sınırı, denetim) yanlış görünür. `web` konteyn
 | `POSTGRES_PASSWORD` (süper kullanıcı; yalnız db-init/yedek) | `.env` | `.env`'i değiştirip PostgreSQL'de `ALTER ROLE postgres PASSWORD` + `up -d` (postgres konteyneri ilk kurulumdaki parolayla başladı) |
 | `CRM_OWNER_PASSWORD`, `CRM_APP_PASSWORD`, `CONDUCTOR_DB_PASSWORD` | `.env` | `.env`'i değiştirin → `up -d`: `db-init` rol parolalarını eşitler, servisler yeni değerle yeniden yaratılır |
 | JWT imza anahtarı (RS256) | `secrets/jwt-signing-key.pem` → `/run/secrets/Auth__SigningKeyPem` | Yeni anahtar → `up -d api`: tüm access token'lar geçersiz olur, kullanıcılar (refresh token ile otomatik ya da yeniden giriş yaparak) devam eder |
-| Platform yöneticisi parolası | `secrets/platform-admin-password` (yalnız bootstrap) | Bootstrap sonrası dosyayı boşaltın |
+| Platform yöneticisi parolası | `secrets/platform-admin-password` (yalnız bootstrap; ana makinede `0600`, migrator'a yazılabilir bağlanır) | Migrator başarıdan sonra dosyayı boşaltır (uyarırsa elle boşaltın); bootstrap parolası ilk girişte değiştirilir (§3.4) |
 | `REDIS_PASSWORD` | `.env` | Redis kullanılıyorsa `REDIS_CONNECTION` ile birlikte |
+| **M8C** `minio-root-user` / `minio-root-password` | `secrets/minio-root-user`, `secrets/minio-root-password` → yalnız `minio` ve `minio-init` | Yeni değer + `up -d minio minio-init`; uygulama hesabı etkilenmez. Uygulamada kök kimlik bilgisi **yoktur** |
+| **M8C** `minio-app-access-key` / `minio-app-secret-key` | `secrets/minio-app-*` → `/run/secrets/Files__Storage__AccessKey|SecretKey` (api, worker, migrator) | Dosyaları yenileyip `up -d`: `minio-init` hesabın parolasını günceller (`mc admin user add` idempotent), api/worker yeniden yaratılır |
+| **M8C** `minio-kms-key` (`crm-files-key:<base64 32 bayt>`) | `secrets/minio-kms-key` → yalnız `minio` | **Döndürülemez** (ilk sürüm: yeni anahtar = yeniden şifreleme işi, kapsam dışı). **Veri yedeğiyle birlikte yedeklenir; kaybı = dosyaların kaybıdır** (nesneler anahtarsız okunamaz) |
+| **Webhook sırrı şifreleme anahtarı (AES-256, base64/32 bayt; M8B)** | `secrets/integrations-encryption-key` → `/run/secrets/Integrations__Encryption__Keys__k1` (api, worker, migrator) | **Yoksa api/worker/migrator başlamaz.** Döndürme: yeni anahtarı `Integrations__Encryption__Keys__k2` olarak ekleyin + `Integrations__Encryption__CurrentKeyId=k2` → `migrator reencrypt-integration-secrets` (idempotent; eski anahtarla çözüp yenisiyle yazar) → eski anahtarı kaldırın. **Yedeği veritabanı yedeğinden AYRI saklayın**; kayıp = saklı sırlar okunamaz (her abonelikte sırrı döndürün, alıcılar yeni sırrı alır). `generate-secrets` bunu üretir ve **asla `FORCE=1` ile yeniden üretmez** (`FORCE_INTEGRATIONS_KEY=1` gerekir) |
 
 Üretimde API, `Auth:SigningKeyPem` veya `ConnectionStrings:Database` yoksa **başlamaz** (testli: `PlatformApiTests.Production_RefusesToStart_*`);
 geçici geliştirme anahtarı yalnız Development/Testing ortamlarındadır.
@@ -161,15 +189,21 @@ geçici geliştirme anahtarı yalnız Development/Testing ortamlarındadır.
 ## 6. Yedekleme
 
 ```bash
-./deploy/backup.sh                        # Linux;  BACKUP_DIR, RETENTION_DAYS (14), BACKUP_GPG_RECIPIENT | BACKUP_OPENSSL_PASSFILE (isteğe bağlı şifreleme)
-.\deploy\backup.ps1 -BackupDir D:\yedek   # Windows; -RetentionDays, -GpgRecipient
+BACKUP_GPG_RECIPIENT=yedek@sirket.local ./deploy/backup.sh            # Linux;  BACKUP_DIR, RETENTION_DAYS (14); şifreleme ZORUNLU: BACKUP_GPG_RECIPIENT | BACKUP_OPENSSL_PASSFILE
+.\deploy\backup.ps1 -BackupDir D:\yedek -GpgRecipient yedek@sirket.local   # Windows; -RetentionDays; şifreleme ZORUNLU: -GpgRecipient (veya BACKUP_GPG_RECIPIENT)
 ```
+
+**Şifreleme zorunludur:** anahtar/alıcı verilmezse betikler hiçbir docker komutu çalıştırmadan, açık bir iletiyle **reddeder** (çıkış kodu 2). Bilerek açık metin isteniyorsa `./deploy/backup.sh --no-encryption` /
+`.\deploy\backup.ps1 -NoEncryption` verilir; betik yedeğin **açık metin** saklandığına dair yüksek sesli `WARNING` yazar (yalnız izole prova/geçici kullanım için). Şifreleme başarısız olursa açık metin döküm silinir ve betik hatayla biter.
+Anahtar sağlama: gpg için genel anahtar, yedeği alan kullanıcının anahtarlığında olmalıdır (`gpg --import`; çözmek için özel anahtar yalnız geri yükleme makinesinde/kasada); `BACKUP_OPENSSL_PASSFILE` yalnız sahibi okuyabilen (`0600`) bir parola dosyasıdır
+(yalnız `backup.sh`; `.gz.enc`). Cron/Görev Zamanlayıcı'da değişkeni/parametreyi tanımlamayı unutmayın; aksi halde yedek **sessizce değil, hata koduyla** başarısız olur — izleyin. Çözme adımları: [restore.md](../../deploy/restore.md) (Notlar).
 
 `crm` ve `conductor` veritabanlarının `pg_dump` (düz SQL, sahiplik/izin yok) → gzip → `crm-YYYYmmdd-HHMMSS.sql.gz`, `gzip -t` ile bütünlük denetimi, saklama
 süresini aşan (yalnız bu betiğin adlandırdığı) dosyaların silinmesi. **Zamanlama:** Linux cron `30 2 * * *` (gece 02:30) ve pilot süresince ek olarak iş saatlerinde 4 saatte bir;
 Windows Görev Zamanlayıcı: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\crm\deploy\backup.ps1`.
 Yedekleri **aynı diskin dışına ve veri merkezi içinde** (NAS/ikinci sunucu) kopyalayın ve şifreleyin (`gpg`/`openssl` seçenekleri veya disk/NAS şifrelemesi).
-Ayrı yedeklenecekler: `deploy/.env`, `deploy/secrets/` (şifreli). Aylık **geri yükleme provası** yapın (§13).
+Ayrı yedeklenecekler: `deploy/.env`, `deploy/secrets/` (şifreli; **M8C: `minio-kms-key` dâhil**). Aylık **geri yükleme provası** yapın (§13).
+**M8C nesne kovası:** aynı betikler veritabanı dökümlerinden **sonra** kovayı `mc mirror` ile `files-<zaman>.tar.gz` olarak yedekler (sıra bilinçli: geri yüklemede satırsız nesne = zararsız yetim, nesnesiz satır = `missing`). Nesne yedeği düz metindir (SSE-S3 okuyana şeffaf) → **şifrelenmesi zorunludur** (`BACKUP_GPG_RECIPIENT` / `BACKUP_OPENSSL_PASSFILE`; şifresizse betik uyarır). Geri yükleme: [`deploy/restore.md`](../../deploy/restore.md) "Nesne deposu".
 
 ## 7. Geri yükleme
 
@@ -183,6 +217,7 @@ Ayrı yedeklenecekler: `deploy/.env`, `deploy/secrets/` (şifreli). Aylık **ger
 3. **Şema önce:** `docker compose -f deploy/docker-compose.prod.yml run --rm migrator migrate` — eski api/worker çalışırken migration'lar uygulanır;
    bu yüzden migration'lar geriye uyumlu yazılır (önce ekle, sonra kullan, en son kaldır). Başarısızsa **devam etmeyin** (adım 6).
    **M7:** `migrate` şemalardan sonra **plan senkronunu** (`Platform:Plans` → `platform.plans`, geçersiz yapılandırma → çıkış 3, yayın durur) ve **backfill**'i (satırı olmayan mevcut her kiracıya `internal` plan; kısıt yok, onboarding kapalı) çalıştırır; ikisi de idempotenttir. Yalnız plan kataloğu yapılandırması değiştiyse şema gerekmez: `docker compose -f deploy/docker-compose.prod.yml run --rm migrator sync-plans` yeter (yapılandırmadan kalkan plan pasifleşir; mevcut atamalar çalışır). `smoke.sh`'a "satırı olmayan kiracı yok" denetimi eklenmelidir (`select count(*) from identity.tenants t left join platform.tenant_accounts a on a.tenant_id = t.id where a.tenant_id is null` = 0).
+   **Ağ ayrımına (M5) geçişte:** `.env`'ye `EDGE_SUBNET=10.213.80.0/24` ekleyin (LAN ile çakışırsa değiştirin) ve `TRUSTED_PROXY_CIDR`'ı §3.1'e göre düzeltin; `up -d` yeni `edge` ağını yaratır, `web` ve `api` yeniden yaratılır.
 4. `docker compose -f deploy/docker-compose.prod.yml up -d` — api/worker/web yeni imajla yeniden yaratılır (`db-init` ve `migrator` yeniden çalışır, bekleyen bir şey yoksa işlem yapmaz).
 5. `./deploy/smoke.sh` ve arayüzden kontrol; `docker compose ... ps` (hepsi healthy), `docker compose ... logs --since 10m api worker`.
 6. **Geri alma:**
@@ -203,7 +238,9 @@ Postgres ana sürümü yükseltme (17 → 18): mantıksal yedek al → yeni sür
 | Dış (LB) sağlık kontrolü | `GET /healthz` (vekil ayakta) ve `GET /api/v1/auth/config` (API ayakta) | 200 |
 | Worker | `docker inspect --format '{{.State.Health.Status}}' <proje>-worker-1` | `healthy` (15 sn'de bir yenilenen sinyal dosyası; 60 sn eskirse `unhealthy`) |
 | Conductor | `docker compose ... exec conductor curl -fsS localhost:8080/health` | `{"healthy":true,...}` |
-| Tümü | `docker compose -f deploy/docker-compose.prod.yml ps -a` | api/worker/web/postgres/conductor `healthy`; db-init, migrator `Exited (0)` |
+| **M8C** Nesne deposu | API `/health` tam raporunda `storage` denetimi (erişim + kova + varsayılan şifreleme); `docker compose ... ps minio` | `Healthy`. Depo kapalıyken `Degraded` (**`/health/ready`'ye girmez**: CRM'nin geri kalanı çalışır, dosya uçları `503 file.storage_unavailable`). Disk: `miniodata` doluluğu >%80 uyarısı kurun |
+| **M8C** Uzlaştırma sayacı | `migrator files-reconcile --dry-run` çıktısı / `crm.files.reconcile.missing` metriği / `select count(*) from files.attachments where state = 'missing'` | 0 (`> 0` ise §18.5) |
+| Tümü | `docker compose -f deploy/docker-compose.prod.yml ps -a` | api/worker/web/postgres/conductor/minio `healthy`; db-init, minio-init, migrator `Exited (0)` |
 
 `/health*` uçları `web` üzerinden dışarı verilmez (yalnız `/api/*` vekil edilir); iç izleme aracınız docker `healthcheck` durumunu veya `exec` çıktısını okuyabilir
 (ör. cron + `docker inspect`, Zabbix/Prometheus `cadvisor`). Diskler: `docker system df`, `pgdata` doluluğu ve yedek dizini için ayrıca uyarı kurun (>%80).
@@ -218,6 +255,8 @@ Pilot topolojisi **tek `api` örneğidir**. Bu varsayımdan üç davranış doğ
 | **Giriş azaltma sayaçları** (`LoginThrottle`: IP+hesap 5 hatalı deneme/15 dk, e-posta başına 20 deneme/dk) | Bellek içidir; `api` yeniden başlayınca sıfırlanır ve kopyalar arasında paylaşılmaz. | Çok kopyada saldırgan sınırı kopya sayısıyla çarpar; o zaman paylaşımlı depo (Redis) gerekir. Kalıcı kalan koruma: hesap kilidi (10 hatalı deneme → 15 dk, veritabanında) ve auth uçlarının IP başına hız sınırı. |
 | **Kimliği doğrulanmış hız sınırı** (`RateLimiting:User` 600/dk, `Tenant` 3000/dk) | Kopya başına sayılır. | Cömert varsayılanlar normal kullanımı asla etkilemez; kurumsal NAT/tek vekil arkasında kullanıcı başına sınır yine kullanıcı kimliğine (`sub`) bağlıdır, IP'ye değil. `RateLimiting__User__PermitLimit` vb. ortam değişkeniyle ayarlanır. |
 | **Varlık (plan/askı) önbelleği** (M7, HybridCache `ent:{tenantId}`) | Plan, deneme, askı ve modül bayrakları `Platform:Entitlements:CacheSeconds` (30 sn) önbelleklenir; **etkin durum her istekte saatten hesaplanır** (deneme bitişi önbelleğe takılmaz). Platform komutları (plan/askı/silme) aynı süreçte önbelleği **hemen** geçersiz kılar. | Çok kopyada diğer kopyalar ≤ 30 sn (+ L2/Redis süresi) bayat kalır: askı en geç bu sürede tüm kopyalarda etkili olur. Kayıt sayaçları (limit) `Platform:Usage:CacheSeconds` (300 sn) önbellekli ve **yumuşak**tır (sınır bu sürede bir miktar aşılabilir); kullanıcı sınırı sert ve önbelleksizdir (istişari kilit). |
+| **API anahtarı önbelleği ve azaltma** (M8B) | Anahtar özeti + meta `Integrations:ApiKeys:CacheSeconds` (30 sn) önbelleklenir (`apikey:{kiracı}:{önek}`); iptal/güncelleme aynı süreçte **anında** geçersiz kılar. Kimlik doğrulama **başarısızlık azaltması** (IP+kiracı 20 hata/10 dk → 429, DB'siz) bellek içidir, kopya başına. | Çok kopyada iptal ≤ 30 sn (+ L2) gecikebilir; azaltma paylaşılmaz (kopya sayısıyla çarpılır). Sızan anahtarı **hemen iptal edin**. Anahtar hız sınırı `RateLimiting:ApiKey` (120/dk) ve `ApiKeyTenant` (600/dk) kopya başına sayılır. |
+| **Webhook kota kovaları** (M8B) | Kiracı başına dakikada teslimat (600), eşzamanlılık (kiracı 4 / genel 32 / ana bilgisayar 2), test ping'i (5/dk) ve yeniden gönderme (20/dk) sayaçları bellek içidir. | Tek Worker varsayımı; Worker çoğaltılırsa kotalar kopya başına uygulanır. |
 
 İstek gövdesi üst sınırı `RequestLimits__MaxRequestBodyBytes` (varsayılan 1 MB; aşan istek 413). Oturum: refresh token ailesinin **mutlak** ömrü 30 gündür (`Identity__RefreshFamilyDays`); süre dolunca kullanıcı yeniden giriş yapar. Parola değişince kullanıcının tüm cihazlardaki oturumları kapanır.
 
@@ -276,22 +315,87 @@ Lead/fırsat olayları işlenmiyorsa outbox birikir: `SELECT count(*) FROM sales
   web arayüzü yazı tiplerini ve tüm varlıklarını kendi kökeninden sunar (CDN yok, CSP `default-src 'self'`). Ek olarak `backend` ağı `internal` olduğundan API/Worker/Postgres/Conductor dışarıya
   bağlantı **açamaz** (doğrulandı: API ve Postgres konteynerinden dış ad çözümlenemedi). Dış çağrı yalnız sizin eklediğiniz yapılandırmayla olur
   (ileride SMTP vb. eklenirse `backend` ağı ve bu belge güncellenmelidir). Scalar/OpenAPI dokümantasyonu üretimde kapalıdır (Scalar, açıkken tarayıcıda CDN'den betik çeker).
+- **Giden webhook (M8B) — "veri merkezinden çıkış yok" güvencesi egress açıkken yeniden yazılır:** varsayılan `WEBHOOKS_ENABLED=false` (hiçbir dış çağrı yok). Açıldığında dış trafik **yalnız** `egress-dns` + `egress-proxy` (bkz. §17) üzerinden, yalnız kiracı yöneticisinin tanımladığı HTTPS hedeflerine, PII içermeyen zarfla (kimlik/numara/durum/tutar) gider; `backend` ağı `internal` kalır, Worker'a internet ağı verilmez. Dış çağrı kaydı `egress-proxy` erişim günlüğüdür (hedef IP/zaman; içerik yok). **Hedefi seçen yönetici (kiracı = veri sorumlusu) alıcının ülkesi ve yurt dışı aktarım (KVKK m.9) yükümlülüklerinden sorumludur**; işleten taraf `WEBHOOKS_ALLOWED_HOSTS` ile hedef kümesini daraltabilir veya `WEBHOOKS_ENABLED=false` ile çıkışı tamamen kapatabilir. Çözümleyici üst akışı (`EGRESS_DNS_UPSTREAM`) hedef **ana bilgisayar adlarını** görür → kurum içi çözümleyici önerilir. Teslimat günlüğü (PII'siz zarf) 30 gün tutulur, kiracı imhasında silinir; yedeklerde `RETENTION_DAYS` boyunca kalır. Sırlar şifreli saklanır; anahtar yedekten ayrı korunur.
 - **Kişisel veriler:** kişi/lead/firma iletişim alanları veritabanındadır; denetim kaydında (`audit.audit_log_entries`) e-posta/telefon alanları `***` ile maskelenir; oturum kayıtları IP ve kullanıcı-aracısı tutar
   (`identity.refresh_tokens`, kişisel veri sayılır; süresi dolmuş kayıtların temizliği sonraki iş).
 - **Veri yerleşimi (M7):** tek bölge / tek veri merkezi. Kiracı başına bölge seçimi **yoktur ve kapsam dışıdır**; SaaS'ta tüm kiracılar aynı yurt içi veri merkezinde durur, dış çağrı/alt işleyici yoktur
   (bu bölümdeki "veri merkezinden çıkış yok" güvenceleri aynen geçerlidir).
 - **Silme ≠ imha (kayıt düzeyi):** tek kayıt silme yumuşaktır (`is_deleted`); kayıt/kullanıcı bazlı kalıcı imha ve anonimleştirme aracı **yoktur** (kısmi imha kapsam dışı). **Kiracı bütününün** KVKK imhası M7 ile vardır:
-  1. **Talep:** platform yöneticisi `POST /api/v1/platform/organizations/{id}/deletion-request` `{ reason, retentionDays? }` (varsayılan **30 gün**, 7–90). Kiracı **anında** `pending_deletion` olur (tüm kullanıcılar dışarıda, giriş yok).
+  1. **Talep:** platform yöneticisi `POST /api/v1/platform/organizations/{id}/deletion-request` `{ reason, retentionDays?, confirmTenantName, currentPassword }` (varsayılan **30 gün**, 7–90). Kiracı **anında** `pending_deletion` olur (tüm kullanıcılar dışarıda, giriş yok).
+     **Sunucu tarafı onay (C-SEC2 H2):** `confirmTenantName` sunucudaki kiracı adıyla (kırpılmış, harf duyarlı) eşleşmelidir (`422 platform.confirmation_mismatch`); `currentPassword` çağıran platform yöneticisinin **kendi parolasıdır** (step-up, §12.1;
+     eksik `422 platform.step_up_required`, yanlış `422 platform.step_up_failed`, çok deneme `429 platform.step_up_rate_limited`). Başarılı talep aynı işlemde `deletion.requested` denetim satırı ve `TenantDeletionRequested` entegrasyon olayı yazar
+     (bildirim modülü bu olayı tüketecek). **`reason` serbest metindir: kişisel veri (ad, e-posta, telefon) yazmayın** — konsol bunu uyarır; imhada `[redacted]` yapılır (L1).
   2. **Bekleme:** talep bekleme süresi içinde `.../deletion-request/cancel` ile iptal edilir (kiracı önceki duruma döner).
   3. **İmha:** süre dolunca Worker (`TenantErasureService`, `Platform:Deletion:PollMinutes` = 10 dk, tek örnek) **kalıcı** imha yapar: kiracının tüm iş verisi (yumuşak silinenler dahil; yedi modül), outbox, denetim kaydı (`audit.audit_log_entries`), Conductor'daki yürütme kayıtları,
      yalnız bu kiracıya ait hesaplar ve oturumları; başka kiracıda üyeliği olan (ortak) hesaplar ve platform yöneticisi hesapları **kalır** (yalnız bu kiracıdaki üyelik/rol gider). Adımlar idempotenttir ve `erased_steps` ile yeniden başlatılır; hata → `failed`, üstel bekleme, `Platform:Deletion:MaxAttempts` (10) sonrası `deletion.failed` denetimi + günlük uyarısı (konsolda kırmızı).
-  4. **Mezar taşı:** `platform.tenant_accounts` satırı `deleted` (ad `[deleted]`, slug `deleted-xxxxxxxx`), `platform.deletion_requests` satırı imha raporuyla (kişisel veri yok) ve `platform.platform_audit_entries` (hedef adı redakte) **bilerek kalır** (hesap verebilirlik; `Platform:Audit:RetentionDays` = 1825 gün).
-  Sistem (işletim) organizasyonu asla imha edilmez. Önbellek girdileri (kiracı önekli, TTL ≤ 10 dk) imha sonunda geçersiz kılınır.
-  **Yedekler:** imha yedekleri temizlemez; silinmiş veri yedeklerde saklama süresi (`RETENTION_DAYS`) boyunca kalır — saklama ve imha politikasını buna göre yazın. **Geri yükleme sonrası** imha edilmiş kiracının yeniden görünmemesi için
-  `migrator erase-deleted-tenants` çalıştırılır (tüm mezar taşları için imhayı yeniden koşar; idempotent).
+  4. **Mezar taşı:** `platform.tenant_accounts` satırı `deleted` (ad `[deleted]`, slug `deleted-xxxxxxxx`, askı gerekçesi/kipi temizlenir), `platform.deletion_requests` satırı imha raporuyla (kişisel veri yok; `reason` = `[redacted]`) ve `platform.platform_audit_entries`
+  (hedef adı `[deleted]`, `details.reason` silinir) **bilerek kalır** (hesap verebilirlik; `Platform:Audit:RetentionDays` = 1825 gün).
+  Sistem (işletim) organizasyonu ve **aktif platform yöneticisi üyesi olan her organizasyon** asla askıya alınamaz, engellenemez, silme sürecine alınamaz ya da imha edilemez (`422 platform.system_tenant_protected`; §12.1).
+  Önbellek girdileri (kiracı önekli, TTL ≤ 10 dk) imha sonunda geçersiz kılınır.
+  **Dosya ekleri (M8C):** imha, `files-objects` adımıyla (sıra 95: `workflows-conductor` 90'dan sonra, `module:files` 100'den önce) kiracının **tüm nesnelerini** `{tenantId}/` önekiyle siler ve **doğrular** (önekte 0 nesne değilse adım `failed` olur ve yeniden denenir); satırlar ve `file_access_log` modül adımında gider; rapora `files.objects` sayısı girer (kişisel veri yok). **Dosya adları kişisel veri olabilir** (veritabanında ve denetimde; imhada gider); dosya içeriği günlüğe hiç yazılmaz.
+  **Yedekler:** imha yedekleri temizlemez; silinmiş veri yedeklerde (**nesne kovası arşivleri dâhil**) saklama süresi (`RETENTION_DAYS`) boyunca kalır — saklama ve imha politikasını buna göre yazın. **Geri yükleme sonrası** imha edilmiş kiracının yeniden görünmemesi için
+  `migrator erase-deleted-tenants` çalıştırılır (tüm mezar taşları için imhayı yeniden koşar; idempotent; **geri yüklenen nesneleri de yeniden siler**). Dosya **indirme izi** (kim neyi ne zaman): `select occurred_at, user_id, file_id, action from files.file_access_log where tenant_id = '<kiracı>' order by occurred_at desc limit 100;` (IP/ad yok; `Files:AccessLog:RetentionDays` = 365 gün sonra Worker siler).
 - **Erişim:** kiracı ayrımı satır bazlıdır (`TenantId` + global filtre; testli); platform yöneticisi organizasyon açar, plan/deneme/askı/silme yönetir ve sayaç (kullanım) görür ama kiracı iş verisini **okuyamaz** (taklit yok; M7). Yönetici hesapları ve yedek erişimini kısıtlayın; `.env`/`secrets/` dosya izinleri sıkı tutulmalıdır.
 - **İletim:** dış trafik TLS ile (§3.7); iç ağ (backend) yalnız konteynerler arasıdır.
 - **VERBİS / aydınlatma metni / veri işleyen sözleşmeleri** teknik değil, kurumsal iştir (kontrol listesi: [m5-pilot-yayin.md](../plan/m5-pilot-yayin.md)).
+
+### 12.1 Yıkıcı platform komutları: step-up, korunan kiracı, platform yöneticisi yaşam döngüsü (C-SEC2)
+
+**Step-up (yeniden kimlik doğrulama).** Şu komutlar çağıran platform yöneticisinin **kendi parolasını** gövdede `currentPassword` olarak ister ve sunucuda doğrular: silme talebi (`deletion-request`), **`blocked`** askı
+(`suspend` + `mode = blocked`; `readOnly` istemez), başarısız imhayı yeniden deneme (`deletion-request/retry`), platform yöneticisi yetkisini geri alma (`admins/{id}/revoke`). Çalınmış bir access token (localStorage'daki 15 dk'lık jeton) tek başına yetmez.
+Hatalar 401 **değildir** (istemci oturumu düşmez): eksik parola `422 platform.step_up_required`, yanlış `422 platform.step_up_failed`, deneme sınırı `429 platform.step_up_rate_limited`. Yanlış parola giriş ile **aynı** korumalara yazar
+(hesabın kalıcı hatalı-deneme sayacı → eşikte hesap kilidi; (IP, hesap) çifti başına 5 hata/15 dk). Parola ve hash asla loglanmaz. Kiracı adı onayı (`confirmTenantName`) ayrıca sunucuda doğrulanır (§12 adım 1).
+
+> **Karar notu (ADR tarzı) — MFA / ikinci onaylayıcı yok (kabul edilen risk).** Durum: kabul. Bağlam: e-posta altyapısı ve TOTP/WebAuthn yoktur; platform ekibi küçüktür. Karar: yıkıcı komutlar bir **tek** yöneticinin parolasını yeniden doğrulamasıyla
+> sınırlanır; ikinci onaylayıcı (four-eyes) ve MFA sonraki aşamaya bırakılır. Sonuçlar: parolası ele geçirilmiş bir platform yöneticisi hesabı yıkıcı komut verebilir; hafifletmeler — silme bekleme süresi (7–90 gün; iptal edilebilir), her komutun denetim satırı
+> ve olayı (`TenantDeletionRequested`), step-up hız sınırı/kilit, platform yöneticisi oturumlarının kısa ömrü (8 saat), korunan kiracı kuralı. Yeniden değerlendirme: MFA/e-posta altyapısı geldiğinde veya ikinci platform yöneticisi sayısı ≥ 2 iken.
+
+**Korunan kiracı (H1).** Sistem (işletim) organizasyonu **ya da aktif platform yöneticisi üyesi olan** (hesap aktif + bayrak var + üyelik aktif) her organizasyon askıya alınamaz, engellenemez, silme sürecine alınamaz ve imha edilemez; kural alan modelinde
+(`TenantAccount`), komut işleyicilerinde ve imha işinde (her talep başında ve **her yıkıcı adımdan önce**) ayrı ayrı uygulanır. Yükseltilen (M7 öncesi) kurulumlarda `is_system` bayrağı eksik olabilir: `migrate` (ve `backfill`) aktif platform yöneticisi üyesi olan her
+kiracı hesabını `is_system = true` işaretler; `create-platform-admin` de `Created` yanında `Promoted`/`Unchanged` için hesabın aktif üyeliği olan kiracıları işaretler. Sonuç: bir müşteri hesabı platform yöneticisi yapılırsa (ya da bir platform yöneticisi
+müşteri organizasyonuna davetle katılırsa) o organizasyon **korunan** olur; silinmesi gerekiyorsa önce yönetici yetkisi geri alınır (aşağıda) ya da üyeliği pasifleştirilir. Talep sonradan korunan hale gelen (aktif platform yöneticisi üyesi olan) bir kiracı için imha işi talebi **sistemce iptal eder**
+(hesap eski durumuna döner, `deletion.cancelled` denetimi `by = system`, `TenantDeletionCancelled` olayı); `is_system` işaretli kiracıda doğrudan SQL ile zorlanmış bir talep ise işlenmeden olduğu gibi bırakılır (M7 davranışı).
+
+**Platform yöneticisi yaşam döngüsü (M6).**
+- Liste: `GET /api/v1/platform/admins` (pasif olanlar dahil). Konsol: **Platform yöneticileri** sayfası.
+- Geri alma: `POST /api/v1/platform/admins/{userId}/revoke` `{ currentPassword, deactivate? }` (step-up) veya Migrator: `PLATFORM_ADMIN_EMAIL=… [PLATFORM_ADMIN_DEACTIVATE=true] docker compose … run --rm migrator revoke-platform-admin`.
+  Bayrak kaldırılır, `deactivate` ile hesap da pasifleşir ve **tüm refresh token aileleri iptal edilir** (yetki her istekte veritabanından doğrulandığından access token'lar da hemen işlevsiz kalır). **Son aktif platform yöneticisi geri alınamaz/pasifleştirilemez**
+  (`409 platform.last_platform_admin`; Migrator çıkış kodu 4) — önce bir başkasını oluşturun. `platform_admin.revoked` denetimi yazılır.
+- Bootstrap yöneticisi `MustChangePassword = true` ile açılır; `create-platform-admin` başarıdan sonra parola dosyasını boşaltır (§3.4).
+- **Oturum süreleri (M4, kısmi):** platform yöneticisi oturumları (refresh token ailesi) ilk girişten itibaren **8 saatte** mutlaken biter (`Identity__PlatformAdminRefreshFamilyHours`, varsayılan 8; normal kullanıcı 30 gün) ve **60 dk boşta** kalınca kapanır
+  (`Identity__PlatformAdminRefreshIdleMinutes`, varsayılan 60 = platform yöneticisi refresh token ömrü; istemci açıkken yenileme onu uzatır, aile ömrünü aşamaz). Yapılandırma yalnız yeni oturumlar (aileler) için geçerlidir.
+  **Sonraki iş:** jetonlar hâlâ tarayıcı `localStorage`'ındadır (XSS'e açık). Hedef: refresh token'ı `HttpOnly; Secure; SameSite=Strict` çerezine, access token'ı bellekte tutmak (CSRF için çift gönderim/`Origin` denetimi; nginx'te aynı-köken). Bu kartta uygulanmadı.
+- **İzleme (L4):** `/api/v1/platform/**` üzerinde kimliği doğrulanmış **ama platform yöneticisi olmayan** kullanıcının reddedilen (403) istekleri kaba düzeyde sayılır: metrik `crm.platform.rejected_requests` (`Sense.Crm.Security` meter'ı, etiket: HTTP yöntemi) ve
+  kişisel veri içermeyen `Warning` günlüğü ("Rejected a … request to the platform console…", olay 4301). Ani artış = keşif/sızma denemesi; `platform.audit` satırı **yazılmaz** (yalnız yetkili yönetici eylemleri denetlenir).
+- **`organization.created` denetimi (L4):** satır Identity işlemi commit edildikten sonra doğrudan yazılır; yazılamazsa günlüğe `Error` düşer ve `OrganizationCreated` olayı (aynı Identity işleminde outbox'a yazılır, `ActorUserId` taşır) Platform işleyicisinde satırı **tamamlar** (idempotent).
+  İki farklı DbContext arasında dağıtık işlem yoktur; tek işlem mümkün olmadığından "olay + tamamlama" seçildi.
+
+### 12.2 İmha doğrulaması, adım kaydı ve yeniden deneme (M1, M2, L3)
+
+- **Yıkıcı işlemden önce yeniden doğrulama (M1):** işin her turunda talep `SELECT … FOR UPDATE SKIP LOCKED` ile kilitlenir (eşzamanlı iptal ya da başka Worker varsa atlanır) ve aynı işlemde durum (`scheduled|running|failed`), `scheduled_for ≤ now`, hesap `pending_deletion`,
+  sistem değil, aktif platform yöneticisi üyesi yok doğrulanır. `deletion_requests` `xmin` eşzamanlılık belirteci taşır: iptal ↔ başlatma yarışını kaybeden yazma `409` alır. İş kilidi işlem düzeyindedir (`pg_try_advisory_xact_lock`). Ön koşul bozuksa: korunan kiracı → talep sistemce iptal;
+  hesap `pending_deletion` değil → `erasure.precondition_failed` ile kalıcı `failed` (otomatik yeniden deneme durur).
+- **Tombstone öncesi doğrulama (M2):** mezar taşı yazılmadan önce (a) her `ITenantDataEraser`'ın isteğe bağlı `VerifyErasedAsync` kancası ve (b) `information_schema.columns`'ta **`tenant_id` kolonu olan tüm taban tablolar** (her şema; yalnız `platform.tenant_accounts` ve `platform.deletion_requests` bilerek hariç) taranır. Kiracıya ait satır kalmışsa adım
+  `erasure.verification_failed: <şema.tablo>=<sayı>` ile başarısız olur, talep `failed` kalır, **tombstone yazılmaz** (hata iletisi satır içeriği taşımaz). Ne kalmışsa giderilip yeniden denenir.
+- **Kayıt bütünlüğü:** yeni bir modülün DbContext'i `ModuleCatalog`'a eklenince Worker ve Migrator `Program.cs`'e de `AddModuleDbContext<…>` ile eklenmelidir; `ErasureRegistrationArchitectureTests` unutulursa kırmızı olur (ve tüm kiracı varlıklarının imha planında olduğunu doğrular).
+  Veritabanı dışı depolar (M8C nesne depolama, webhook/bildirim tabloları) `ITenantDataEraser` uygulayıp `Order` ile kaydolarak aynı akışa katılır (`Name` benzersiz, `TenantErasureSteps` doğrular); `VerifyErasedAsync` ile kalıntıyı bildirir.
+- **Yetim Conductor yürütmeleri (L2):** `engine_workflow_id` yazılamamış ama motorda başlatılmış yürütmeler, CRM yürütme kimliğiyle (`correlationId`) Conductor `GET workflow/{ad}/correlated/{id}` ile bulunup imhada silinir (rapor: `conductor.orphan_executions`).
+- **Başarısız imhayı yeniden deneme (L3):** konsolda kiracı detayı `lastError` (kod + tablo/sayı; kişisel veri yok) ve deneme sayısını gösterir; **Yeniden dene** düğmesi (`POST …/deletion-request/retry`, step-up) `attempts`'i sıfırlar ve `deletion.retried` denetimi yazar.
+  Yalnız `failed` talep için (aksi `409 platform.deletion_not_retryable`).
+
+### 12.3 Denetim tablolarının salt-eklemeli koruması (M3)
+
+`audit.audit_log_entries` ve `platform.platform_audit_entries` veritabanı **tetikleyicileriyle** korunur (`crm_app` tam DML yetkili olsa bile): `UPDATE`/`DELETE`/`TRUNCATE` reddedilir (`audit_immutable`, SQLSTATE 42501). İstisnalar yalnız işlem başına `SET LOCAL crm.audit_maintenance = '…'` işaretiyle **ve** koşullarıyla:
+`erasure` (KVKK imhası) — `audit_log_entries` için yalnız DELETE ve yalnız kiracı `platform.tenant_accounts`'ta `pending_deletion|deleted` iken; `platform_audit_entries` için yalnız `target_tenant_name`/`details` sütunlarının redaksiyonu (UPDATE) ve aynı kiracı koşulu;
+`retention` (saklama işi) — yalnız `platform_audit_entries`, yalnız **30 günden eski** satırlar (yapılandırılan `Platform:Audit:RetentionDays` < 30 ise 30 uygulanır). Kırılma-cam: **süper kullanıcı** oturumunda `SET crm.audit_maintenance = 'superuser'` (uygulama rolü süper kullanıcı değildir; işaret onda işlemez) —
+DBA yalnız olağanüstü durumda kullanır ve yaptığını kayda geçirir. **Kalan risk:** uygulama süreci ele geçirilirse saldırgan `erasure` işaretini koyabilir, ama yalnızca silme sürecindeki bir kiracının satırlarını silebilir; tam koruma için denetimi ayrı bir salt-ekleme deposuna/WAL arşivine akıtmak sonraki iştir.
+
+### 12.4 Askıdayken düşen olaylar ve `TenantReactivated` (L5)
+
+Askıdaki/salt okunur/silme bekleyen kiracıda kullanıcı kaynaklı yazma işlemleri (403 `tenant.suspended`) **hiç gerçekleşmez**, dolayısıyla olay üretmez; ancak askı sırasında **halihazırda kuyruğa alınmış** iş (Worker outbox, Conductor görevleri, olay
+tüketicileri) kiracı kapısından geçemeyebilir: bu olaylar **atılır (yeniden oynatılmaz)** — politika budur (askı = kiracıya ait iş durur, geri gelince yeni olaylar akar). `TenantReactivated` olayı (askı kalkınca Platform outbox'ına yazılır) bu yüzden bir **uzlaştırma işaretidir**:
+gelecekteki tüketiciler (bildirim/faturalama/webhook) askı süresince kaçırılmış durumu bu olayda kaynağından yeniden okuyarak kapatmalıdır (kod eklenmedi; olay `TenantReactivated(TenantId, ActorUserId)` her yeniden açmada tam bir kez yazılır: `PlatformConsoleApiTests`, `PlatformAuditApiTests`).
+Davet kabul/red (L7) askı/silme bekleyen kiracıya **yazmaz** (`403 tenant.suspended`); askı kalkınca davet hâlâ bekler ve kabul edilebilir.
 
 ## 13. Kurtarma hedefleri (öneri — onay gerekir)
 
@@ -307,8 +411,265 @@ Tek sunuculu kurulumda sunucu arızası = RTO süresi kadar kesinti; yüksek eri
 ## 14. Ek: ortam değişkenleri özeti
 
 Ayrıntı ve varsayılanlar: [`deploy/.env.example`](../../deploy/.env.example). Uygulama ayarları (compose `environment` bölümünden): `Registration__Mode`, `AllowedHosts`,
-`ForwardedHeaders__Enabled|KnownProxies__n|KnownNetworks__n` (varsayılan kapalı; compose yalnız `backend` alt ağını güvenilir sayar), `Docs__Enabled`, `Conductor__BaseUrl`,
+`ForwardedHeaders__Enabled|KnownProxies__n|KnownNetworks__n` (varsayılan kapalı; compose yalnız `edge` alt ağını (`EDGE_SUBNET`) güvenilir sayar; nginx'e ulaşan tek ağ budur), `Docs__Enabled`, `Conductor__BaseUrl`,
 `ConnectionStrings__Database|Redis`, `Auth__SigningKeyPem` (dosyadan; `/run/secrets/<Ad>` dosyaları `Ad`'daki `__` → `:` ile yapılandırma anahtarı olur), `Worker__HeartbeatFile`.
 **Platform (M7):** `Platform__Signup__PlanCode` (`starter`), `Platform__Provisioning__DefaultPlanCode` (`internal`), `Platform__Plans__<n>__…` (plan kataloğu; yalnız **Migrator** için anlamlıdır — `migrate`/`sync-plans`; örnek: `appsettings.json`), `Platform__Entitlements__CacheSeconds` (30),
 `Platform__Usage__{CacheSeconds 300, SnapshotPollMinutes 30, RetentionDays 400}`, `Platform__Audit__RetentionDays` (1825), `Platform__Deletion__{RetentionDays 30, MinRetentionDays 7, MaxRetentionDays 90, PollMinutes 10, MaxAttempts 10, ChunkSize 10000}`.
+**Platform yöneticisi oturumu (C-SEC2 M4):** `Identity__PlatformAdminRefreshFamilyHours` (8), `Identity__PlatformAdminRefreshIdleMinutes` (60). **Migrator komutları:** `create-platform-admin`, `revoke-platform-admin` (`PLATFORM_ADMIN_EMAIL`, isteğe bağlı `PLATFORM_ADMIN_DEACTIVATE=true`), `backfill` (`is_system` işaretlemesi dahil).
 Bilinmeyen plan kodu ve tutarsız aralıklar açılışta reddedilir (Migrator ≠ 0 çıkış; API/Worker başlamaz). Compose `environment` ve `.env.example` satırlarını DevOps ekler.
+**Dosya ekleri (M8C):** `Files__Storage__{Provider s3|filesystem|memory, Endpoint, Region, Bucket, AccessKey|SecretKey (dosyadan), ForcePathStyle, Encryption required|none, AcknowledgeUnencrypted, RootPath}`, `Files__Upload__{MaxFileMb 25, MaxFilesPerRequest 10, MaxRequestMb 110, TempDirectory, AllowedExtensions}`, `Files__Scanner__{Provider none, FailMode open|closed, OnInfected reject|quarantine}`, `Files__Purge__{SoftDeleteRetentionDays 7, PollMinutes 60, RecordMissingGraceDays 30}`, `Files__Reconcile__{PollHours 24, OrphanGraceHours 24, MaxOrphanDeleteFraction 0.05, MaxOrphanDeletePerRun 1000}`, `Files__AccessLog__RetentionDays` (365), `Files__RateLimiting__{Upload 30, Download 120, ConcurrentUploadsPerTenant 4, MaxConcurrentUploads 16}`; plan limiti `Platform__Plans__<n>__limits__maxStorageMb`. Üretimde `Provider != s3` ya da `Encryption=none` (`AcknowledgeUnencrypted=true` beyanı olmadan) API/Worker/Migrator'ı **başlatmaz**; tutarsız aralıklar (`MaxFileMb` 1–200, `MaxFileMb ≤ MaxRequestMb ≤ MaxFilesPerRequest × MaxFileMb`) açılışta reddedilir. Compose değişkenleri: `MINIO_IMAGE`, `MINIO_MC_IMAGE`, `FILES_BUCKET`, `MINIO_MEM_LIMIT`, `API_TMP_SIZE`.
+
+## 15. Ek: uçtan uca tarayıcı testleri (Playwright)
+
+Yayın öncesi doğrulama için [`e2e/`](../../e2e) paketi, üretim compose'unu **ayrı bir compose projesinde** (`crm-e2e`, `127.0.0.1:8181`, tek kullanımlık sırlar) kaldırıp gerçek tarayıcıyla kritik akışları, erişilebilirliği (axe) ve nginx güvenlik başlıklarını sınar; işi bitince yalnız o projeyi siler (`crm-prod-*` ve diğer yığınlara dokunmaz).
+`.\e2e\run.ps1` (Windows) veya `./e2e/run.sh` (Linux/macOS) — ayrıntı, seçenekler ve sorun giderme: [`e2e/README.md`](../../e2e/README.md); ürün bulguları: README'nin "Bulgular ve bilinen sorunlar" bölümü. CI'da `e2e` işi (`.github/workflows/ci.yml`) aynı betiği çalıştırır ve raporu artifact olarak yükler.
+
+## 16. Gözlemlenebilirlik: izleme ve metrikler (C-OPS1, K20)
+
+Varsayılan `up` **hiçbir izleme bileşeni çalıştırmaz** ve hiçbir yeni port açmaz. İzleme yığını isteğe bağlı bir compose **overlay**'idir: [`deploy/docker-compose.observability.yml`](../../deploy/docker-compose.observability.yml).
+Kapsam: yalnız **metrikler** (Prometheus + Grafana); iz (trace) ve merkezî günlük yığını (Seq/Loki) yoktur (K20). Günlükler §10'daki gibi konsoldan/`docker logs`'tan okunur.
+
+### 15.1 Bileşenler ve ağ
+
+| Bileşen | İmaj (sabit) | Ağ | Yayın |
+|---|---|---|---|
+| `api` metrik dinleyicisi | uygulama içinde, **ayrı port 9464** | `backend` (internal) | **Yok** (nginx bu portu bilmez) |
+| `worker` metrik dinleyicisi | uygulama içinde, **port 9465** | `backend` (internal) | **Yok** |
+| `prometheus` | `prom/prometheus:v3.5.1` | `backend` + `observability` (ikisi de internal) | **Yok** (yalnız `docker compose exec`) |
+| `postgres-exporter` (+ tek seferlik `monitor-init`) | `quay.io/prometheuscommunity/postgres-exporter:v0.17.1` | `backend` + `observability` | **Yok** |
+| `grafana` | `grafana/grafana:12.2.1` | `observability` + `observability-ui` | **`127.0.0.1:${GRAFANA_PORT:-3000}` yalnız loopback** (bind geçersiz kılma yoktur) |
+| `node-exporter`, `cadvisor` (profil `host-metrics`, isteğe bağlı) | `prom/node-exporter:v1.9.1`, `gcr.io/cadvisor/cadvisor:v0.52.1` | `observability` | Yok |
+
+- **Çıkış yok (egress = none):** Prometheus, exporter'lar ve uygulama yalnız `internal: true` ağlardadır; dışarıya çıkış yolu yoktur. **Tek istisna Grafana:** Docker, internal bir ağdan port yayınlayamadığı için Grafana ayrıca normal bir köprü ağa (`observability-ui`) bağlıdır. Grafana dışarı çağrı yapmayacak şekilde ayarlıdır (güncelleme/eklenti/haber/telemetri denetimleri kapalı, kayıt ve anonim erişim kapalı, eklenti yönetimi kapalı), ancak ağ katmanında çıkış **yetkisi teknik olarak vardır**. Katı veri yerleşimi (KVKK) gerekiyorsa ana bilgisayar güvenlik duvarında `observability-ui` alt ağından (`docker network inspect <proje>_observability-ui`) çıkışı engelleyin (Linux: `DOCKER-USER` zincirinde `-s <alt ağ> -j DROP`; yayınlanan `127.0.0.1` portu bundan etkilenmez).
+- **İç ağ notu:** Prometheus `backend` ağındadır (api/worker'ı kazımak için); dolayısıyla `backend` ağındaki her konteyner (web/nginx dahil) `prometheus:9090`'a erişebilir. nginx yalnız `/api/` yolunu `api:8080`'e vekiller, Prometheus'a yol vermez; `backend`'e yeni bir servis eklerken bunu hesaba katın (Prometheus arayüzü kimlik doğrulamasızdır ve salt-okur metrik/kural verisi gösterir, yönetim uçları — `--web.enable-lifecycle`/admin API — kapalıdır).
+- **Uygulama tarafı:** `Observability:Metrics:Enabled` **varsayılan kapalıdır**; yalnız overlay `api`/`worker`'a `Observability__Metrics__Enabled=true`, `BindAddress=0.0.0.0` ve belirteç dosyasını verir. Dinleyici ana uygulama hattından **bağımsız** küçük bir Kestrel'dir: yalnız `GET|HEAD /metrics` sunar, başka her yol 404, `AllowedHosts`/hız sınırı/kimlik doğrulama ana uygulamaya aittir ve burayı etkilemez. Dinleyici açılamazsa uygulama çalışmaya devam eder (günlükte `Metrics endpoint could not start`).
+- **Koruma katmanları:** (1) ağ yalıtımı (`backend` internal, port yayınlanmaz), (2) bearer belirteç (`secrets/metrics-bearer-token`; uygulama ve Prometheus aynı Docker secret'ını okur; sabit zamanlı karşılaştırma; dosya boşsa uygulama belirteç sormaz), (3) yalnız `/metrics` yolu.
+
+### 15.2 Etkinleştirme
+
+```bash
+# 1) Yeni sırları üret (mevcut dosyalar korunur; .env'e dokunulmaz): metrics-bearer-token, grafana-admin-password, pg-monitor-password
+./deploy/generate-secrets.sh            # Windows: .\deploy\generate-secrets.ps1
+# 2) (İsteğe bağlı) deploy/.env: GRAFANA_PORT, PROM_RETENTION_TIME, PROM_RETENTION_SIZE ... (bkz. .env.example'ın sonu)
+# 3) Overlay ile başlat (api/worker yeni ortam değişkenleriyle yeniden oluşturulur)
+docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml up -d
+# ana bilgisayar metrikleri (Linux; node-exporter + cAdvisor):
+docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml --profile host-metrics up -d
+```
+
+Doğrulama:
+
+```bash
+# Hedefler UP mı? (Prometheus yayınlanmadığı için konteynerin içinden)
+docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.observability.yml exec prometheus \
+  wget -qO- 'http://localhost:9090/api/v1/query?query=up'
+# /metrics yalnız iç ağda: web portundan ulaşılamaz (SPA sayfası döner, metrik dönmez)
+curl -s http://127.0.0.1:${WEB_PORT:-8080}/metrics | head -c 200 ; curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:${WEB_PORT:-8080}/api/metrics   # 404
+# Grafana: http://127.0.0.1:3000 (kullanıcı GRAFANA_ADMIN_USER=admin; parola: deploy/secrets/grafana-admin-password)
+```
+
+Uzak sunucuda Grafana'ya SSH tüneli ile bağlanın (`ssh -L 3000:127.0.0.1:3000 sunucu`) ya da aynı makinedeki TLS vekilinizle `127.0.0.1:3000`'i yayınlayın (Grafana kendi oturum açma ekranını kullanır; anonim erişim kapalıdır).
+Kapatmak için overlay'siz `up -d` yeterlidir (api/worker metrik ortam değişkenleri olmadan yeniden oluşur; Prometheus/Grafana verileri `promdata`/`grafanadata` birimlerinde kalır, `--remove-orphans` ile konteynerler silinir).
+
+### 15.3 Ne açığa ÇIKARILMAMALI
+
+- `9464`/`9465` (uygulama metrikleri), `9090` (Prometheus), `9187` (postgres-exporter), `9100`/`8080` (node-exporter/cAdvisor) **asla** `ports:` ile yayınlanmaz, nginx'te `location /metrics` (veya `9464`'e `proxy_pass`) eklenmez, TLS vekiline yönlendirilmez. Mimari test (`ObservabilityArchitectureTests`) üretim compose'unda tek yayınlanan portun `web` olduğunu, overlay'de tek yayınlanan portun `127.0.0.1:…:3000` (Grafana) olduğunu ve nginx yapılandırmasında `metrics`/`9464` geçmediğini denetler.
+- Grafana'yı `0.0.0.0`'a bağlamayın; internete/kurumsal ağa açmanız gerekirse önüne kimlik doğrulamalı TLS vekili koyun. Yönetici parolası `secrets/grafana-admin-password` dosyasındadır (varsayılan parola **yoktur**); `secrets/` dizinini `.env` gibi yedekleyin ve sürüm denetimine koymayın.
+- Metrikler kiracı veya kullanıcı kimliği, e-posta, IP taşımaz (etiketler yalnız `module|status|reason|outcome|task_type|plan|step|background_job` ve HTTP için yol **şablonu**). Buna rağmen metrik çıktısını dış bir SaaS'a göndermeyin: kiracı sayıları, plan adları ve hata oranları ticari bilgidir.
+- Prometheus/Grafana birimleri (`promdata`, `grafanadata`) iş verisi içermez ama sistem topolojisini gösterir; yedek/erişim politikanızda buna göre ele alın.
+
+### 15.4 Panolar (Grafana klasörü "CRM"; dosyadan provizyonlanır, arayüzden düzenlenemez)
+
+Kaynak: [`infra/observability/grafana/dashboards`](../../infra/observability/grafana/dashboards) (değişiklik = dosyayı düzenleyip commit; Grafana 30 sn içinde okur).
+
+| Pano | İçerik |
+|---|---|
+| `CRM - API overview` | RED (istek hızı, hata oranı, süre p50/p95/p99, **yol şablonu** başına), doygunluk (CPU, bellek, GC, thread pool, Kestrel bağlantıları, hız sınırlayıcı), bağımlılıklar (Conductor HttpClient, Npgsql, EF Core) |
+| `CRM - Background processing` | Outbox bekleyen/ölü/en eski yaş ve gönderim gecikmesi (modül başına), workflow yürütmeleri, Conductor yoklama/görev sonuçları ve süreleri, worker süreci |
+| `CRM - Security signals` | Giriş sonuçları, kilitlenmeler, refresh yeniden kullanım tespiti, hız sınırlama, 401/403/429, plan/askı reddi |
+| `CRM - Tenant lifecycle and deletion` | KVKK silme hattı (durum, gecikme, adım sonuçları, silinen satır), kullanım anlık görüntüsü, plan zorlaması (neden/plan/modül) |
+| `CRM - PostgreSQL basics` | `pg_up`, bağlantılar, işlem hızı, önbellek isabeti, kilitler, deadlock, boyut, WAL, uygulama havuzları |
+
+### 15.5 Metrik sözlüğü (uygulama)
+
+Tümü tek `Sense.Crm` Meter'ından gelir (kaynak: `Sense.Crm.Shared.Contracts.Observability.CrmMetrics`); Prometheus adları noktaların `_` olduğu biçimdir. Framework metrikleri (`http_server_request_duration_seconds`, `dotnet_*`, `kestrel_*`, `aspnetcore_rate_limiting_*`, `http_client_*`, `microsoft_entityframeworkcore_*`, `db_client_*`) yerleşik Meter'lardır.
+
+| Metrik | Etiketler | Anlamı |
+|---|---|---|
+| `crm_auth_logins_total` | `outcome` = success / invalid_credentials / rate_limited / locked_out / inactive / no_organization / suspended | giriş sonuçları |
+| `crm_auth_lockouts_total`, `crm_auth_refresh_reuse_detected_total` | – | hesap kilitleme; iptal edilmiş refresh token'ın süre aşımı dışında tekrar kullanımı (aile kapatılır) |
+| `crm_auth_refresh_rejected_total` | `reason` = unknown / expired / reuse / concurrent / user_inactive | reddedilen yenilemeler |
+| `crm_entitlement_rejections_total` | `reason` (etkin durum: trial_expired, suspended, pending_deletion, deleted \| module_disabled \| limit_exceeded), `module`, `plan` | plan/yaşam döngüsü zorlaması reddi |
+| `crm_event_handlers_skipped_total` | `handler` (kod sınıf adı) | plan/askı nedeniyle atlanan olay işleyicileri |
+| `crm_outbox_messages_total`, `crm_outbox_dispatch_lag_seconds`, `crm_outbox_poll_failures_total` | `module`, `outcome` = dispatched / retry / dead | outbox işleme |
+| `crm_outbox_pending`, `crm_outbox_dead`, `crm_outbox_oldest_pending_age_seconds` | `module` | **Worker** örnekleyicisi (15 sn; `processed_at IS NULL` kısmi indeksi) |
+| `crm_conductor_polls_total`, `crm_conductor_tasks_total`, `crm_conductor_task_duration_seconds` | `outcome` (tasks/empty/error; completed/failed/failed_terminal/blocked/report_failed), `task_type` | Conductor yoklama ve görevler |
+| `crm_workflow_executions_total`, `crm_workflow_executions_running` | `status` (completed/failed/terminated) | workflow yürütmeleri |
+| `crm_tenant_deletion_runs_total`, `_steps_total`, `_rows_deleted_total`, `crm_tenant_deletion_requests`, `crm_tenant_deletion_oldest_due_age_seconds` | `outcome`, `step`, `status` | KVKK imha hattı |
+| `crm_usage_snapshot_tenants_total`, `crm_background_failures_total` | `outcome`; `background_job` | günlük kullanım işi; arka plan turu hataları |
+
+Nadir olay sayaçları (refresh yeniden kullanımı, kilitlenme, ölü mesaj, başarısız görev …) süreç açılırken **0 ile önceden oluşturulur**; böylece Prometheus'ta ilk olay bile `increase()`/`rate()` ile görülür (gerçek yığında doğrulandı: ilk `crm_auth_refresh_reuse_detected_total` artışı `CrmRefreshTokenReuse` alarmını tetikledi).
+
+Yeni bir metrik eklerken: etiket olarak **asla** kiracı/kullanıcı/kayıt kimliği, e-posta, IP koymayın; yalnız `CrmMetrics.Tag` sabitlerini kullanın (test kapısı çıktıdaki etiket adlarını denetler).
+
+### 15.6 Alarmlar
+
+Kurallar: [`infra/observability/prometheus/rules/crm-alerts.yml`](../../infra/observability/prometheus/rules/crm-alerts.yml) (`promtool check rules` ile doğrulanır). Tetiklenenleri şu ikisi gösterir: Prometheus'un `/api/v1/alerts` ucu (`docker compose … exec prometheus wget -qO- http://localhost:9090/api/v1/alerts`; Prometheus yayınlanmadığı için konteynerin içinden) ve panolardaki "Firing alerts" kutusu (`ALERTS` serisi).
+**Varsayılan olarak bildirim kanalı yoktur** (Alertmanager/e-posta yok: yığının çıkışı yoktur ve SMTP rölesi kurum politikasına bağlıdır). Bildirim istenirse: kurum içi SMTP rölesine erişen bir Alertmanager konteynerini yalnız `observability` ağına ekleyin ve `prometheus.yml`'e `alerting:` bloğu ekleyin; ya da Prometheus'u kurum içi mevcut izleme aracınıza federasyonla bağlayın. Eşikler pilot içindir (≈ 50 eşzamanlı kullanıcı, tek api + tek worker); gerçek trafikle ayarlayın.
+
+Her alarmın `runbook_url` etiketi aşağıdaki başlığa (`#### <AlarmAdı>`) gider; başlık ve bağlantı bir mimari testle senkron tutulur.
+
+### 15.7 Alarm müdahale rehberi
+
+#### CrmTargetDown
+`up == 0`: ilgili süreç kapalı/yeniden başlıyor ya da metrik dinleyicisi/belirteç yanlış. `docker compose … ps`, `logs --since 15m <servis>`; `Metrics endpoint listening on …` satırını arayın. Belirteç uyuşmazlığı: Prometheus `HTTP 401` görür (`secrets/metrics-bearer-token` her iki tarafta aynı dosya olmalı). `postgres` hedefi düşükse `monitor-init` çıkışı ve `pg-monitor-password` dosyası.
+
+#### CrmScrapeTargetMissing
+DNS keşfi `api`/`worker` adresi bulamıyor: konteynerler çalışmıyor ya da `backend` ağında değil. `docker compose … up -d api worker`.
+
+#### CrmApiHighErrorRate
+5xx > %5 (10 dk). `logs api` (`Error` düzeyi, `X-Correlation-Id`), `CRM - API overview` → "5xx by route template" ile sorunlu yolu bulun; `/health/ready` (Postgres?), Conductor bağlantısı, son dağıtım. Kalıcıysa son sürüme geri dönün (§8).
+
+#### CrmApiSlowRoute
+Bir yol şablonunun p95'i > 1 sn. Panoda o yolun süresini ve `DB command p95` / havuz kullanımını karşılaştırın; yavaş sorgu günlüğü (`PG_LOG_MIN_DURATION_MS`) ve eksik indeks kontrolü. Yalnız o yol yavaşsa sorgu/indeks, hepsi yavaşsa kaynak (CPU/thread pool/DB).
+
+#### CrmApiRateLimiting
+Hız sınırlayıcı sürekli 429 veriyor. Hangi ilkenin (Auth/User/Tenant/LoginEmail) reddettiğini `CRM - Security signals` panosundan görün. Kötü niyetli tek kaynak ise vekil/güvenlik duvarında engelleyin; meşru yük ise `RateLimiting__<İlke>__PermitLimit` değerini yükseltin (§9.1).
+
+#### CrmRuntimeThreadPoolStarvation
+Thread pool kuyruğu büyüyor: engelleyici çağrı veya aşırı yük. Aynı anda CPU/aktif istek grafiklerine bakın; `logs` içinde zaman aşımı; geçiciyse yükü azaltın, kalıcıysa `API_CPUS`/kopya sayısı ve kodda senkron bekleme araştırılır.
+
+#### CrmRuntimeHighMemory
+Çalışma kümesi konteyner sınırının %85'i üstünde. Sızıntı şüphesinde GC grafiklerini (heap büyüyor mu?) izleyin; sınır aşılırsa konteyner OOM ile yeniden başlar (`docker inspect … OOMKilled`). Geçici çözüm: `API_MEM_LIMIT`/`WORKER_MEM_LIMIT`'i yükseltin ve kural eşiğini güncelleyin.
+
+#### CrmOutboxBacklog
+Bir modülün outbox'ında > 500 bekleyen mesaj. Worker ayakta mı (`ps`), `CRM - Background processing` → "Messages handled/s" akıyor mu? Yavaşsa Postgres/handler süreleri; ölüyse yeniden başlatın. Bekleyen sayısı: `docker compose … exec postgres psql -U postgres -d crm -c "SELECT count(*) FROM sales.outbox_messages WHERE processed_at IS NULL AND NOT is_dead"` (şema adını değiştirin).
+
+#### CrmOutboxStuck
+En eski bekleyen mesaj > 10 dk. Worker düşmüş, işleyici hata veriyor (üstel geri çekilme en çok `Outbox:MaxBackoffSeconds` = 1 sa) ya da veritabanı erişilemez. `logs worker` içinde `Outbox message … failed; retrying` (EventId 1101, günlük kapsamında `CorrelationId` ile isteğe kadar izlenir). Nedeni giderince mesajlar kendiliğinden işlenir; beklemek istemiyorsanız `UPDATE <şema>.outbox_messages SET next_attempt_at = NULL WHERE processed_at IS NULL AND NOT is_dead`.
+
+#### CrmOutboxDeadLetters
+Mesajlar `Outbox:MaxAttempts` sonrası ölü. Hata metni: `SELECT type, attempts, left(error, 300) FROM <şema>.outbox_messages WHERE is_dead AND processed_at IS NULL ORDER BY occurred_at` (hata metni istisna yığını içerir; kişisel veri içermemelidir, yine de paylaşırken kırpın). Nedeni giderdikten sonra yeniden kuyruğa alın: `UPDATE <şema>.outbox_messages SET is_dead = false, attempts = 0, next_attempt_at = NULL, error = NULL WHERE is_dead AND processed_at IS NULL` (yedek almadan toplu güncelleme yapmayın; kimin/neyin etkilendiğini önce SELECT ile görün).
+
+#### CrmOutboxPollFailing
+Tur tümüyle başarısız (`Outbox polling failed`, EventId 4000): veritabanı erişilemez, şema migrate edilmemiş ya da `crm_app` yetkisi eksik. `logs worker`, `pg_isready`, migrator çıkış kodu (§8).
+
+#### CrmWorkerSamplerMissing
+Worker ayakta ama outbox/silme göstergeleri yok: örnekleyici veritabanını okuyamıyor (`Metrics sampling failed` uyarısı, EventId 4300). Bu durumda birikim/silme alarmları **kördür**; bağlantı ve izinleri (`crm_app` SELECT) düzeltin.
+
+#### CrmConductorUnreachable
+Worker Conductor'a ulaşamıyor (workflow görevleri çalışmıyor). `conductor` konteyneri `healthy` mi, veritabanı `conductor` erişilebilir mi (§11.1). Geri gelince bekleyen görevler işlenir.
+
+#### CrmConductorTaskFailures
+Görevlerin > %20'si başarısız (askıdaki kiracıların `blocked` görevleri sayılmaz). Hangi `task_type` başarısız: pano "Tasks handled by task type and outcome". `logs worker` içinde `Workflow task … failed` (EventId 5000) ve yürütme listesindeki hata nedeni; `failed_terminal` iş kuralı hatasıdır (yeniden denenmez), `failed` geçici hatadır.
+
+#### CrmWorkflowExecutionsFailing
+30 dk'da > 5 yürütme `failed` oldu. Workflow modülünde yürütme listesi/hata nedeni; kural tanımı hatası mı, Conductor kesintisi mi (`engine_unavailable`, `engine_workflow_not_found`)?
+
+#### CrmBackgroundJobFailing
+Platform işleri (kullanım anlık görüntüsü / KVKK imha) turları hata veriyor (`Platform job … failed`, EventId 4200). Veritabanı bağlantısı, `pg_try_advisory_lock` ve hata ayrıntısı için `logs worker`.
+
+#### CrmLoginFailureSpike
+Uzun süre saniyede > 1 başarısız giriş. Tek kaynak mı çok hesap mı? `CRM - Security signals` → "Login attempts by outcome". Çok hesap + `rate_limited` = parola püskürtme/credential stuffing: vekilde kaynak IP engelleyin, auth hız sınırlarını sıkılaştırın (`RateLimiting__Auth__PermitLimit`), hedef hesapları denetim kaydından inceleyin. (Metriklerde IP/hesap yoktur; ayrıntı için API günlüğüne ve `audit.audit_log_entries`'e bakın.)
+
+#### CrmAccountLockouts
+15 dk'da > 5 hesap kilitlendi: toplu saldırı ya da bayat parolayla sürekli yeniden deneyen bir istemci/entegrasyon. Kilit 15 dk sürer (`Identity__LockoutMinutes`); kullanıcı parola sıfırlama yapabilir.
+
+#### CrmRefreshTokenReuse
+İptal edilmiş bir refresh token süre aşımı dışında yeniden sunuldu: olası token hırsızlığı. Aile iptal edildi (kullanıcı yeniden giriş yapar). Tekrarlıyorsa etkilenen kullanıcıyı denetim kaydından bulun, parolasını sıfırlatın, paylaşılan/güvensiz cihaz olup olmadığını sorun. Tek seferlik ve zararsız durumlar (sekme çakışması) `concurrent` olarak ayrı sayılır ve bu alarmı tetiklemez.
+
+#### CrmTenantDeletionOverdue
+Zamanı gelmiş KVKK silme talebi > 1 sa ilerlemiyor. Worker'da `TenantErasureService` (Platform işleri) çalışıyor mu, başka bir kopya `pg_try_advisory_lock`'u tutuyor mu; `Tenant erasure failed for …` (EventId 5010). Yasal süre sorumluluğu: gecikmeyi kaydedin.
+
+#### CrmTenantDeletionFailed
+Bir silme talebi `failed`. Adım hatası `platform.deletion_requests.last_error`'da (kişisel veri içermez); `MaxAttempts` sonrası talep failed kalır ve `deletion.failed` denetimi yazılır: nedeni giderip talebi platform yöneticisi arayüzünden yeniden başlatın ya da Migrator `erase-deleted-tenants` ile tamamlayın (§12).
+
+#### CrmUsageSnapshotFailing
+Bazı kiracılar için günlük kullanım anlık görüntüsü yazılamadı; sonraki turda yeniden denenir. Süreklilik varsa `logs worker` (`Usage snapshot failed for tenant …`, EventId 5000). Kullanım geçmişinde boşluk oluşur (geriye dönük üretilemez).
+
+#### CrmPostgresDown
+`pg_up == 0`: tüm uygulama etkilenir. `docker compose … ps postgres`, `logs postgres`, disk doluluğu (`docker system df`, `pgdata`), bellek sınırı (OOM). Geri yükleme gerekiyorsa §7.
+
+#### CrmPostgresConnectionsHigh
+Bağlantılar `max_connections`'ın > %80'i. Havuz boyutlarını (api/worker/conductor) ve `idle in transaction` oturumlarını inceleyin: `SELECT state, count(*) FROM pg_stat_activity GROUP BY 1`. Geçici çözüm `PG_MAX_CONNECTIONS` (bellek etkisine dikkat).
+
+#### CrmPostgresDeadlocks
+`crm` veritabanında deadlock. Ayrıntı PostgreSQL günlüğündedir (`deadlock detected`; sorgular). Genellikle aynı satırlara ters sırada yazan eşzamanlı işler; uygulama yeniden dener (EF yeniden deneme). Tekrarlıyorsa ilgili use-case'i geliştirmeye bildirin.
+
+#### CrmPostgresCacheHitLow
+Tampon önbelleği isabet oranı < %90 (30 dk, anlamlı disk okumasıyla). Çalışma kümesi `shared_buffers`/sayfa önbelleğine sığmıyor: `PG_SHARED_BUFFERS` ve `PG_MEM_LIMIT`'i artırmayı, eksik indeksleri değerlendirin.
+
+#### CrmPrometheusStorageNearLimit
+Prometheus depolaması `PROM_RETENTION_SIZE` sınırının > %90'ında; sınıra ulaşınca en eski veri silinir. `PROM_RETENTION_SIZE`'ı artırın ya da `PROM_RETENTION_TIME`'ı kısaltın (bkz. §15.8).
+
+### 15.8 Saklama ve boyutlandırma
+
+- **Saklama:** `PROM_RETENTION_TIME` (varsayılan **30 gün**) ve `PROM_RETENTION_SIZE` (varsayılan **5 GB**); hangisi önce dolarsa eski bloklar silinir. `promdata` birimi `docker volume ls`'te `<proje>_promdata`; yedeklenmesi gerekmez (metrikler yeniden üretilebilir tanı verisidir).
+- **Ölçek (ölçülen; pilot topolojisi: 1 api + 1 worker + postgres-exporter, kazıma 15 sn):** ≈ **3 000 aktif seri** (`prometheus_tsdb_head_series`: api ≈ 500, worker ≈ 280, postgres-exporter ≈ 620, Prometheus kendisi ≈ 880) ve ≈ **150 örnek/sn** (≈ 13 milyon örnek/gün). Prometheus örnek başına ortalama ~1–2 bayt harcar ⇒ **≈ 15–30 MB/gün, 30 günde < 1 GB** (5 GB sınırı bolca yeter). Hedef sayısı arttıkça (api/worker kopyaları, node-exporter/cAdvisor) seri sayısı doğrusal artar; en çok seri `postgres-exporter` (`pg_settings_*`) ve `cadvisor` üretir. Seri sayısı, yeni kiracı/kullanıcı eklenmesiyle **artmaz** (kimlik etiketi yok); yalnız yeni yol şablonu, plan, modül veya görev türü eklenince büyür.
+- **Kaynak sınırları:** Prometheus 512 MB / 0.5 CPU, Grafana 512 MB / 0.5 CPU, postgres-exporter 128 MB (`PROM_MEM_LIMIT`, `GRAFANA_MEM_LIMIT` …). Uygulamaya ek yük ihmal edilebilir: kazıma yanıtı 1 sn önbelleklenir, örnekleyici 15 sn'de birkaç indeksli sorgu çalıştırır.
+- **Kardinalite kuralı:** seri sayısı sabit kalmalıdır: kiracı/kullanıcı/kayıt kimliği etiketi yoktur, HTTP yol **şablonu** (ham URL değil), Npgsql havuz adı etiketi düşürülür. Seri sayısı beklenmedik büyürse `topk(10, count by (__name__)({__name__=~".+"}))` ile hangi metriğin büyüdüğüne bakın.
+
+### 15.9 Sır döndürme ve bakım
+
+- `secrets/metrics-bearer-token`: dosyayı değiştirip `up -d api worker prometheus` (üçü de yeniden oluşur; kısa süre `CrmTargetDown` görülebilir).
+- `secrets/grafana-admin-password`: yalnız ilk açılışta uygulanır (Grafana veritabanında saklanır); sonradan değiştirmek için `docker compose … exec grafana grafana cli admin reset-admin-password <yeni>`, ardından dosyayı da güncelleyin (kayıt için).
+- `secrets/pg-monitor-password`: dosyayı değiştirip `up -d monitor-init postgres-exporter` (rol parolası her `up`'ta yeniden eşitlenir).
+- Panoyu değiştirmek: `infra/observability/grafana/dashboards/*.json` dosyasını düzenleyin (arayüzden kaydedilemez, `allowUiUpdates: false`).
+
+## 17. Entegrasyonlar (Milestone 8B): giden webhook, API anahtarı, OpenAPI — işletim notları
+
+Kaynak: [m8b-entegrasyonlar.md](../plan/m8b-entegrasyonlar.md), karar K19. **Webhook gönderimi varsayılan olarak kapalıdır.**
+
+- **Ağ (§1'e ek):** `backend` ağı `internal` kalır. Çıkış yalnız isteğe bağlı `egress` profilindeki iki servisten geçer (`deploy/docker-compose.egress.yml` katmanı): `egress-dns` (CoreDNS; Worker'ın tek çözümleyicisi, üst akış `EGRESS_DNS_UPSTREAM` **zorunlu**) ve `egress-proxy` (Squid; yalnız `CONNECT <IP>:443|8443`, hedef IP ACL'i: loopback/link-local (bulut metadata `169.254.169.254`)/CGNAT/özel ağ/rezerve reddedilir; yalnız `backend` alt ağından kabul eder; işleten `WEBHOOKS_ALLOWED_PRIVATE_CIDRS` ile yalnız **özel ağ** aralıklarını açabilir, loopback/metadata asla). API/Worker hiçbir zaman internet ağına bağlanmaz. İmaj etiketleri sabittir (`coredns/coredns:1.12.1`, `ubuntu/squid:6.10-24.10_edge`; `docker manifest inspect` ile doğrulandı).
+- **Açma:** `.env`: `WEBHOOKS_ENABLED=true`, `EGRESS_DNS_UPSTREAM=<çözümleyici>` (+ isteğe bağlı `WEBHOOKS_ALLOWED_HOSTS`, `WEBHOOKS_ALLOWED_PRIVATE_CIDRS`); `docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.egress.yml --profile egress up -d`. Production'da `Enabled=true` iken `EgressProxy`/`DnsServer` yoksa API/Worker **başlamaz**; doğrudan çıkış yalnız Development/Testing. Kapatma: `WEBHOOKS_ENABLED=false` (fan-out satır yazmaz; kapalıyken üretilen olaylar sonradan teslim edilmez).
+- **Doğrulama provası (DevOps):** (1) API/Worker konteynerinden doğrudan dış çıkış **yok**; (2) Worker yalnız egress-dns/proxy üzerinden çıkıyor; (3) proxy `CONNECT 169.254.169.254:443` ve `CONNECT 10.213.77.1:443`'ü **reddediyor** (`docker compose exec egress-proxy sh -c 'echo -e "CONNECT 169.254.169.254:443 HTTP/1.1\r\nHost: x\r\n\r\n" | nc 127.0.0.1 3128'` → 403); (4) `internal` ağdaki Worker'ın `egress-dns`'e ulaştığı ispatlanır (olmazsa uygulama `DnsServer` ile doğrudan UDP sorgular).
+- **Yükseltme (§8 adım 2'ye ek):** `deploy/secrets/integrations-encryption-key` dosyası **zorunludur** (`generate-secrets.*` mevcut kurulumda yalnızca bu dosyayı üretir; mevcut sırlara dokunmaz). Yoksa api/worker/migrator başlamaz.
+- **İzleme (§9):** `crm.api_keys.auth_failed` sayacı (yalnız önek loglanır), Worker günlüğünde `Webhook delivery is disabled/dispatcher will NOT start` iletileri, kuyruk gecikmesi: `SELECT count(*) FROM integrations.delivery_queue WHERE due_at < now() - interval '10 minutes'` (0'a yakın olmalı). `WEBHOOKS_ENABLED` doğrulaması: `GET /api/v1/integrations/status` → `webhooksEnabled`.
+- **Sorun giderme (§11):** teslimat günlüğünde `blocked_destination` (hedef çözümlemesi iç/özel adres veya URL politikası; `AllowedHosts`/`AllowedPrivateCidrs` ve proxy ACL'ini denetleyin), `tls_error` (sertifika/ad uyuşmazlığı; sertifika doğrulaması kapatılamaz), `dns_error` (3 deneme sonra terminal), `retries_exhausted` (≈ 20,6 sa sonra ölü mektup; arayüzden yeniden gönderilir), kuyruk birikimi (yukarıdaki sorgu; Worker durumu ve askıdaki kiracılar: askıda teslimat bekler, `due_at +5 dk`). Abonelik art arda 10 terminal hatada `failing` nedeniyle pasifleşir (arayüzde rozet); düzeltip yeniden etkinleştirin.
+- **Geri yükleme (§7) ve prova (§13):** anahtar yedeği geri yüklemeyle birlikte gerekir; **imha edilmiş bir kiracının API anahtarı çalışmaz** (satır yok → 401; `migrator erase-deleted-tenants` sonrası doğrulayın). Anahtar kaybında: aboneliklerde sır döndürülür.
+- **Ortam değişkenleri (§14'e ek):** `Integrations__Webhooks__{Enabled,EgressProxy,DnsServer,AllowedHosts,AllowedPrivateCidrs,AllowedPorts,TimeoutSeconds,MaxAttempts,PerTenantPerMinute,…}`, `Integrations__ApiKeys__{DefaultLifetimeDays,MaxLifetimeDays,CacheSeconds,FailureThrottle__MaxFailures,…}`, `Integrations__Encryption__{CurrentKeyId,Keys__<id>}`, `Integrations__OpenApi__CacheMinutes`, `RateLimiting__ApiKey__PermitLimit`, `RateLimiting__ApiKeyTenant__PermitLimit`. Aralık tutarsızlığı açılışta reddedilir (`ValidateOnStart`).
+- **OpenAPI:** `GET /api/v1/integrations/openapi.json` yalnız kimliği doğrulanmış `org.integrations.manage` sahibine sunulur; anonim `/openapi/v1.json` ve `/scalar` Production'da kapalıdır (`Docs:Enabled`, §9).
+
+## 18. Nesne deposu (dosya ekleri, M8C, karar K21)
+
+Bağlayıcı plan: [m8c-dosya-ekleri.md](../plan/m8c-dosya-ekleri.md). Kullanıcılar kayıtlara (firma, kişi, potansiyel müşteri, fırsat, aktivite, talep, teklif, sipariş, kampanya) dosya ekler; baytlar **API üzerinden akışla** tek bir kovaya (`crm-files`) `{tenantId}/{yyyy}/{fileId}` anahtarıyla yazılır; tarayıcıya presigned URL **verilmez**.
+
+### 18.1 Sunucu seçimi, imaj doğrulaması ve lisans notu (K21)
+
+- **Uygulama S3-genel:** adaptör `AWSSDK.S3`tir (MinIO SDK'sı değil); sunucu değişebilir (MinIO / SeaweedFS S3 / Garage / Ceph RGW) — yalnız `Files__Storage__*` + `minio-init` betiği değişir, **uygulama kodu değişmez**.
+- **Doğrulama (2026-09-20):** `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z` ve `quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z` **çekilebilir** (manifest doğrulandı; `latest` da bu sürüme çözülür — topluluk sürümünün son yayınıdır). Etiketler **sabitlenir**, `latest` kullanılmaz; kurum içi registry aynası önerilir (kurumsal ağ dışına çekim gerektirmez, kaynak kaybolursa etkilenmezsiniz).
+- **Lisans:** MinIO AGPLv3'tür. Bu kurulumda MinIO **değiştirilmeden, iç bir hizmet olarak** çalışır (uygulama ağ üzerinden S3 protokolüyle konuşur, MinIO koduna bağlanmaz/dağıtmaz) — bu kullanım AGPL'nin kaynak paylaşım yükümlülüğünü doğurmaz; ancak **hukuk onayı** alınmalıdır (MinIO'yu değiştirip kullanıcılara ağ üzerinden sunarsanız değişiklikleri yayınlamanız gerekir). Ticari lisans (AIStor) ayrı bir karardır.
+- **Bakım uyarısı:** MinIO topluluk sürümü **bakım modundadır** (yeni güvenlik yamaları/özellikleri garanti değildir; yönetim konsolu özellikleri de topluluk sürümünde kısıtlıdır). Bu yüzden: depo yalnız iç ağdadır (`internal` ağ, port yok), servis hesabı yalnız tek kovaya yetkilidir, şifreleme `required`. **Karar noktası:** güvenlik yamasına ihtiyaç doğarsa ya kurumsal bir ayna/derleme kaynağı belirlenir ya da **SeaweedFS S3 veya Garage**'a geçilir (compose'daki `minio`/`minio-init` servisleri ve `init.sh` politikası değişir; uygulama ve testler aynı kalır; nesneler `mc mirror`/`rclone` ile taşınır).
+
+### 18.2 Kurulum, yapılandırma ve şifreleme
+
+- `generate-secrets.*` beş sırrı üretir (§4). `docker compose ... up -d`: `minio` (sağlıklı) → `minio-init` (kova + `mc encrypt set sse-s3` + `crm-files-app` politikası/hesabı) → `migrator`/`api`/`worker`. **Kova/şifreleme/hesap yapılamazsa `minio-init` başarısız olur ve yığın başlamaz** (sessizce şifresiz kalınmaz). API her yüklemeden önce (30 sn önbellekli) `GetBucketEncryption` ile şifrelemeyi doğrular; yoksa yüklemeler `503 file.storage_unavailable` olur.
+- **MinIO konsolu kapalıdır** (`MINIO_BROWSER=off`); yönetim geçici bir mc konteyneriyle yapılır: `docker compose -f deploy/docker-compose.prod.yml run --rm --no-deps --entrypoint /bin/sh minio-init` (kök kimlik bilgileri secret dosyalarındadır; `mc alias set local http://minio:9000 ...`). Erişim yalnız `docker compose` sahibinedir.
+- **API geçici dosyaları:** yükleme önce geçici dosyaya yazılır (`Files__Upload__TempDirectory=/tmp`, **tmpfs**, `API_TMP_SIZE` = eşzamanlı yükleme × `MaxFileMb`; kiracı başına en çok 4, genel 16 eşzamanlı yükleme).
+- **Web ters vekili (nginx) — DEVOPS/WEB İŞİ (bu karta `web/` dâhil değildi):** `web/nginx/default.conf.template` içinde (1) `location = /api/v1/files` (yükleme): `client_max_body_size` = `Files:Upload:MaxRequestMb` + 5 (varsayılan **115m**), `proxy_request_buffering off`, `proxy_read_timeout 300s`, `proxy_send_timeout 300s`; (2) `location ~ ^/api/v1/files/[0-9a-fA-F-]{36}/content$` (indirme): `proxy_buffering off`, 300 sn zaman aşımı; ikisinde de `/api/` bloğundaki `add_header` deseni; genel `client_max_body_size 20m` **değişmez**; (3) CSP'ye yalnız `img-src 'self' data: blob:` ve `frame-src 'self' blob:` eklenir (önizleme; `object-src 'none'`, `script-src 'self'` aynen). Bunlar eklenmeden 20 MB üstü yüklemeler vekilde 413 alır ve önizleme CSP'ye takılır.
+
+### 18.3 Kota (`maxStorageMb`) ve planlar
+
+`platform.plans.limits.maxStorageMb` (`null` = sınırsız, `0` = hiç yükleme yok, ≥ 0, üst sınır 1 048 576 MiB) ve kiracı istisnası `overrides.maxStorageMb` (anahtar yok = plan, `null` = açıkça sınırsız). Örnek plan sayıları (`Platform:Plans`, **ticari karar değildir**): `internal` sınırsız, `starter` 1024, `business` 25600, `enterprise` 512000. Zorlama **sert ve kesindir** (kiracı başına istişari kilit; eşzamanlı yüklemelerle aşılamaz); aşımda `402 file.quota_exceeded`. Silme kotayı anında düşürür; plan düşürme dosyayı silmez (indirme/silme açık, yeni yükleme 402). Kullanım `files.storage_bytes`/`files.files` metrikleriyle günlük anlık görüntüye ve **finans CSV'sine** (`GET /platform/usage/export`) girer. Kiracı yöneticisi: `GET /api/v1/files/usage`, `GET /api/v1/subscription`.
+
+### 18.4 Yaşam döngüsü işleri (Worker) ve komutlar
+
+| İş | Ne yapar | Ayar |
+|---|---|---|
+| Temizlik (`FilesPurgeService`, 60 dk) | Yumuşak silinen dosyaların nesnesini `SoftDeleteRetentionDays` (7) sonra fiziksel siler; erişim günlüğü saklama temizliği (365 gün) | `Files__Purge__*`, `Files__AccessLog__RetentionDays` |
+| Uzlaştırma (`FilesReconciliationService`, 24 saat) | Nesne ↔ satır: nesnesiz satır `missing`, boyut uyuşmazlığı `missing`, geri gelen nesne `ready`; grace (24 sa) sonrası **yetim nesne siler (güvenlik supabıyla)**; kayıt-yok süpürmesi (kaydı silinen dosya `RecordMissingGraceDays` = 30 gün sonra yumuşak silinir) | `Files__Reconcile__*` |
+| `migrator files-reconcile [--dry-run] [--tenant <id>]` | Aynı kod elle; çıktıda yalnız sayılar (kiracı başına `objects rows missing restored sizeMismatch orphans orphansDeleted guardTripped foreign`) | Geri yükleme sonrası önce `--dry-run` |
+
+Güvenlik kuralları: **bilinmeyen kiracı önekleri ve anahtarı ayrıştırılamayan nesneler asla silinmez**; yetim sayısı `MaxOrphanDeletePerRun` (1000) ya da nesnelerin `MaxOrphanDeleteFraction` (%5) oranını aşarsa **hiçbir şey silinmez** (`guardTripped=True`, `Error` günlüğü, `crm.files.reconcile.guard_tripped` sayacı) — yanlış geri yükleme sonrası toplu silmeyi önler. İşler `pg_try_advisory_lock` ile tek örnektir; depo arızası turu erteler (Worker düşmez).
+
+### 18.5 Sorun giderme
+
+| Belirti | Neden | Çözüm |
+|---|---|---|
+| Yüklemeler `503 file.storage_unavailable` | `minio` kapalı/sağlıksız, kimlik bilgisi yanlış ya da kovada varsayılan şifreleme yok | `docker compose ... ps minio`, `logs minio`; `/health` `storage` denetimi (`Degraded` açıklaması); `up -d minio-init` (kova/şifreleme/hesabı yeniden kurar) |
+| API/Worker açılışta çıkıyor: `Files:Storage:Provider must be 's3' in Production` / `Encryption 'none' ...` | Yanlış yapılandırma (üretimde `filesystem`/`memory` ya da şifresiz) | `Files__Storage__Provider=s3`, `Encryption` boş/`required`; şifresiz disk bilinçli kabulse `Files__Storage__AcknowledgeUnencrypted=true` |
+| Dosya indirme `410 file.content_missing`; kullanıcıya "dosya kullanılamıyor" | Uzlaştırma nesnesi olmayan satırı `missing` işaretledi (geri yükleme sırası, elle silinmiş nesne, disk sorunu) | `files-reconcile --dry-run`; nesne yedekten geri konursa bir sonraki uzlaştırmada `ready` olur; kalıcı kayıpsa kullanıcı dosyayı silip yeniden yükler. `missing` sayacı > 0 → uyarı |
+| `files-reconcile` `guardTripped=True` | Çok sayıda yetim (yanlış/eski nesne yedeği geri yüklendi?) | Nedeni inceleyin; **elle silmeden önce** veritabanı ve nesne yedeğinin aynı zaman noktasından olduğunu doğrulayın; gerçekten yetimse `Files__Reconcile__MaxOrphanDeleteFraction` ile geçici gevşetip yeniden koşun |
+| Yüklemede `413 file.too_large` (vekilden) | nginx `client_max_body_size` (§18.2) | Vekil ayarını `MaxRequestMb + 5` yapın |
+| Yüklemeler `429 general.rate_limit_exceeded` | Kiracı başına 4 / genel 16 eşzamanlı yükleme ya da kullanıcı başına 30 parça/dk | Beklenen; `Files__RateLimiting__*` ile ayarlanır |
+| Disk dolu (`api` `/tmp`) | tmpfs küçük (yükleme geçici dosyaları) | `API_TMP_SIZE` artırın |

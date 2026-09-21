@@ -27,5 +27,12 @@
   "platformOrganizations": "Organizations",
   "platformPlans": "Plans",
   "platformAudit": "Platform audit",
-  "backToApp": "Back to app"
+  "backToApp": "Back to app",
+  "platformAdmins": "Platform administrators",
+  "notificationsSettings": "Notifications",
+  "integrations": "Integrations",
+  "pricebooks": "Price Books",
+  "purchaseOrders": "Purchase Orders",
+  "invoices": "Invoices",
+  "vendors": "Vendors"
 }

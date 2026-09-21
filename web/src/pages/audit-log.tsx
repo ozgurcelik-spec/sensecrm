@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge, Card, Group, Pagination, Skeleton, Table, Text } from "@mantine/core";
 import { AuditChanges } from "@/components/audit/audit-changes";
+import { ApiKeyAuditBadge } from "@/components/integrations/badges";
 import { LoadError } from "@/components/load-error";
 import { PageHeader } from "@/components/page-header";
 import { useAuditEntries } from "@/hooks/use-organization-queries";
@@ -62,6 +63,7 @@ export default function AuditLogPage() {
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm">{entry.userDisplayName ?? t("audit:system")}</Text>
+                    <ApiKeyAuditBadge apiKeyId={entry.apiKeyId} />
                   </Table.Td>
                   <Table.Td>
                     <Badge variant="light" color={ACTION_COLOR[entry.action] ?? "gray"}>

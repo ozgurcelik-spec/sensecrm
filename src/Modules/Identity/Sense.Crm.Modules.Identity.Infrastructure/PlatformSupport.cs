@@ -1,7 +1,12 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Options;
+using Sense.Crm.Modules.Identity.Application;
+using Sense.Crm.Modules.Identity.Contracts;
+using Sense.Crm.Modules.Identity.Domain;
 using Sense.Crm.Modules.Identity.Domain.Memberships;
+using Sense.Crm.Modules.Identity.Domain.Users;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
 using Sense.Crm.Modules.Identity.Infrastructure.Security;
 using Sense.Crm.Shared.Contracts.Context;
@@ -106,5 +111,137 @@ public sealed class IdentityTenantEraser(IdentityDbContext db, HybridCache cache
             ["identity.refresh_tokens(tenant)"] = tokens,
             ["identity.tenants"] = tenants,
         });
+    }
+}
+
+/// <summary>
+/// <see cref="IPlatformAdminDirectory"/> (C-SEC2 H1/M6): kiracı filtresi bilinçli aşılır; yalnız <b>aktif hesap + platform yöneticisi bayrağı + aktif üyelik</b> sayılır.
+/// Salt okunur, kişisel veri yalnız <see cref="ListAsync"/>'te (konsol).
+/// </summary>
+public sealed class PlatformAdminDirectory(IdentityDbContext db) : IPlatformAdminDirectory
+{
+    public Task<bool> HasActivePlatformAdminAsync(Guid tenantId, CancellationToken ct = default) =>
+        db.Memberships.IgnoreQueryFilters().AsNoTracking()
+            .Where(m => m.TenantId == tenantId && m.IsActive && m.Status == MembershipStatus.Active)
+            .AnyAsync(m => db.Users.Any(u => u.Id == m.UserId && u.IsActive && u.IsPlatformAdmin), ct);
+
+    public async Task<IReadOnlyList<Guid>> ListTenantsWithActivePlatformAdminAsync(CancellationToken ct = default) =>
+        await db.Memberships.IgnoreQueryFilters().AsNoTracking()
+            .Where(m => m.IsActive && m.Status == MembershipStatus.Active && db.Users.Any(u => u.Id == m.UserId && u.IsActive && u.IsPlatformAdmin))
+            .Select(m => m.TenantId)
+            .Distinct()
+            .ToListAsync(ct).ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<Guid>> ListActiveTenantsOfUserAsync(Guid userId, CancellationToken ct = default) =>
+        await db.Memberships.IgnoreQueryFilters().AsNoTracking()
+            .Where(m => m.UserId == userId && m.IsActive && m.Status == MembershipStatus.Active)
+            .Select(m => m.TenantId)
+            .Distinct()
+            .ToListAsync(ct).ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<PlatformAdminInfo>> ListAsync(CancellationToken ct = default)
+    {
+        var rows = await db.Users.AsNoTracking().Where(u => u.IsPlatformAdmin)
+            .OrderBy(u => u.NormalizedEmail)
+            .Select(u => new { u.Id, u.Email, u.DisplayName, u.IsActive, u.LastLoginAt })
+            .ToListAsync(ct).ConfigureAwait(false);
+        return rows.Select(r => new PlatformAdminInfo(r.Id, r.Email, r.DisplayName, r.IsActive, r.LastLoginAt is { } at ? new DateTimeOffset(DateTime.SpecifyKind(at, DateTimeKind.Utc)) : null)).ToList();
+    }
+}
+
+/// <summary>
+/// <see cref="IPlatformAdminManager"/> (M6): tek transaction'da (a) bayrağı kaldırır, (b) isteğe bağlı hesabı pasifleştirir, (c) tüm refresh token'ları iptal eder.
+/// <b>Son aktif platform yöneticisi</b> geri alınamaz. "Son" sayımı ile yazma arasındaki yarışı kapatmak için işlem, istişari işlem kilidi (<c>pg_advisory_xact_lock</c>) altında yapılır.
+/// </summary>
+public sealed class PlatformAdminManager(IdentityDbContext db, TimeProvider clock) : IPlatformAdminManager
+{
+    private const string LockKey = "identity.platform-admins";
+
+    public async Task<PlatformAdminRevocation> RevokeAsync(Guid userId, bool deactivateAccount, CancellationToken ct = default)
+    {
+        var outcome = PlatformAdminRevocation.Revoked;
+        await db.ExecuteInTransactionAsync(async token =>
+        {
+            await db.AcquireAdvisoryLockAsync(LockKey, token).ConfigureAwait(false);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, token).ConfigureAwait(false);
+            if (user is null)
+            {
+                outcome = PlatformAdminRevocation.NotFound;
+                return;
+            }
+
+            if (!user.IsPlatformAdmin)
+            {
+                outcome = PlatformAdminRevocation.NotAPlatformAdmin;
+                return;
+            }
+
+            // Bu hesap aktif bir yönetici ise başka en az bir aktif yönetici kalmalı.
+            if (user.IsActive && !await db.Users.AnyAsync(u => u.Id != userId && u.IsActive && u.IsPlatformAdmin, token).ConfigureAwait(false))
+            {
+                outcome = PlatformAdminRevocation.LastActiveAdmin;
+                return;
+            }
+
+            user.RevokePlatformAdmin();
+            if (deactivateAccount)
+            {
+                user.Deactivate();
+            }
+
+            await db.SaveChangesAsync(token).ConfigureAwait(false);
+            var now = clock.GetUtcNow().UtcDateTime;
+            await db.RefreshTokens.Where(t => t.UserId == userId && t.RevokedAt == null).ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now), token).ConfigureAwait(false);
+        }, ct).ConfigureAwait(false);
+        return outcome;
+    }
+}
+
+/// <summary>
+/// <see cref="IStepUpAuthenticator"/> (H2): giriş ile aynı korumalar — hesap kilidi, (IP, hesap) hatalı deneme eşiği ve kalıcı hata sayacı. Yanlış parola hesabın
+/// <c>FailedAccessCount</c>'unu artırır (eşikte hesap kilitlenir); böylece çalınmış bir access token ile parola kaba kuvvetle denenemez. Parola ve hash asla loglanmaz.
+/// </summary>
+public sealed class StepUpAuthenticator(
+    IdentityDbContext db,
+    IPasswordHasher hasher,
+    ILoginThrottle throttle,
+    IOptions<IdentityOptions> options,
+    TimeProvider clock) : IStepUpAuthenticator
+{
+    public async Task<StepUpOutcome> VerifyAsync(Guid userId, string? currentPassword, string? ipAddress, CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(currentPassword))
+        {
+            return StepUpOutcome.PasswordRequired;
+        }
+
+        if (currentPassword.Length > IdentityLimits.PasswordMaxLength)
+        {
+            return StepUpOutcome.Invalid;
+        }
+
+        var now = clock.GetUtcNow().UtcDateTime;
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct).ConfigureAwait(false);
+        if (user is null || !user.IsActive)
+        {
+            return StepUpOutcome.Invalid;
+        }
+
+        var normalized = User.Normalize(user.Email);
+        if (user.IsLockedOut(now) || throttle.IsBlocked(ipAddress, normalized))
+        {
+            return StepUpOutcome.RateLimited;
+        }
+
+        if (!hasher.Verify(user.PasswordHash, currentPassword))
+        {
+            throttle.RecordFailure(ipAddress, normalized);
+            user.RecordFailedAccess(now, new LockoutPolicy(options.Value.MaxFailedAccessAttempts, TimeSpan.FromMinutes(options.Value.LockoutMinutes)));
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            return StepUpOutcome.Invalid;
+        }
+
+        throttle.Reset(ipAddress, normalized);
+        return StepUpOutcome.Verified;
     }
 }

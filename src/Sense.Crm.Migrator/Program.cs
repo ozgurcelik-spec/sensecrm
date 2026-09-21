@@ -1,22 +1,32 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Sense.Crm.Migrator;
+using Sense.Crm.Modules.Activities.Infrastructure;
 using Sense.Crm.Modules.Activities.Infrastructure.Persistence;
+using Sense.Crm.Modules.Commerce.Infrastructure;
 using Sense.Crm.Modules.Commerce.Infrastructure.Persistence;
+using Sense.Crm.Modules.Files.Infrastructure;
 using Sense.Crm.Modules.Identity.Application;
 using Sense.Crm.Modules.Identity.Infrastructure;
 using Sense.Crm.Modules.Identity.Infrastructure.Persistence;
+using Sense.Crm.Modules.Integrations.Infrastructure;
+using Sense.Crm.Modules.Marketing.Infrastructure;
 using Sense.Crm.Modules.Platform.Infrastructure;
+using Sense.Crm.Modules.Sales.Infrastructure;
 using Sense.Crm.Modules.Sales.Infrastructure.Persistence;
+using Sense.Crm.Modules.Service.Infrastructure;
 using Sense.Crm.Modules.Service.Infrastructure.Persistence;
 using Sense.Crm.Modules.Workflows.Infrastructure.Persistence;
 using Sense.Crm.Shared.Infrastructure.DependencyInjection;
 using Sense.Crm.Shared.Infrastructure.Persistence;
 
-// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|sync-plans|backfill|erase-deleted-tenants]
+// Kullanım: dotnet run --project src/Sense.Crm.Migrator -- [migrate|reset|create-platform-admin|revoke-platform-admin|sync-plans|backfill|erase-deleted-tenants|reencrypt-integration-secrets|files-reconcile]
 // Yeni modül eklendiğinde DbContext'i buraya da kaydedilir (build/new-module.ps1 çıktısındaki adımlar).
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
+// Docker secret dosyalari (/run/secrets/<Ad>; "__" = ":"): Integrations__Encryption__Keys__k1 (reencrypt-integration-secrets) (M8B), Files__Storage__AccessKey (M8C).
+builder.Configuration.AddDockerSecrets();
 builder.Services.AddCrmCore(builder.Configuration);
 builder.Services.AddAuditStore(builder.Configuration);
 builder.Services.AddModuleDbContext<IdentityDbContext>(builder.Configuration, IdentityDbContext.SchemaName);
@@ -43,6 +53,24 @@ builder.Services.AddModuleHandlers(
     typeof(Sense.Crm.Modules.Platform.Contracts.TenantSuspended).Assembly);
 builder.Services.AddIdentityContractServices();
 builder.Services.AddPlatformContractServices(builder.Configuration);
+
+// Files (M8C): FilesDbContext + nesne imhası (erase-deleted-tenants geri yükleme sonrası nesneleri yeniden siler) + files-reconcile. Uzlaştırmanın kayıt-yok süpürmesi tüm
+// modüllerin IAttachmentTarget'larını ister (Add<Modül>ContractServices).
+builder.Services.AddModuleDbContext<Sense.Crm.Modules.Files.Infrastructure.Persistence.FilesDbContext>(builder.Configuration, Sense.Crm.Modules.Files.Infrastructure.Persistence.FilesDbContext.SchemaName);
+builder.Services.AddModuleHandlers(
+    Sense.Crm.Modules.Files.Infrastructure.Persistence.FilesDbContext.SchemaName,
+    typeof(Sense.Crm.Modules.Files.Domain.FileAttachment).Assembly,
+    typeof(Sense.Crm.Modules.Files.Contracts.FileAttached).Assembly);
+builder.Services.AddFilesContractServices(builder.Configuration);
+builder.Services.AddSalesContractServices();
+builder.Services.AddActivitiesContractServices();
+builder.Services.AddCommerceContractServices();
+builder.Services.AddServiceContractServices();
+builder.Services.AddMarketingContractServices();
+
+// Integrations (M8B): şema + KVKK imha adımları (delivery_queue) + webhook sırrı anahtar döndürme (reencrypt-integration-secrets).
+builder.Services.AddModuleDbContext<Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext>(builder.Configuration, Sense.Crm.Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext.SchemaName);
+builder.Services.AddIntegrationsContractServices(builder.Configuration);
 
 using var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger(MigratorConstants.LoggerName);
@@ -80,11 +108,38 @@ switch (command)
         await PlatformCommands.EraseDeletedTenantsAsync(host.Services, logger, CancellationToken.None);
         break;
 
+    case FilesCommands.ReconcileName:
+        var reconcileExit = await FilesCommands.ReconcileAsync(args, host.Services, logger, CancellationToken.None);
+        if (reconcileExit != 0)
+        {
+            return reconcileExit;
+        }
+
+        break;
+
+    case IntegrationsSecretsCommand.Name:
+        var reencryptExit = await IntegrationsSecretsCommand.RunAsync(host.Services, logger, CancellationToken.None);
+        if (reencryptExit != 0)
+        {
+            return reencryptExit;
+        }
+
+        break;
+
     case PlatformAdminCommand.Name:
         var exitCode = await PlatformAdminCommand.RunAsync(host.Services, logger, CancellationToken.None);
         if (exitCode != 0)
         {
             return exitCode;
+        }
+
+        break;
+
+    case PlatformAdminCommand.RevokeName:
+        var revokeExit = await PlatformAdminCommand.RevokeAsync(host.Services, logger, CancellationToken.None);
+        if (revokeExit != 0)
+        {
+            return revokeExit;
         }
 
         break;

@@ -6,31 +6,32 @@ using Sense.Crm.Shared.Kernel.Results;
 namespace Sense.Crm.Modules.Commerce.Domain.Quotes;
 
 /// <summary>
-/// Teklif durumu. Saklanan değerler <c>Draft/Sent/Accepted/Rejected</c>; <see cref="Expired"/> yalnız <b>türetilir</b>
-/// (<see cref="QuoteStatusExpression"/>): süresi dolmuş gönderilmiş teklif.
+/// Teklif durumu. Saklanan değerler <c>Draft/Sent/Negotiation/Accepted/Rejected</c>; <see cref="Expired"/> yalnız <b>türetilir</b>
+/// (<see cref="QuoteStatusExpression"/>): süresi dolmuş gönderilmiş veya müzakere edilen teklif.
 /// </summary>
 public enum QuoteStatus
 {
     Draft,
     Sent,
+    Negotiation,
     Accepted,
     Rejected,
     Expired,
 }
 
 /// <summary>
-/// Etkin teklif durumunun tek tanımı: <c>status = sent</c> ve <c>validUntil</c> dolu ve <c>validUntil &lt; bugün (kiracı saat dilimi)</c>
+/// Etkin teklif durumunun tek tanımı: <c>status ∈ {sent, negotiation}</c> ve <c>validUntil</c> dolu ve <c>validUntil &lt; bugün (kiracı saat dilimi)</c>
 /// ⇒ <c>expired</c>. Liste filtresi, rapor ve DTO eşlemesi aynı tanımı kullanır (ifade ağacı EF'e çevrilir, <see cref="Compute"/> bellekte
 /// aynı kuralı uygular; ikisinin eşdeğerliği testle korunur).
 /// </summary>
 public static class QuoteStatusExpression
 {
     public static QuoteStatus Compute(QuoteStatus status, DateOnly? validUntil, DateOnly today) =>
-        status == QuoteStatus.Sent && validUntil is { } until && until < today ? QuoteStatus.Expired : status;
+        (status is QuoteStatus.Sent or QuoteStatus.Negotiation) && validUntil is { } until && until < today ? QuoteStatus.Expired : status;
 
     /// <summary>Süresi dolmuş (etkin durum <c>expired</c>) teklifler.</summary>
     public static Expression<Func<Quote, bool>> IsExpired(DateOnly today) =>
-        q => q.Status == QuoteStatus.Sent && q.ValidUntil != null && q.ValidUntil < today;
+        q => (q.Status == QuoteStatus.Sent || q.Status == QuoteStatus.Negotiation) && q.ValidUntil != null && q.ValidUntil < today;
 
     /// <summary><see cref="IsExpired"/>'ın tersi (aynı ifadeden türetilir).</summary>
     public static Expression<Func<Quote, bool>> IsNotExpired(DateOnly today)
@@ -39,11 +40,14 @@ public static class QuoteStatusExpression
         return Expression.Lambda<Func<Quote, bool>>(Expression.Not(expired.Body), expired.Parameters);
     }
 
-    /// <summary>Etkin durum filtresi: <c>expired</c> → süresi dolmuşlar; <c>sent</c> → süresi dolmamış gönderilmişler; diğerleri saklanan durum.</summary>
+    /// <summary>
+    /// Etkin durum filtresi: <c>expired</c> → süresi dolmuşlar; <c>sent</c> / <c>negotiation</c> → süresi dolmamış olanlar; diğerleri saklanan durum.
+    /// </summary>
     public static Expression<Func<Quote, bool>> HasEffectiveStatus(QuoteStatus status, DateOnly today) => status switch
     {
         QuoteStatus.Expired => IsExpired(today),
         QuoteStatus.Sent => And(q => q.Status == QuoteStatus.Sent, IsNotExpired(today)),
+        QuoteStatus.Negotiation => And(q => q.Status == QuoteStatus.Negotiation, IsNotExpired(today)),
         _ => q => q.Status == status,
     };
 
@@ -110,7 +114,7 @@ public sealed class Quote : SalesDocument
         var quote = new Quote(Guid.CreateVersion7(), Guard.NotDefault(tenantId), number);
         quote.ApplyHeader(header);
         quote.ValidUntil = validUntil;
-        var replaced = quote.ReplaceLines(lines);
+        var replaced = quote.ReplaceLines(lines, header.Adjustment);
         return replaced.IsFailure ? replaced.Error : quote;
     }
 
@@ -125,7 +129,7 @@ public sealed class Quote : SalesDocument
             return Error.Conflict(CommerceErrors.QuoteNotEditable);
         }
 
-        var replaced = ReplaceLines(lines);
+        var replaced = ReplaceLines(lines, header.Adjustment);
         if (replaced.IsFailure)
         {
             return replaced;
@@ -165,7 +169,19 @@ public sealed class Quote : SalesDocument
         return Result.Success();
     }
 
-    /// <summary><c>sent → accepted</c> (süresi dolmamış): süresi dolmuşsa <c>quote.expired</c> 409.</summary>
+    /// <summary><c>sent → negotiation</c> (yalnız süresi dolmamış gönderilmiş teklif; aksi <c>quote.invalid_transition</c>).</summary>
+    public Result Negotiate(DateOnly today)
+    {
+        if (EffectiveStatus(today) != QuoteStatus.Sent)
+        {
+            return Invalid(QuoteStatus.Negotiation, today);
+        }
+
+        Status = QuoteStatus.Negotiation;
+        return Result.Success();
+    }
+
+    /// <summary><c>sent | negotiation → accepted</c> (süresi dolmamış): süresi dolmuşsa <c>quote.expired</c> 409.</summary>
     public Result Accept(DateOnly today, DateTime nowUtc)
     {
         var effective = EffectiveStatus(today);
@@ -174,7 +190,7 @@ public sealed class Quote : SalesDocument
             return Error.Conflict(CommerceErrors.QuoteExpired);
         }
 
-        if (effective != QuoteStatus.Sent)
+        if (effective is not (QuoteStatus.Sent or QuoteStatus.Negotiation))
         {
             return Invalid(QuoteStatus.Accepted, today);
         }
@@ -184,10 +200,10 @@ public sealed class Quote : SalesDocument
         return Result.Success();
     }
 
-    /// <summary><c>sent → rejected</c> (süresi dolmuş olsa da).</summary>
+    /// <summary><c>sent | negotiation → rejected</c> (süresi dolmuş olsa da).</summary>
     public Result Reject(string? reason, DateOnly today, DateTime nowUtc)
     {
-        if (Status != QuoteStatus.Sent)
+        if (Status is not (QuoteStatus.Sent or QuoteStatus.Negotiation))
         {
             return Invalid(QuoteStatus.Rejected, today);
         }
@@ -199,10 +215,10 @@ public sealed class Quote : SalesDocument
         return Result.Success();
     }
 
-    /// <summary><c>sent | rejected → draft</c> (etkin <c>expired</c> dahil): yeniden düzenlemek için; <c>sentAt/rejectedAt/rejectionReason</c> temizlenir.</summary>
+    /// <summary><c>sent | negotiation | rejected → draft</c> (etkin <c>expired</c> dahil): yeniden düzenlemek için; <c>sentAt/rejectedAt/rejectionReason</c> temizlenir.</summary>
     public Result Revert(DateOnly today)
     {
-        if (Status is not (QuoteStatus.Sent or QuoteStatus.Rejected))
+        if (Status is not (QuoteStatus.Sent or QuoteStatus.Negotiation or QuoteStatus.Rejected))
         {
             return Invalid(QuoteStatus.Draft, today);
         }
@@ -214,10 +230,10 @@ public sealed class Quote : SalesDocument
         return Result.Success();
     }
 
-    /// <summary><c>sent → sent</c> (etkin <c>expired</c> dahil): yeni tarih bugünden önce olamaz (<c>validation.valid_until_past</c>).</summary>
+    /// <summary><c>sent | negotiation</c> aynı kalır (etkin <c>expired</c> dahil): yeni tarih bugünden önce olamaz (<c>validation.valid_until_past</c>).</summary>
     public Result Extend(DateOnly newValidUntil, DateOnly today)
     {
-        if (Status != QuoteStatus.Sent)
+        if (Status is not (QuoteStatus.Sent or QuoteStatus.Negotiation))
         {
             return Invalid(QuoteStatus.Sent, today);
         }
@@ -231,9 +247,9 @@ public sealed class Quote : SalesDocument
         return Result.Success();
     }
 
-    private Result ReplaceLines(IReadOnlyList<LineInput> inputs)
+    private Result ReplaceLines(IReadOnlyList<LineInput> inputs, decimal adjustment)
     {
-        var calculated = CalculateLines(inputs);
+        var calculated = CalculateLines(inputs, adjustment);
         if (calculated.IsFailure)
         {
             return calculated;
