@@ -1,0 +1,56 @@
+name: crm
+
+services:
+  api:
+    image: crm-api:dev
+    container_name: crm-api-dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Database: Host=crm-postgres;Port=5432;Database=crm;Username=crm;Password=crm
+      ConnectionStrings__Redis: crm-redis:6379
+      Conductor__BaseUrl: http://crm-conductor:8080
+      AllowedHosts: localhost;127.0.0.1;*.local
+      Registration__Mode: disabled
+      Docs__Enabled: "true"
+      TZ: Europe/Istanbul
+    ports:
+      - "127.0.0.1:5080:8080"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  worker:
+    image: crm-worker:dev
+    container_name: crm-worker-dev
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ConnectionStrings__Database: Host=crm-postgres;Port=5432;Database=crm;Username=crm;Password=crm
+      ConnectionStrings__Redis: crm-redis:6379
+      Conductor__BaseUrl: http://crm-conductor:8080
+      TZ: Europe/Istanbul
+    networks:
+      - default
+
+  web:
+    image: crm-web:dev
+    container_name: crm-web-dev
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://crm-api-dev:8080
+      TRUSTED_PROXY_CIDR: 127.0.0.0/8
+    ports:
+      - "127.0.0.1:5000:8080"
+    networks:
+      - default
+
+networks:
+  default:
+    name: crm_default
+    external: true
