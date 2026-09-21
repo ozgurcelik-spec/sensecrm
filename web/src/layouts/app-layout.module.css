@@ -1,15 +1,49 @@
 .header {
-  border-bottom: 1px solid var(--mantine-color-default-border);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  box-shadow: 0 1px 3px rgba(20, 30, 80, 0.06);
 }
 
+.main {
+  background-color: light-dark(#eef0f8, var(--mantine-color-dark-8));
+}
+
+/* Zoho-style deep navy rail; the scoped variables recolor every Mantine child (text, dimmed labels, dividers). */
 .sidebar {
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  --sidebar-bg: light-dark(#1b2a5c, #131b3a);
+  --mantine-color-text: #ffffff;
+  --mantine-color-dimmed: rgba(255, 255, 255, 0.55);
+  --mantine-color-default-border: rgba(255, 255, 255, 0.14);
+  background-color: var(--sidebar-bg);
+  border-inline-end: none;
+  color: #ffffff;
   display: flex;
   flex-direction: column;
 }
 
 .navLink {
   border-radius: var(--mantine-radius-md);
+  color: rgba(255, 255, 255, 0.85);
   font-weight: 500;
   margin-bottom: 2px;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &[data-active],
+  &[aria-current="page"] {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+  }
+}
+
+.search {
+  display: none;
+  flex: 1;
+  max-width: 480px;
+  min-width: 0;
+
+  @media (min-width: 48em) {
+    display: block;
+  }
 }

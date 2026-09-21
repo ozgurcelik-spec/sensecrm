@@ -41,7 +41,11 @@
     "language": "Language",
     "profile": "My profile",
     "logout": "Sign out",
-    "toggleNavigation": "Toggle navigation"
+    "toggleNavigation": "Toggle navigation",
+    "back": "Back",
+    "search": "Search",
+    "searchPlaceholder": "Search leads, contacts, accounts or deals",
+    "noResults": "No results"
   },
   "comingSoon": {
     "title": "{{module}} is coming soon",

@@ -31,7 +31,10 @@ function renderApp(route: string, me: Me) {
     "GET /me": () => me,
     "GET /approvals/summary": () => ({ pendingCount: 0 }),
     "GET /platform/organizations": () => page([orgRow("t1", { name: "Acme A.Ş." })]),
-    "GET /platform/organizations/t1": () => ({ ...orgRow("t1"), limits: { maxRecords: {}, modules: {} } }),
+    "GET /platform/organizations/t1": () => ({
+      ...orgRow("t1"),
+      limits: { maxRecords: {}, modules: {} },
+    }),
     "GET /platform/plans": () => PLANS,
     "GET /platform/audit": () => page([]),
     "GET /subscription": () => ({
@@ -75,7 +78,8 @@ function renderApp(route: string, me: Me) {
 }
 
 const link = (name: string) => screen.queryByRole("link", { name });
-const requested = (prefix: string) => client.get.mock.calls.some(([url]) => String(url).startsWith(prefix));
+const requested = (prefix: string) =>
+  client.get.mock.calls.some(([url]) => String(url).startsWith(prefix));
 const requestedUrls = () => client.get.mock.calls.map(([url]) => String(url));
 
 const OFF: MeSubscription["modules"] = {
@@ -98,9 +102,18 @@ describe("App - platform console access", () => {
     expect(await screen.findByRole("heading", { name: "Organizasyonlar" })).toBeInTheDocument();
     expect(await screen.findByText("Acme A.Ş.")).toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Platform" });
-    expect(within(nav).getByRole("link", { name: "Organizasyonlar" })).toHaveAttribute("href", "/app/platform/organizations");
-    expect(within(nav).getByRole("link", { name: "Planlar" })).toHaveAttribute("href", "/app/platform/plans");
-    expect(within(nav).getByRole("link", { name: "Platform denetimi" })).toHaveAttribute("href", "/app/platform/audit");
+    expect(within(nav).getByRole("link", { name: "Organizasyonlar" })).toHaveAttribute(
+      "href",
+      "/app/platform/organizations"
+    );
+    expect(within(nav).getByRole("link", { name: "Planlar" })).toHaveAttribute(
+      "href",
+      "/app/platform/plans"
+    );
+    expect(within(nav).getByRole("link", { name: "Platform denetimi" })).toHaveAttribute(
+      "href",
+      "/app/platform/audit"
+    );
   });
 
   it("/app/platform redirects to the organization list", async () => {
@@ -115,15 +128,20 @@ describe("App - platform console access", () => {
     ["/app/platform/plans"],
     ["/app/platform/audit"],
     ["/app/platform"],
-  ])("hides the menu and answers %s with the no-access page for a tenant admin holding every permission", async (route) => {
-    renderApp(route, platformMe(ALL_PERMISSIONS, { isPlatformAdmin: false }));
+  ])(
+    "hides the menu and answers %s with the no-access page for a tenant admin holding every permission",
+    async (route) => {
+      renderApp(route, platformMe(ALL_PERMISSIONS, { isPlatformAdmin: false }));
 
-    expect(await screen.findByRole("heading", { name: "Erişim izniniz yok" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Platform" })).not.toBeInTheDocument();
-    expect(link("Platform denetimi")).not.toBeInTheDocument();
-    expect(link("Planlar")).not.toBeInTheDocument();
-    expect(requested("/platform")).toBe(false);
-  });
+      expect(
+        await screen.findByRole("heading", { name: "Erişim izniniz yok" })
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("navigation", { name: "Platform" })).not.toBeInTheDocument();
+      expect(link("Platform denetimi")).not.toBeInTheDocument();
+      expect(link("Planlar")).not.toBeInTheDocument();
+      expect(requested("/platform")).toBe(false);
+    }
+  );
 
   it("a platform admin without any tenant permission still sees the console but no tenant module entries", async () => {
     renderApp("/app/platform/plans", platformMe([], { isPlatformAdmin: true }));
@@ -146,14 +164,24 @@ describe("App - plan and usage settings", () => {
   });
 
   it("adds 'Plan ve kullanım' to the settings menu for org.settings.manage and opens the page", async () => {
-    renderApp("/app/settings/plan", platformMe(["org.settings.manage"], { subscription: subscription() }));
+    renderApp(
+      "/app/settings/plan",
+      platformMe(["org.settings.manage"], { subscription: subscription() })
+    );
     expect(await screen.findByRole("heading", { name: "Plan ve kullanım" })).toBeInTheDocument();
     expect(await screen.findByTestId("plan-card")).toBeInTheDocument();
-    expect(within(screen.getByRole("navigation", { name: "Ayarlar" })).getByRole("link", { name: "Plan ve kullanım" })).toHaveAttribute("href", "/app/settings/plan");
+    expect(
+      within(screen.getByRole("navigation", { name: "Ayarlar" })).getByRole("link", {
+        name: "Plan ve kullanım",
+      })
+    ).toHaveAttribute("href", "/app/settings/plan");
   });
 
   it("answers with the no-access page and no request without org.settings.manage", async () => {
-    renderApp("/app/settings/plan", platformMe(["crm.leads.read"], { subscription: subscription() }));
+    renderApp(
+      "/app/settings/plan",
+      platformMe(["crm.leads.read"], { subscription: subscription() })
+    );
     expect(await screen.findByRole("heading", { name: "Erişim izniniz yok" })).toBeInTheDocument();
     expect(link("Plan ve kullanım")).not.toBeInTheDocument();
     expect(requested("/subscription")).toBe(false);
@@ -187,15 +215,31 @@ describe("App - modules the plan lacks", () => {
     // Core entries and "Plan ve kullanım" stay.
     expect(screen.getAllByRole("link", { name: "Potansiyeller" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link", { name: "Aktiviteler" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: "Plan ve kullanım" }).length).toBeGreaterThan(0);
+    expect(
+      (await screen.findAllByRole("link", { name: "Plan ve kullanım" })).length
+    ).toBeGreaterThan(0);
   });
 
   it("makes no request at all for the gated modules, including the top bar approvals badge", async () => {
     renderApp("/app", off());
     await screen.findAllByRole("link", { name: "Potansiyeller" });
-    await waitFor(() => expect(requested("/leads") || requested("/deals") || requested("/onboarding")).toBe(true));
+    await waitFor(() =>
+      expect(requested("/leads") || requested("/deals") || requested("/onboarding")).toBe(true)
+    );
 
-    for (const prefix of ["/approvals", "/campaigns", "/quotes", "/orders", "/products", "/cases", "/service", "/workflows", "/reports/marketing", "/reports/commerce", "/reports/service"]) {
+    for (const prefix of [
+      "/approvals",
+      "/campaigns",
+      "/quotes",
+      "/orders",
+      "/products",
+      "/cases",
+      "/service",
+      "/workflows",
+      "/reports/marketing",
+      "/reports/commerce",
+      "/reports/service",
+    ]) {
       expect(requested(prefix), prefix).toBe(false);
     }
     expect(screen.queryByRole("link", { name: /Bekleyen onaylar/ })).not.toBeInTheDocument();
@@ -213,23 +257,42 @@ describe("App - modules the plan lacks", () => {
     ["/app/settings/sla", "Servis"],
     ["/app/settings/workflows", "İş akışları"],
     ["/app/approvals", "İş akışları"],
-  ])("answers %s with the module-disabled page (%s) and requests nothing", async (route, moduleName) => {
-    renderApp(route, off());
+  ])(
+    "answers %s with the module-disabled page (%s) and requests nothing",
+    async (route, moduleName) => {
+      renderApp(route, off());
 
-    const card = await screen.findByTestId("module-disabled");
-    expect(within(card).getByRole("heading", { name: "Bu modül planınıza dahil değil" })).toBeInTheDocument();
-    expect(card).toHaveTextContent(moduleName);
-    expect(within(card).getByRole("link", { name: "Plan ve kullanım" })).toHaveAttribute("href", "/app/settings/plan");
-    for (const prefix of ["/campaigns", "/quotes", "/orders", "/products", "/cases", "/service", "/workflows", "/approvals"]) {
-      expect(requested(prefix), prefix).toBe(false);
+      const card = await screen.findByTestId("module-disabled");
+      expect(
+        within(card).getByRole("heading", { name: "Bu modül planınıza dahil değil" })
+      ).toBeInTheDocument();
+      expect(card).toHaveTextContent(moduleName);
+      expect(within(card).getByRole("link", { name: "Plan ve kullanım" })).toHaveAttribute(
+        "href",
+        "/app/settings/plan"
+      );
+      for (const prefix of [
+        "/campaigns",
+        "/quotes",
+        "/orders",
+        "/products",
+        "/cases",
+        "/service",
+        "/workflows",
+        "/approvals",
+      ]) {
+        expect(requested(prefix), prefix).toBe(false);
+      }
     }
-  });
+  );
 
   it("leaves a module that is on reachable while another is off", async () => {
     renderApp(
       "/app/quotes",
       platformMe(ALL_PERMISSIONS, {
-        subscription: subscription({ modules: { workflows: false, commerce: true, service: false, marketing: false } }),
+        subscription: subscription({
+          modules: { workflows: false, commerce: true, service: false, marketing: false },
+        }),
       })
     );
     expect(await screen.findByRole("heading", { name: "Teklifler" })).toBeInTheDocument();
@@ -245,9 +308,16 @@ describe("App - modules the plan lacks", () => {
       expect(screen.queryByRole("tab", { name })).not.toBeInTheDocument();
     }
     // A stale ?tab=service falls back to the default tab.
-    expect(screen.getByRole("tab", { name: "Satış hunisi" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Satış hunisi" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
     for (const url of requestedUrls()) {
-      expect(url.startsWith("/reports/service") || url.startsWith("/reports/commerce") || url.startsWith("/reports/marketing")).toBe(false);
+      expect(
+        url.startsWith("/reports/service") ||
+          url.startsWith("/reports/commerce") ||
+          url.startsWith("/reports/marketing")
+      ).toBe(false);
     }
   });
 
@@ -273,7 +343,9 @@ describe("App - banners, read-only and blocked tenants", () => {
         subscription: subscription({ status: "trial", trialDaysLeft: 2 }),
       })
     );
-    expect(await screen.findByTestId("subscription-banner")).toHaveTextContent("Deneme sürenizin bitmesine 2 gün kaldı.");
+    expect(await screen.findByTestId("subscription-banner")).toHaveTextContent(
+      "Deneme sürenizin bitmesine 2 gün kaldı."
+    );
     expect(await screen.findByRole("heading", { name: "Potansiyeller" })).toBeInTheDocument();
   });
 
@@ -317,7 +389,9 @@ describe("App - banners, read-only and blocked tenants", () => {
   });
 
   it("leaves the blocked screen when /me reports the tenant is reachable again", async () => {
-    const me = platformMe(ALL_PERMISSIONS, { subscription: subscription({ status: "suspended", accessLevel: "none" }) });
+    const me = platformMe(ALL_PERMISSIONS, {
+      subscription: subscription({ status: "suspended", accessLevel: "none" }),
+    });
     renderApp("/app/leads", me);
     await screen.findByTestId("blocked-screen");
 

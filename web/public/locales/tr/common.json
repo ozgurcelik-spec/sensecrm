@@ -41,7 +41,11 @@
     "language": "Dil",
     "profile": "Profilim",
     "logout": "Çıkış yap",
-    "toggleNavigation": "Menüyü aç/kapat"
+    "toggleNavigation": "Menüyü aç/kapat",
+    "back": "Geri",
+    "search": "Ara",
+    "searchPlaceholder": "Potansiyel, kişi, müşteri veya fırsat ara",
+    "noResults": "Sonuç bulunamadı"
   },
   "comingSoon": {
     "title": "{{module}} çok yakında",

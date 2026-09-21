@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MantineProvider } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ const navLink = (name: string) => screen.queryByRole("link", { name });
 describe("App - workflow navigation and route permissions", () => {
   beforeEach(() => vi.clearAllMocks());
   afterEach(() => {
+    cleanup();
     act(() => useAuthStore.setState({ token: null, refreshToken: null, me: null }));
     window.history.pushState({}, "", "/");
   });
@@ -102,5 +104,23 @@ describe("App - workflow navigation and route permissions", () => {
     renderApp("/app/approvals", []);
     expect(await screen.findByRole("heading", { name: "Onaylarım" })).toBeInTheDocument();
     expect(await screen.findByText("Bekleyen onayınız yok")).toBeInTheDocument();
+  });
+
+  it("opens the settings area from the header gear and swaps the left rail to the settings pages", async () => {
+    renderApp("/app", ["org.workflows.manage", "crm.deals.read"]);
+
+    const modules = await screen.findByRole("navigation", { name: "Modüller" });
+    expect(within(modules).getByRole("link", { name: "Fırsatlar" })).toBeInTheDocument();
+    expect(within(modules).queryByRole("link", { name: "İş akışları" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("link", { name: "Ayarlar" }));
+
+    const settings = await screen.findByRole("navigation", { name: "Ayarlar" });
+    expect(within(settings).getByRole("link", { name: "İş akışları" })).toHaveAttribute(
+      "href",
+      "/app/settings/workflows"
+    );
+    expect(screen.queryByRole("navigation", { name: "Modüller" })).not.toBeInTheDocument();
+    expect(navLink("Uygulamaya dön")).toHaveAttribute("href", "/app");
   });
 });

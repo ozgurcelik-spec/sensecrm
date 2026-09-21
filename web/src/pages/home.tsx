@@ -1,19 +1,12 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import {
-  Badge,
-  Card,
-  Group,
-  SimpleGrid,
-  Skeleton,
-  Stack,
-  Table,
-  Text,
-  ThemeIcon,
-  Title,
-} from "@mantine/core";
+import { Badge, Card, Group, SimpleGrid, Skeleton, Stack, Table, Text, ThemeIcon } from "@mantine/core";
 import { Building2, Handshake, Target, Wallet } from "lucide-react";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { TopDealsWidget } from "@/components/dashboard/top-deals-widget";
+import { WelcomeCard } from "@/components/dashboard/welcome-card";
+import { WonThisMonthKpi } from "@/components/dashboard/won-this-month-kpi";
 import { CampaignSummaryWidget } from "@/components/dashboard/campaign-summary-widget";
 import { MyWorkWidget } from "@/components/dashboard/my-work-widget";
 import { HomeCasesWidget } from "@/components/service/home-cases-widget";
@@ -26,79 +19,50 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { useAuthStore } from "@/store/auth.store";
 import { PERMISSIONS } from "@/types";
 
-interface StatCardProps {
-  to: string;
-  icon: ReactNode;
-  label: string;
-  value: string;
-  loading: boolean;
-  failed: boolean;
-}
-
-function StatCard({ to, icon, label, value, loading, failed }: StatCardProps) {
-  const { t } = useTranslation(["home"]);
-  return (
-    <Card component={Link} to={to} withBorder padding="lg" style={{ textDecoration: "none" }}>
-      <Group gap="sm" mb="xs" wrap="nowrap">
-        <ThemeIcon variant="light" size="lg">
-          {icon}
-        </ThemeIcon>
-        <Text size="sm" c="dimmed">
-          {label}
-        </Text>
-      </Group>
-      {loading ? (
-        <Skeleton h={32} w={120} />
-      ) : (
-        <Text fz={28} fw={700} c="var(--mantine-color-text)" data-testid="stat-value">
-          {failed ? t("home:stats.unavailable") : value}
-        </Text>
-      )}
-    </Card>
-  );
-}
-
 /** Small sales cards; each one is only requested/shown when the user may read the resource. */
 function SalesSummary() {
   const { t } = useTranslation(["home"]);
   const canLeads = usePermission(PERMISSIONS.crmLeadsRead);
   const canDeals = usePermission(PERMISSIONS.crmDealsRead);
   const leads = useOpenLeadsCount(canLeads);
+  const canReports = usePermission(PERMISSIONS.crmReportsRead);
   const deals = useOpenDealsSummary(canDeals);
-  if (!canLeads && !canDeals) return null;
+  if (!canLeads && !canDeals && !canReports) return null;
+  const unavailable = t("home:stats.unavailable");
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
+    <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg">
       {canLeads && (
-        <StatCard
+        <KpiCard
           to="/app/leads"
           icon={<Target size={18} />}
           label={t("home:stats.openLeads")}
           value={formatNumber(leads.count)}
           loading={leads.isLoading}
-          failed={leads.isError}
+          failedText={leads.isError ? unavailable : undefined}
         />
       )}
       {canDeals && (
         <>
-          <StatCard
+          <KpiCard
             to="/app/deals"
             icon={<Handshake size={18} />}
             label={t("home:stats.openDeals")}
             value={formatNumber(deals.count)}
             loading={deals.isLoading}
-            failed={deals.isError}
+            failedText={deals.isError ? unavailable : undefined}
           />
-          <StatCard
+          <KpiCard
             to="/app/deals"
             icon={<Wallet size={18} />}
             label={t("home:stats.pipelineAmount")}
             value={formatMoney(deals.totalAmount)}
             loading={deals.isLoading}
-            failed={deals.isError}
+            failedText={deals.isError ? unavailable : undefined}
           />
         </>
       )}
+      {canReports && <WonThisMonthKpi />}
     </SimpleGrid>
   );
 }
@@ -111,12 +75,18 @@ function DashboardWidgets() {
   const canActivities = usePermission(PERMISSIONS.crmActivitiesRead);
   const canReports = usePermission(PERMISSIONS.crmReportsRead);
   const canCases = usePermission(PERMISSIONS.crmCasesRead);
+  const canDeals = usePermission(PERMISSIONS.crmDealsRead);
   // The campaign summary is a marketing report: it needs both permissions.
   const canCampaignSummary = usePermission(PERMISSIONS.crmCampaignsRead) && canReports;
-  if (!canActivities && !canReports && !canCases) return null;
+  if (!canActivities && !canReports && !canCases && !canDeals) return null;
   return (
     <Stack gap="lg">
-      {canActivities && <MyWorkWidget />}
+      {(canActivities || canDeals) && (
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+          {canActivities && <MyWorkWidget />}
+          {canDeals && <TopDealsWidget />}
+        </SimpleGrid>
+      )}
       {canCases && <HomeCasesWidget />}
       {canCampaignSummary && <CampaignSummaryWidget />}
       {canReports && (
@@ -139,11 +109,8 @@ export default function HomePage() {
   const quickLinks = [...modules, ...settings];
 
   return (
-    <Stack gap="lg" maw={1100}>
-      <Stack gap={4}>
-        <Title order={2}>{t("home:welcome", { name: me.user.displayName })}</Title>
-        <Text c="dimmed">{t("home:subtitle", { org: org.name, role: me.role.name })}</Text>
-      </Stack>
+    <Stack gap="lg" maw={1280}>
+      <WelcomeCard />
 
       <OnboardingCard />
 

@@ -26,5 +26,6 @@
   "platform": "Platform",
   "platformOrganizations": "Organizasyonlar",
   "platformPlans": "Planlar",
-  "platformAudit": "Platform denetimi"
+  "platformAudit": "Platform denetimi",
+  "backToApp": "Uygulamaya dön"
 }

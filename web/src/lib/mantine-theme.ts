@@ -38,4 +38,14 @@ export const mantineTheme = createTheme({
   },
   defaultRadius: "md",
   cursorType: "pointer",
+  components: {
+    Card: {
+      defaultProps: { radius: "lg", shadow: "xs" },
+      styles: {
+        root: {
+          borderColor: "light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4))",
+        },
+      },
+    },
+  },
 });

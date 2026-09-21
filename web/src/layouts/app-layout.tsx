@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { Link, NavLink as RouterNavLink, Outlet, useNavigate } from "react-router";
+import { Link, NavLink as RouterNavLink, Outlet, useMatch, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { ArrowLeft } from "lucide-react";
 import { useDisclosure } from "@mantine/hooks";
 import { AppShell, Burger, Divider, Group, NavLink, ScrollArea, Text } from "@mantine/core";
 import { NAV_ITEMS, PLATFORM_ITEMS, SETTINGS_ITEMS, type NavItem } from "@/config/navigation";
@@ -12,9 +13,12 @@ import { setAppNavigator } from "@/lib/app-navigator";
 import { BlockedScreen } from "@/components/subscription/blocked-screen";
 import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
 import RouteBoundary from "@/components/route-boundary";
+import { BackButton } from "@/components/shell/back-button";
+import { GlobalSearch } from "@/components/shell/global-search";
 import { ApprovalsBell } from "@/components/shell/approvals-bell";
 import { InvitationsBell } from "@/components/shell/invitations-bell";
 import { LanguageMenu } from "@/components/shell/language-menu";
+import { SettingsLink } from "@/components/shell/settings-link";
 import { OrganizationSwitcher } from "@/components/shell/organization-switcher";
 import { UserMenu } from "@/components/shell/user-menu";
 import classes from "./app-layout.module.css";
@@ -62,8 +66,10 @@ export default function AppLayout() {
   // Approvals belong to the workflows module: no request while the plan lacks it or the tenant is blocked.
   const { data: pendingApprovals = 0 } = usePendingApprovalCount(workflowsOn && !blocked);
   const modules = useVisibleItems(NAV_ITEMS, { pendingApprovals: pendingApprovals > 0 });
-  const settings = useVisibleItems(SETTINGS_ITEMS);
   const platform = useVisibleItems(PLATFORM_ITEMS);
+  const settings = useVisibleItems(SETTINGS_ITEMS);
+  // Inside the settings area the left rail lists the settings pages instead of the CRM modules.
+  const inSettings = useMatch("/app/settings/*") !== null;
   useSubscriptionSync();
   // Toasts (rendered above the router) navigate through this.
   useEffect(() => {
@@ -90,6 +96,7 @@ export default function AppLayout() {
               size="sm"
               aria-label={t("common:shell.toggleNavigation")}
             />
+            <BackButton />
             <Group
               renderRoot={(props) => <Link to="/app" {...props} />}
               gap={8}
@@ -102,11 +109,15 @@ export default function AppLayout() {
               </Text>
             </Group>
           </Group>
+          <div className={classes.search}>
+            <GlobalSearch />
+          </div>
           <Group gap="xs" wrap="nowrap">
             <ApprovalsBell />
             <InvitationsBell />
             <OrganizationSwitcher />
             <LanguageMenu />
+            <SettingsLink />
             <UserMenu />
           </Group>
         </Group>
@@ -114,41 +125,46 @@ export default function AppLayout() {
 
       <AppShell.Navbar className={classes.sidebar}>
         <ScrollArea className="flex-1" p="sm">
-          <nav aria-label={t("navigation:modules")}>
-            <NavSection items={modules} onNavigate={close} />
-          </nav>
-          {settings.length > 0 && (
-            <nav aria-label={t("navigation:settings")}>
-              <Divider
-                my="sm"
-                labelPosition="left"
-                label={
-                  <Text size="xs" fw={600} tt="uppercase" c="dimmed">
-                    {t("navigation:settings")}
-                  </Text>
-                }
+          {inSettings ? (
+            <>
+              <NavLink
+                component={Link}
+                to="/app"
+                label={t("navigation:backToApp")}
+                leftSection={<ArrowLeft size={18} />}
+                className={classes.navLink}
+                onClick={close}
               />
-              <NavSection items={settings} onNavigate={close} />
-            </nav>
-          )}
-          {platform.length > 0 && (
-            <nav aria-label={t("navigation:platform")}>
-              <Divider
-                my="sm"
-                labelPosition="left"
-                label={
-                  <Text size="xs" fw={600} tt="uppercase" c="dimmed">
-                    {t("navigation:platform")}
-                  </Text>
-                }
-              />
-              <NavSection items={platform} onNavigate={close} />
-            </nav>
+              <Divider my="sm" />
+              <nav aria-label={t("navigation:settings")}>
+                <NavSection items={settings} onNavigate={close} />
+              </nav>
+            </>
+          ) : (
+            <>
+              <nav aria-label={t("navigation:modules")}>
+                <NavSection items={modules} onNavigate={close} />
+              </nav>
+              {platform.length > 0 && (
+                <nav aria-label={t("navigation:platform")}>
+                  <Divider
+                    my="sm"
+                    labelPosition="left"
+                    label={
+                      <Text size="xs" fw={600} tt="uppercase" c="dimmed">
+                        {t("navigation:platform")}
+                      </Text>
+                    }
+                  />
+                  <NavSection items={platform} onNavigate={close} />
+                </nav>
+              )}
+            </>
           )}
         </ScrollArea>
       </AppShell.Navbar>
 
-      <AppShell.Main>
+      <AppShell.Main className={classes.main}>
         <SubscriptionBanner />
         <RouteBoundary>
           <Outlet />

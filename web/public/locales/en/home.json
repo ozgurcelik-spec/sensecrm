@@ -13,7 +13,8 @@
     "openLeads": "Open leads",
     "openDeals": "Open deals",
     "pipelineAmount": "Open pipeline amount",
-    "unavailable": "Unavailable"
+    "unavailable": "Unavailable",
+    "wonThisMonth": "Won this month"
   },
   "myWork": {
     "title": "My work",
@@ -33,5 +34,10 @@
     "empty": "No data to show",
     "viewReports": "Reports",
     "failed": "Chart data could not be loaded"
+  },
+  "topDeals": {
+    "title": "Highest-value open deals",
+    "viewAll": "All deals",
+    "empty": "No open deals"
   }
 }

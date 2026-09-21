@@ -13,7 +13,8 @@
     "openLeads": "Açık potansiyeller",
     "openDeals": "Açık fırsatlar",
     "pipelineAmount": "Açık huni tutarı",
-    "unavailable": "Kullanılamıyor"
+    "unavailable": "Kullanılamıyor",
+    "wonThisMonth": "Bu ay kazanılan"
   },
   "myWork": {
     "title": "Benim işlerim",
@@ -33,5 +34,10 @@
     "empty": "Gösterilecek veri yok",
     "viewReports": "Raporlar",
     "failed": "Grafik verileri yüklenemedi"
+  },
+  "topDeals": {
+    "title": "En yüksek değerli açık fırsatlar",
+    "viewAll": "Tüm fırsatlar",
+    "empty": "Açık fırsat yok"
   }
 }
